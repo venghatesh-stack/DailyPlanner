@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-gunicorn dailyplanner.app:app
+gunicorn DailyPlanner.app:app
