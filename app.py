@@ -347,6 +347,53 @@ tr:hover {
     min-height: 64px;
   }
 }
+/* ---------- Status Dropdown Base ---------- */
+.status-select {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+/* ---------- Status Colors ---------- */
+.status-nothing-planned {
+  background: #e5e7eb; /* grey */
+  color: #374151;
+}
+
+.status-yet-to-start {
+  background: #fed7aa; /* orange */
+  color: #9a3412;
+}
+
+.status-in-progress {
+  background: #dbeafe; /* blue */
+  color: #1e40af;
+}
+
+.status-closed {
+  background: #dcfce7; /* green */
+  color: #166534;
+}
+
+.status-deferred {
+  background: #fee2e2; /* red */
+  color: #991b1b;
+}
+
+/* Focus polish */
+.status-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
 
 
 </style>
@@ -395,11 +442,18 @@ tr:hover {
 <textarea class="plan-input" name="plan_{{slot}}" oninput="markDirty()">{{ plans[slot]['plan'] }}</textarea>
 </td>
 <td>
-<select name="status_{{slot}}" onchange="markDirty()">
-{% for s in statuses %}
-<option value="{{s}}" {% if s==plans[slot]['status'] %}selected{% endif %}>{{s}}</option>
-{% endfor %}
+<select
+  name="status_{{slot}}"
+  class="status-select"
+  onchange="updateStatusColor(this); markDirty();"
+>
+  {% for s in statuses %}
+    <option value="{{s}}" {% if s==plans[slot]['status'] %}selected{% endif %}>
+      {{s}}
+    </option>
+  {% endfor %}
 </select>
+
 </td>
 </tr>
 {% endfor %}
@@ -438,6 +492,38 @@ document.addEventListener("DOMContentLoaded",()=>{
   const msg=document.getElementById("save-msg");
   if(msg) setTimeout(()=>msg.style.display="none",3000);
 });
+<script>
+function updateStatusColor(selectEl) {
+  // Remove old status classes
+  selectEl.classList.remove(
+    "status-nothing-planned",
+    "status-yet-to-start",
+    "status-in-progress",
+    "status-closed",
+    "status-deferred"
+  );
+
+  const value = selectEl.value;
+
+  if (value === "Nothing Planned") {
+    selectEl.classList.add("status-nothing-planned");
+  } else if (value === "Yet to Start") {
+    selectEl.classList.add("status-yet-to-start");
+  } else if (value === "In Progress") {
+    selectEl.classList.add("status-in-progress");
+  } else if (value === "Closed") {
+    selectEl.classList.add("status-closed");
+  } else if (value === "Deferred") {
+    selectEl.classList.add("status-deferred");
+  }
+}
+
+// Apply colors on page load
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".status-select").forEach(updateStatusColor);
+});
+</script>
+
 </script>
 </body>
 </html>
@@ -446,6 +532,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 if __name__ == "__main__":
     logger.info("Starting app (Supabase REST – stable mode)")
     app.run(debug=True)
+
 
 
 
