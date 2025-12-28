@@ -143,7 +143,7 @@ def save_day(plan_date, form):
 # ===============================
 @app.route("/", methods=["GET", "POST"])
 def plan_of_day():
-    today = date.today()
+    today = datetime.now(IST).date()
 
     year = int(request.args.get("year", today.year))
     month = int(request.args.get("month", today.month))
@@ -446,6 +446,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 if __name__ == "__main__":
     logger.info("Starting app (Supabase REST – stable mode)")
     app.run(debug=True)
+
 
 
 
