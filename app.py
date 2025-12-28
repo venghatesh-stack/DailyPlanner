@@ -227,10 +227,33 @@ td { padding:8px; vertical-align:top; }
 .time { width:160px; font-weight:500; }
 
 .plan-input {
-  width:100%; min-height:36px;
-  border-radius:6px; border:1px solid var(--border);
-  padding:8px; resize:none;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  line-height: 1.4;
+  background: #f9fafb;
+  transition: 
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
 }
+
+/* Focus = premium feel */
+.plan-input:focus {
+  outline: none;
+  background: #ffffff;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* Hover subtle */
+.plan-input:hover {
+  background: #ffffff;
+}
+
 
 .habits-grid {
   display:grid;
@@ -272,16 +295,57 @@ td { padding:8px; vertical-align:top; }
     width: 100%;
   }
 
+select {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 999px; /* pill */
+  border: 1px solid var(--border);
+  background: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+/* Focus */
+select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+/* Status colors */
+select[value="Nothing Planned"] { background:#f3f4f6; }
+select[value="Yet to Start"]    { background:#fef3c7; }
+select[value="In Progress"]    { background:#dbeafe; }
+select[value="Closed"]         { background:#dcfce7; }
+select[value="Deferred"]       { background:#fee2e2; }
+tr {
+  transition: background 0.15s ease;
+}
+
+tr:hover {
+  background: #f9fafb;
+}
+.time {
+  width: 160px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #374151;
+}
+@media (max-width: 768px) {
+  textarea,
   select {
-    width: 100%;
-    margin-top: 6px;
+    font-size: 16px; /* prevents iOS zoom */
   }
 
   .plan-input {
-    width: 100%;
-    min-height: 60px;
+    min-height: 64px;
   }
 }
+
 
 </style>
 </head>
@@ -380,4 +444,5 @@ document.addEventListener("DOMContentLoaded",()=>{
 if __name__ == "__main__":
     logger.info("Starting app (Supabase REST – stable mode)")
     app.run(debug=True)
+
 
