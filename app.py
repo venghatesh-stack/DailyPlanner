@@ -252,6 +252,37 @@ td { padding:8px; vertical-align:top; }
   display:flex; gap:10px;
 }
 .hidden { display:none; }
+/* -------- Mobile Optimizations -------- */
+@media (max-width: 768px) {
+
+  table, tbody, tr, td {
+    display: block;
+    width: 100%;
+  }
+
+  tr {
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td.time {
+    font-weight: 600;
+    margin-bottom: 6px;
+    width: 100%;
+  }
+
+  select {
+    width: 100%;
+    margin-top: 6px;
+  }
+
+  .plan-input {
+    width: 100%;
+    min-height: 60px;
+  }
+}
+
 </style>
 </head>
 
@@ -349,3 +380,4 @@ document.addEventListener("DOMContentLoaded",()=>{
 if __name__ == "__main__":
     logger.info("Starting app (Supabase REST – stable mode)")
     app.run(debug=True)
+
