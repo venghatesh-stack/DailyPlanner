@@ -4,7 +4,9 @@ import calendar
 
 from supabase_client import get, post, delete
 from logger import setup_logger
-
+from datetime import datetime, date, timedelta
+from zoneinfo import ZoneInfo
+IST = ZoneInfo("Asia/Kolkata")
 app = Flask(__name__)
 logger = setup_logger()
 
@@ -40,7 +42,7 @@ def slot_label(slot: int) -> str:
     return f"{start.strftime('%I:%M %p')} – {end.strftime('%I:%M %p')}"
 
 def current_slot() -> int:
-    now = datetime.now()
+    now = datetime.now(IST)
     return (now.hour * 60 + now.minute) // 30 + 1
 
 # ===============================
@@ -444,5 +446,6 @@ document.addEventListener("DOMContentLoaded",()=>{
 if __name__ == "__main__":
     logger.info("Starting app (Supabase REST – stable mode)")
     app.run(debug=True)
+
 
 
