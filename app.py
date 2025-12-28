@@ -2,6 +2,7 @@ from flask import Flask, request, redirect, url_for, render_template_string
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 import calendar
+import urllib.parse
 
 from supabase_client import get, post
 from logger import setup_logger
@@ -42,9 +43,33 @@ def slot_label(slot: int) -> str:
     end = start + timedelta(minutes=30)
     return f"{start.strftime('%I:%M %p')} – {end.strftime('%I:%M %p')}"
 
+def slot_start_end(plan_date: date, slot: int):
+    start = datetime.combine(plan_date, datetime.min.time(), tzinfo=IST) + timedelta(minutes=(slot - 1) * 30)
+    end = start + timedelta(minutes=30)
+    return start, end
+
 def current_slot() -> int:
     now = datetime.now(IST)
     return (now.hour * 60 + now.minute) // 30 + 1
+
+def google_calendar_link(plan_date, slot, task):
+    if not task:
+        return "#"
+
+    start, end = slot_start_end(plan_date, slot)
+
+    start_str = start.strftime("%Y%m%dT%H%M%S")
+    end_str = end.strftime("%Y%m%dT%H%M%S")
+
+    params = {
+        "action": "TEMPLATE",
+        "text": task,
+        "dates": f"{start_str}/{end_str}",
+        "details": "Reminder from Daily Planner",
+        "trp": "false",
+    }
+
+    return "https://calendar.google.com/calendar/render?" + urllib.parse.urlencode(params)
 
 # ===============================
 # DATA ACCESS
@@ -125,21 +150,32 @@ def plan_of_day():
         save_day(plan_date, request.form)
         return redirect(url_for(
             "plan_of_day",
-            year=year,
-            month=month,
+            year=plan_date.year,
+            month=plan_date.month,
             day=plan_date.day,
             saved=1
         ))
 
     plans, reflection, habits = load_day(plan_date)
-    days = [date(year, month, d) for d in range(1, calendar.monthrange(year, month)[1] + 1)]
+
+    reminder_links = {
+        slot: google_calendar_link(plan_date, slot, plans[slot]["plan"])
+        for slot in range(1, TOTAL_SLOTS + 1)
+    }
+
+    days = [
+        date(year, month, d)
+        for d in range(1, calendar.monthrange(year, month)[1] + 1)
+    ]
 
     return render_template_string(
         TEMPLATE,
         year=year,
         month=month,
+        month_name=calendar.month_name[month],
         days=days,
         selected_day=plan_date.day,
+        today=today,
         plans=plans,
         reflection=reflection,
         habits=habits,
@@ -147,8 +183,10 @@ def plan_of_day():
         statuses=STATUSES,
         total_slots=TOTAL_SLOTS,
         slot_labels={i: slot_label(i) for i in range(1, TOTAL_SLOTS + 1)},
+        reminder_links=reminder_links,
         now_slot=current_slot() if plan_date == today else None,
-        saved=request.args.get("saved")
+        saved=request.args.get("saved"),
+        calendar=calendar
     )
 
 # ===============================
@@ -160,66 +198,45 @@ TEMPLATE = """
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-:root {
-  --bg:#f6f7f9; --card:#fff; --border:#e5e7eb; --primary:#2563eb;
-}
-body { background:var(--bg); font-family:system-ui; padding:20px; }
-.container { max-width:1100px; margin:auto; background:var(--card); padding:24px; border-radius:14px; }
+body { font-family: system-ui; background:#f6f7f9; padding:20px; }
+.container { max-width:1100px; margin:auto; background:#fff; padding:24px; border-radius:14px; }
 
 .header-bar {
   display:flex; justify-content:space-between; align-items:center;
-  margin-bottom:16px; padding-bottom:10px; border-bottom:1px solid var(--border);
+  margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid #e5e7eb;
 }
-.header-time { display:flex; align-items:center; gap:6px; font-weight:700; color:var(--primary); }
-.clock-icon { font-size:18px; }
+.header-date { font-weight:600; color:#374151; }
+.header-time { font-weight:700; color:#2563eb; }
 
-.day-strip { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; }
+.month-controls {
+  display:flex; gap:8px; margin-bottom:16px;
+}
+.month-controls select {
+  padding:6px 10px;
+}
+
+.day-strip { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
 .day-btn {
   width:36px; height:36px; border-radius:50%;
   display:flex; align-items:center; justify-content:center;
-  border:1px solid var(--border); background:#f9fafb;
-  text-decoration:none; font-weight:600; color:#111;
+  border:1px solid #ddd; text-decoration:none;
 }
-.day-btn.selected { background:var(--primary); color:#fff; }
+.day-btn.selected { background:#2563eb; color:#fff; }
 
-table { width:100%; border-collapse:collapse; }
-td { padding:8px; vertical-align:top; }
+.current-slot { background:#eef2ff; border-left:4px solid #2563eb; }
 
-.current-slot { background:#eef2ff; border-left:4px solid var(--primary); }
-
-.time-cell { display:flex; align-items:center; gap:6px; font-weight:600; }
-
-.cell-header { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:#6b7280; margin-bottom:4px; }
-
-.plan-input {
-  width:100%; min-height:44px; padding:10px 12px;
-  border-radius:10px; border:1px solid var(--border);
+.task-header {
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:12px; font-weight:600; color:#6b7280; margin-bottom:4px;
 }
 
-.status-select {
-  width:100%; padding:8px 12px; border-radius:999px;
-  border:1px solid var(--border); font-weight:600;
-}
-.status-nothing-planned { background:#e5e7eb; }
-.status-yet-to-start { background:#fed7aa; }
-.status-in-progress { background:#dbeafe; }
-.status-closed { background:#dcfce7; }
-.status-deferred { background:#fee2e2; }
-
-.section-header { display:flex; align-items:center; gap:8px; font-weight:700; margin-top:20px; }
-.habits-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; }
-.habit-item { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px; }
-.habit-item:hover { background:#f9fafb; }
+.reminder-icon { text-decoration:none; font-size:16px; opacity:.75; }
+.reminder-icon:hover { opacity:1; }
 
 .floating-actions {
   position:fixed; bottom:16px; left:50%; transform:translateX(-50%);
-  background:#fff; border:1px solid var(--border);
-  padding:10px 14px; border-radius:12px; display:flex; gap:10px;
-}
-.hidden { display:none; }
-
-@media(max-width:768px){
-  table, tr, td { display:block; width:100%; }
+  background:#fff; border:1px solid #ddd; padding:10px;
+  border-radius:12px; display:none; gap:10px;
 }
 </style>
 </head>
@@ -228,17 +245,26 @@ td { padding:8px; vertical-align:top; }
 <div class="container">
 
 <div class="header-bar">
-  <div class="header-time">
-    <span class="clock-icon">🕒</span>
-    <span id="current-time"></span>
-  </div>
+  <div class="header-date" id="current-date"></div>
+  <div class="header-time">🕒 <span id="current-time"></span> IST</div>
 </div>
 
-{% if saved %}
-<div style="background:#dcfce7;padding:10px;border-radius:8px;margin-bottom:12px;font-weight:600">
-✅ Saved successfully
-</div>
-{% endif %}
+<form method="get" class="month-controls">
+  <input type="hidden" name="day" value="{{ selected_day }}">
+  <select name="month" onchange="this.form.submit()">
+    {% for m in range(1,13) %}
+      <option value="{{m}}" {% if m==month %}selected{% endif %}>
+        {{ calendar.month_name[m] }}
+      </option>
+    {% endfor %}
+  </select>
+
+  <select name="year" onchange="this.form.submit()">
+    {% for y in range(year-5, year+6) %}
+      <option value="{{y}}" {% if y==year %}selected{% endif %}>{{y}}</option>
+    {% endfor %}
+  </select>
+</form>
 
 <div class="day-strip">
 {% for d in days %}
@@ -250,19 +276,21 @@ td { padding:8px; vertical-align:top; }
 </div>
 
 <form method="post">
-<table>
+<table width="100%">
 {% for slot in range(1,total_slots+1) %}
 <tr id="slot-{{slot}}" class="{% if now_slot==slot %}current-slot{% endif %}">
-<td class="time-cell">🕒 {{ slot_labels[slot] }}</td>
+<td>🕒 {{ slot_labels[slot] }}</td>
 <td>
-  <div class="cell-header">📝 Task</div>
-  <textarea class="plan-input" name="plan_{{slot}}" oninput="markDirty()">{{ plans[slot]['plan'] }}</textarea>
+  <div class="task-header">
+    <span>📝 Task</span>
+    <a href="{{ reminder_links[slot] }}" class="reminder-icon" title="Add Google reminder">⏰</a>
+  </div>
+  <textarea name="plan_{{slot}}" oninput="markDirty()" style="width:100%">{{ plans[slot]['plan'] }}</textarea>
 </td>
 <td>
-  <div class="cell-header">🚦 Status</div>
-  <select name="status_{{slot}}" class="status-select" onchange="updateStatusColor(this); markDirty()">
+  <select name="status_{{slot}}" onchange="markDirty()">
   {% for s in statuses %}
-    <option value="{{s}}" {% if s==plans[slot]['status'] %}selected{% endif %}>{{s}}</option>
+    <option {% if s==plans[slot]['status'] %}selected{% endif %}>{{s}}</option>
   {% endfor %}
   </select>
 </td>
@@ -270,26 +298,10 @@ td { padding:8px; vertical-align:top; }
 {% endfor %}
 </table>
 
-<h3 class="section-header">🔁 Habits</h3>
-<div class="habits-grid">
-{% for h in habit_list %}
-<label class="habit-item">
-<input type="checkbox" name="habits" value="{{h}}" {% if h in habits %}checked{% endif %} onchange="markDirty()">
-{% if h=="Walking" %}🚶{% endif %}
-{% if h=="Water" %}💧{% endif %}
-{% if h=="No Shopping" %}🛒❌{% endif %}
-{% if h=="No TimeWastage" %}⏳❌{% endif %}
-{% if h=="8 hrs sleep" %}😴{% endif %}
-{% if h=="Daily prayers" %}🙏{% endif %}
-{{ h }}
-</label>
-{% endfor %}
-</div>
+<h3>🪞 Reflection</h3>
+<textarea name="reflection" oninput="markDirty()" style="width:100%">{{ reflection }}</textarea>
 
-<h3 class="section-header">🪞 Reflection</h3>
-<textarea name="reflection" class="plan-input" oninput="markDirty()">{{ reflection }}</textarea>
-
-<div id="floating-actions" class="floating-actions hidden">
+<div id="actions" class="floating-actions">
 <button type="submit">Save</button>
 <button type="button" onclick="location.reload()">Cancel</button>
 </div>
@@ -298,38 +310,30 @@ td { padding:8px; vertical-align:top; }
 
 <script>
 let dirty=false;
-
 function markDirty(){
   if(!dirty){
     dirty=true;
-    document.getElementById("floating-actions").classList.remove("hidden");
+    document.getElementById("actions").style.display="flex";
   }
-}
-
-function updateStatusColor(el){
-  el.className="status-select";
-  if(el.value==="Nothing Planned") el.classList.add("status-nothing-planned");
-  if(el.value==="Yet to Start") el.classList.add("status-yet-to-start");
-  if(el.value==="In Progress") el.classList.add("status-in-progress");
-  if(el.value==="Closed") el.classList.add("status-closed");
-  if(el.value==="Deferred") el.classList.add("status-deferred");
 }
 
 function updateClock(){
   const now=new Date();
   const utc=now.getTime()+now.getTimezoneOffset()*60000;
   const ist=new Date(utc+330*60000);
-  document.getElementById("current-time").textContent=
-    ist.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:true})+" IST";
-}
 
+  document.getElementById("current-time").textContent =
+    ist.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:true});
+
+  document.getElementById("current-date").textContent =
+    ist.toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+}
 updateClock();
 setInterval(updateClock,1000);
 
 document.addEventListener("DOMContentLoaded",()=>{
-  document.querySelectorAll(".status-select").forEach(updateStatusColor);
   const row=document.querySelector(".current-slot");
-  if(row) setTimeout(()=>row.scrollIntoView({behavior:"smooth",block:"center"}),300);
+  if(row) row.scrollIntoView({behavior:"smooth",block:"center"});
 });
 </script>
 </body>
