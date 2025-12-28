@@ -138,10 +138,8 @@ def plan_of_day():
         TEMPLATE,
         year=year,
         month=month,
-        month_name=calendar.month_name[month],
         days=days,
         selected_day=plan_date.day,
-        today=today,
         plans=plans,
         reflection=reflection,
         habits=habits,
@@ -172,10 +170,8 @@ body { background:var(--bg); font-family:system-ui; padding:20px; }
   display:flex; justify-content:space-between; align-items:center;
   margin-bottom:16px; padding-bottom:10px; border-bottom:1px solid var(--border);
 }
-.header-date { font-weight:600; }
 .header-time { display:flex; align-items:center; gap:6px; font-weight:700; color:var(--primary); }
 .clock-icon { font-size:18px; }
-.tz { font-size:11px; opacity:.8; }
 
 .day-strip { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; }
 .day-btn {
@@ -189,29 +185,31 @@ body { background:var(--bg); font-family:system-ui; padding:20px; }
 table { width:100%; border-collapse:collapse; }
 td { padding:8px; vertical-align:top; }
 
-.current-slot {
-  background:#eef2ff;
-  border-left:4px solid var(--primary);
-}
+.current-slot { background:#eef2ff; border-left:4px solid var(--primary); }
+
+.time-cell { display:flex; align-items:center; gap:6px; font-weight:600; }
+
+.cell-header { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:#6b7280; margin-bottom:4px; }
 
 .plan-input {
   width:100%; min-height:44px; padding:10px 12px;
   border-radius:10px; border:1px solid var(--border);
-  background:#f9fafb;
 }
 
 .status-select {
   width:100%; padding:8px 12px; border-radius:999px;
   border:1px solid var(--border); font-weight:600;
 }
+.status-nothing-planned { background:#e5e7eb; }
+.status-yet-to-start { background:#fed7aa; }
+.status-in-progress { background:#dbeafe; }
+.status-closed { background:#dcfce7; }
+.status-deferred { background:#fee2e2; }
 
-.status-nothing-planned { background:#e5e7eb; color:#374151; }
-.status-yet-to-start { background:#fed7aa; color:#9a3412; }
-.status-in-progress { background:#dbeafe; color:#1e40af; }
-.status-closed { background:#dcfce7; color:#166534; }
-.status-deferred { background:#fee2e2; color:#991b1b; }
-
+.section-header { display:flex; align-items:center; gap:8px; font-weight:700; margin-top:20px; }
 .habits-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; }
+.habit-item { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px; }
+.habit-item:hover { background:#f9fafb; }
 
 .floating-actions {
   position:fixed; bottom:16px; left:50%; transform:translateX(-50%);
@@ -230,11 +228,9 @@ td { padding:8px; vertical-align:top; }
 <div class="container">
 
 <div class="header-bar">
-  <div class="header-date" id="current-date"></div>
   <div class="header-time">
     <span class="clock-icon">🕒</span>
     <span id="current-time"></span>
-    <span class="tz">IST</span>
   </div>
 </div>
 
@@ -257,28 +253,40 @@ td { padding:8px; vertical-align:top; }
 <table>
 {% for slot in range(1,total_slots+1) %}
 <tr id="slot-{{slot}}" class="{% if now_slot==slot %}current-slot{% endif %}">
-<td>{{ slot_labels[slot] }}</td>
-<td><textarea class="plan-input" name="plan_{{slot}}" oninput="markDirty()">{{ plans[slot]['plan'] }}</textarea></td>
+<td class="time-cell">🕒 {{ slot_labels[slot] }}</td>
 <td>
-<select name="status_{{slot}}" class="status-select"
-        onchange="updateStatusColor(this); markDirty()">
-{% for s in statuses %}
-<option value="{{s}}" {% if s==plans[slot]['status'] %}selected{% endif %}>{{s}}</option>
-{% endfor %}
-</select>
+  <div class="cell-header">📝 Task</div>
+  <textarea class="plan-input" name="plan_{{slot}}" oninput="markDirty()">{{ plans[slot]['plan'] }}</textarea>
+</td>
+<td>
+  <div class="cell-header">🚦 Status</div>
+  <select name="status_{{slot}}" class="status-select" onchange="updateStatusColor(this); markDirty()">
+  {% for s in statuses %}
+    <option value="{{s}}" {% if s==plans[slot]['status'] %}selected{% endif %}>{{s}}</option>
+  {% endfor %}
+  </select>
 </td>
 </tr>
 {% endfor %}
 </table>
 
-<h3>Habits</h3>
+<h3 class="section-header">🔁 Habits</h3>
 <div class="habits-grid">
 {% for h in habit_list %}
-<label><input type="checkbox" name="habits" value="{{h}}" {% if h in habits %}checked{% endif %} onchange="markDirty()"> {{h}}</label>
+<label class="habit-item">
+<input type="checkbox" name="habits" value="{{h}}" {% if h in habits %}checked{% endif %} onchange="markDirty()">
+{% if h=="Walking" %}🚶{% endif %}
+{% if h=="Water" %}💧{% endif %}
+{% if h=="No Shopping" %}🛒❌{% endif %}
+{% if h=="No TimeWastage" %}⏳❌{% endif %}
+{% if h=="8 hrs sleep" %}😴{% endif %}
+{% if h=="Daily prayers" %}🙏{% endif %}
+{{ h }}
+</label>
 {% endfor %}
 </div>
 
-<h3>Reflection</h3>
+<h3 class="section-header">🪞 Reflection</h3>
 <textarea name="reflection" class="plan-input" oninput="markDirty()">{{ reflection }}</textarea>
 
 <div id="floating-actions" class="floating-actions hidden">
@@ -289,31 +297,17 @@ td { padding:8px; vertical-align:top; }
 </div>
 
 <script>
-let dirty = false;
+let dirty=false;
 
 function markDirty(){
   if(!dirty){
-    dirty = true;
+    dirty=true;
     document.getElementById("floating-actions").classList.remove("hidden");
   }
 }
 
-function updateISTClock(){
-  const now = new Date();
-  const utc = now.getTime() + now.getTimezoneOffset()*60000;
-  const ist = new Date(utc + 330*60000);
-
-  document.getElementById("current-time").textContent =
-    ist.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:true});
-
-  document.getElementById("current-date").textContent =
-    ist.toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
-}
-updateISTClock();
-setInterval(updateISTClock,1000);
-
 function updateStatusColor(el){
-  el.className = "status-select";
+  el.className="status-select";
   if(el.value==="Nothing Planned") el.classList.add("status-nothing-planned");
   if(el.value==="Yet to Start") el.classList.add("status-yet-to-start");
   if(el.value==="In Progress") el.classList.add("status-in-progress");
@@ -321,9 +315,20 @@ function updateStatusColor(el){
   if(el.value==="Deferred") el.classList.add("status-deferred");
 }
 
+function updateClock(){
+  const now=new Date();
+  const utc=now.getTime()+now.getTimezoneOffset()*60000;
+  const ist=new Date(utc+330*60000);
+  document.getElementById("current-time").textContent=
+    ist.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:true})+" IST";
+}
+
+updateClock();
+setInterval(updateClock,1000);
+
 document.addEventListener("DOMContentLoaded",()=>{
   document.querySelectorAll(".status-select").forEach(updateStatusColor);
-  const row = document.querySelector(".current-slot");
+  const row=document.querySelector(".current-slot");
   if(row) setTimeout(()=>row.scrollIntoView({behavior:"smooth",block:"center"}),300);
 });
 </script>
