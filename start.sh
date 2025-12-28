@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-gunicorn --chdir DailyPlanner.app:app
+gunicorn --chdir DailyPlanner app:app
