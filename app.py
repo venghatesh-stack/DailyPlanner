@@ -238,6 +238,54 @@ body { font-family: system-ui; background:#f6f7f9; padding:20px; }
   background:#fff; border:1px solid #ddd; padding:10px;
   border-radius:12px; display:none; gap:10px;
 }
+/* ---------- Mobile-first layout ---------- */
+@media (max-width: 768px) {
+
+  table, tbody, tr, td {
+    display: block;
+    width: 100%;
+  }
+
+  tr {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 14px;
+  }
+
+  tr.current-slot {
+    border-left: 4px solid #2563eb;
+    background: #eef2ff;
+  }
+
+  td {
+    padding: 0;
+    margin-bottom: 10px;
+  }
+
+  td:first-child {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 64px;
+    font-size: 16px; /* prevent iOS zoom */
+  }
+
+  select {
+    width: 100%;
+    font-size: 16px;
+  }
+
+  .task-header {
+    margin-bottom: 6px;
+  }
+}
+
 </style>
 </head>
 
@@ -343,3 +391,4 @@ document.addEventListener("DOMContentLoaded",()=>{
 if __name__ == "__main__":
     logger.info("Starting Daily Planner (IST)")
     app.run(debug=True)
+
