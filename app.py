@@ -56,17 +56,21 @@ def google_calendar_link(plan_date, slot, task):
     if not task:
         return "#"
 
-    start, end = slot_start_end(plan_date, slot)
+    start_ist, end_ist = slot_start_end(plan_date, slot)
 
-    start_str = start.strftime("%Y%m%dT%H%M%S")
-    end_str = end.strftime("%Y%m%dT%H%M%S")
+    # Convert to UTC for Google Calendar
+    start_utc = start_ist.astimezone(ZoneInfo("UTC"))
+    end_utc = end_ist.astimezone(ZoneInfo("UTC"))
+
+    start_str = start_utc.strftime("%Y%m%dT%H%M%SZ")
+    end_str = end_utc.strftime("%Y%m%dT%H%M%SZ")
 
     params = {
         "action": "TEMPLATE",
         "text": task,
         "dates": f"{start_str}/{end_str}",
-        "details": "Reminder from Daily Planner",
-        "trp": "false",
+        "details": "Created from Daily Planner",
+        "trp": "false"
     }
 
     return "https://calendar.google.com/calendar/render?" + urllib.parse.urlencode(params)
@@ -391,4 +395,5 @@ document.addEventListener("DOMContentLoaded",()=>{
 if __name__ == "__main__":
     logger.info("Starting Daily Planner (IST)")
     app.run(debug=True)
+
 
