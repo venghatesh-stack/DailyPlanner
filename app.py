@@ -266,6 +266,23 @@ textarea, select {
     border-radius:12px;
   }
 }
+/* Status background colors */
+.status-Nothing\ Planned { background:#f3f4f6; }
+.status-Yet\ to\ Start   { background:#fef3c7; }
+.status-In\ Progress    { background:#dbeafe; }
+.status-Closed          { background:#dcfce7; }
+.status-Deferred        { background:#fee2e2; }
+
+/* Make it visible on mobile cards */
+tr[class^="status-"] {
+  border-left: 6px solid rgba(0,0,0,0.08);
+}
+
+/* Status select clarity */
+select {
+  font-weight: 600;
+}
+
 </style>
 </head>
 
@@ -311,7 +328,10 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
 <form method="post">
 <table>
 {% for slot in range(1,total_slots+1) %}
-<tr class="{% if now_slot==slot %}current-slot{% endif %}">
+<tr
+  class="{% if now_slot==slot %}current-slot{% endif %}"
+  data-status="{{ plans[slot]['status'] }}">
+
 <td>🕒 {{ slot_labels[slot] }}</td>
 <td>
 <textarea name="plan_{{slot}}" rows="2" oninput="markDirty()">{{ plans[slot]['plan'] }}</textarea>
@@ -391,6 +411,29 @@ window.addEventListener("resize", () => {
 
   lastHeight = currentHeight;
 });
+function applyStatusColors() {
+  document.querySelectorAll("tr[data-status]").forEach(row => {
+    const status = row.dataset.status;
+    if (!status) return;
+
+    const safe = "status-" + status.replaceAll(" ", "\\ ");
+    row.className = row.className.replace(/status-[^ ]+/g, "");
+    row.classList.add("status-" + status.replaceAll(" ", " "));
+  });
+}
+
+/* Apply on load */
+document.addEventListener("DOMContentLoaded", applyStatusColors);
+
+/* Apply on status change */
+document.querySelectorAll("select[name^='status_']").forEach(sel => {
+  sel.addEventListener("change", e => {
+    const row = e.target.closest("tr");
+    row.dataset.status = e.target.value;
+    applyStatusColors();
+    markDirty();
+  });
+});
 
 </script>
 </body>
@@ -400,6 +443,7 @@ window.addEventListener("resize", () => {
 if __name__ == "__main__":
     logger.info("Starting Daily Planner")
     app.run(debug=True)
+
 
 
 
