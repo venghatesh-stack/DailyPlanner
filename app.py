@@ -236,16 +236,18 @@ textarea, select {
 }
 
 .floating-actions {
-  position: fixed;
-  left: 12px;
-  right: 12px;
-  bottom: env(safe-area-inset-bottom, 12px);
+  position: sticky;
+  bottom: 12px;
+  margin-top: 24px;
   display: none;
   gap: 10px;
-  z-index: 10000;
+  z-index: 20;
   background: #fff;
-  padding-bottom: env(safe-area-inset-bottom, 12px);
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
 }
+
 
 
 .floating-actions button {
@@ -346,9 +348,9 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
 <script>
 let dirty=false;
 function markDirty(){
-  const actions = document.getElementById("actions");
-  actions.style.display = "flex";
+  document.getElementById("actions").style.display = "flex";
 }
+
 
 
 function updateClock(){
@@ -398,5 +400,6 @@ window.addEventListener("resize", () => {
 if __name__ == "__main__":
     logger.info("Starting Daily Planner")
     app.run(debug=True)
+
 
 
