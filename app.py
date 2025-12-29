@@ -337,15 +337,24 @@ body { font-family: system-ui; background:#f6f7f9; padding:20px; }
 ">
   ✅ Saved successfully
 </div>
-{% endif %}
-<div class="day-strip">
-{% for d in days %}
-<a href="/?year={{year}}&month={{month}}&day={{d.day}}"
-   class="day-btn {% if d.day==selected_day %}selected{% endif %}">
-{{ d.day }}
-</a>
-{% endfor %}
+{% if saved %}
+<div id="save-msg" style="
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #dcfce7;
+  color: #166534;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-weight: 600;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  z-index: 9999;
+">
+  ✅ Saved successfully
 </div>
+{% endif %}
+
 
 <form method="post">
 <table width="100%">
@@ -417,8 +426,12 @@ function markDirty(){
   }
 const msg = document.getElementById("save-msg");
 if (msg) {
-  setTimeout(() => msg.style.display = "none", 3000);
+  setTimeout(() => {
+    msg.style.opacity = "0";
+    setTimeout(() => msg.remove(), 500);
+  }, 2500);
 }
+
 }
 
 
@@ -448,6 +461,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 if __name__ == "__main__":
     logger.info("Starting Daily Planner (IST)")
     app.run(debug=True)
+
 
 
 
