@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, url_for, render_template_string
+flask import Flask, request, redirect, url_for, render_template_string
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 import calendar
@@ -391,6 +391,10 @@ select {
   border: 2px solid #ef4444;
   background: #fff5f5;
 }
+/* Collapsed empty slots */
+.hidden-slot {
+  display: none !important;
+}
 
 
 </style>
@@ -445,6 +449,15 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
 ">
   ❌ Tasks cannot be empty. Rows highlighted in red must be corrected.
 </div>
+<div id="collapse-toggle" style="
+  display:none;
+  margin-bottom:12px;
+  font-weight:600;
+  color:#2563eb;
+  cursor:pointer;
+">
+  ⏳ <span id="hidden-count"></span> empty slots hidden — <u>Show</u>
+</div>
 
 <form method="post">
 <table>
@@ -480,7 +493,7 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
 <textarea name="reflection" rows="4" oninput="markDirty()">{{ reflection }}</textarea>
 
 <div id="actions" class="floating-actions">
-<button type="submit">Save</button>
+<button type="button" onclick="validateAndSubmit()">Save</button>
 <button type="button" onclick="location.reload()">Cancel</button>
 </div>
 </form>
@@ -492,6 +505,58 @@ function markDirty(){
   document.getElementById("actions").style.display = "flex";
 }
 
+function validateAndSubmit() {
+  const rows = document.querySelectorAll("tr[data-status]");
+  const errorBox = document.getElementById("task-error");
+
+  let firstInvalidTextarea = null;
+  let hasErrors = false;
+
+  // Clear previous errors
+  rows.forEach(row => row.classList.remove("row-error"));
+
+  rows.forEach(row => {
+    const status = row.dataset.status;
+    const textarea = row.querySelector("textarea");
+
+    const isInvalid =
+      status &&
+      status !== "Nothing Planned" &&
+      textarea &&
+      textarea.value.trim() === "";
+
+    if (isInvalid) {
+      hasErrors = true;
+      row.classList.add("row-error");
+
+      if (!firstInvalidTextarea) {
+        firstInvalidTextarea = textarea;
+      }
+    }
+  });
+
+  if (hasErrors) {
+    errorBox.style.display = "block";
+
+    firstInvalidTextarea.scrollIntoView({
+      behavior: "smooth",
+      block: "center"
+    });
+    firstInvalidTextarea.focus();
+
+    // ensure collapsed rows stay visible
+    if (typeof applyCollapse === "function") {
+      applyCollapse();
+    }
+
+    return; // 🚫 stop submit
+  }
+
+  errorBox.style.display = "none";
+
+  // ✅ submit form programmatically
+  document.querySelector("form[method='post']").submit();
+}
 
 
 function updateClock(){
@@ -556,7 +621,7 @@ function applyStatusColors() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", applyStatusColors);
+
 
 document.querySelectorAll("select[name^='status_']").forEach(sel => {
   sel.addEventListener("change", e => {
@@ -568,8 +633,10 @@ document.querySelectorAll("select[name^='status_']").forEach(sel => {
 });
 
 
-/* Apply on load */
-document.addEventListener("DOMContentLoaded", applyStatusColors);
+document.addEventListener("DOMContentLoaded", () => {
+  applyStatusColors();
+  applyCollapse();
+});
 
 /* Apply on status change */
 document.querySelectorAll("select[name^='status_']").forEach(sel => {
@@ -577,12 +644,63 @@ document.querySelectorAll("select[name^='status_']").forEach(sel => {
     const row = e.target.closest("tr");
     row.dataset.status = e.target.value;
     applyStatusColors();
+    apply.collapse();
     markDirty();
   });
 });
 function statusKey(status) {
   return status.toLowerCase().replace(/\s+/g, "-");
 }
+let collapsed = true;
+
+function isEmptySlot(row) {
+  const status = row.dataset.status;
+  const textarea = row.querySelector("textarea");
+
+  if (!textarea) return false;
+
+  const isCurrent = row.classList.contains("current-slot");
+  const hasError = row.classList.contains("row-error");
+
+  return (
+    !isCurrent &&
+    !hasError &&
+    (!textarea.value.trim()) &&
+    (status === "Nothing Planned")
+  );
+}
+
+function applyCollapse() {
+  const rows = document.querySelectorAll("tr[data-status]");
+  let hiddenCount = 0;
+
+  rows.forEach(row => {
+    if (collapsed && isEmptySlot(row)) {
+      row.classList.add("hidden-slot");
+      hiddenCount++;
+    } else {
+      row.classList.remove("hidden-slot");
+    }
+  });
+
+  const toggle = document.getElementById("collapse-toggle");
+  const countSpan = document.getElementById("hidden-count");
+
+  if (hiddenCount > 0) {
+    toggle.style.display = "block";
+    countSpan.textContent = hiddenCount;
+    toggle.innerHTML = collapsed
+      ? `⏳ <span id="hidden-count">${hiddenCount}</span> empty slots hidden — <u>Show</u>`
+      : `⬆️ Hide empty slots`;
+  } else {
+    toggle.style.display = "none";
+  }
+}
+
+document.getElementById("collapse-toggle").onclick = () => {
+  collapsed = !collapsed;
+  applyCollapse();
+};
 
 </script>
 </body>
@@ -592,6 +710,7 @@ function statusKey(status) {
 if __name__ == "__main__":
     logger.info("Starting Daily Planner")
     app.run(debug=True)
+
 
 
 
