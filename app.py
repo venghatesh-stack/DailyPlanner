@@ -378,6 +378,19 @@ select.status-deferred        { background:#fee2e2; }
 select {
   font-weight: 600;
 }
+/* ===== Validation error styling ===== */
+.row-error {
+  background: #fee2e2 !important; /* light red */
+}
+
+.row-error td {
+  background: #fee2e2 !important;
+}
+
+.row-error textarea {
+  border: 2px solid #ef4444;
+  background: #fff5f5;
+}
 
 
 </style>
@@ -420,6 +433,17 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
 {{ d.day }}
 </a>
 {% endfor %}
+</div>
+<div id="task-error" style="
+  display:none;
+  background:#fee2e2;
+  color:#991b1b;
+  padding:12px 14px;
+  border-radius:10px;
+  margin-bottom:12px;
+  font-weight:600;
+">
+  ❌ Tasks cannot be empty. Rows highlighted in red must be corrected.
 </div>
 
 <form method="post">
@@ -568,6 +592,7 @@ function statusKey(status) {
 if __name__ == "__main__":
     logger.info("Starting Daily Planner")
     app.run(debug=True)
+
 
 
 
