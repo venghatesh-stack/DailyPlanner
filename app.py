@@ -1,4 +1,4 @@
-import Flask, request, redirect, url_for, render_template_string
+import flask, request, redirect, url_for, render_template_string
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 import calendar
@@ -698,6 +698,7 @@ document.getElementById("collapse-toggle").onclick = () => {
 if __name__ == "__main__":
     logger.info("Starting Daily Planner")
     app.run(debug=True)
+
 
 
 
