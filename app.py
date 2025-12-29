@@ -508,16 +508,41 @@ window.addEventListener("resize", () => {
 
   lastHeight = currentHeight;
 });
+function statusKey(status) {
+  return status.toLowerCase().replace(/\s+/g, "-");
+}
+
 function applyStatusColors() {
   document.querySelectorAll("tr[data-status]").forEach(row => {
     const status = row.dataset.status;
     if (!status) return;
 
-    const safe = "status-" + status.replaceAll(" ", "\\ ");
-    row.className = row.className.replace(/status-[^ ]+/g, "");
-    row.classList.add("status-" + status.replaceAll(" ", " "));
+    const key = statusKey(status);
+
+    // Clean old status classes
+    row.className = row.className.replace(/\bstatus-\S+/g, "");
+    row.classList.add("status-" + key);
+
+    // Apply to dropdown also
+    const select = row.querySelector("select");
+    if (select) {
+      select.className = select.className.replace(/\bstatus-\S+/g, "");
+      select.classList.add("status-" + key);
+    }
   });
 }
+
+document.addEventListener("DOMContentLoaded", applyStatusColors);
+
+document.querySelectorAll("select[name^='status_']").forEach(sel => {
+  sel.addEventListener("change", e => {
+    const row = e.target.closest("tr");
+    row.dataset.status = e.target.value;
+    applyStatusColors();
+    markDirty();
+  });
+});
+
 
 /* Apply on load */
 document.addEventListener("DOMContentLoaded", applyStatusColors);
@@ -543,6 +568,7 @@ function statusKey(status) {
 if __name__ == "__main__":
     logger.info("Starting Daily Planner")
     app.run(debug=True)
+
 
 
 
