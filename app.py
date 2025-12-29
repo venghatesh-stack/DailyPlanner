@@ -236,14 +236,17 @@ textarea, select {
 }
 
 .floating-actions {
-  position:fixed;
-  bottom:12px;
-  left:12px;
-  right:12px;
-  display:none;
-  gap:10px;
-  z-index:9999;
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: env(safe-area-inset-bottom, 12px);
+  display: none;
+  gap: 10px;
+  z-index: 10000;
+  background: #fff;
+  padding-bottom: env(safe-area-inset-bottom, 12px);
 }
+
 
 .floating-actions button {
   flex:1;
@@ -343,11 +346,10 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
 <script>
 let dirty=false;
 function markDirty(){
-  if(!dirty){
-    dirty=true;
-    document.getElementById("actions").style.display="flex";
-  }
+  const actions = document.getElementById("actions");
+  actions.style.display = "flex";
 }
+
 
 function updateClock(){
   const now=new Date();
@@ -368,6 +370,25 @@ if (msg) {
     setTimeout(() => msg.remove(), 400);
   }, 2500);
 }
+let lastHeight = window.innerHeight;
+const actions = document.getElementById("actions");
+
+window.addEventListener("resize", () => {
+  if (!actions) return;
+
+  const currentHeight = window.innerHeight;
+  const keyboardOpen = currentHeight < lastHeight - 120;
+
+  if (keyboardOpen) {
+    // Move buttons above keyboard
+    actions.style.bottom = "calc(100vh - " + currentHeight + "px + 12px)";
+  } else {
+    // Reset position
+    actions.style.bottom = "env(safe-area-inset-bottom, 12px)";
+  }
+
+  lastHeight = currentHeight;
+});
 
 </script>
 </body>
@@ -377,4 +398,5 @@ if (msg) {
 if __name__ == "__main__":
     logger.info("Starting Daily Planner")
     app.run(debug=True)
+
 
