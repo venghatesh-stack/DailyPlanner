@@ -216,8 +216,6 @@ body { font-family: system-ui; background:#f6f7f9; padding:12px; }
 
 .current-slot { background:#eef2ff; border-left:4px solid #2563eb; }
 
-.hidden-slot { display:none !important; }
-
 .focus-now { outline:2px solid #22c55e; }
 .focus-next { outline:2px dashed #60a5fa; }
 
@@ -228,6 +226,12 @@ body { font-family: system-ui; background:#f6f7f9; padding:12px; }
 .status-deferred { background:#fee2e2; }
 
 .row-error { background:#fee2e2 !important; }
+
+.reminder-link {
+  text-decoration:none;
+  font-size:18px;
+  margin-left:8px;
+}
 </style>
 </head>
 
@@ -261,7 +265,12 @@ padding:10px 16px;border-radius:999px;font-weight:600;">
 <table width="100%">
 {% for slot in range(1,total_slots+1) %}
 <tr data-status="{{ plans[slot]['status'] }}" class="{% if now_slot==slot %}current-slot{% endif %}">
-<td>{{ slot_labels[slot] }}</td>
+<td>
+  {{ slot_labels[slot] }}
+  {% if plans[slot]['plan'] %}
+    <a href="{{ reminder_links[slot] }}" target="_blank" class="reminder-link" title="Add to Google Calendar">⏰</a>
+  {% endif %}
+</td>
 <td><textarea name="plan_{{slot}}">{{ plans[slot]['plan'] }}</textarea></td>
 <td>
 <select name="status_{{slot}}">
