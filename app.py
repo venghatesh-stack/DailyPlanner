@@ -267,21 +267,34 @@ textarea, select {
   }
 }
 /* Status background colors */
-.status-Nothing\ Planned { background:#f3f4f6; }
-.status-Yet\ to\ Start   { background:#fef3c7; }
-.status-In\ Progress    { background:#dbeafe; }
-.status-Closed          { background:#dcfce7; }
-.status-Deferred        { background:#fee2e2; }
+/* ===== Status row colors ===== */
+.status-nothing-planned { background:#f3f4f6; }
+.status-yet-to-start    { background:#fef3c7; }
+.status-in-progress     { background:#dbeafe; }
+.status-closed          { background:#dcfce7; }
+.status-deferred        { background:#fee2e2; }
 
-/* Make it visible on mobile cards */
+/* Desktop table clarity */
+tr[class^="status-"] td {
+  background: inherit;
+}
+
+/* Left accent bar */
 tr[class^="status-"] {
   border-left: 6px solid rgba(0,0,0,0.08);
 }
 
-/* Status select clarity */
+/* ===== Status dropdown colors ===== */
+select.status-nothing-planned { background:#f3f4f6; }
+select.status-yet-to-start    { background:#fef3c7; }
+select.status-in-progress     { background:#dbeafe; }
+select.status-closed          { background:#dcfce7; }
+select.status-deferred        { background:#fee2e2; }
+
 select {
   font-weight: 600;
 }
+
 
 </style>
 </head>
@@ -434,6 +447,9 @@ document.querySelectorAll("select[name^='status_']").forEach(sel => {
     markDirty();
   });
 });
+function statusKey(status) {
+  return status.toLowerCase().replace(/\s+/g, "-");
+}
 
 </script>
 </body>
@@ -443,6 +459,7 @@ document.querySelectorAll("select[name^='status_']").forEach(sel => {
 if __name__ == "__main__":
     logger.info("Starting Daily Planner")
     app.run(debug=True)
+
 
 
 
