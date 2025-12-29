@@ -235,18 +235,40 @@ textarea, select {
   padding:8px;
 }
 
+/* ===== ACTION BAR ===== */
 .floating-actions {
-  position: sticky;
-  bottom: 12px;
-  margin-top: 24px;
   display: none;
-  gap: 10px;
-  z-index: 20;
-  background: #fff;
-  padding: 12px;
-  border-radius: 14px;
-  border: 1px solid #e5e7eb;
+  gap: 12px;
 }
+
+/* Desktop: centered action bar */
+@media (min-width: 769px) {
+  .floating-actions {
+    position: sticky;
+    bottom: 12px;
+    justify-content: center;
+    margin-top: 24px;
+  }
+
+  .floating-actions button {
+    min-width: 180px;
+  }
+}
+
+/* Mobile: full-width thumb-friendly */
+@media (max-width: 768px) {
+  .floating-actions {
+    position: sticky;
+    bottom: 12px;
+  }
+
+  .floating-actions button {
+    flex: 1;
+    padding: 14px;
+    font-size: 16px;
+  }
+}
+
 
 
 
@@ -256,16 +278,78 @@ textarea, select {
   font-size:16px;
   border-radius:12px;
 }
+/* ===== DESKTOP TABLE LAYOUT (RESTORE) ===== */
+@media (min-width: 769px) {
 
-@media (max-width:768px) {
-  table, tr, td { display:block; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
   tr {
-    margin-bottom:14px;
-    padding:10px;
-    border:1px solid #e5e7eb;
-    border-radius:12px;
+    display: table-row;
+  }
+
+  td {
+    display: table-cell;
+    vertical-align: top;
+    padding: 10px;
+  }
+
+  /* Column widths */
+  td:nth-child(1) {
+    width: 180px; /* time */
+    white-space: nowrap;
+    font-weight: 600;
+  }
+
+  td:nth-child(2) {
+    width: auto; /* task */
+  }
+
+  td:nth-child(3) {
+    width: 180px; /* status */
+  }
+
+  textarea {
+    min-height: 48px;
+  }
+
+  select {
+    width: 100%;
   }
 }
+
+/* ===== MOBILE CARD LAYOUT ONLY ===== */
+@media (max-width: 768px) {
+
+  table, tr, td {
+    display: block;
+    width: 100%;
+  }
+
+  tr {
+    margin-bottom: 14px;
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  td {
+    padding: 6px 0;
+  }
+
+  td:nth-child(1) {
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  textarea {
+    min-height: 64px;
+  }
+}
+
 /* Status background colors */
 /* ===== Status row colors ===== */
 .status-nothing-planned { background:#f3f4f6; }
@@ -459,6 +543,7 @@ function statusKey(status) {
 if __name__ == "__main__":
     logger.info("Starting Daily Planner")
     app.run(debug=True)
+
 
 
 
