@@ -440,15 +440,20 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
 </div>
 <div id="task-error" style="
   display:none;
+  position:fixed;
+  bottom:80px;
+  left:50%;
+  transform:translateX(-50%);
   background:#fee2e2;
   color:#991b1b;
-  padding:12px 14px;
-  border-radius:10px;
-  margin-bottom:12px;
+  padding:10px 16px;
+  border-radius:999px;
   font-weight:600;
+  z-index:9999;
 ">
   ❌ Tasks cannot be empty. Rows highlighted in red must be corrected.
 </div>
+
 <div id="collapse-toggle" style="
   display:none;
   margin-bottom:12px;
@@ -698,6 +703,7 @@ document.getElementById("collapse-toggle").onclick = () => {
 if __name__ == "__main__":
     logger.info("Starting Daily Planner")
     app.run(debug=True)
+
 
 
 
