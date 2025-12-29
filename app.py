@@ -34,6 +34,14 @@ HABIT_LIST = [
     "8 hrs sleep",
     "Daily prayers"
 ]
+HABIT_ICONS = {
+    "Walking": "🚶‍♂️",
+    "Water": "💧",
+    "No Shopping": "🛒🚫",
+    "No TimeWastage": "⏳🚫",
+    "8 hrs sleep": "😴",
+    "Daily prayers": "🙏"
+}
 
 # ===============================
 # HELPERS
@@ -184,6 +192,7 @@ def plan_of_day():
         reflection=reflection,
         habits=habits,
         habit_list=HABIT_LIST,
+        habit_icons=HABIT_ICONS,
         statuses=STATUSES,
         total_slots=TOTAL_SLOTS,
         slot_labels={i: slot_label(i) for i in range(1, TOTAL_SLOTS + 1)},
@@ -349,6 +358,34 @@ body { font-family: system-ui; background:#f6f7f9; padding:20px; }
 </tr>
 {% endfor %}
 </table>
+<h3>✅ Habits</h3>
+<div style="
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:12px;
+  margin-bottom:20px;
+">
+{% for h in habit_list %}
+  <label style="
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 12px;
+    border:1px solid #e5e7eb;
+    border-radius:10px;
+    background:#f9fafb;
+    font-weight:500;
+  ">
+    <input type="checkbox"
+           name="habits"
+           value="{{ h }}"
+           {% if h in habits %}checked{% endif %}
+           onchange="markDirty()">
+    <span style="font-size:18px">{{ habit_icons[h] }}</span>
+    <span>{{ h }}</span>
+  </label>
+{% endfor %}
+</div>
 
 <h3>🪞 Reflection</h3>
 <textarea name="reflection" oninput="markDirty()" style="width:100%">{{ reflection }}</textarea>
@@ -395,5 +432,6 @@ document.addEventListener("DOMContentLoaded",()=>{
 if __name__ == "__main__":
     logger.info("Starting Daily Planner (IST)")
     app.run(debug=True)
+
 
 
