@@ -360,6 +360,15 @@ function updateClock(){
 }
 updateClock();
 setInterval(updateClock,1000);
+const msg = document.getElementById("save-msg");
+if (msg) {
+  setTimeout(() => {
+    msg.style.transition = "opacity 0.4s ease";
+    msg.style.opacity = "0";
+    setTimeout(() => msg.remove(), 400);
+  }, 2500);
+}
+
 </script>
 </body>
 </html>
@@ -368,3 +377,4 @@ setInterval(updateClock,1000);
 if __name__ == "__main__":
     logger.info("Starting Daily Planner")
     app.run(debug=True)
+
