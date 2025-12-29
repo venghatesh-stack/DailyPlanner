@@ -326,7 +326,18 @@ body { font-family: system-ui; background:#f6f7f9; padding:20px; }
     {% endfor %}
   </select>
 </form>
-
+{% if saved %}
+<div id="save-msg" style="
+  background:#dcfce7;
+  color:#166534;
+  padding:10px 14px;
+  border-radius:10px;
+  margin-bottom:12px;
+  font-weight:600;
+">
+  ✅ Saved successfully
+</div>
+{% endif %}
 <div class="day-strip">
 {% for d in days %}
 <a href="/?year={{year}}&month={{month}}&day={{d.day}}"
@@ -404,7 +415,12 @@ function markDirty(){
     dirty=true;
     document.getElementById("actions").style.display="flex";
   }
+const msg = document.getElementById("save-msg");
+if (msg) {
+  setTimeout(() => msg.style.display = "none", 3000);
 }
+}
+
 
 function updateClock(){
   const now=new Date();
@@ -432,6 +448,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 if __name__ == "__main__":
     logger.info("Starting Daily Planner (IST)")
     app.run(debug=True)
+
 
 
 
