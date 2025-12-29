@@ -1,4 +1,4 @@
-flask import Flask, request, redirect, url_for, render_template_string
+import Flask, request, redirect, url_for, render_template_string
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 import calendar
@@ -638,19 +638,7 @@ document.addEventListener("DOMContentLoaded", () => {
   applyCollapse();
 });
 
-/* Apply on status change */
-document.querySelectorAll("select[name^='status_']").forEach(sel => {
-  sel.addEventListener("change", e => {
-    const row = e.target.closest("tr");
-    row.dataset.status = e.target.value;
-    applyStatusColors();
-    apply.collapse();
-    markDirty();
-  });
-});
-function statusKey(status) {
-  return status.toLowerCase().replace(/\s+/g, "-");
-}
+
 let collapsed = true;
 
 function isEmptySlot(row) {
@@ -710,6 +698,7 @@ document.getElementById("collapse-toggle").onclick = () => {
 if __name__ == "__main__":
     logger.info("Starting Daily Planner")
     app.run(debug=True)
+
 
 
 
