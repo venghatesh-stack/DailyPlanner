@@ -34,6 +34,7 @@ HABIT_LIST = [
     "8 hrs sleep",
     "Daily prayers"
 ]
+
 HABIT_ICONS = {
     "Walking": "🚶‍♂️",
     "Water": "💧",
@@ -65,8 +66,6 @@ def google_calendar_link(plan_date, slot, task):
         return "#"
 
     start_ist, end_ist = slot_start_end(plan_date, slot)
-
-    # Convert to UTC for Google Calendar
     start_utc = start_ist.astimezone(ZoneInfo("UTC"))
     end_utc = end_ist.astimezone(ZoneInfo("UTC"))
 
@@ -91,10 +90,10 @@ def load_day(plan_date):
     reflection = ""
     habits = set()
 
-    rows = get(
-        "daily_slots",
-        params={"plan_date": f"eq.{plan_date}", "select": "slot,plan,status"}
-    )
+    rows = get("daily_slots", params={
+        "plan_date": f"eq.{plan_date}",
+        "select": "slot,plan,status"
+    })
 
     for r in rows:
         plans[r["slot"]] = {
@@ -102,15 +101,15 @@ def load_day(plan_date):
             "status": r.get("status") or DEFAULT_STATUS
         }
 
-    summary = get(
-        "daily_summary",
-        params={"plan_date": f"eq.{plan_date}", "select": "reflection,habits"}
-    )
+    summary = get("daily_summary", params={
+        "plan_date": f"eq.{plan_date}",
+        "select": "reflection,habits"
+    })
 
     if summary:
         reflection = summary[0].get("reflection") or ""
         if summary[0].get("habits"):
-            habits = set(summary[0]["habits"].split(","))
+            habits = set(h.strip() for h in summary[0]["habits"].split(",") if h.strip())
 
     return plans, reflection, habits
 
@@ -221,14 +220,9 @@ body { font-family: system-ui; background:#f6f7f9; padding:20px; }
 .header-date { font-weight:600; color:#374151; }
 .header-time { font-weight:700; color:#2563eb; }
 
-.month-controls {
-  display:flex; gap:8px; margin-bottom:16px;
-}
-.month-controls select {
-  padding:6px 10px;
-}
-
+.month-controls { display:flex; gap:8px; margin-bottom:16px; }
 .day-strip { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+
 .day-btn {
   width:36px; height:36px; border-radius:50%;
   display:flex; align-items:center; justify-content:center;
@@ -243,66 +237,29 @@ body { font-family: system-ui; background:#f6f7f9; padding:20px; }
   font-size:12px; font-weight:600; color:#6b7280; margin-bottom:4px;
 }
 
-.reminder-icon { text-decoration:none; font-size:16px; opacity:.75; }
-.reminder-icon:hover { opacity:1; }
+.reminder-icon { text-decoration:none; font-size:16px; }
 
 .floating-actions {
   position:fixed; bottom:16px; left:50%; transform:translateX(-50%);
   background:#fff; border:1px solid #ddd; padding:10px;
   border-radius:12px; display:none; gap:10px;
 }
-/* ---------- Mobile-first layout ---------- */
-@media (max-width: 768px) {
-
-  table, tbody, tr, td {
-    display: block;
-    width: 100%;
-  }
-
-  tr {
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 12px;
-    margin-bottom: 14px;
-  }
-
-  tr.current-slot {
-    border-left: 4px solid #2563eb;
-    background: #eef2ff;
-  }
-
-  td {
-    padding: 0;
-    margin-bottom: 10px;
-  }
-
-  td:first-child {
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 6px;
-  }
-
-  textarea {
-    width: 100%;
-    min-height: 64px;
-    font-size: 16px; /* prevent iOS zoom */
-  }
-
-  select {
-    width: 100%;
-    font-size: 16px;
-  }
-
-  .task-header {
-    margin-bottom: 6px;
-  }
-}
-
 </style>
 </head>
 
 <body>
+
+{% if saved %}
+<div id="save-msg" style="
+  position:fixed; top:12px; left:50%; transform:translateX(-50%);
+  background:#dcfce7; color:#166534;
+  padding:10px 16px; border-radius:999px;
+  font-weight:600; z-index:9999;
+">
+  ✅ Saved successfully
+</div>
+{% endif %}
+
 <div class="container">
 
 <div class="header-bar">
@@ -314,57 +271,34 @@ body { font-family: system-ui; background:#f6f7f9; padding:20px; }
   <input type="hidden" name="day" value="{{ selected_day }}">
   <select name="month" onchange="this.form.submit()">
     {% for m in range(1,13) %}
-      <option value="{{m}}" {% if m==month %}selected{% endif %}>
-        {{ calendar.month_name[m] }}
-      </option>
+      <option value="{{m}}" {% if m==month %}selected{% endif %}>{{ calendar.month_name[m] }}</option>
     {% endfor %}
   </select>
-
   <select name="year" onchange="this.form.submit()">
     {% for y in range(year-5, year+6) %}
       <option value="{{y}}" {% if y==year %}selected{% endif %}>{{y}}</option>
     {% endfor %}
   </select>
 </form>
-{% if saved %}
-<div id="save-msg" style="
-  background:#dcfce7;
-  color:#166534;
-  padding:10px 14px;
-  border-radius:10px;
-  margin-bottom:12px;
-  font-weight:600;
-">
-  ✅ Saved successfully
-</div>
-{% if saved %}
-<div id="save-msg" style="
-  position: fixed;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #dcfce7;
-  color: #166534;
-  padding: 10px 16px;
-  border-radius: 999px;
-  font-weight: 600;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-  z-index: 9999;
-">
-  ✅ Saved successfully
-</div>
-{% endif %}
 
+<div class="day-strip">
+{% for d in days %}
+<a href="/?year={{year}}&month={{month}}&day={{d.day}}"
+   class="day-btn {% if d.day==selected_day %}selected{% endif %}">
+{{ d.day }}
+</a>
+{% endfor %}
+</div>
 
 <form method="post">
 <table width="100%">
 {% for slot in range(1,total_slots+1) %}
-<tr id="slot-{{slot}}" class="{% if now_slot==slot %}current-slot{% endif %}">
+<tr class="{% if now_slot==slot %}current-slot{% endif %}">
 <td>🕒 {{ slot_labels[slot] }}</td>
 <td>
   <div class="task-header">
     <span>📝 Task</span>
-    <a href="{{ reminder_links[slot] }}" class="reminder-icon" title="Add Google reminder">⏰</a>
+    <a href="{{ reminder_links[slot] }}" class="reminder-icon">⏰</a>
   </div>
   <textarea name="plan_{{slot}}" oninput="markDirty()" style="width:100%">{{ plans[slot]['plan'] }}</textarea>
 </td>
@@ -378,32 +312,15 @@ body { font-family: system-ui; background:#f6f7f9; padding:20px; }
 </tr>
 {% endfor %}
 </table>
+
 <h3>✅ Habits</h3>
-<div style="
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
-  gap:12px;
-  margin-bottom:20px;
-">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;">
 {% for h in habit_list %}
-  <label style="
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:10px 12px;
-    border:1px solid #e5e7eb;
-    border-radius:10px;
-    background:#f9fafb;
-    font-weight:500;
-  ">
-    <input type="checkbox"
-           name="habits"
-           value="{{ h }}"
-           {% if h in habits %}checked{% endif %}
-           onchange="markDirty()">
-    <span style="font-size:18px">{{ habit_icons[h] }}</span>
-    <span>{{ h }}</span>
-  </label>
+<label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #e5e7eb;border-radius:10px;">
+  <input type="checkbox" name="habits" value="{{h}}" {% if h in habits %}checked{% endif %} onchange="markDirty()">
+  <span>{{ habit_icons[h] }}</span>
+  {{ h }}
+</label>
 {% endfor %}
 </div>
 
@@ -424,16 +341,7 @@ function markDirty(){
     dirty=true;
     document.getElementById("actions").style.display="flex";
   }
-const msg = document.getElementById("save-msg");
-if (msg) {
-  setTimeout(() => {
-    msg.style.opacity = "0";
-    setTimeout(() => msg.remove(), 500);
-  }, 2500);
 }
-
-}
-
 
 function updateClock(){
   const now=new Date();
@@ -448,6 +356,11 @@ function updateClock(){
 }
 updateClock();
 setInterval(updateClock,1000);
+
+const msg=document.getElementById("save-msg");
+if(msg){
+  setTimeout(()=>{msg.style.opacity="0";setTimeout(()=>msg.remove(),500)},2500);
+}
 
 document.addEventListener("DOMContentLoaded",()=>{
   const row=document.querySelector(".current-slot");
