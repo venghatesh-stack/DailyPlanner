@@ -330,13 +330,21 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
 </table>
 
 
-<h3 style="margin-top:24px">🏃 Habits</h3>
+<h3>🏃 Habits</h3>
+
 <div>
 {% for h in habit_list %}
-<label style="margin-right:10px">
-<input type="checkbox" name="habits" value="{{h}}" {% if h in habits %}checked{% endif %}>
-{{ habit_icons[h] }} {{h}}
-</label>
+  <div style="margin-bottom:10px;">
+    <label>
+      <input
+        type="checkbox"
+        name="habits"
+        value="{{h}}"
+        {% if h in habits %}checked{% endif %}
+      >
+      {{ habit_icons[h] }} {{h}}
+    </label>
+  </div>
 {% endfor %}
 </div>
 
