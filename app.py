@@ -201,7 +201,13 @@ TEMPLATE = """
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body { font-family: system-ui; background:#f6f7f9; padding:12px; padding-bottom:160px; }
+body {
+  font-family: system-ui;
+  background:#f6f7f9;
+  padding:12px;
+  padding-bottom:220px; /* increased */
+}
+
 .container { max-width:1100px; margin:auto; background:#fff; padding:16px; border-radius:14px; }
 
 .header-bar { display:flex; justify-content:space-between; margin-bottom:12px; }
@@ -235,17 +241,27 @@ textarea { width:100%; resize:vertical; }
   tr.slot-row:not(.active) select { display:none; }
   tr.slot-row.active textarea { min-height:100px; font-size:16px; }
 }
-
 .floating-bar {
-  position:fixed;
-  bottom:0; left:0; right:0;
-  background:#fff;
-  border-top:1px solid #ddd;
-  padding:10px;
-  display:flex;
-  gap:10px;
-  z-index:9999;
+  position: fixed;
+  bottom: env(safe-area-inset-bottom, 0);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-top: 1px solid #ddd;
+  padding: 10px;
+  display: flex;
+  gap: 10px;
+  z-index: 9999;
 }
+
+/* Mobile keyboard fix */
+@supports (-webkit-touch-callout: none) {
+  .floating-bar {
+    position: sticky;
+    bottom: 0;
+  }
+}
+
 .floating-bar button { flex:1; padding:14px; font-size:16px; }
 .time-filter {
   display:flex;
@@ -273,6 +289,19 @@ textarea { width:100%; resize:vertical; }
   overflow-y:scroll;
   scrollbar-width:thin;
 }
+.status-pill {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 600;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.status-Nothing\ Planned { background:#e5e7eb; }
+.status-Yet\ to\ Start { background:#fde68a; }
+.status-In\ Progress { background:#bfdbfe; }
+.status-Closed { background:#bbf7d0; }
+.status-Deferred { background:#fecaca; }
 
 </style>
 </head>
@@ -376,18 +405,21 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
 <!-- STATUS ROW -->
 <tr class="slot-status">
   <td colspan="3">
-    <label>
-      Status:
-      <select name="status_{{slot}}">
-        {% for s in statuses %}
-          <option {% if s==plans[slot]['status'] %}selected{% endif %}>
-            {{s}}
-          </option>
-        {% endfor %}
-      </select>
-    </label>
+    <div
+      class="status-pill status-{{ plans[slot]['status']|replace(' ','\\ ') }}"
+      onclick="cycleStatus(this)"
+    >
+      {{ plans[slot]['status'] }}
+    </div>
+
+    <select name="status_{{slot}}" hidden>
+      {% for s in statuses %}
+        <option {% if s==plans[slot]['status'] %}selected{% endif %}>{{s}}</option>
+      {% endfor %}
+    </select>
   </td>
 </tr>
+
 
 {% endfor %}
 </table>
@@ -480,7 +512,7 @@ function applyTimeFilter() {
   if (!fromTime || !toTime) return;
 
   const fromMin = timeToMinutes(fromTime);
-  const toMin = timeToMinutes(toTime);
+  const toMin = timeToMinutes(toTime)+30; // Include the end slot
 
   document.querySelectorAll("tr[data-slot]").forEach(row => {
     const slot = parseInt(row.dataset.slot, 10);
@@ -508,6 +540,18 @@ document.getElementById("timeTo").addEventListener("change", applyTimeFilter);
 
 // Apply default filter on load
 window.addEventListener("load", applyTimeFilter);
+const STATUSES = {{ statuses | tojson }};
+
+function cycleStatus(el){
+  const select = el.nextElementSibling;
+  let idx = STATUSES.indexOf(select.value);
+  idx = (idx + 1) % STATUSES.length;
+
+  select.value = STATUSES[idx];
+  el.textContent = STATUSES[idx];
+
+  el.className = "status-pill status-" + STATUSES[idx].replaceAll(" ","\\ ");
+}
 
 </script>
 
