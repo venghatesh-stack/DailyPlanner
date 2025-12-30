@@ -138,12 +138,11 @@ def save_day(plan_date, form):
     )
 
 # ===============================
-# ROUTE
+# ROUTES
 # ===============================
 @app.route("/", methods=["GET", "POST"])
 def plan_of_day():
     today = datetime.now(IST).date()
-
     year = int(request.args.get("year", today.year))
     month = int(request.args.get("month", today.month))
     day_param = request.args.get("day")
@@ -166,10 +165,7 @@ def plan_of_day():
         for slot in range(1, TOTAL_SLOTS + 1)
     }
 
-    days = [
-        date(year, month, d)
-        for d in range(1, calendar.monthrange(year, month)[1] + 1)
-    ]
+    days = [date(year, month, d) for d in range(1, calendar.monthrange(year, month)[1] + 1)]
 
     return render_template_string(
         TEMPLATE,
@@ -177,7 +173,6 @@ def plan_of_day():
         month=month,
         days=days,
         selected_day=plan_date.day,
-        today=today,
         plans=plans,
         statuses=STATUSES,
         total_slots=TOTAL_SLOTS,
@@ -192,6 +187,19 @@ def plan_of_day():
         calendar=calendar
     )
 
+@app.route("/weekly")
+def weekly():
+    today = datetime.now(IST).date()
+    start = today - timedelta(days=today.weekday())
+    end = start + timedelta(days=6)
+
+    rows = get("daily_slots", params={
+        "plan_date": f"gte.{start}",
+        "order": "plan_date.asc"
+    }) or []
+
+    return render_template_string(WEEKLY_TEMPLATE, rows=rows, start=start, end=end)
+
 # ===============================
 # TEMPLATE
 # ===============================
@@ -201,36 +209,19 @@ TEMPLATE = """
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body { font-family: system-ui; background:#f6f7f9; padding:12px; padding-bottom:160px; }
+body { font-family: system-ui; background:#f6f7f9; padding:12px; padding-bottom:170px; }
 .container { max-width:1100px; margin:auto; background:#fff; padding:16px; border-radius:14px; }
 
-.header-bar { display:flex; justify-content:space-between; margin-bottom:12px; }
-.header-time { font-weight:700; color:#2563eb; }
-
-.month-controls { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
 .day-strip { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
-
-.day-btn {
-  width:36px; height:36px;
-  border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-  border:1px solid #ddd;
-  text-decoration:none; color:#000;
-}
-.day-btn.selected { background:#2563eb; color:#fff; }
+.day-btn { width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid #ddd;text-decoration:none;color:#000; }
+.day-btn.selected { background:#2563eb;color:#fff; }
 
 table { width:100%; border-collapse:collapse; }
-td { padding:8px; border-bottom:1px solid #eee; vertical-align:top; }
+td { padding:8px; border-bottom:1px solid #eee; }
 
-.current-slot { background:#eef2ff; border-left:4px solid #2563eb; }
-
-textarea { width:100%; resize:vertical; }
-
-@media (max-width: 767px) {
-  tr.slot-row:not(.active) textarea,
-  tr.slot-row:not(.active) select { display:none; }
-  tr.slot-row.active textarea { min-height:100px; font-size:16px; }
-}
+.slot-time { background:#f9fafb; font-weight:600; }
+.slot-task textarea { width:100%; min-height:60px; font-size:16px; }
+.slot-status select { width:100%; padding:8px; }
 
 .floating-bar {
   position:fixed;
@@ -242,105 +233,56 @@ textarea { width:100%; resize:vertical; }
   gap:10px;
   z-index:9999;
 }
-.floating-bar button { flex:1; padding:14px; font-size:16px; }
+.floating-bar button, .floating-bar a {
+  flex:1;
+  padding:14px;
+  font-size:16px;
+  text-align:center;
+}
 </style>
 </head>
 
 <body>
 
-{% if saved %}
-<div id="save-toast" style="position:fixed;bottom:90px;left:50%;
-transform:translateX(-50%);
-background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
-✅ Saved successfully
-</div>
-{% endif %}
-
 <div class="container">
-
-<div class="header-bar">
-  <div id="current-date"></div>
-  <div class="header-time">🕒 <span id="current-time"></span> IST</div>
-</div>
-
-<form method="get" class="month-controls">
-  <input type="hidden" name="day" value="{{ selected_day }}">
-  <select name="month" onchange="this.form.submit()">
-    {% for m in range(1,13) %}
-      <option value="{{m}}" {% if m==month %}selected{% endif %}>{{ calendar.month_name[m] }}</option>
-    {% endfor %}
-  </select>
-  <select name="year" onchange="this.form.submit()">
-    {% for y in range(year-5, year+6) %}
-      <option value="{{y}}" {% if y==year %}selected{% endif %}>{{y}}</option>
-    {% endfor %}
-  </select>
-</form>
-
-<div class="day-strip">
-{% for d in days %}
-<a href="/?year={{year}}&month={{month}}&day={{d.day}}"
-   class="day-btn {% if d.day==selected_day %}selected{% endif %}">
-{{ d.day }}
-</a>
-{% endfor %}
-</div>
-
 <form method="post" id="planner-form">
+
 <table>
 {% for slot in range(1,total_slots+1) %}
-
-<!-- TIME ROW -->
-<tr class="slot-time {% if now_slot==slot %}current-slot{% endif %}">
+<tr class="slot-time">
   <td colspan="3">
-    <strong>{{ slot_labels[slot] }}</strong>
+    {{ slot_labels[slot] }}
     {% if plans[slot]['plan'] %}
       <a href="{{ reminder_links[slot] }}" target="_blank">⏰</a>
     {% endif %}
   </td>
 </tr>
-
-<!-- TASK DESCRIPTION ROW -->
 <tr class="slot-task">
   <td colspan="3">
-    <textarea
-      name="plan_{{slot}}"
-      placeholder="What will you do in this time?"
-    >{{ plans[slot]['plan'] }}</textarea>
+    <textarea name="plan_{{slot}}">{{ plans[slot]['plan'] }}</textarea>
   </td>
 </tr>
-
-<!-- STATUS ROW -->
 <tr class="slot-status">
   <td colspan="3">
-    <label>
-      Status:
-      <select name="status_{{slot}}">
-        {% for s in statuses %}
-          <option {% if s==plans[slot]['status'] %}selected{% endif %}>
-            {{s}}
-          </option>
-        {% endfor %}
-      </select>
-    </label>
+    <select name="status_{{slot}}">
+      {% for s in statuses %}
+        <option {% if s==plans[slot]['status'] %}selected{% endif %}>{{s}}</option>
+      {% endfor %}
+    </select>
   </td>
 </tr>
-
 {% endfor %}
 </table>
 
-
-<h3 style="margin-top:24px">🏃 Habits</h3>
-<div>
+<h3>🏃 Habits</h3>
 {% for h in habit_list %}
-<label style="margin-right:10px">
+<label>
 <input type="checkbox" name="habits" value="{{h}}" {% if h in habits %}checked{% endif %}>
 {{ habit_icons[h] }} {{h}}
 </label>
 {% endfor %}
-</div>
 
-<h3>📝 Reflection of the day</h3>
+<h3>📝 Reflection</h3>
 <textarea name="reflection" rows="3">{{reflection}}</textarea>
 
 </form>
@@ -348,37 +290,30 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
 
 <div class="floating-bar">
   <button type="submit" form="planner-form">💾 Save</button>
-  <button type="button" onclick="cancelEdit()">❌ Cancel</button>
+  <button type="button" onclick="window.location.reload()">❌ Cancel</button>
+  <a href="/weekly">📊 Weekly</a>
 </div>
-
-<script>
-function updateClock(){
-  const ist=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
-  document.getElementById("current-time").textContent=ist.toLocaleTimeString();
-  document.getElementById("current-date").textContent=ist.toDateString();
-}
-setInterval(updateClock,1000);updateClock();
-
-function activateRow(row){
-  document.querySelectorAll(".slot-row").forEach(r=>r.classList.remove("active"));
-  row.classList.add("active");
-}
-
-function cancelEdit(){
-  const url = new URL(window.location.href);
-  url.searchParams.delete("saved");
-  window.location.href = url.toString();
-}
-
-{% if saved %}
-setTimeout(()=>{ const t=document.getElementById("save-toast"); if(t) t.remove(); },2500);
-{% endif %}
-</script>
 
 </body>
 </html>
 """
 
+WEEKLY_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<body>
+<h2>Weekly Summary</h2>
+<p>{{start}} → {{end}}</p>
+{% for r in rows %}
+{% if r.slot == 0 %}
+<div>{{ r.plan_date }} – {{ r.plan }}</div>
+{% endif %}
+{% endfor %}
+<a href="/">Back</a>
+</body>
+</html>
+"""
+
 if __name__ == "__main__":
-    logger.info("Starting Daily Planner (stable + mobile UX + restored controls)")
+    logger.info("Starting Daily Planner (stable restored build)")
     app.run(debug=True)
