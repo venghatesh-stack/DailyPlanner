@@ -13,12 +13,16 @@ HEADERS = {
     "Content-Type": "application/json",
 }
 
-def get(path, params=None):
-    r = requests.get(
-        f"{SUPABASE_URL}/rest/v1/{path}",
-        headers=HEADERS,
-        params=params,
-    )
+def get(table, params=None):
+    url = f"{BASE_URL}/{table}"
+
+    if params is None:
+        params = {}
+
+    # REQUIRED for Supabase/PostgREST
+    params["select"] = "*"
+
+    r = requests.get(url, headers=headers, params=params)
     r.raise_for_status()
     return r.json()
 
@@ -42,3 +46,4 @@ def delete(path, params):
         params=params,
     )
     r.raise_for_status()
+
