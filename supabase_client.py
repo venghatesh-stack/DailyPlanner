@@ -22,7 +22,7 @@ def get(table, params=None):
     # REQUIRED for Supabase/PostgREST
     params["select"] = "*"
 
-    r = requests.get(url, headers=headers, params=params)
+    r = requests.get(url, headers=HEADERS, params=params)
     r.raise_for_status()
     return r.json()
 
