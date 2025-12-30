@@ -225,7 +225,11 @@ td { padding:8px; border-bottom:1px solid #eee; vertical-align:top; }
 .current-slot { background:#eef2ff; border-left:4px solid #2563eb; }
 
 textarea { width:100%; resize:vertical; }
-
+.slot-task textarea {
+  min-height:100px;
+  font-size:16px;
+  line-height:1.4;
+}
 @media (max-width: 767px) {
   tr.slot-row:not(.active) textarea,
   tr.slot-row:not(.active) select { display:none; }
@@ -276,6 +280,18 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
     {% endfor %}
   </select>
 </form>
+<!-- Time Filter -->
+<div style="margin-bottom:12px; display:flex; gap:8px; flex-wrap:wrap;">
+  <label>
+    From:
+    <input type="time" id="timeFrom" value="06:00">
+  </label>
+
+  <label>
+    To:
+    <input type="time" id="timeTo" value="18:00">
+  </label>
+</div>
 
 <div class="day-strip">
 {% for d in days %}
@@ -291,7 +307,7 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
 {% for slot in range(1,total_slots+1) %}
 
 <!-- TIME ROW -->
-<tr class="slot-time {% if now_slot==slot %}current-slot{% endif %}">
+<tr class="slot-time {% if now_slot==slot %}current-slot{% endif %}" data-slot="{{slot}}">
   <td colspan="3">
     <strong>{{ slot_labels[slot] }}</strong>
     {% if plans[slot]['plan'] %}
@@ -381,6 +397,71 @@ function cancelEdit(){
 {% if saved %}
 setTimeout(()=>{ const t=document.getElementById("save-toast"); if(t) t.remove(); },2500);
 {% endif %}
+window.addEventListener("load", () => {
+  const currentRow = document.querySelector(".current-slot");
+  if (!currentRow) return;
+
+  // Scroll the current slot into view
+  currentRow.scrollIntoView({
+    behavior: "smooth",
+    block: "center"
+  });
+
+  // Focus the textarea inside the current slot (if present)
+  const textarea = currentRow.querySelector("textarea");
+  if (textarea) {
+    textarea.focus();
+    textarea.setSelectionRange(
+      textarea.value.length,
+      textarea.value.length
+    );
+  }
+});
+function slotToMinutes(slot) {
+  return (slot - 1) * 30;
+}
+
+function timeToMinutes(timeStr) {
+  const [h, m] = timeStr.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function applyTimeFilter() {
+  const fromTime = document.getElementById("timeFrom").value;
+  const toTime = document.getElementById("timeTo").value;
+
+  if (!fromTime || !toTime) return;
+
+  const fromMin = timeToMinutes(fromTime);
+  const toMin = timeToMinutes(toTime);
+
+  document.querySelectorAll("tr[data-slot]").forEach(row => {
+    const slot = parseInt(row.dataset.slot, 10);
+    const slotMin = slotToMinutes(slot);
+
+    // Each slot spans 30 minutes
+    const slotEnd = slotMin + 30;
+
+    const visible = slotEnd > fromMin && slotMin < toMin;
+
+    // Hide/show the time row AND its following task + status rows
+    let r = row;
+    for (let i = 0; i < 3; i++) {
+      if (r) {
+        r.style.display = visible ? "" : "none";
+        r = r.nextElementSibling;
+      }
+    }
+  });
+}
+
+// Bind events
+document.getElementById("timeFrom").addEventListener("change", applyTimeFilter);
+document.getElementById("timeTo").addEventListener("change", applyTimeFilter);
+
+// Apply default filter on load
+window.addEventListener("load", applyTimeFilter);
+
 </script>
 
 </body>
