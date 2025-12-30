@@ -14,7 +14,7 @@ HEADERS = {
 }
 
 def get(table, params=None):
-    url = f"{SUPABASE_URL}/{table}"
+    url = f"{SUPABASE_URL}/rest/v1/{table}"
 
     if params is None:
         params = {}
