@@ -212,12 +212,7 @@ body { font-family: system-ui; background:#f6f7f9; padding:12px; }
 .header-bar { display:flex; justify-content:space-between; margin-bottom:12px; }
 .header-time { font-weight:700; color:#2563eb; }
 
-.focus-toggle { font-weight:600; color:#2563eb; cursor:pointer; margin-bottom:12px; }
-
 .current-slot { background:#eef2ff; border-left:4px solid #2563eb; }
-
-.focus-now { outline:2px solid #22c55e; }
-.focus-next { outline:2px dashed #60a5fa; }
 
 .status-nothing-planned { background:#f3f4f6; }
 .status-yet-to-start { background:#fef3c7; }
@@ -227,11 +222,35 @@ body { font-family: system-ui; background:#f6f7f9; padding:12px; }
 
 .row-error { background:#fee2e2 !important; }
 
-.reminder-link {
-  text-decoration:none;
-  font-size:18px;
-  margin-left:8px;
+/* ===== FLOATING ACTION BAR ===== */
+.floating-actions {
+  position: sticky;
+  bottom: env(safe-area-inset-bottom, 12px);
+  background:#fff;
+  padding:12px;
+  display:none;
+  gap:12px;
+  border-top:1px solid #e5e7eb;
+  z-index:1000;
 }
+
+@media (min-width: 769px) {
+  .floating-actions {
+    justify-content:center;
+  }
+  .floating-actions button {
+    min-width:180px;
+  }
+}
+
+@media (max-width: 768px) {
+  .floating-actions button {
+    flex:1;
+    padding:14px;
+    font-size:16px;
+  }
+}
+
 </style>
 </head>
 
@@ -257,10 +276,6 @@ padding:10px 16px;border-radius:999px;font-weight:600;">
   <div class="header-time">🕒 <span id="current-time"></span> IST</div>
 </div>
 
-<div id="focus-toggle" class="focus-toggle">
-🎯 Focus mode ON — <u>Show full day</u>
-</div>
-
 <form method="post">
 <table width="100%">
 {% for slot in range(1,total_slots+1) %}
@@ -268,12 +283,12 @@ padding:10px 16px;border-radius:999px;font-weight:600;">
 <td>
   {{ slot_labels[slot] }}
   {% if plans[slot]['plan'] %}
-    <a href="{{ reminder_links[slot] }}" target="_blank" class="reminder-link" title="Add to Google Calendar">⏰</a>
+    <a href="{{ reminder_links[slot] }}" target="_blank">⏰</a>
   {% endif %}
 </td>
-<td><textarea name="plan_{{slot}}">{{ plans[slot]['plan'] }}</textarea></td>
+<td><textarea name="plan_{{slot}}" oninput="markDirty()">{{ plans[slot]['plan'] }}</textarea></td>
 <td>
-<select name="status_{{slot}}">
+<select name="status_{{slot}}" onchange="markDirty()">
 {% for s in statuses %}
 <option {% if s==plans[slot]['status'] %}selected{% endif %}>{{s}}</option>
 {% endfor %}
@@ -283,29 +298,28 @@ padding:10px 16px;border-radius:999px;font-weight:600;">
 {% endfor %}
 </table>
 
-<div style="margin-top:20px">
-<button type="button" onclick="validateAndSubmit()">Save</button>
-<button type="button" onclick="location.reload()">Cancel</button>
+<div id="actions" class="floating-actions">
+  <button type="button" onclick="validateAndSubmit()">Save</button>
+  <button type="button" onclick="location.reload()">Cancel</button>
 </div>
 </form>
 </div>
 
 <script>
+let dirty=false;
+function markDirty(){
+  if(!dirty){
+    dirty=true;
+    document.getElementById("actions").style.display="flex";
+  }
+}
+
 function updateClock(){
   const ist=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
   document.getElementById("current-time").textContent=ist.toLocaleTimeString();
   document.getElementById("current-date").textContent=ist.toDateString();
 }
 setInterval(updateClock,1000);updateClock();
-
-function statusKey(s){return s.toLowerCase().replace(/\\s+/g,"-");}
-
-function applyStatusColors(){
-  document.querySelectorAll("tr[data-status]").forEach(r=>{
-    r.className=r.className.replace(/status-\\S+/g,"");
-    r.classList.add("status-"+statusKey(r.dataset.status));
-  });
-}
 
 function validateAndSubmit(){
   let bad=false, first=null;
@@ -325,34 +339,18 @@ function validateAndSubmit(){
   document.querySelector("form").submit();
 }
 
-let focus=true;
-document.getElementById("focus-toggle").onclick=()=>{
-  focus=!focus;
-  document.getElementById("focus-toggle").innerHTML=
-    focus?"🎯 Focus mode ON — <u>Show full day</u>":"📅 Full day view — <u>Enable focus</u>";
-  applyFocus();
-};
-
-function applyFocus(){
-  const rows=[...document.querySelectorAll("tr")];
-  let found=false,next=0;
-  rows.forEach(r=>{
-    r.style.display="";
-    if(!focus) return;
-    if(r.classList.contains("current-slot")){found=true;return;}
-    const t=r.querySelector("textarea");
-    if(found && t.value.trim() && next<2){next++;return;}
-    r.style.display="none";
-  });
-}
-
-document.addEventListener("keydown",e=>{
-  if(e.key.toLowerCase()==="f"){focus=!focus;applyFocus();}
-});
-
-document.addEventListener("DOMContentLoaded",()=>{
-  applyStatusColors();
-  applyFocus();
+/* Keyboard-safe lift */
+let lastHeight=window.innerHeight;
+window.addEventListener("resize",()=>{
+  const a=document.getElementById("actions");
+  if(!a) return;
+  const h=window.innerHeight;
+  if(h<lastHeight-120){
+    a.style.bottom=(lastHeight-h+12)+"px";
+  }else{
+    a.style.bottom="env(safe-area-inset-bottom,12px)";
+  }
+  lastHeight=h;
 });
 </script>
 </body>
