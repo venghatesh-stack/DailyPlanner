@@ -17,7 +17,7 @@ logger = setup_logger()
 # CONSTANTS
 # ===============================
 TOTAL_SLOTS = 48
-META_SLOT = 0  # reserved for habits + reflection
+META_SLOT = 0
 DEFAULT_STATUS = "Nothing Planned"
 
 STATUSES = [
@@ -69,6 +69,7 @@ def google_calendar_link(plan_date, slot, task):
         "details": "Created from Daily Planner",
         "trp": "false"
     }
+
     return "https://calendar.google.com/calendar/render?" + urllib.parse.urlencode(params)
 
 # ===============================
@@ -103,7 +104,6 @@ def load_day(plan_date):
 def save_day(plan_date, form):
     payload = []
 
-    # Save tasks
     for slot in range(1, TOTAL_SLOTS + 1):
         plan = form.get(f"plan_{slot}", "").strip()
         status = form.get(f"status_{slot}", DEFAULT_STATUS)
@@ -115,11 +115,11 @@ def save_day(plan_date, form):
                 "status": status
             })
 
-    # Save habits + reflection in META_SLOT
     meta = {
         "habits": form.getlist("habits"),
         "reflection": form.get("reflection", "").strip()
     }
+
     payload.append({
         "plan_date": str(plan_date),
         "slot": META_SLOT,
@@ -134,7 +134,7 @@ def save_day(plan_date, form):
     )
 
 # ===============================
-# ROUTES
+# ROUTE
 # ===============================
 @app.route("/", methods=["GET", "POST"])
 def plan_of_day():
@@ -188,31 +188,155 @@ def plan_of_day():
     )
 
 # ===============================
-# WEEKLY REVIEW (READ ONLY)
+# TEMPLATE (REAL, FULL)
 # ===============================
-@app.route("/weekly")
-def weekly():
-    today = datetime.now(IST).date()
-    start = today - timedelta(days=today.weekday())
-    end = start + timedelta(days=6)
+TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body { font-family: system-ui; background:#f6f7f9; padding:12px; }
+.container { max-width:1100px; margin:auto; background:#fff; padding:16px; border-radius:14px; }
 
-    rows = get("daily_slots", params={
-        "plan_date": f"gte.{start}",
-        "plan_date": f"lte.{end}",
-        "order": "plan_date.asc"
-    })
+.header-bar { display:flex; justify-content:space-between; margin-bottom:12px; }
+.header-time { font-weight:700; color:#2563eb; }
 
-    return render_template_string(WEEKLY_TEMPLATE, rows=rows, start=start, end=end)
+.month-controls { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+.day-strip { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
 
-# ===============================
-# TEMPLATES
-# ===============================
-TEMPLATE = """<html>... (unchanged baseline + added Habits + Reflection + floating bar) ...</html>"""
-WEEKLY_TEMPLATE = """<html>Weekly summary here</html>"""
+.day-btn {
+  width:36px; height:36px;
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid #ddd;
+  text-decoration:none; color:#000;
+}
+.day-btn.selected { background:#2563eb; color:#fff; }
 
-# ===============================
-# MAIN
-# ===============================
+table { width:100%; border-collapse:collapse; }
+td { padding:8px; border-bottom:1px solid #eee; vertical-align:top; }
+
+.current-slot { background:#eef2ff; border-left:4px solid #2563eb; }
+
+.status-nothing-planned { background:#f3f4f6; }
+.status-yet-to-start { background:#fef3c7; }
+.status-in-progress { background:#dbeafe; }
+.status-closed { background:#dcfce7; }
+.status-deferred { background:#fee2e2; }
+
+.habits { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+.habit { border:1px solid #ddd; padding:6px 10px; border-radius:20px; }
+
+textarea { width:100%; }
+
+.floating-bar {
+  position:fixed; bottom:0; left:0; right:0;
+  background:#fff; border-top:1px solid #ddd;
+  padding:10px; display:flex; gap:10px;
+}
+.floating-bar button { flex:1; padding:12px; font-size:16px; }
+</style>
+</head>
+
+<body>
+
+{% if saved %}
+<div style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
+✅ Saved successfully
+</div>
+{% endif %}
+
+<div class="container">
+
+<div class="header-bar">
+  <div id="current-date"></div>
+  <div class="header-time">🕒 <span id="current-time"></span> IST</div>
+</div>
+
+<form method="get" class="month-controls">
+  <input type="hidden" name="day" value="{{ selected_day }}">
+  <select name="month" onchange="this.form.submit()">
+    {% for m in range(1,13) %}
+      <option value="{{m}}" {% if m==month %}selected{% endif %}>{{ calendar.month_name[m] }}</option>
+    {% endfor %}
+  </select>
+
+  <select name="year" onchange="this.form.submit()">
+    {% for y in range(year-5, year+6) %}
+      <option value="{{y}}" {% if y==year %}selected{% endif %}>{{y}}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<div class="day-strip">
+{% for d in days %}
+<a href="/?year={{year}}&month={{month}}&day={{d.day}}"
+   class="day-btn {% if d.day==selected_day %}selected{% endif %}">
+{{ d.day }}
+</a>
+{% endfor %}
+</div>
+
+<form method="post">
+
+<h3>Habits</h3>
+<div class="habits">
+{% for h in habit_list %}
+<label class="habit">
+  <input type="checkbox" name="habits" value="{{h}}" {% if h in habits %}checked{% endif %}> {{h}}
+</label>
+{% endfor %}
+</div>
+
+<h3>Reflection of the day</h3>
+<textarea name="reflection" rows="3">{{reflection}}</textarea>
+
+<table>
+{% for slot in range(1,total_slots+1) %}
+<tr class="{% if now_slot==slot %}current-slot{% endif %} status-{{ plans[slot]['status'].lower().replace(' ','-') }}">
+<td>
+  {{ slot_labels[slot] }}
+  {% if plans[slot]['plan'] %}
+    <a href="{{ reminder_links[slot] }}" target="_blank">⏰</a>
+  {% endif %}
+</td>
+<td>
+  <textarea name="plan_{{slot}}">{{ plans[slot]['plan'] }}</textarea>
+</td>
+<td>
+  <select name="status_{{slot}}">
+  {% for s in statuses %}
+    <option {% if s==plans[slot]['status'] %}selected{% endif %}>{{s}}</option>
+  {% endfor %}
+  </select>
+</td>
+</tr>
+{% endfor %}
+</table>
+
+<div class="floating-bar">
+  <button type="submit">💾 Save</button>
+  <button type="button" onclick="location.reload()">❌ Cancel</button>
+</div>
+
+</form>
+</div>
+
+<script>
+function updateClock(){
+  const ist=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
+  document.getElementById("current-time").textContent=ist.toLocaleTimeString();
+  document.getElementById("current-date").textContent=ist.toDateString();
+}
+setInterval(updateClock,1000);updateClock();
+</script>
+
+</body>
+</html>
+"""
+
 if __name__ == "__main__":
-    logger.info("Starting Daily Planner (stable + extended)")
+    logger.info("Starting Daily Planner (stable + habits + reflection)")
     app.run(debug=True)
