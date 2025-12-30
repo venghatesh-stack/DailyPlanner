@@ -101,10 +101,12 @@ def index():
             "reflection": reflection
         }])
 
-    task_rows = get("tasks", {"date": selected_date.isoformat()})
+    task_rows = get("tasks", {"date": f"eq.{selected_date.isoformat()}"})
+
     task_map = {row["slot"]: row for row in task_rows}
 
-    meta = get("daily_meta", {"date": selected_date.isoformat()})
+    meta = get("daily_meta", {"date": f"eq.{selected_date.isoformat()}"})
+
     habits_selected = set()
     reflection_text = ""
 
