@@ -26,134 +26,113 @@ STATUSES = [
     "Deferred"
 ]
 
+HABIT_LIST = [
+    ("Walking", "🚶"),
+    ("Water", "💧"),
+    ("No Shopping", "🛒❌"),
+    ("No TimeWastage", "⏳"),
+    ("8 hrs sleep", "😴"),
+    ("Daily prayers", "🙏")
+]
+
 # ===============================
 # HELPERS
 # ===============================
 def slot_label(slot: int) -> str:
     start = datetime.min + timedelta(minutes=(slot - 1) * 30)
     end = start + timedelta(minutes=30)
-    return f"{start.strftime('%I:%M %p')} – {end.strftime('%I:%M %p')}"
+    return f"{start.strftime('%H:%M')} - {end.strftime('%H:%M')}"
 
-def slot_start_end(plan_date: date, slot: int):
-    start = datetime.combine(plan_date, datetime.min.time(), tzinfo=IST) + timedelta(minutes=(slot - 1) * 30)
-    end = start + timedelta(minutes=30)
-    return start, end
+def ist_now():
+    return datetime.now(IST)
 
-def current_slot() -> int:
-    now = datetime.now(IST)
-    return (now.hour * 60 + now.minute) // 30 + 1
+def today_ist():
+    return ist_now().date()
 
-def google_calendar_link(plan_date, slot, task):
-    if not task:
-        return "#"
-
-    start_ist, end_ist = slot_start_end(plan_date, slot)
-    start_utc = start_ist.astimezone(ZoneInfo("UTC"))
-    end_utc = end_ist.astimezone(ZoneInfo("UTC"))
-
-    params = {
-        "action": "TEMPLATE",
-        "text": task,
-        "dates": f"{start_utc.strftime('%Y%m%dT%H%M%SZ')}/{end_utc.strftime('%Y%m%dT%H%M%SZ')}",
-        "details": "Created from Daily Planner",
-        "trp": "false"
-    }
-
-    return "https://calendar.google.com/calendar/render?" + urllib.parse.urlencode(params)
-
-# ===============================
-# DATA ACCESS
-# ===============================
-def load_day(plan_date):
-    plans = {i: {"plan": "", "status": DEFAULT_STATUS} for i in range(1, TOTAL_SLOTS + 1)}
-
-    rows = get("daily_slots", params={
-        "plan_date": f"eq.{plan_date}",
-        "select": "slot,plan,status"
-    })
-
-    for r in rows:
-        plans[r["slot"]] = {
-            "plan": r.get("plan") or "",
-            "status": r.get("status") or DEFAULT_STATUS
-        }
-
-    return plans
-
-def save_day(plan_date, form):
-    payload = []
-
-    for slot in range(1, TOTAL_SLOTS + 1):
-        plan = form.get(f"plan_{slot}", "").strip()
-        status = form.get(f"status_{slot}", DEFAULT_STATUS)
-
-        if not plan:
-            continue
-
-        payload.append({
-            "plan_date": str(plan_date),
-            "slot": slot,
-            "plan": plan,
-            "status": status
-        })
-
-    if payload:
-        post(
-            "daily_slots?on_conflict=plan_date,slot",
-            payload,
-            prefer="resolution=merge-duplicates"
-        )
+def is_past_slot(selected_date, slot):
+    if selected_date != today_ist():
+        return False
+    slot_time = datetime.combine(selected_date, datetime.min.time()) + timedelta(minutes=(slot - 1) * 30)
+    return slot_time < ist_now()
 
 # ===============================
 # ROUTE
 # ===============================
 @app.route("/", methods=["GET", "POST"])
-def plan_of_day():
-    today = datetime.now(IST).date()
+def index():
+    today = today_ist()
 
     year = int(request.args.get("year", today.year))
     month = int(request.args.get("month", today.month))
-    day_param = request.args.get("day")
+    day = int(request.args.get("day", today.day))
 
-    plan_date = date(year, month, int(day_param)) if day_param else today
+    selected_date = date(year, month, day)
+
+    message = ""
+    error = ""
 
     if request.method == "POST":
-        save_day(plan_date, request.form)
-        return redirect(url_for(
-            "plan_of_day",
-            year=plan_date.year,
-            month=plan_date.month,
-            day=plan_date.day,
-            saved=1
-        ))
+        tasks = []
+        for slot in range(1, TOTAL_SLOTS + 1):
+            desc = request.form.get(f"desc_{slot}", "").strip()
+            status = request.form.get(f"status_{slot}", DEFAULT_STATUS)
 
-    plans = load_day(plan_date)
+            if desc:
+                tasks.append({
+                    "date": selected_date.isoformat(),
+                    "slot": slot,
+                    "description": desc,
+                    "status": status
+                })
 
-    reminder_links = {
-        slot: google_calendar_link(plan_date, slot, plans[slot]["plan"])
-        for slot in range(1, TOTAL_SLOTS + 1)
-    }
+        if not tasks:
+            error = "Cannot save empty tasks."
+        else:
+            post("tasks", tasks)
+            logger.info(f"Saved tasks for {selected_date}")
+            message = "Saved successfully!"
 
-    days = [
-        date(year, month, d)
-        for d in range(1, calendar.monthrange(year, month)[1] + 1)
-    ]
+        habits = request.form.getlist("habits")
+        reflection = request.form.get("reflection", "").strip()
 
-    return render_template_string(
-        TEMPLATE,
+        post("daily_meta", [{
+            "date": selected_date.isoformat(),
+            "habits": ",".join(habits),
+            "reflection": reflection
+        }])
+
+    task_rows = get("tasks", {"date": selected_date.isoformat()})
+    task_map = {row["slot"]: row for row in task_rows}
+
+    meta = get("daily_meta", {"date": selected_date.isoformat()})
+    habits_selected = set()
+    reflection_text = ""
+
+    if meta:
+        habits_selected = set(meta[0].get("habits", "").split(","))
+        reflection_text = meta[0].get("reflection", "")
+
+    cal = calendar.monthcalendar(year, month)
+
+    return render_template_string(TEMPLATE,
         year=year,
         month=month,
-        days=days,
-        selected_day=plan_date.day,
+        day=day,
+        selected_date=selected_date,
+        cal=cal,
+        calendar=calendar,
+        task_map=task_map,
+        STATUSES=STATUSES,
+        TOTAL_SLOTS=TOTAL_SLOTS,
+        slot_label=slot_label,
+        is_past_slot=is_past_slot,
         today=today,
-        plans=plans,
-        statuses=STATUSES,
-        total_slots=TOTAL_SLOTS,
-        slot_labels={i: slot_label(i) for i in range(1, TOTAL_SLOTS + 1)},
-        reminder_links=reminder_links,
-        now_slot=current_slot() if plan_date == today else None,
-        saved=request.args.get("saved"),
-        calendar=calendar
+        message=message,
+        error=error,
+        HABIT_LIST=HABIT_LIST,
+        habits_selected=habits_selected,
+        reflection_text=reflection_text,
+        ist_now=ist_now
     )
 
 # ===============================
@@ -164,133 +143,91 @@ TEMPLATE = """
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Planner</title>
+
 <style>
-body { font-family: system-ui; background:#f6f7f9; padding:12px; }
-.container { max-width:1100px; margin:auto; background:#fff; padding:16px; border-radius:14px; }
-
-.header-bar { display:flex; justify-content:space-between; margin-bottom:12px; }
-.header-time { font-weight:700; color:#2563eb; }
-
-.month-controls { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
-.day-strip { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
-
-.day-btn {
-  width:36px; height:36px;
-  border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-  border:1px solid #ddd;
-  text-decoration:none; color:#000;
-}
-.day-btn.selected { background:#2563eb; color:#fff; }
-
-table { width:100%; border-collapse:collapse; }
-td { padding:8px; border-bottom:1px solid #eee; }
-
-.current-slot { background:#eef2ff; border-left:4px solid #2563eb; }
-
-/* Status colors */
-.status-nothing-planned { background:#f3f4f6; }
-.status-yet-to-start { background:#fef3c7; }
-.status-in-progress { background:#dbeafe; }
-.status-closed { background:#dcfce7; }
-.status-deferred { background:#fee2e2; }
+body { font-family: Arial, sans-serif; margin-bottom: 90px; }
+.header { text-align: center; margin-bottom: 10px; }
+.time { font-size: 14px; color: gray; }
+table { width: 100%; border-collapse: collapse; }
+td, th { padding: 6px; border-bottom: 1px solid #eee; }
+.past { background: #f8f8f8; color: #999; }
+.current { background: #e6f3ff; }
+.habits, .reflection { border: 1px solid #ddd; padding: 10px; margin: 10px 0; border-radius: 8px; }
+.floating { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #ccc; padding: 10px; display: flex; gap: 10px; }
+button { flex: 1; padding: 12px; font-size: 16px; }
+.toast { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 20px; border-radius: 6px; }
+.toast.error { background: #c0392b; }
 </style>
-</head>
 
+<script>
+setInterval(() => {
+  document.getElementById("clock").innerText =
+    new Date().toLocaleTimeString("en-IN");
+}, 1000);
+</script>
+
+</head>
 <body>
 
-{% if saved %}
-<div style="
-  position:fixed; bottom:20px; left:50%;
-  transform:translateX(-50%);
-  background:#dcfce7;
-  padding:10px 16px;
-  border-radius:999px;
-  font-weight:600;">
-  ✅ Saved successfully
+<div class="header">
+  <h2>{{ selected_date.strftime('%A, %d %b %Y') }}</h2>
+  <div class="time" id="clock">{{ ist_now().strftime('%H:%M:%S') }}</div>
 </div>
+
+{% if message %}
+<div class="toast">{{ message }}</div>
+{% endif %}
+{% if error %}
+<div class="toast error">{{ error }}</div>
 {% endif %}
 
-<div class="container">
+<form method="POST">
 
-<div class="header-bar">
-  <div id="current-date"></div>
-  <div class="header-time">🕒 <span id="current-time"></span> IST</div>
-</div>
-
-<form method="get" class="month-controls">
-  <input type="hidden" name="day" value="{{ selected_day }}">
-  <select name="month" onchange="this.form.submit()">
-    {% for m in range(1,13) %}
-      <option value="{{m}}" {% if m==month %}selected{% endif %}>
-        {{ calendar.month_name[m] }}
-      </option>
-    {% endfor %}
-  </select>
-
-  <select name="year" onchange="this.form.submit()">
-    {% for y in range(year-5, year+6) %}
-      <option value="{{y}}" {% if y==year %}selected{% endif %}>{{y}}</option>
-    {% endfor %}
-  </select>
-</form>
-
-<div class="day-strip">
-{% for d in days %}
-<a href="/?year={{year}}&month={{month}}&day={{d.day}}"
-   class="day-btn {% if d.day==selected_day %}selected{% endif %}">
-{{ d.day }}
-</a>
-{% endfor %}
-</div>
-
-<form method="post">
 <table>
-{% for slot in range(1,total_slots+1) %}
-<tr class="
-  {% if now_slot==slot %}current-slot{% endif %}
-  status-{{ plans[slot]['status'].lower().replace(' ','-') }}
-">
-<td>
-  {{ slot_labels[slot] }}
-  {% if plans[slot]['plan'] %}
-    <a href="{{ reminder_links[slot] }}" target="_blank">⏰</a>
-  {% endif %}
-</td>
-<td>
-  <textarea name="plan_{{slot}}" style="width:100%">{{ plans[slot]['plan'] }}</textarea>
-</td>
-<td>
-  <select name="status_{{slot}}">
-  {% for s in statuses %}
-    <option {% if s==plans[slot]['status'] %}selected{% endif %}>{{s}}</option>
-  {% endfor %}
-  </select>
-</td>
+{% for slot in range(1, TOTAL_SLOTS + 1) %}
+{% set row = task_map.get(slot) %}
+<tr class="{% if is_past_slot(selected_date, slot) %}past{% endif %}">
+  <td>🕒 {{ slot_label(slot) }}</td>
+  <td>
+    <input style="width:100%" name="desc_{{slot}}" value="{{ row.description if row else '' }}">
+  </td>
+  <td>
+    <select name="status_{{slot}}">
+      {% for s in STATUSES %}
+      <option value="{{s}}" {% if row and row.status==s %}selected{% endif %}>{{s}}</option>
+      {% endfor %}
+    </select>
+  </td>
 </tr>
 {% endfor %}
 </table>
 
-<div style="margin-top:16px; text-align:center">
-  <button type="submit">Save</button>
-  <button type="button" onclick="location.reload()">Cancel</button>
-</div>
-</form>
+<div class="habits">
+<h3>Habits</h3>
+{% for h, icon in HABIT_LIST %}
+<label>
+<input type="checkbox" name="habits" value="{{h}}" {% if h in habits_selected %}checked{% endif %}>
+{{ icon }} {{ h }}
+</label><br>
+{% endfor %}
 </div>
 
-<script>
-function updateClock(){
-  const ist=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
-  document.getElementById("current-time").textContent=ist.toLocaleTimeString();
-  document.getElementById("current-date").textContent=ist.toDateString();
-}
-setInterval(updateClock,1000);updateClock();
-</script>
+<div class="reflection">
+<h3>🧠 Reflection of the Day</h3>
+<textarea name="reflection" style="width:100%" rows="4">{{ reflection_text }}</textarea>
+</div>
+
+<div class="floating">
+<button type="submit">💾 Save</button>
+<a href="/" style="flex:1"><button type="button">❌ Cancel</button></a>
+</div>
+
+</form>
 
 </body>
 </html>
 """
 
 if __name__ == "__main__":
-    logger.info("Starting Daily Planner (baseline)")
     app.run(debug=True)
