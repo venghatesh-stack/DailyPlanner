@@ -297,11 +297,12 @@ textarea { width:100%; resize:vertical; }
   cursor: pointer;
 }
 
-.status-Nothing\ Planned { background:#e5e7eb; }
-.status-Yet\ to\ Start { background:#fde68a; }
-.status-In\ Progress { background:#bfdbfe; }
-.status-Closed { background:#bbf7d0; }
-.status-Deferred { background:#fecaca; }
+.status-nothing-planned { background:#e5e7eb; }
+.status-yet-to-start { background:#fde68a; }
+.status-in-progress { background:#bfdbfe; }
+.status-closed { background:#bbf7d0; }
+.status-deferred { background:#fecaca; }
+
 
 </style>
 </head>
@@ -406,7 +407,7 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
 <tr class="slot-status">
   <td colspan="3">
     <div
-      class="status-pill status-{{ plans[slot]['status']|replace(' ','\\ ') }}"
+      class="status-pill status-{{ plans[slot]['status']|lower|replace(' ','-') }}"
       onclick="cycleStatus(this)"
     >
       {{ plans[slot]['status'] }}
@@ -550,7 +551,11 @@ function cycleStatus(el){
   select.value = STATUSES[idx];
   el.textContent = STATUSES[idx];
 
-  el.className = "status-pill status-" + STATUSES[idx].replaceAll(" ","\\ ");
+ el.className = "status-pill status-" + statusKey(STATUSES[idx]);
+
+}
+function statusKey(s){
+  return s.toLowerCase().replaceAll(" ","-");
 }
 
 </script>
