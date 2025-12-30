@@ -210,24 +210,6 @@ def plan_of_day():
         calendar=calendar
     )
 
-@app.route("/weekly")
-def weekly():
-    today = datetime.now(IST).date()
-    start = today - timedelta(days=today.weekday())
-    end = start + timedelta(days=6)
-
-    rows = get("daily_slots", params={
-        "plan_date": f"gte.{start}",
-        "order": "plan_date.asc"
-    }) or []
-
-    return render_template_string(
-        WEEKLY_TEMPLATE,
-        rows=rows,
-        start=start,
-        end=end
-    )
-
 # ===============================
 # TEMPLATE
 # ===============================
@@ -272,18 +254,23 @@ td { padding:8px; border-bottom:1px solid #eee; vertical-align:top; }
 textarea { width:100%; }
 
 .floating-bar {
-  position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
-  background:#fff;
-  border-top:1px solid #ddd;
-  padding:10px;
-  display:flex;
-  gap:10px;
-  z-index:2000;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-top: 1px solid #ddd;
+  padding: 10px;
+  display: flex;
+  gap: 10px;
+  z-index: 9999;
 }
-.floating-bar button { flex:1; padding:12px; font-size:16px; }
+.floating-bar button, .floating-bar a {
+  flex:1;
+  padding:12px;
+  font-size:16px;
+  text-align:center;
+}
 </style>
 </head>
 
@@ -327,7 +314,7 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
 {% endfor %}
 </div>
 
-<form method="post">
+<form method="post" id="planner-form">
 
 <table>
 {% for slot in range(1,total_slots+1) %}
@@ -371,9 +358,9 @@ status-{{ plans[slot]['status'].lower().replace(' ','-') }}">
 </div>
 
 <div class="floating-bar">
-  <button type="submit" formmethod="post">💾 Save</button>
+  <button type="submit" form="planner-form">💾 Save</button>
   <button type="button" onclick="cancelEdit()">❌ Cancel</button>
-  <a href="/weekly" style="flex:1;text-align:center;line-height:44px;text-decoration:none;">📊 Weekly</a>
+  <a href="/weekly">📊 Weekly</a>
 </div>
 
 <script>
@@ -383,11 +370,6 @@ function updateClock(){
   document.getElementById("current-date").textContent=ist.toDateString();
 }
 setInterval(updateClock,1000);updateClock();
-
-window.addEventListener("load", () => {
-  const cur = document.querySelector(".current-slot textarea");
-  if(cur){ cur.focus(); cur.scrollIntoView({behavior:"smooth",block:"center"}); }
-});
 
 function cancelEdit(){
   const url = new URL(window.location.href);
@@ -404,37 +386,6 @@ setTimeout(()=>{ const t=document.getElementById("save-toast"); if(t) t.remove()
 </html>
 """
 
-WEEKLY_TEMPLATE = """
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-body { font-family: system-ui; padding:16px; }
-.day { border-bottom:1px solid #ddd; padding:10px 0; }
-</style>
-</head>
-<body>
-
-<h2>📊 Weekly Summary</h2>
-<p>{{start}} → {{end}}</p>
-
-{% for r in rows %}
-{% if r.slot == 0 %}
-<div class="day">
-<strong>{{r.plan_date}}</strong><br>
-{{ r.plan }}
-</div>
-{% endif %}
-{% endfor %}
-
-<p><a href="/">⬅ Back</a></p>
-
-</body>
-</html>
-"""
-
 if __name__ == "__main__":
-    logger.info("Starting Daily Planner (final stable build)")
+    logger.info("Starting Daily Planner (stable floating bar build)")
     app.run(debug=True)
-
