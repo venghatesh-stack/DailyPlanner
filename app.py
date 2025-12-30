@@ -78,19 +78,6 @@ def google_calendar_link(plan_date, slot, task):
     }
     return "https://calendar.google.com/calendar/render?" + urllib.parse.urlencode(params)
 
-def compute_streak(habit, meta_rows):
-    streak = 0
-    for r in meta_rows:
-        try:
-            meta = json.loads(r["plan"] or "{}")
-            if habit in meta.get("habits", []):
-                streak += 1
-            else:
-                break
-        except Exception:
-            break
-    return streak
-
 # ===============================
 # DATA ACCESS
 # ===============================
@@ -151,7 +138,7 @@ def save_day(plan_date, form):
     )
 
 # ===============================
-# ROUTES
+# ROUTE
 # ===============================
 @app.route("/", methods=["GET", "POST"])
 def plan_of_day():
@@ -174,19 +161,15 @@ def plan_of_day():
 
     plans, habits, reflection = load_day(plan_date)
 
-    meta_rows = get("daily_slots", params={
-        "slot": f"eq.{META_SLOT}",
-        "order": "plan_date.desc"
-    }) or []
-
-    habit_streaks = {h: compute_streak(h, meta_rows) for h in HABIT_LIST}
-
     reminder_links = {
         slot: google_calendar_link(plan_date, slot, plans[slot]["plan"])
         for slot in range(1, TOTAL_SLOTS + 1)
     }
 
-    days = [date(year, month, d) for d in range(1, calendar.monthrange(year, month)[1] + 1)]
+    days = [
+        date(year, month, d)
+        for d in range(1, calendar.monthrange(year, month)[1] + 1)
+    ]
 
     return render_template_string(
         TEMPLATE,
@@ -206,193 +189,153 @@ def plan_of_day():
         reflection=reflection,
         habit_list=HABIT_LIST,
         habit_icons=HABIT_ICONS,
-        habit_streaks=habit_streaks,
         calendar=calendar
     )
 
 # ===============================
 # TEMPLATE
 # ===============================
-# --- SAME IMPORTS & BACKEND LOGIC AS BEFORE ---
-# (No backend changes at all)
-
-# ⬇️ ONLY TEMPLATE IS UX-ENHANCED ⬇️
-
 TEMPLATE = """
 <!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body {
-  font-family: system-ui;
-  background:#f6f7f9;
-  padding:12px;
-  padding-bottom:160px;
-}
+body { font-family: system-ui; background:#f6f7f9; padding:12px; padding-bottom:160px; }
+.container { max-width:1100px; margin:auto; background:#fff; padding:16px; border-radius:14px; }
 
-.container {
-  max-width:1100px;
-  margin:auto;
-  background:#fff;
-  padding:16px;
-  border-radius:14px;
-}
+.header-bar { display:flex; justify-content:space-between; margin-bottom:12px; }
+.header-time { font-weight:700; color:#2563eb; }
 
-/* ---------- DESKTOP TABLE (unchanged) ---------- */
-@media (min-width: 768px) {
-  .mobile-only { display:none; }
-}
+.month-controls { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+.day-strip { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
 
-/* ---------- MOBILE UX ---------- */
+.day-btn {
+  width:36px; height:36px;
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid #ddd;
+  text-decoration:none; color:#000;
+}
+.day-btn.selected { background:#2563eb; color:#fff; }
+
+table { width:100%; border-collapse:collapse; }
+td { padding:8px; border-bottom:1px solid #eee; vertical-align:top; }
+
+.current-slot { background:#eef2ff; border-left:4px solid #2563eb; }
+
+textarea { width:100%; resize:vertical; }
+
 @media (max-width: 767px) {
-  table textarea, table select {
-    pointer-events:none;
-  }
-
-  tr {
-    cursor:pointer;
-  }
+  tr.slot-row:not(.active) textarea,
+  tr.slot-row:not(.active) select { display:none; }
+  tr.slot-row.active textarea { min-height:100px; font-size:16px; }
 }
 
-/* ---------- SLOT MODAL ---------- */
-.modal {
-  display:none;
-  position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
-  background:#fff;
-  border-radius:16px 16px 0 0;
-  padding:16px;
-  z-index:9999;
-  box-shadow:0 -4px 20px rgba(0,0,0,.2);
-}
-
-.modal textarea {
-  width:100%;
-  height:120px;
-  font-size:16px;
-}
-
-.modal select {
-  width:100%;
-  padding:10px;
-  margin-top:10px;
-}
-
-.modal-actions {
-  display:flex;
-  gap:10px;
-  margin-top:12px;
-}
-
-.modal-actions button {
-  flex:1;
-  padding:14px;
-  font-size:16px;
-}
-
-/* ---------- FLOATING BAR ---------- */
 .floating-bar {
   position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
+  bottom:0; left:0; right:0;
   background:#fff;
   border-top:1px solid #ddd;
   padding:10px;
   display:flex;
   gap:10px;
-  z-index:2000;
+  z-index:9999;
 }
+.floating-bar button { flex:1; padding:14px; font-size:16px; }
 </style>
 </head>
 
 <body>
 
+{% if saved %}
+<div id="save-toast" style="position:fixed;bottom:90px;left:50%;
+transform:translateX(-50%);
+background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
+✅ Saved successfully
+</div>
+{% endif %}
+
 <div class="container">
 
-<!-- EXISTING HEADER + CALENDAR (unchanged) -->
+<div class="header-bar">
+  <div id="current-date"></div>
+  <div class="header-time">🕒 <span id="current-time"></span> IST</div>
+</div>
+
+<form method="get" class="month-controls">
+  <input type="hidden" name="day" value="{{ selected_day }}">
+  <select name="month" onchange="this.form.submit()">
+    {% for m in range(1,13) %}
+      <option value="{{m}}" {% if m==month %}selected{% endif %}>{{ calendar.month_name[m] }}</option>
+    {% endfor %}
+  </select>
+  <select name="year" onchange="this.form.submit()">
+    {% for y in range(year-5, year+6) %}
+      <option value="{{y}}" {% if y==year %}selected{% endif %}>{{y}}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<div class="day-strip">
+{% for d in days %}
+<a href="/?year={{year}}&month={{month}}&day={{d.day}}"
+   class="day-btn {% if d.day==selected_day %}selected{% endif %}">
+{{ d.day }}
+</a>
+{% endfor %}
+</div>
 
 <form method="post" id="planner-form">
 
 <table>
 {% for slot in range(1,total_slots+1) %}
-<tr onclick="openEditor({{slot}})">
+<tr class="slot-row {% if now_slot==slot %}current-slot{% endif %}" onclick="activateRow(this)">
 <td>{{ slot_labels[slot] }}</td>
-<td>{{ plans[slot]['plan'] or '— Tap to add —' }}</td>
-<td>{{ plans[slot]['status'] }}</td>
+<td><textarea name="plan_{{slot}}">{{ plans[slot]['plan'] }}</textarea></td>
+<td>
+<select name="status_{{slot}}">
+{% for s in statuses %}
+<option {% if s==plans[slot]['status'] %}selected{% endif %}>{{s}}</option>
+{% endfor %}
+</select>
+</td>
 </tr>
 {% endfor %}
 </table>
 
-<!-- HABITS -->
-<h3>🏃 Habits</h3>
-<div class="habits">
+<h3 style="margin-top:24px">🏃 Habits</h3>
+<div>
 {% for h in habit_list %}
-<label class="habit">
-  <input type="checkbox" name="habits" value="{{h}}" {% if h in habits %}checked{% endif %}>
-  {{ habit_icons[h] }} {{h}}
+<label style="margin-right:10px">
+<input type="checkbox" name="habits" value="{{h}}" {% if h in habits %}checked{% endif %}>
+{{ habit_icons[h] }} {{h}}
 </label>
 {% endfor %}
 </div>
 
-<!-- REFLECTION -->
-<h3>📝 Reflection</h3>
-<textarea name="reflection" rows="3"
-  onfocus="enterFocusMode()"
-  onblur="exitFocusMode()">{{reflection}}</textarea>
+<h3>📝 Reflection of the day</h3>
+<textarea name="reflection" rows="3">{{reflection}}</textarea>
 
 </form>
-
 </div>
 
-<!-- SLOT EDITOR MODAL -->
-<div class="modal" id="slotModal">
-  <h3 id="modalTime"></h3>
-  <textarea id="modalPlan"></textarea>
-  <select id="modalStatus">
-    {% for s in statuses %}
-      <option>{{s}}</option>
-    {% endfor %}
-  </select>
-
-  <div class="modal-actions">
-    <button onclick="saveSlot()">💾 Save</button>
-    <button onclick="closeEditor()">❌ Cancel</button>
-  </div>
-</div>
-
-<!-- FLOATING BAR -->
 <div class="floating-bar">
-  <button type="submit" form="planner-form">💾 Save Day</button>
+  <button type="submit" form="planner-form">💾 Save</button>
   <button type="button" onclick="cancelEdit()">❌ Cancel</button>
 </div>
 
 <script>
-let currentSlot = null;
-
-function openEditor(slot){
-  currentSlot = slot;
-  document.getElementById("slotModal").style.display="block";
-  document.getElementById("modalTime").textContent = "Edit " + slot;
+function updateClock(){
+  const ist=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
+  document.getElementById("current-time").textContent=ist.toLocaleTimeString();
+  document.getElementById("current-date").textContent=ist.toDateString();
 }
+setInterval(updateClock,1000);updateClock();
 
-function closeEditor(){
-  document.getElementById("slotModal").style.display="none";
-}
-
-function saveSlot(){
-  closeEditor();
-}
-
-function enterFocusMode(){
-  document.querySelector(".floating-bar").style.bottom="auto";
-}
-
-function exitFocusMode(){
-  document.querySelector(".floating-bar").style.bottom="0";
+function activateRow(row){
+  document.querySelectorAll(".slot-row").forEach(r=>r.classList.remove("active"));
+  row.classList.add("active");
 }
 
 function cancelEdit(){
@@ -400,13 +343,16 @@ function cancelEdit(){
   url.searchParams.delete("saved");
   window.location.href = url.toString();
 }
+
+{% if saved %}
+setTimeout(()=>{ const t=document.getElementById("save-toast"); if(t) t.remove(); },2500);
+{% endif %}
 </script>
 
 </body>
 </html>
 """
 
-
 if __name__ == "__main__":
-    logger.info("Starting Daily Planner (stable floating bar build)")
+    logger.info("Starting Daily Planner (stable + mobile UX + restored controls)")
     app.run(debug=True)
