@@ -188,7 +188,7 @@ def plan_of_day():
     )
 
 # ===============================
-# TEMPLATE (REAL, FULL)
+# TEMPLATE
 # ===============================
 TEMPLATE = """
 <!DOCTYPE html>
@@ -196,7 +196,7 @@ TEMPLATE = """
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body { font-family: system-ui; background:#f6f7f9; padding:12px; }
+body { font-family: system-ui; background:#f6f7f9; padding:12px; padding-bottom:140px; }
 .container { max-width:1100px; margin:auto; background:#fff; padding:16px; border-radius:14px; }
 
 .header-bar { display:flex; justify-content:space-between; margin-bottom:12px; }
@@ -231,9 +231,14 @@ td { padding:8px; border-bottom:1px solid #eee; vertical-align:top; }
 textarea { width:100%; }
 
 .floating-bar {
-  position:fixed; bottom:0; left:0; right:0;
-  background:#fff; border-top:1px solid #ddd;
-  padding:10px; display:flex; gap:10px;
+  position:sticky;
+  bottom:0;
+  background:#fff;
+  border-top:1px solid #ddd;
+  padding:10px;
+  display:flex;
+  gap:10px;
+  z-index:1000;
 }
 .floating-bar button { flex:1; padding:12px; font-size:16px; }
 </style>
@@ -242,9 +247,17 @@ textarea { width:100%; }
 <body>
 
 {% if saved %}
-<div style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
-background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
-✅ Saved successfully
+<div id="save-toast" style="
+  position:fixed;
+  bottom:80px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#dcfce7;
+  padding:10px 16px;
+  border-radius:999px;
+  font-weight:600;
+  z-index:9999;">
+  ✅ Saved successfully
 </div>
 {% endif %}
 
@@ -281,7 +294,7 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
 
 <form method="post">
 
-<h3>Habits</h3>
+<h3>🏃 Habits</h3>
 <div class="habits">
 {% for h in habit_list %}
 <label class="habit">
@@ -290,7 +303,7 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
 {% endfor %}
 </div>
 
-<h3>Reflection of the day</h3>
+<h3>📝 Reflection of the day</h3>
 <textarea name="reflection" rows="3">{{reflection}}</textarea>
 
 <table>
@@ -331,6 +344,30 @@ function updateClock(){
   document.getElementById("current-date").textContent=ist.toDateString();
 }
 setInterval(updateClock,1000);updateClock();
+
+window.addEventListener("load", () => {
+  const current = document.querySelector(".current-slot textarea");
+  if (current) {
+    current.focus();
+    current.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+});
+
+{% if saved %}
+setTimeout(() => {
+  const t = document.getElementById("save-toast");
+  if (t) t.remove();
+}, 2500);
+{% endif %}
+
+let lastHeight = window.innerHeight;
+window.addEventListener("resize", () => {
+  const bar = document.querySelector(".floating-bar");
+  if (!bar) return;
+  if (window.innerHeight < lastHeight) bar.style.display = "none";
+  else bar.style.display = "flex";
+  lastHeight = window.innerHeight;
+});
 </script>
 
 </body>
@@ -338,5 +375,5 @@ setInterval(updateClock,1000);updateClock();
 """
 
 if __name__ == "__main__":
-    logger.info("Starting Daily Planner (stable + habits + reflection)")
+    logger.info("Starting Daily Planner (stable + UX fixes)")
     app.run(debug=True)
