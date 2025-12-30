@@ -512,19 +512,30 @@ function applyTimeFilter() {
 
   if (!fromTime || !toTime) return;
 
-  const fromMin = timeToMinutes(fromTime);
-  const toMin = timeToMinutes(toTime)+30; // Include the end slot
+  let fromMin = timeToMinutes(fromTime);
+  let toMinRaw = timeToMinutes(toTime);
+
+  // Enforce: To must be > From
+  if (toMinRaw <= fromMin) {
+    toMinRaw = fromMin + 30;
+    document.getElementById("timeTo").value = minutesToTime(toMinRaw);
+  }
+
+  // Enforce: From must be < To (symmetric)
+  if (fromMin >= toMinRaw) {
+    fromMin = toMinRaw - 30;
+    document.getElementById("timeFrom").value = minutesToTime(fromMin);
+  }
+
+  const toMin = toMinRaw + 30; // include end slot
 
   document.querySelectorAll("tr[data-slot]").forEach(row => {
     const slot = parseInt(row.dataset.slot, 10);
     const slotMin = slotToMinutes(slot);
-
-    // Each slot spans 30 minutes
     const slotEnd = slotMin + 30;
 
     const visible = slotEnd > fromMin && slotMin < toMin;
 
-    // Hide/show the time row AND its following task + status rows
     let r = row;
     for (let i = 0; i < 3; i++) {
       if (r) {
@@ -534,6 +545,7 @@ function applyTimeFilter() {
     }
   });
 }
+
 
 // Bind events
 document.getElementById("timeFrom").addEventListener("change", applyTimeFilter);
@@ -556,6 +568,11 @@ function cycleStatus(el){
 }
 function statusKey(s){
   return s.toLowerCase().replaceAll(" ","-");
+}
+function minutesToTime(mins) {
+  const h = Math.floor(mins / 60) % 24;
+  const m = mins % 60;
+  return String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0");
 }
 
 </script>
