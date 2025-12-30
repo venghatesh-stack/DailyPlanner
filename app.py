@@ -247,6 +247,33 @@ textarea { width:100%; resize:vertical; }
   z-index:9999;
 }
 .floating-bar button { flex:1; padding:14px; font-size:16px; }
+.time-filter {
+  display:flex;
+  gap:20px;
+  margin-bottom:12px;
+}
+
+.time-wheel {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+.time-wheel label {
+  font-size:14px;
+  margin-bottom:4px;
+  font-weight:600;
+}
+
+.time-wheel select {
+  height:120px;
+  width:90px;
+  font-size:16px;
+  text-align:center;
+  overflow-y:scroll;
+  scrollbar-width:thin;
+}
+
 </style>
 </head>
 
@@ -281,17 +308,37 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
   </select>
 </form>
 <!-- Time Filter -->
-<div style="margin-bottom:12px; display:flex; gap:8px; flex-wrap:wrap;">
-  <label>
-    From:
-    <input type="time" id="timeFrom" value="06:00">
-  </label>
+<!-- Scrollable Clock Filter -->
+<div class="time-filter">
+  <div class="time-wheel">
+    <label>From</label>
+    <select id="timeFrom">
+      {% for h in range(0,24) %}
+        {% for m in (0,30) %}
+          {% set t = "%02d:%02d"|format(h,m) %}
+          <option value="{{t}}" {% if t=="06:00" %}selected{% endif %}>
+            {{t}}
+          </option>
+        {% endfor %}
+      {% endfor %}
+    </select>
+  </div>
 
-  <label>
-    To:
-    <input type="time" id="timeTo" value="18:00">
-  </label>
+  <div class="time-wheel">
+    <label>To</label>
+    <select id="timeTo">
+      {% for h in range(0,24) %}
+        {% for m in (0,30) %}
+          {% set t = "%02d:%02d"|format(h,m) %}
+          <option value="{{t}}" {% if t=="18:00" %}selected{% endif %}>
+            {{t}}
+          </option>
+        {% endfor %}
+      {% endfor %}
+    </select>
+  </div>
 </div>
+
 
 <div class="day-strip">
 {% for d in days %}
