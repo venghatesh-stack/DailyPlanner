@@ -287,22 +287,48 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
 </div>
 
 <form method="post" id="planner-form">
-
 <table>
 {% for slot in range(1,total_slots+1) %}
-<tr class="slot-row {% if now_slot==slot %}current-slot{% endif %}" onclick="activateRow(this)">
-<td>{{ slot_labels[slot] }}</td>
-<td><textarea name="plan_{{slot}}">{{ plans[slot]['plan'] }}</textarea></td>
-<td>
-<select name="status_{{slot}}">
-{% for s in statuses %}
-<option {% if s==plans[slot]['status'] %}selected{% endif %}>{{s}}</option>
-{% endfor %}
-</select>
-</td>
+
+<!-- TIME ROW -->
+<tr class="slot-time {% if now_slot==slot %}current-slot{% endif %}">
+  <td colspan="3">
+    <strong>{{ slot_labels[slot] }}</strong>
+    {% if plans[slot]['plan'] %}
+      <a href="{{ reminder_links[slot] }}" target="_blank">⏰</a>
+    {% endif %}
+  </td>
 </tr>
+
+<!-- TASK DESCRIPTION ROW -->
+<tr class="slot-task">
+  <td colspan="3">
+    <textarea
+      name="plan_{{slot}}"
+      placeholder="What will you do in this time?"
+    >{{ plans[slot]['plan'] }}</textarea>
+  </td>
+</tr>
+
+<!-- STATUS ROW -->
+<tr class="slot-status">
+  <td colspan="3">
+    <label>
+      Status:
+      <select name="status_{{slot}}">
+        {% for s in statuses %}
+          <option {% if s==plans[slot]['status'] %}selected{% endif %}>
+            {{s}}
+          </option>
+        {% endfor %}
+      </select>
+    </label>
+  </td>
+</tr>
+
 {% endfor %}
 </table>
+
 
 <h3 style="margin-top:24px">🏃 Habits</h3>
 <div>
