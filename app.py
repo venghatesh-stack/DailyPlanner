@@ -212,14 +212,25 @@ body { font-family: system-ui; background:#f6f7f9; padding:12px; }
 .header-bar { display:flex; justify-content:space-between; margin-bottom:12px; }
 .header-time { font-weight:700; color:#2563eb; }
 
+.month-controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+.day-strip { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+
+.day-btn {
+  width:38px; height:38px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid #ddd;
+  text-decoration:none;
+  color:#000;
+}
+.day-btn.selected {
+  background:#2563eb;
+  color:#fff;
+}
+
 .current-slot { background:#eef2ff; border-left:4px solid #2563eb; }
-
-.status-nothing-planned { background:#f3f4f6; }
-.status-yet-to-start { background:#fef3c7; }
-.status-in-progress { background:#dbeafe; }
-.status-closed { background:#dcfce7; }
-.status-deferred { background:#fee2e2; }
-
 .row-error { background:#fee2e2 !important; }
 
 /* ===== FLOATING ACTION BAR ===== */
@@ -228,29 +239,20 @@ body { font-family: system-ui; background:#f6f7f9; padding:12px; }
   bottom: env(safe-area-inset-bottom, 12px);
   background:#fff;
   padding:12px;
-  display:none;
+  display:flex;
   gap:12px;
   border-top:1px solid #e5e7eb;
   z-index:1000;
 }
 
-@media (min-width: 769px) {
-  .floating-actions {
-    justify-content:center;
-  }
-  .floating-actions button {
-    min-width:180px;
-  }
+.floating-actions button {
+  flex:1;
+  padding:14px;
+  font-size:16px;
+  border-radius:12px;
 }
 
-@media (max-width: 768px) {
-  .floating-actions button {
-    flex:1;
-    padding:14px;
-    font-size:16px;
-  }
-}
-
+button[disabled] { opacity:0.5; }
 </style>
 </head>
 
@@ -276,6 +278,32 @@ padding:10px 16px;border-radius:999px;font-weight:600;">
   <div class="header-time">🕒 <span id="current-time"></span> IST</div>
 </div>
 
+<form method="get" class="month-controls">
+  <input type="hidden" name="day" value="{{ selected_day }}">
+  <select name="month" onchange="this.form.submit()">
+    {% for m in range(1,13) %}
+      <option value="{{m}}" {% if m==month %}selected{% endif %}>
+        {{ calendar.month_name[m] }}
+      </option>
+    {% endfor %}
+  </select>
+
+  <select name="year" onchange="this.form.submit()">
+    {% for y in range(year-5, year+6) %}
+      <option value="{{y}}" {% if y==year %}selected{% endif %}>{{y}}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<div class="day-strip">
+{% for d in days %}
+<a href="/?year={{year}}&month={{month}}&day={{d.day}}"
+   class="day-btn {% if d.day==selected_day %}selected{% endif %}">
+{{ d.day }}
+</a>
+{% endfor %}
+</div>
+
 <form method="post">
 <table width="100%">
 {% for slot in range(1,total_slots+1) %}
@@ -298,8 +326,8 @@ padding:10px 16px;border-radius:999px;font-weight:600;">
 {% endfor %}
 </table>
 
-<div id="actions" class="floating-actions">
-  <button type="button" onclick="validateAndSubmit()">Save</button>
+<div class="floating-actions">
+  <button id="saveBtn" type="button" onclick="validateAndSubmit()" disabled>Save</button>
   <button type="button" onclick="location.reload()">Cancel</button>
 </div>
 </form>
@@ -308,10 +336,8 @@ padding:10px 16px;border-radius:999px;font-weight:600;">
 <script>
 let dirty=false;
 function markDirty(){
-  if(!dirty){
-    dirty=true;
-    document.getElementById("actions").style.display="flex";
-  }
+  dirty=true;
+  document.getElementById("saveBtn").disabled=false;
 }
 
 function updateClock(){
@@ -338,20 +364,6 @@ function validateAndSubmit(){
   }
   document.querySelector("form").submit();
 }
-
-/* Keyboard-safe lift */
-let lastHeight=window.innerHeight;
-window.addEventListener("resize",()=>{
-  const a=document.getElementById("actions");
-  if(!a) return;
-  const h=window.innerHeight;
-  if(h<lastHeight-120){
-    a.style.bottom=(lastHeight-h+12)+"px";
-  }else{
-    a.style.bottom="env(safe-area-inset-bottom,12px)";
-  }
-  lastHeight=h;
-});
 </script>
 </body>
 </html>"""
