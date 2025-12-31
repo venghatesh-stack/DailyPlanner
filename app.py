@@ -5,7 +5,7 @@ import calendar
 import urllib.parse
 import json
 
-from supabase_client import get, post
+from supabase_client import get, post,delete
 from logger import setup_logger
 
 IST = ZoneInfo("Asia/Kolkata")
@@ -156,8 +156,11 @@ def load_todo(plan_date):
 
 
 def save_todo(plan_date, form):
-    # ✅ DELETE existing todos for the day (correct method)
-    delete(f"todo_matrix?plan_date=eq.{plan_date}")
+    # ✅ Proper DELETE with params dict
+    delete(
+        "todo_matrix",
+        params={"plan_date": f"eq.{plan_date}"}
+    )
 
     payload = []
     for q in ["do", "schedule", "delegate", "eliminate"]:
@@ -559,8 +562,9 @@ window.addEventListener("load", () => {
     block: "center"
   });
 
-  // Focus the textarea inside the current slot (if present)
-  const textarea = currentRow.querySelector("textarea");
+const taskRow = currentRow.nextElementSibling;
+if (taskRow) {
+  const textarea = taskRow.querySelector("textarea");
   if (textarea) {
     textarea.focus();
     textarea.setSelectionRange(
@@ -568,7 +572,8 @@ window.addEventListener("load", () => {
       textarea.value.length
     );
   }
-});
+}
+
 function slotToMinutes(slot) {
   return (slot - 1) * 30;
 }
