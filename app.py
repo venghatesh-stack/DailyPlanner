@@ -148,7 +148,10 @@ def planner():
     year = int(request.args.get("year", today.year))
     month = int(request.args.get("month", today.month))
     day = int(request.args.get("day", today.day))
+    last_day = calendar.monthrange(year, month)[1]
+    day = min(day, last_day)
     plan_date = date(year, month, day)
+
 
     if request.method == "POST":
       save_day(plan_date, request.form)
@@ -288,14 +291,7 @@ textarea { width:100%; min-height:90px; font-size:16px; }
       {% endfor %}{% endfor %}
     </select>
   </div>
-  <div class="day-strip">
-    {% for d in days %}
-    <a href="/?year={{year}}&month={{month}}&day={{d.day}}"
-      class="day-btn {% if d.day==selected_day %}selected{% endif %}">
-      {{d.day}}
-    </a>
-    {% endfor %}
-  </div>
+
   <div class="time-wheel">
     <label>To</label><br>
     <select id="timeTo">
@@ -306,13 +302,15 @@ textarea { width:100%; min-height:90px; font-size:16px; }
     </select>
   </div>
 </div>
-
 <div class="day-strip">
 {% for d in days %}
 <a href="/?year={{year}}&month={{month}}&day={{d.day}}"
-   class="day-btn {% if d.day==selected_day %}selected{% endif %}">{{d.day}}</a>
+   class="day-btn {% if d.day==selected_day %}selected{% endif %}">
+   {{d.day}}
+</a>
 {% endfor %}
 </div>
+
 
 <form method="post" id="planner-form">
 {% for slot in range(1,49) %}
