@@ -79,7 +79,7 @@ def google_calendar_link(plan_date, slot, task):
     return "https://calendar.google.com/calendar/render?" + urllib.parse.urlencode(params)
 
 # ===============================
-# DATA ACCESS
+# DATA ACCESS : Daily Planner
 # ===============================
 def load_day(plan_date):
     plans = {i: {"plan": "", "status": DEFAULT_STATUS} for i in range(1, TOTAL_SLOTS + 1)}
@@ -136,6 +136,48 @@ def save_day(plan_date, form):
         payload,
         prefer="resolution=merge-duplicates"
     )
+# ===============================
+# TODO MATRIX Eisenhower Matrix
+# ===============================
+def load_todo(plan_date):
+    rows = get(
+        "todo_matrix",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "select": "id,quadrant,task_text,status"
+        }
+    ) or []
+
+    data = {"do": [], "schedule": [], "delegate": [], "eliminate": []}
+    for r in rows:
+        data[r["quadrant"]].append(r)
+
+    return data
+
+
+def save_todo(plan_date, form):
+    # Clear existing for the day (simple + safe)
+    post(
+        f"todo_matrix?plan_date=eq.{plan_date}",
+        payload=[],
+        prefer="resolution=delete"
+    )
+
+    payload = []
+    for q in ["do", "schedule", "delegate", "eliminate"]:
+        text = form.get(q, "").strip()
+        if text:
+            for line in text.splitlines():
+                line = line.strip()
+                if line:
+                    payload.append({
+                        "plan_date": str(plan_date),
+                        "quadrant": q,
+                        "task_text": line
+                    })
+
+    if payload:
+        post("todo_matrix", payload)
 
 # ===============================
 # ROUTE
@@ -191,9 +233,33 @@ def plan_of_day():
         habit_icons=HABIT_ICONS,
         calendar=calendar
     )
-@app.route("/todo", methods=["GET"])
+@app.route("/todo", methods=["GET", "POST"])
 def todo_page():
-    return render_template_string(TODO_TEMPLATE)
+    today = datetime.now(IST).date()
+
+    year = int(request.args.get("year", today.year))
+    month = int(request.args.get("month", today.month))
+    day = int(request.args.get("day", today.day))
+    plan_date = date(year, month, day)
+
+    if request.method == "POST":
+        save_todo(plan_date, request.form)
+        return redirect(url_for(
+            "todo_page",
+            year=plan_date.year,
+            month=plan_date.month,
+            day=plan_date.day,
+            saved=1
+        ))
+
+    todo = load_todo(plan_date)
+
+    return render_template_string(
+        TODO_TEMPLATE,
+        todo=todo,
+        plan_date=plan_date,
+        saved=request.args.get("saved")
+    )
 
 # ===============================
 # TEMPLATE
