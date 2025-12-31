@@ -539,149 +539,25 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
 
 <script>
 function updateClock(){
-  const ist=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
-  document.getElementById("current-time").textContent=ist.toLocaleTimeString();
-  document.getElementById("current-date").textContent=ist.toDateString();
+  const ist = new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
+  document.getElementById("current-time").textContent = ist.toLocaleTimeString();
+  document.getElementById("current-date").textContent = ist.toDateString();
 }
-setInterval(updateClock,1000);updateClock();
-
-function activateRow(row){
-  document.querySelectorAll(".slot-row").forEach(r=>r.classList.remove("active"));
-  row.classList.add("active");
-}
+setInterval(updateClock,1000);
+updateClock();
 
 function cancelEdit(){
   const url = new URL(window.location.href);
-
-  // remove transient params
   url.searchParams.delete("saved");
-
-  // hard reload from server (discard client state)
-  window.location.replace(url.toString());
-}
-
-
-{% if saved %}
-setTimeout(()=>{ const t=document.getElementById("save-toast"); if(t) t.remove(); },2500);
-{% endif %}
-window.addEventListener("load", () => {
-  const currentRow = document.querySelector(".current-slot");
-  if (!currentRow) return;
-
-  // Scroll the current slot into view
-  currentRow.scrollIntoView({
-    behavior: "smooth",
-    block: "center"
-  });
-
-const taskRow = currentRow.nextElementSibling;
-if (taskRow) {
-  const textarea = taskRow.querySelector("textarea");
-  if (textarea) {
-    textarea.focus();
-    textarea.setSelectionRange(
-      textarea.value.length,
-      textarea.value.length
-    );
-  }
+  window.location.href = url.toString();   // hard reload
 }
 
 function slotToMinutes(slot) {
   return (slot - 1) * 30;
 }
-
 function timeToMinutes(timeStr) {
-  if (timeStr === "24:00") return 1440;
   const [h, m] = timeStr.split(":").map(Number);
   return h * 60 + m;
-}
-
-
-function applyTimeFilter() {
-  const fromTime = document.getElementById("timeFrom").value;
-  const toTime = document.getElementById("timeTo").value;
-
-  if (!fromTime || !toTime) return;
-
-  let fromMin = timeToMinutes(fromTime);
-  let toMinRaw = timeToMinutes(toTime);
-
-  // Enforce: To must be > From
-  if (toMinRaw <= fromMin) {
-    toMinRaw = fromMin + 30;
-    document.getElementById("timeTo").value = minutesToTime(toMinRaw);
-  }
-
-  // Enforce: From must be < To (symmetric)
-  if (fromMin >= toMinRaw) {
-    fromMin = toMinRaw - 30;
-    document.getElementById("timeFrom").value = minutesToTime(fromMin);
-  }
-
-  const toMin = toMinRaw + 30; // include end slot
-
-  document.querySelectorAll("tr[data-slot]").forEach(row => {
-    const slot = parseInt(row.dataset.slot, 10);
-    const slotMin = slotToMinutes(slot);
-    const slotEnd = slotMin + 30;
-
-    const visible = slotEnd > fromMin && slotMin < toMin;
-
-    let r = row;
-    for (let i = 0; i < 3; i++) {
-      if (r) {
-        r.style.display = visible ? "" : "none";
-        r = r.nextElementSibling;
-      }
-    }
-  });
-}
-
-
-// Bind events
-document.getElementById("timeFrom").addEventListener("change", applyTimeFilter);
-document.getElementById("timeTo").addEventListener("change", applyTimeFilter);
-
-// Apply default filter on load
-window.addEventListener("load", () => {
-  applyTimeFilter();
-
-  const currentRow = document.querySelector(".current-slot");
-  if (!currentRow || currentRow.style.display === "none") return;
-
-  currentRow.scrollIntoView({
-    behavior: "smooth",
-    block: "center"
-  });
-
-  const taskRow = currentRow.nextElementSibling;
-  if (taskRow) {
-    const textarea = taskRow.querySelector("textarea");
-    if (textarea) {
-      textarea.focus();
-      textarea.setSelectionRange(
-        textarea.value.length,
-        textarea.value.length
-      );
-    }
-  }
-});
-
-const STATUSES = {{ statuses | tojson }};
-
-function cycleStatus(el){
-  const select = el.nextElementSibling;
-  let idx = STATUSES.indexOf(select.value);
-  idx = (idx + 1) % STATUSES.length;
-
-  select.value = STATUSES[idx];
-  el.textContent = STATUSES[idx];
-
- el.className = "status-pill status-" + statusKey(STATUSES[idx]);
-
-}
-function statusKey(s){
-  return s.toLowerCase().replaceAll(" ","-");
 }
 function minutesToTime(mins) {
   const h = Math.floor(mins / 60) % 24;
@@ -689,7 +565,73 @@ function minutesToTime(mins) {
   return String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0");
 }
 
+function applyTimeFilter() {
+  const fromTime = document.getElementById("timeFrom").value;
+  const toTime = document.getElementById("timeTo").value;
+
+  let fromMin = timeToMinutes(fromTime);
+  let toMin = timeToMinutes(toTime) + 30;
+
+  document.querySelectorAll("tr[data-slot]").forEach(row => {
+    const slot = parseInt(row.dataset.slot,10);
+    const slotMin = slotToMinutes(slot);
+    const visible = slotMin < toMin && (slotMin + 30) > fromMin;
+
+    let r = row;
+    for (let i=0;i<3;i++){
+      if(r){
+        r.style.display = visible ? "" : "none";
+        r = r.nextElementSibling;
+      }
+    }
+  });
+}
+
+window.addEventListener("load", () => {
+  applyTimeFilter();
+
+  // 🔹 Scroll current DATE (day button) into view
+  const selectedDay = document.querySelector(".day-btn.selected");
+  if (selectedDay){
+    selectedDay.scrollIntoView({
+      behavior: "smooth",
+      inline: "center"
+    });
+  }
+
+  // 🔹 Scroll current TIME slot into view
+  const currentRow = document.querySelector(".current-slot");
+  if (!currentRow) return;
+
+  currentRow.scrollIntoView({
+    behavior: "smooth",
+    block: "center"
+  });
+
+  // 🔹 Focus textarea of current slot
+  const textarea = currentRow.nextElementSibling?.querySelector("textarea");
+  if (textarea){
+    textarea.focus();
+    textarea.setSelectionRange(
+      textarea.value.length,
+      textarea.value.length
+    );
+  }
+});
+
+document.getElementById("timeFrom").addEventListener("change", applyTimeFilter);
+document.getElementById("timeTo").addEventListener("change", applyTimeFilter);
+
+const STATUSES = {{ statuses | tojson }};
+function cycleStatus(el){
+  const select = el.nextElementSibling;
+  let i = (STATUSES.indexOf(select.value)+1)%STATUSES.length;
+  select.value = STATUSES[i];
+  el.textContent = STATUSES[i];
+  el.className = "status-pill status-" + STATUSES[i].toLowerCase().replaceAll(" ","-");
+}
 </script>
+
 
 </body>
 </html>
@@ -701,7 +643,15 @@ TODO_TEMPLATE = """
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 body { font-family:system-ui; background:#f6f7f9; padding:16px; }
-.container { max-width:1100px; margin:auto; background:#fff; padding:20px; border-radius:14px; }
+.container {
+  max-width:1100px;
+  margin:auto;
+  background:#fff;
+  padding:20px;
+  padding-top:28px;   /* 🔑 FIX */
+  border-radius:14px;
+}
+
 .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
 .matrix { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
 .quadrant { border-radius:12px; padding:14px; border:1px solid #e5e7eb; background:#f9fafb; }
