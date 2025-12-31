@@ -20,7 +20,6 @@ STATUSES = [
     "Closed",
     "Deferred",
 ]
-
 DEFAULT_STATUS = "Yet to Start"
 
 # ===============================
@@ -39,11 +38,7 @@ def current_slot():
 # DATA – DAILY PLANNER
 # ===============================
 def load_day(plan_date):
-    plans = {
-        i: {"text": "", "status": DEFAULT_STATUS}
-        for i in range(1, TOTAL_SLOTS + 1)
-    }
-
+    plans = {i: {"text": "", "status": DEFAULT_STATUS} for i in range(1, TOTAL_SLOTS + 1)}
     rows = get(
         "daily_slots",
         params={"plan_date": f"eq.{plan_date}", "select": "slot,plan,status"},
@@ -55,16 +50,13 @@ def load_day(plan_date):
                 "text": r.get("plan") or "",
                 "status": r.get("status") or DEFAULT_STATUS,
             }
-
     return plans
 
 def save_day(plan_date, form):
     payload = []
-
     for slot in range(1, TOTAL_SLOTS + 1):
         text = form.get(f"plan_{slot}", "").strip()
         status = form.get(f"status_{slot}", DEFAULT_STATUS)
-
         if text:
             payload.append({
                 "plan_date": str(plan_date),
@@ -72,9 +64,6 @@ def save_day(plan_date, form):
                 "plan": text,
                 "status": status,
             })
-
-    logger.info("Planner save payload size: %d", len(payload))
-
     if payload:
         post(
             "daily_slots?on_conflict=plan_date,slot",
@@ -104,7 +93,6 @@ def save_habits(plan_date, form):
         "habit": h,
         "done": form.get(f"habit_{h}") == "on"
     } for h in HABITS]
-
     post(
         "daily_habits?on_conflict=plan_date,habit",
         payload,
@@ -158,49 +146,115 @@ def planner():
         habits=load_habits(plan_date),
         habit_list=HABITS,
         reflection=load_reflection(plan_date),
+        STATUSES=STATUSES,
     )
 
 # ===============================
 # TEMPLATE
 # ===============================
-TEMPLATE = """<!DOCTYPE html>
+TEMPLATE = """
+<!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 body { font-family:system-ui; background:#f6f7f9; padding:12px; padding-bottom:140px; }
 .container { max-width:1100px; margin:auto; background:#fff; padding:16px; border-radius:14px; }
-.slot { margin-bottom:12px; }
+.header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.header-time { font-weight:700; color:#2563eb; }
+
+.day-strip { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+.day-btn {
+  width:36px; height:36px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid #ddd; text-decoration:none; color:#000;
+}
+.day-btn.selected { background:#2563eb; color:#fff; }
+
+.slot {
+  margin-bottom:14px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.current-slot { background:#eef2ff; border-left:4px solid #2563eb; padding-left:8px; }
+
 textarea { width:100%; min-height:90px; font-size:16px; }
+
 .status-pill {
-  margin-top:6px;
-  padding:6px 10px;
+  align-self:flex-start;
+  padding:6px 12px;
   border-radius:999px;
   border:1px solid #ddd;
   background:#f9fafb;
   font-size:14px;
 }
+
 .floating-bar {
-  position:fixed; bottom:0; left:0; right:0;
-  background:#fff; border-top:1px solid #ddd;
-  display:flex; gap:10px; padding:10px;
+  position:fixed;
+  bottom:env(safe-area-inset-bottom);
+  left:0; right:0;
+  background:#fff;
+  border-top:1px solid #ddd;
+  display:flex;
+  gap:10px;
+  padding:10px;
+  z-index:9999;
 }
 .floating-bar button { flex:1; padding:14px; font-size:16px; }
+
+.time-filter { display:flex; gap:20px; margin-bottom:12px; }
+.time-wheel select { height:120px; width:90px; font-size:16px; }
 </style>
 </head>
-<body>
 
+<body>
 {% if request.args.get("saved") %}
-<div style="position:fixed;top:16px;left:50%;transform:translateX(-50%);
-background:#16a34a;color:white;padding:12px 18px;border-radius:10px;">
-✅ Data saved successfully
+<div id="toast"
+     style="position:fixed;top:16px;left:50%;transform:translateX(-50%);
+            background:#16a34a;color:white;padding:12px 18px;border-radius:10px;
+            font-weight:600;z-index:10000;">
+  ✅ Data saved successfully
 </div>
+<script>
+setTimeout(()=>{const t=document.getElementById("toast");if(t)t.remove();},2000);
+</script>
 {% endif %}
 
 <div class="container">
+<div class="header">
+  <a href="/todo" style="font-weight:600;color:#2563eb;text-decoration:none;">📋 To-Do Matrix</a>
+  <div class="header-time">🕒 <span id="current-time"></span> IST</div>
+</div>
+
+<form method="get" style="display:flex;gap:8px;margin-bottom:12px;">
+  <input type="hidden" name="day" value="{{selected_day}}">
+  <select name="month" onchange="this.form.submit()">
+    {% for m in range(1,13) %}
+      <option value="{{m}}" {% if m==month %}selected{% endif %}>
+        {{calendar.month_name[m]}}
+      </option>
+    {% endfor %}
+  </select>
+  <select name="year" onchange="this.form.submit()">
+    {% for y in range(year-5, year+6) %}
+      <option value="{{y}}" {% if y==year %}selected{% endif %}>{{y}}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<div class="day-strip">
+{% for d in days %}
+<a href="/?year={{year}}&month={{month}}&day={{d.day}}"
+   class="day-btn {% if d.day==selected_day %}selected{% endif %}">
+  {{d.day}}
+</a>
+{% endfor %}
+</div>
+
 <form method="post" id="planner-form">
 {% for slot in range(1,49) %}
-<div class="slot">
+<div class="slot {% if now_slot==slot %}current-slot{% endif %}">
   <b>{{slot_labels[slot]}}</b>
   <textarea name="plan_{{slot}}">{{plans[slot].text}}</textarea>
 
@@ -210,29 +264,57 @@ background:#16a34a;color:white;padding:12px 18px;border-radius:10px;">
   </button>
 </div>
 {% endfor %}
+
+<hr style="margin:24px 0;">
+
+<h3>✅ Habits</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+{% for h in habit_list %}
+<label style="display:flex;align-items:center;gap:8px;">
+  <input type="checkbox" name="habit_{{h}}" {% if habits.get(h) %}checked{% endif %}> {{h}}
+</label>
+{% endfor %}
+</div>
+
+<hr style="margin:24px 0;">
+<h3>📝 Reflection of the Day</h3>
+<textarea name="reflection" style="min-height:120px;">{{reflection}}</textarea>
 </form>
 </div>
 
 <div class="floating-bar">
   <button type="submit" form="planner-form">Save</button>
+  <button type="button" onclick="window.history.back()">Cancel</button>
 </div>
 
 <!-- STATUS POPUP -->
 <div id="status-popup" style="display:none;position:fixed;inset:0;
-background:rgba(0,0,0,0.4);align-items:center;justify-content:center;">
+background:rgba(0,0,0,0.4);z-index:10000;align-items:center;justify-content:center;">
   <div style="background:white;border-radius:12px;padding:12px;width:300px;">
+    <h3>Select Status</h3>
     {% for s in STATUSES %}
-    <button style="width:100%;padding:10px;margin:6px 0;"
-            onclick="selectStatus('{{s}}')">{{s}}</button>
+    <button style="width:100%;padding:10px;margin:6px 0;" onclick="selectStatus('{{s}}')">{{s}}</button>
     {% endfor %}
     <button style="width:100%;padding:10px;" onclick="closeStatusPopup()">Cancel</button>
   </div>
 </div>
 
 <script>
+function updateClock(){
+  const ist=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
+  document.getElementById("current-time").textContent=ist.toLocaleTimeString();
+}
+setInterval(updateClock,1000);updateClock();
+
 let activeSlot=null;
-function openStatusPopup(slot){activeSlot=slot;document.getElementById("status-popup").style.display="flex";}
-function closeStatusPopup(){document.getElementById("status-popup").style.display="none";activeSlot=null;}
+function openStatusPopup(slot){
+  activeSlot=slot;
+  document.getElementById("status-popup").style.display="flex";
+}
+function closeStatusPopup(){
+  document.getElementById("status-popup").style.display="none";
+  activeSlot=null;
+}
 function selectStatus(s){
   const i=document.getElementById("status_"+activeSlot);
   i.value=s;
@@ -240,7 +322,6 @@ function selectStatus(s){
   closeStatusPopup();
 }
 </script>
-
 </body>
 </html>
 """
