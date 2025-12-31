@@ -213,7 +213,16 @@ def save_todo(plan_date, form):
 
     # 2️⃣ Notes + move-to-quadrant handling
     notes_raw = form.get("notes", "")
-    notes_lines = [l.strip() for l in notes_raw.splitlines() if l.strip()]
+
+# Normalize notes to avoid Supabase 400 errors
+notes_lines = []
+for line in notes_raw.splitlines():
+    line = line.strip()
+    if not line:
+        continue
+    # Hard safety limit per line
+    notes_lines.append(line[:300])
+
 
     move_map = {
         "do": set(form.getlist("move_to_do")),
@@ -247,7 +256,7 @@ def save_todo(plan_date, form):
         payload.append({
             "plan_date": str(plan_date),
             "quadrant": "notes",
-            "task_text": "\n".join(remaining_notes),
+            "task_text": "\n".join(remaining_notes)[:2000],
             "is_done": False,
             "position": -1
         })
