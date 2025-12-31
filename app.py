@@ -324,12 +324,15 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
 
 <div class="header-bar">
   <div id="current-date"></div>
-  <div class="header-time">🕒 <span id="current-time"></span> IST</div>
+
   <div style="display:flex; gap:14px; align-items:center;">
     <a href="/todo" style="text-decoration:none;font-weight:600;color:#2563eb;">
       📋 To-Do Matrix
     </a>
+    <div class="header-time">🕒 <span id="current-time"></span> IST</div>
+  </div>
 </div>
+
 
 <form method="get" class="month-controls">
   <input type="hidden" name="day" value="{{ selected_day }}">
