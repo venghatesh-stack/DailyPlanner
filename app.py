@@ -237,8 +237,14 @@ def planner():
     year = int(request.args.get("year", today.year))
     month = int(request.args.get("month", today.month))
     day_param = request.args.get("day")
-    plan_date = date(year, month, int(day_param)) if day_param else today
-
+    if day_param:
+      day = int(day_param)
+      last_day = calendar.monthrange(year, month)[1]
+      day = min(day, last_day)
+      plan_date = date(year, month, day)
+    else:
+      plan_date = today
+      
     if request.method == "POST":
         save_day(plan_date, request.form)
         return redirect(url_for("planner", year=year, month=month, day=plan_date.day, saved=1))
