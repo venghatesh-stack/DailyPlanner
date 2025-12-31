@@ -440,6 +440,19 @@ body { font-family:system-ui; background:#f6f7f9; padding:16px; }
   color:#2563eb;
   cursor:pointer;
 }
+.del-btn {
+  border: none;
+  background: #ef4444;
+  color: #fff;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
 </style>
 </head>
 
@@ -451,7 +464,8 @@ body { font-family:system-ui; background:#f6f7f9; padding:16px; }
   <a href="/">⬅ Daily Planner</a>
 </div>
 
-<form method="post">
+<form method="post" onkeydown="return event.key !== 'Enter';">
+
 
 <div class="matrix">
 
@@ -463,10 +477,12 @@ body { font-family:system-ui; background:#f6f7f9; padding:16px; }
     {% for t in tasks %}
     <div class="task-row {% if t.done %}done{% endif %}">
       <input type="hidden" name="{{key}}_done[]" value="{{ 1 if t.done else 0 }}">
+      <button type="button" class="del-btn" onclick="deleteTask(this)">−</button>
       <input type="checkbox" {% if t.done %}checked{% endif %}
-             onclick="toggleDone(this)">
+            onclick="toggleDone(this)">
       <input type="text" name="{{key}}_text[]" value="{{t.text}}">
     </div>
+
     {% endfor %}
   </div>
 
