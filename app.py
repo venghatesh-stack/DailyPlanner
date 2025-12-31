@@ -1,4 +1,3 @@
-
 from flask import Flask, request, redirect, url_for, render_template_string
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -191,6 +190,42 @@ def save_todo(plan_date, form):
 
     if payload:
         post("todo_matrix", payload)
+def google_calendar_link_eisenhower(plan_date, quadrant, task):
+    if not task or quadrant == "eliminate":
+        return "#"
+
+    QUADRANT_TIME = {
+        "do": (9, 10),
+        "schedule": (11, 12),
+        "delegate": (14, 15),
+    }
+
+    start_hour, end_hour = QUADRANT_TIME.get(quadrant, (9, 10))
+
+    start_ist = datetime.combine(
+        plan_date,
+        datetime.min.time(),
+        tzinfo=IST
+    ) + timedelta(hours=start_hour)
+
+    end_ist = datetime.combine(
+        plan_date,
+        datetime.min.time(),
+        tzinfo=IST
+    ) + timedelta(hours=end_hour)
+
+    start_utc = start_ist.astimezone(ZoneInfo("UTC"))
+    end_utc = end_ist.astimezone(ZoneInfo("UTC"))
+
+    params = {
+        "action": "TEMPLATE",
+        "text": task,
+        "dates": f"{start_utc.strftime('%Y%m%dT%H%M%SZ')}/{end_utc.strftime('%Y%m%dT%H%M%SZ')}",
+        "details": "Created from Eisenhower Matrix",
+        "trp": "false"
+    }
+
+    return "https://calendar.google.com/calendar/render?" + urllib.parse.urlencode(params)
 
 # ==========================================================
 # ROUTES – DAILY PLANNER
@@ -261,7 +296,8 @@ def todo():
     return render_template_string(
         TODO_TEMPLATE,
         todo=todo,
-        plan_date=plan_date
+        plan_date=plan_date,
+        calendar_link=google_calendar_link_eisenhower
     )
 
 # ==========================================================
@@ -460,11 +496,18 @@ body { font-family: system-ui; background:#f6f7f9; padding:16px; }
 
 <div id="{{q}}">
 {% for t in todo[q] %}
-  <div class="task">
-    <input type="checkbox" name="done[]" value="{{loop.index0}}" {% if t.done %}checked{% endif %}>
-    <input type="text" name="{{q}}[]" value="{{t.text}}">
-    <button type="button" onclick="this.parentElement.remove()">−</button>
-  </div>
+ <div class="task">
+  <input type="checkbox" name="done[]" value="{{loop.index0}}" {% if t.done %}checked{% endif %}>
+
+  <input type="text" name="{{q}}[]" value="{{t.text}}">
+
+  {% if q != 'eliminate' and t.text %}
+    <a href="{{ calendar_link(plan_date, q, t.text) }}" target="_blank">⏰</a>
+  {% endif %}
+
+  <button type="button" onclick="this.parentElement.remove()">−</button>
+</div>
+
 {% endfor %}
 </div>
 
