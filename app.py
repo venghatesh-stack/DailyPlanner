@@ -284,8 +284,9 @@ setTimeout(()=>{const t=document.getElementById("toast");if(t)t.remove();},2000)
 
 <div class="floating-bar">
   <button type="submit" form="planner-form">Save</button>
-  <button type="button" onclick="window.history.back()">Cancel</button>
+  <button type="button" onclick="handleCancel()">Cancel</button>
 </div>
+
 
 <!-- STATUS POPUP -->
 <div id="status-popup" style="display:none;position:fixed;inset:0;
@@ -321,6 +322,11 @@ function selectStatus(s){
   i.parentElement.querySelector(".status-pill").textContent=s+" ▾";
   closeStatusPopup();
 }
+function handleCancel() {
+  alert("Any uncommitted changes would be lost");
+  // intentionally do nothing else
+}
+
 </script>
 </body>
 </html>
