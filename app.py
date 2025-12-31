@@ -184,7 +184,7 @@ def save_todo(plan_date, form):
 
     payload = []
 
-    # Track next position per quadrant to avoid conflicts
+    # Track next position per quadrant
     position_counter = {
         "do": 0,
         "schedule": 0,
@@ -192,7 +192,7 @@ def save_todo(plan_date, form):
         "eliminate": 0
     }
 
-    # 1️⃣ Save existing quadrant tasks
+    # 1️⃣ Save quadrant tasks
     for quadrant in ["do", "schedule", "delegate", "eliminate"]:
         lines = form.getlist(f"{quadrant}[]")
         done_flags = set(form.getlist("done[]"))
@@ -211,19 +211,18 @@ def save_todo(plan_date, form):
             })
             position_counter[quadrant] += 1
 
-    # 2️⃣ Notes + move-to-quadrant handling
+    # 2️⃣ NOTES — DEFINE FIRST (THIS FIXES YOUR CRASH)
     notes_raw = form.get("notes", "")
 
-# Normalize notes to avoid Supabase 400 errors
-notes_lines = []
-for line in notes_raw.splitlines():
-    line = line.strip()
-    if not line:
-        continue
-    # Hard safety limit per line
-    notes_lines.append(line[:300])
+    notes_lines = []
+    for line in notes_raw.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        # hard safety bound
+        notes_lines.append(line[:300])
 
-
+    # 3️⃣ Move-to-quadrant selections (safe even if none exist)
     move_map = {
         "do": set(form.getlist("move_to_do")),
         "schedule": set(form.getlist("move_to_schedule")),
@@ -251,7 +250,7 @@ for line in notes_raw.splitlines():
         if not moved:
             remaining_notes.append(line)
 
-    # 3️⃣ Persist remaining notes
+    # 4️⃣ Persist remaining notes (reserved position avoids conflicts)
     if remaining_notes:
         payload.append({
             "plan_date": str(plan_date),
@@ -263,6 +262,7 @@ for line in notes_raw.splitlines():
 
     if payload:
         post("todo_matrix", payload)
+
 
 
 def google_calendar_link_eisenhower(plan_date, quadrant, task):
