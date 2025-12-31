@@ -195,7 +195,7 @@ def planner():
         reflection=reflection,
         habit_list=HABIT_LIST,
         habit_icons=HABIT_ICONS,
-        statuses=STATUSES,
+        STATUSES=STATUSES,
         google_calendar_links={
             s: google_calendar_link(plan_date, s, plans[s]["plan"])
             for s in range(1, TOTAL_SLOTS + 1)
