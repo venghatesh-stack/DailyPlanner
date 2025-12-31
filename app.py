@@ -83,6 +83,51 @@ def save_todo(plan_date, form):
                 })
     if payload:
         post("todo_matrix", payload)
+# ===============================
+# DATA – HABITS & REFLECTION
+# ===============================
+HABITS = [
+    "Walking",
+    "Water",
+    "No Shopping",
+    "No TimeWastage",
+    "8 hrs sleep",
+    "Daily prayers",
+]
+
+def load_habits(plan_date):
+    rows = get(
+        "daily_habits",
+        params={"plan_date": f"eq.{plan_date}"}
+    ) or []
+    return {r["habit"]: r["done"] for r in rows}
+
+def save_habits(plan_date, form):
+    delete("daily_habits", params={"plan_date": f"eq.{plan_date}"})
+    payload = []
+    for h in HABITS:
+        payload.append({
+            "plan_date": str(plan_date),
+            "habit": h,
+            "done": form.get(f"habit_{h}") == "on"
+        })
+    post("daily_habits", payload)
+
+def load_reflection(plan_date):
+    rows = get(
+        "daily_reflection",
+        params={"plan_date": f"eq.{plan_date}", "select": "reflection"}
+    ) or []
+    return rows[0]["reflection"] if rows else ""
+
+def save_reflection(plan_date, form):
+    text = form.get("reflection", "").strip()
+    delete("daily_reflection", params={"plan_date": f"eq.{plan_date}"})
+    if text:
+        post("daily_reflection", {
+            "plan_date": str(plan_date),
+            "reflection": text
+        })
 
 # ===============================
 # ROUTES
@@ -96,8 +141,11 @@ def planner():
     plan_date = date(year, month, day)
 
     if request.method == "POST":
-        save_day(plan_date, request.form)
-        return redirect(url_for("planner", year=year, month=month, day=day))
+      save_day(plan_date, request.form)
+      save_habits(plan_date, request.form)
+      save_reflection(plan_date, request.form)
+      return redirect(url_for("planner", year=year, month=month, day=day))
+
 
     return render_template_string(
         TEMPLATE,
@@ -109,6 +157,10 @@ def planner():
         now_slot=current_slot() if plan_date == today else None,
         slot_labels={i: slot_label(i) for i in range(1, TOTAL_SLOTS + 1)},
         calendar=calendar,
+        habits=load_habits(plan_date),
+        habit_list=HABITS,
+        reflection=load_reflection(plan_date),
+
     )
 
 @app.route("/todo", methods=["GET", "POST"])
@@ -185,6 +237,23 @@ textarea { width:100%; min-height:90px; font-size:16px; }
       <option value="{{y}}" {% if y==year %}selected{% endif %}>{{y}}</option>
     {% endfor %}
   </select>
+  <hr style="margin:24px 0;">
+
+<h3>✅ Habits</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+  {% for h in habit_list %}
+  <label style="display:flex;align-items:center;gap:8px;">
+    <input type="checkbox" name="habit_{{h}}" {% if habits.get(h) %}checked{% endif %}>
+    {{h}}
+  </label>
+  {% endfor %}
+</div>
+
+<hr style="margin:24px 0;">
+
+<h3>📝 Reflection of the Day</h3>
+<textarea name="reflection" style="min-height:120px;">{{reflection}}</textarea>
+
 </form>
 
 <div class="time-filter">
