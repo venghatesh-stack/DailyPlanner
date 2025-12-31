@@ -148,26 +148,47 @@ def save_day(plan_date, form):
 # ===============================
 # TODO MATRIX
 # ===============================
+# ===============================
+# TODO MATRIX – DATA
+# ===============================
 def load_todo(plan_date):
-    rows = get("todo_matrix", params={"plan_date": f"eq.{plan_date}"}) or []
+    rows = get(
+        "todo_matrix",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "select": "quadrant,task_text,is_done,position",
+            "order": "position.asc"
+        }
+    ) or []
+
     data = {"do": [], "schedule": [], "delegate": [], "eliminate": []}
     for r in rows:
-        data[r["quadrant"]].append(r["task_text"])
+        data[r["quadrant"]].append({
+            "text": r["task_text"],
+            "done": bool(r.get("is_done")),
+        })
     return data
 
+
 def save_todo(plan_date, form):
+    # Clear existing tasks for the day
     delete("todo_matrix", params={"plan_date": f"eq.{plan_date}"})
+
     payload = []
-    for q in ["do", "schedule", "delegate", "eliminate"]:
-        for line in form.get(q, "").splitlines():
-            if line.strip():
-                payload.append(
-                    {
-                        "plan_date": str(plan_date),
-                        "quadrant": q,
-                        "task_text": line.strip(),
-                    }
-                )
+    for quadrant in ["do", "schedule", "delegate", "eliminate"]:
+        texts = form.getlist(f"{quadrant}_text[]")
+        dones = form.getlist(f"{quadrant}_done[]")
+
+        for idx, text in enumerate(texts):
+            if text.strip():
+                payload.append({
+                    "plan_date": str(plan_date),
+                    "quadrant": quadrant,
+                    "task_text": text.strip(),
+                    "is_done": dones[idx] == "1",
+                    "position": idx,
+                })
+
     if payload:
         post("todo_matrix", payload)
 
@@ -367,62 +388,138 @@ function cycleStatus(el){
 """
 
 # ===============================
-# TEMPLATE – TODO MATRIX
+# TEMPLATE – TODO Eisenhower MATRIX
 # ===============================
 TODO_TEMPLATE = """<!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body{font-family:system-ui;background:#f6f7f9;padding:16px;}
-.container{max-width:1100px;margin:auto;background:#fff;padding:20px;border-radius:14px;}
-.matrix{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-.quad{border:1px solid #e5e7eb;border-radius:12px;padding:14px;}
-input[type=text]{width:100%;padding:6px;font-size:15px;}
-.day-strip{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
-.day-btn{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid #ddd;text-decoration:none;color:#000;}
-.day-btn.selected{background:#2563eb;color:#fff;}
-@media(max-width:768px){.matrix{grid-template-columns:1fr}}
+body { font-family:system-ui; background:#f6f7f9; padding:16px; }
+.container { max-width:1100px; margin:auto; background:#fff; padding:20px; border-radius:14px; }
+
+.header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+
+.matrix {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+@media(max-width:768px){ .matrix{ grid-template-columns:1fr; } }
+
+.quad {
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:14px;
+  background:#f9fafb;
+}
+
+.task-row {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:6px;
+}
+
+.task-row input[type="text"] {
+  flex:1;
+  padding:6px;
+  font-size:15px;
+}
+
+.task-row.done input[type="text"] {
+  text-decoration:line-through;
+  opacity:0.6;
+}
+
+.add-btn {
+  margin-top:8px;
+  font-size:14px;
+  background:none;
+  border:none;
+  color:#2563eb;
+  cursor:pointer;
+}
 </style>
 </head>
+
 <body>
 <div class="container">
-<h2>Eisenhower Matrix</h2>
 
-<form method="get" style="display:flex;gap:8px;margin-bottom:12px;">
-<input type="hidden" name="day" value="{{day}}">
-<select name="month" onchange="this.form.submit()">
-{% for m in range(1,13) %}
-<option value="{{m}}" {% if m==month %}selected{% endif %}>{{calendar.month_name[m]}}</option>
-{% endfor %}
-</select>
-<select name="year" onchange="this.form.submit()">
-{% for y in range(year-5,year+6) %}
-<option value="{{y}}" {% if y==year %}selected{% endif %}>{{y}}</option>
-{% endfor %}
-</select>
-</form>
-
-<div class="day-strip">
-{% for d in days %}
-<a href="/todo?year={{year}}&month={{month}}&day={{d.day}}" class="day-btn {% if d.day==day %}selected{% endif %}">{{d.day}}</a>
-{% endfor %}
+<div class="header">
+  <h2>📋 Eisenhower Matrix – {{ plan_date }}</h2>
+  <a href="/">⬅ Daily Planner</a>
 </div>
-
-<a href="/">⬅ Daily Planner</a>
 
 <form method="post">
+
 <div class="matrix">
-<div class="quad"><h3>🔥 Do</h3>{% for t in todo.do %}<input type="text" name="do" value="{{t}}">{% endfor %}</div>
-<div class="quad"><h3>📅 Schedule</h3>{% for t in todo.schedule %}<input type="text" name="schedule" value="{{t}}">{% endfor %}</div>
-<div class="quad"><h3>🤝 Delegate</h3>{% for t in todo.delegate %}<input type="text" name="delegate" value="{{t}}">{% endfor %}</div>
-<div class="quad"><h3>🗑 Eliminate</h3>{% for t in todo.eliminate %}<input type="text" name="eliminate" value="{{t}}">{% endfor %}</div>
+
+{% macro quadrant(title, key, tasks) %}
+<div class="quad">
+  <h3>{{ title }}</h3>
+
+  <div class="tasks" data-q="{{key}}">
+    {% for t in tasks %}
+    <div class="task-row {% if t.done %}done{% endif %}">
+      <input type="hidden" name="{{key}}_done[]" value="{{ 1 if t.done else 0 }}">
+      <input type="checkbox" {% if t.done %}checked{% endif %}
+             onclick="toggleDone(this)">
+      <input type="text" name="{{key}}_text[]" value="{{t.text}}">
+    </div>
+    {% endfor %}
+  </div>
+
+  <button type="button" class="add-btn" onclick="addTask('{{key}}')">
+    + Add task
+  </button>
 </div>
-<button style="margin-top:16px;padding:14px;width:100%;">💾 Save</button>
+{% endmacro %}
+
+{{ quadrant("🔥 Do Now", "do", todo.do) }}
+{{ quadrant("📅 Schedule", "schedule", todo.schedule) }}
+{{ quadrant("🤝 Delegate", "delegate", todo.delegate) }}
+{{ quadrant("🗑 Eliminate", "eliminate", todo.eliminate) }}
+
+</div>
+
+<button style="margin-top:16px;padding:14px;width:100%;font-size:16px;">
+  💾 Save
+</button>
+
 </form>
 </div>
+
+<script>
+function addTask(q){
+  const box = document.querySelector(`.tasks[data-q='${q}']`);
+  const row = document.createElement("div");
+  row.className = "task-row";
+  row.innerHTML = `
+    <input type="hidden" name="${q}_done[]" value="0">
+    <input type="checkbox" onclick="toggleDone(this)">
+    <input type="text" name="${q}_text[]" value="">
+  `;
+  box.appendChild(row);
+  row.querySelector("input[type=text]").focus();
+}
+
+function toggleDone(cb){
+  const row = cb.parentElement;
+  const hidden = row.querySelector("input[type=hidden]");
+  if(cb.checked){
+    row.classList.add("done");
+    hidden.value = "1";
+  } else {
+    row.classList.remove("done");
+    hidden.value = "0";
+  }
+}
+</script>
+
 </body>
 </html>
+
 """
 
 if __name__ == "__main__":
