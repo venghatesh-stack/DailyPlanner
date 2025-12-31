@@ -267,7 +267,158 @@ def todo():
 # ==========================================================
 # TEMPLATE – DAILY PLANNER (UNCHANGED, STABLE)
 # ==========================================================
-PLANNER_TEMPLATE = """<-- SAME AS YOUR RESTORED VERSION, UNCHANGED -->"""
+##PLANNER_TEMPLATE = """<-- SAME AS YOUR RESTORED VERSION, UNCHANGED -->"""
+
+PLANNER_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body { font-family: system-ui; background:#f6f7f9; padding:12px; padding-bottom:220px; }
+.container { max-width:1100px; margin:auto; background:#fff; padding:16px; border-radius:14px; }
+
+.header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.header a { font-weight:600; text-decoration:none; }
+.time { color:#2563eb; font-weight:700; }
+
+.month-controls { display:flex; gap:8px; margin-bottom:12px; }
+.day-strip { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+
+.day-btn {
+  width:36px; height:36px;
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid #ddd;
+  text-decoration:none; color:#000;
+}
+.day-btn.selected { background:#2563eb; color:#fff; }
+
+.slot { border-bottom:1px solid #eee; padding-bottom:12px; margin-bottom:12px; }
+.current { background:#eef2ff; border-left:4px solid #2563eb; padding-left:8px; }
+
+textarea { width:100%; min-height:90px; font-size:15px; }
+
+.status-pill {
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  font-weight:600;
+  cursor:pointer;
+}
+.status-Nothing\\ Planned { background:#e5e7eb; }
+.status-Yet\\ to\\ Start { background:#fde68a; }
+.status-In\\ Progress { background:#bfdbfe; }
+.status-Closed { background:#bbf7d0; }
+.status-Deferred { background:#fecaca; }
+
+.floating-bar {
+  position:fixed;
+  bottom:env(safe-area-inset-bottom,0);
+  left:0; right:0;
+  background:#fff;
+  border-top:1px solid #ddd;
+  padding:10px;
+  display:flex;
+  gap:10px;
+}
+.floating-bar button { flex:1; padding:14px; font-size:16px; }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+  <div>{{ today }}</div>
+  <div>
+    <a href="/todo">📋 Eisenhower</a>
+    &nbsp;&nbsp;
+    <span class="time">🕒 <span id="clock"></span> IST</span>
+  </div>
+</div>
+
+<form method="get" class="month-controls">
+  <input type="hidden" name="day" value="{{ selected_day }}">
+  <select name="month" onchange="this.form.submit()">
+    {% for m in range(1,13) %}
+      <option value="{{m}}" {% if m==month %}selected{% endif %}>
+        {{ calendar.month_name[m] }}
+      </option>
+    {% endfor %}
+  </select>
+  <select name="year" onchange="this.form.submit()">
+    {% for y in range(year-5, year+6) %}
+      <option value="{{y}}" {% if y==year %}selected{% endif %}>{{y}}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<div class="day-strip">
+{% for d in days %}
+<a href="/?year={{year}}&month={{month}}&day={{d.day}}"
+   class="day-btn {% if d.day==selected_day %}selected{% endif %}">
+  {{d.day}}
+</a>
+{% endfor %}
+</div>
+
+<form method="post" id="planner-form">
+{% for slot in plans %}
+<div class="slot {% if now_slot==slot %}current{% endif %}">
+  <strong>{{ slot_labels[slot] }}</strong>
+  {% if plans[slot].plan %}
+    <a href="{{ reminder_links[slot] }}" target="_blank">⏰</a>
+  {% endif %}
+  <textarea name="plan_{{slot}}">{{ plans[slot].plan }}</textarea>
+
+  <div class="status-pill status-{{ plans[slot].status }}" onclick="cycleStatus(this)">
+    {{ plans[slot].status }}
+    <input type="hidden" name="status_{{slot}}" value="{{ plans[slot].status }}">
+  </div>
+</div>
+{% endfor %}
+
+<h3>🏃 Habits</h3>
+{% for h in habit_list %}
+<label>
+  <input type="checkbox" name="habits" value="{{h}}" {% if h in habits %}checked{% endif %}>
+  {{ habit_icons[h] }} {{h}}
+</label><br>
+{% endfor %}
+
+<h3>📝 Reflection</h3>
+<textarea name="reflection">{{ reflection }}</textarea>
+
+</form>
+</div>
+
+<div class="floating-bar">
+  <button type="submit" form="planner-form">💾 Save</button>
+  <button type="button" onclick="window.location.reload()">❌ Cancel</button>
+</div>
+
+<script>
+function updateClock(){
+  const ist = new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
+  document.getElementById("clock").textContent = ist.toLocaleTimeString();
+}
+setInterval(updateClock,1000); updateClock();
+
+const STATUS_ORDER = {{ statuses|tojson }};
+function cycleStatus(el){
+  const input = el.querySelector("input");
+  let idx = STATUS_ORDER.indexOf(input.value);
+  idx = (idx + 1) % STATUS_ORDER.length;
+  input.value = STATUS_ORDER[idx];
+  el.childNodes[0].nodeValue = STATUS_ORDER[idx] + " ";
+}
+</script>
+
+</body>
+</html>
+"""
 # NOTE: Use the exact PLANNER_TEMPLATE you already validated as correct.
 # (Intentionally not duplicated again to avoid accidental edits.)
 
