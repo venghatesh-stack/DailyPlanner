@@ -191,6 +191,9 @@ def plan_of_day():
         habit_icons=HABIT_ICONS,
         calendar=calendar
     )
+@app.route("/todo", methods=["GET"])
+def todo_page():
+    return render_template_string(TODO_TEMPLATE)
 
 # ===============================
 # TEMPLATE
@@ -322,6 +325,10 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
 <div class="header-bar">
   <div id="current-date"></div>
   <div class="header-time">🕒 <span id="current-time"></span> IST</div>
+  <div style="display:flex; gap:14px; align-items:center;">
+    <a href="/todo" style="text-decoration:none;font-weight:600;color:#2563eb;">
+      📋 To-Do Matrix
+    </a>
 </div>
 
 <form method="get" class="month-controls">
@@ -502,9 +509,11 @@ function slotToMinutes(slot) {
 }
 
 function timeToMinutes(timeStr) {
+  if (timeStr === "24:00") return 1440;
   const [h, m] = timeStr.split(":").map(Number);
   return h * 60 + m;
 }
+
 
 function applyTimeFilter() {
   const fromTime = document.getElementById("timeFrom").value;
@@ -577,6 +586,125 @@ function minutesToTime(mins) {
 
 </script>
 
+</body>
+</html>
+"""
+TODO_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body {
+  font-family: system-ui;
+  background:#f6f7f9;
+  padding:16px;
+}
+
+.container {
+  max-width:1100px;
+  margin:auto;
+  background:#fff;
+  padding:20px;
+  border-radius:14px;
+}
+
+.header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:16px;
+}
+
+.header a {
+  text-decoration:none;
+  font-weight:600;
+  color:#2563eb;
+}
+
+.matrix {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+
+.quadrant {
+  background:#f9fafb;
+  border-radius:12px;
+  padding:14px;
+  min-height:220px;
+  border:1px solid #e5e7eb;
+}
+
+.q-title {
+  font-weight:700;
+  margin-bottom:8px;
+}
+
+.q-desc {
+  font-size:13px;
+  color:#555;
+  margin-bottom:10px;
+}
+
+textarea {
+  width:100%;
+  min-height:140px;
+  resize:vertical;
+  font-size:15px;
+  padding:8px;
+}
+
+.do { border-left:6px solid #22c55e; }
+.schedule { border-left:6px solid #3b82f6; }
+.delegate { border-left:6px solid #f59e0b; }
+.eliminate { border-left:6px solid #ef4444; }
+
+@media (max-width:768px) {
+  .matrix {
+    grid-template-columns:1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+  <div class="header">
+    <h2>📋 Eisenhower To-Do Matrix</h2>
+    <a href="/">⬅ Back to Daily Planner</a>
+  </div>
+
+  <div class="matrix">
+
+    <div class="quadrant do">
+      <div class="q-title">🔥 Do Now</div>
+      <div class="q-desc">Important & Urgent</div>
+      <textarea placeholder="Tasks you must do immediately"></textarea>
+    </div>
+
+    <div class="quadrant schedule">
+      <div class="q-title">📅 Schedule</div>
+      <div class="q-desc">Important but Not Urgent</div>
+      <textarea placeholder="Tasks to plan and schedule"></textarea>
+    </div>
+
+    <div class="quadrant delegate">
+      <div class="q-title">🤝 Delegate</div>
+      <div class="q-desc">Urgent but Not Important</div>
+      <textarea placeholder="Tasks to delegate or automate"></textarea>
+    </div>
+
+    <div class="quadrant eliminate">
+      <div class="q-title">🗑 Eliminate</div>
+      <div class="q-desc">Not Urgent & Not Important</div>
+      <textarea placeholder="Tasks to eliminate or ignore"></textarea>
+    </div>
+
+  </div>
+
+</div>
 </body>
 </html>
 """
