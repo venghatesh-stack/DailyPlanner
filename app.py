@@ -61,6 +61,7 @@ def load_day(plan_date):
     return plans
 def save_day(plan_date, form):
     payload = []
+
     for slot in range(1, TOTAL_SLOTS + 1):
         text = form.get(f"plan_{slot}", "").strip()
         status = form.get(f"status_{slot}", DEFAULT_STATUS)
@@ -74,11 +75,13 @@ def save_day(plan_date, form):
             })
 
     if payload:
+        logger.info("Saving %d planner rows", len(payload))
         post(
             "daily_slots?on_conflict=plan_date,slot",
             payload,
             prefer="resolution=merge-duplicates",
         )
+
 
 # ===============================
 # DATA – TODO MATRIX
