@@ -55,7 +55,11 @@ def save_day(plan_date, form):
             })
 
     if payload:
-        post("daily_slots?on_conflict=plan_date,slot", payload, prefer="resolution=merge-duplicates")
+        post(
+            "daily_slots?on_conflict=plan_date,slot",
+            payload,
+            prefer="resolution=merge-duplicates"
+        )
 
 # ===============================
 # TODO (EISENHOWER MATRIX)
@@ -92,6 +96,7 @@ def save_todo(plan_date, form):
 @app.route("/", methods=["GET", "POST"])
 def planner():
     today = datetime.now(IST).date()
+
     year = int(request.args.get("year", today.year))
     month = int(request.args.get("month", today.month))
     day = int(request.args.get("day", today.day))
@@ -112,13 +117,13 @@ def planner():
         month=month,
         selected_day=day,
         now_slot=current_slot() if plan_date == today else None,
-        slot_labels={i: slot_label(i) for i in range(1, TOTAL_SLOTS + 1)}
+        slot_labels={i: slot_label(i) for i in range(1, TOTAL_SLOTS + 1)},
+        calendar=calendar
     )
 
 @app.route("/todo", methods=["GET", "POST"])
 def todo():
-    today = datetime.now(IST).date()
-    plan_date = today
+    plan_date = datetime.now(IST).date()
 
     if request.method == "POST":
         save_todo(plan_date, request.form)
@@ -128,7 +133,7 @@ def todo():
     return render_template_string(TODO_TEMPLATE, todo=todo, plan_date=plan_date)
 
 # ===============================
-# TEMPLATES
+# PLANNER TEMPLATE
 # ===============================
 PLANNER_TEMPLATE = """
 <!DOCTYPE html>
@@ -136,10 +141,11 @@ PLANNER_TEMPLATE = """
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body { font-family:system-ui; background:#f6f7f9; padding:12px; padding-bottom:160px; }
+body { font-family:system-ui; background:#f6f7f9; padding:12px; padding-bottom:170px; }
 .container { max-width:1100px; margin:auto; background:#fff; padding:20px; border-radius:14px; }
+.header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
 .day-strip { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
-.day-btn { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid #ddd; text-decoration:none; }
+.day-btn { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid #ddd; text-decoration:none; color:#000; }
 .day-btn.selected { background:#2563eb; color:#fff; }
 .current-slot { background:#eef2ff; border-left:4px solid #2563eb; padding-left:8px; }
 textarea { width:100%; min-height:80px; font-size:16px; }
@@ -147,20 +153,40 @@ textarea { width:100%; min-height:80px; font-size:16px; }
 .floating button { flex:1; padding:14px; font-size:16px; }
 </style>
 </head>
-<body>
 
+<body>
 <div class="container">
-<a href="/todo">📋 To-Do Matrix</a>
+
+<div class="header">
+  <a href="/todo">📋 To-Do Matrix</a>
+</div>
+
+<form method="get" style="display:flex;gap:8px;margin-bottom:12px;">
+  <input type="hidden" name="day" value="{{selected_day}}">
+  <select name="month" onchange="this.form.submit()">
+    {% for m in range(1,13) %}
+      <option value="{{m}}" {% if m==month %}selected{% endif %}>
+        {{calendar.month_name[m]}}
+      </option>
+    {% endfor %}
+  </select>
+  <select name="year" onchange="this.form.submit()">
+    {% for y in range(year-5, year+6) %}
+      <option value="{{y}}" {% if y==year %}selected{% endif %}>{{y}}</option>
+    {% endfor %}
+  </select>
+</form>
 
 <div class="day-strip">
 {% for d in days %}
-<a href="/?year={{year}}&month={{month}}&day={{d.day}}" class="day-btn {% if d.day==selected_day %}selected{% endif %}">
+<a href="/?year={{year}}&month={{month}}&day={{d.day}}"
+   class="day-btn {% if d.day==selected_day %}selected{% endif %}">
 {{d.day}}
 </a>
 {% endfor %}
 </div>
 
-<form method="post" id="planner-form" onsubmit="preserveFocus()">
+<form method="post" id="planner-form">
 {% for slot in range(1,49) %}
 <div class="{% if now_slot==slot %}current-slot{% endif %}">
 <b>{{slot_labels[slot]}}</b>
@@ -168,6 +194,7 @@ textarea { width:100%; min-height:80px; font-size:16px; }
 </div>
 {% endfor %}
 </form>
+
 </div>
 
 <div class="floating">
@@ -176,39 +203,51 @@ textarea { width:100%; min-height:80px; font-size:16px; }
 </div>
 
 <script>
-function preserveFocus(){
-  const el=document.activeElement;
-  if(el?.name){
-    sessionStorage.setItem("focus", el.name);
-    sessionStorage.setItem("pos", el.selectionStart);
+let restoreFocus = false;
+
+document.addEventListener("focusin", (e) => {
+  if (e.target.tagName === "TEXTAREA" && e.target.name) {
+    sessionStorage.setItem("focus", e.target.name);
+    sessionStorage.setItem("pos", e.target.selectionStart);
     sessionStorage.setItem("scroll", window.scrollY);
+    restoreFocus = true;
   }
-}
+});
+
 function cancelEdit(){
-  preserveFocus();
+  restoreFocus = true;
   location.reload();
 }
-window.onload=()=>{
-  const name=sessionStorage.getItem("focus");
-  if(name){
-    const el=document.querySelector(`[name='${name}']`);
-    if(el){
+
+window.addEventListener("load", () => {
+  const name = sessionStorage.getItem("focus");
+  if (restoreFocus && name) {
+    const el = document.querySelector(`[name='${name}']`);
+    if (el) {
       el.focus();
-      el.setSelectionRange(sessionStorage.getItem("pos"),sessionStorage.getItem("pos"));
-      window.scrollTo(0,sessionStorage.getItem("scroll"));
+      const pos = parseInt(sessionStorage.getItem("pos") || 0);
+      el.setSelectionRange(pos, pos);
+      window.scrollTo(0, parseInt(sessionStorage.getItem("scroll") || 0));
     }
-    sessionStorage.clear();
     return;
   }
-  const cur=document.querySelector(".current-slot textarea");
-  if(cur){cur.scrollIntoView({block:"center"});cur.focus();}
-}
+
+  // First-load auto-focus only
+  const cur = document.querySelector(".current-slot textarea");
+  if (cur) {
+    cur.scrollIntoView({ block: "center" });
+    cur.focus();
+  }
+});
 </script>
 
 </body>
 </html>
 """
 
+# ===============================
+# TODO TEMPLATE
+# ===============================
 TODO_TEMPLATE = """
 <!DOCTYPE html>
 <html>
@@ -223,8 +262,8 @@ textarea{width:100%;min-height:140px;font-size:15px;}
 @media(max-width:768px){.matrix{grid-template-columns:1fr}}
 </style>
 </head>
-<body>
 
+<body>
 <div class="container">
 <h2>Eisenhower Matrix – {{plan_date}}</h2>
 <a href="/">⬅ Daily Planner</a>
@@ -239,10 +278,10 @@ textarea{width:100%;min-height:140px;font-size:15px;}
 <button style="margin-top:16px;padding:14px;width:100%;">Save</button>
 </form>
 </div>
-
 </body>
 </html>
 """
 
 if __name__ == "__main__":
+    logger.info("Starting Daily Planner")
     app.run(debug=True)
