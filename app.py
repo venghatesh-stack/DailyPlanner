@@ -278,7 +278,14 @@ body {
 
 .container { max-width:1100px; margin:auto; background:#fff; padding:16px; border-radius:14px; }
 
-.header-bar { display:flex; justify-content:space-between; margin-bottom:12px; }
+.header-bar {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  min-height:32px;
+}
+#current-date { font-weight:600; }
+
 .header-time { font-weight:700; color:#2563eb; }
 
 .month-controls { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
