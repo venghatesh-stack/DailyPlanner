@@ -63,23 +63,8 @@ def current_slot() -> int:
     now = datetime.now(IST)
     return (now.hour * 60 + now.minute) // 30 + 1
 
-def google_calendar_link(plan_date, slot, task):
-    if not task:
-        return "#"
-    start_ist, end_ist = slot_start_end(plan_date, slot)
-    start_utc = start_ist.astimezone(ZoneInfo("UTC"))
-    end_utc = end_ist.astimezone(ZoneInfo("UTC"))
-    params = {
-        "action": "TEMPLATE",
-        "text": task,
-        "dates": f"{start_utc.strftime('%Y%m%dT%H%M%SZ')}/{end_utc.strftime('%Y%m%dT%H%M%SZ')}",
-        "details": "Created from Daily Planner",
-        "trp": "false"
-    }
-    return "https://calendar.google.com/calendar/render?" + urllib.parse.urlencode(params)
-
 # ===============================
-# DATA ACCESS : DAILY PLANNER
+# DAILY PLANNER DATA
 # ===============================
 def load_day(plan_date):
     plans = {i: {"plan": "", "status": DEFAULT_STATUS} for i in range(1, TOTAL_SLOTS + 1)}
@@ -131,27 +116,20 @@ def save_day(plan_date, form):
         "status": DEFAULT_STATUS
     })
 
-    post(
-        "daily_slots?on_conflict=plan_date,slot",
-        payload,
-        prefer="resolution=merge-duplicates"
-    )
+    post("daily_slots?on_conflict=plan_date,slot", payload, prefer="resolution=merge-duplicates")
 
 # ===============================
-# DATA ACCESS : TODO MATRIX
+# TODO MATRIX DATA
 # ===============================
 def load_todo(plan_date):
     rows = get(
         "todo_matrix",
-        params={
-            "plan_date": f"eq.{plan_date}",
-            "select": "id,quadrant,task_text"
-        }
+        params={"plan_date": f"eq.{plan_date}", "select": "quadrant,task_text"}
     ) or []
 
-    data = {"do": [], "schedule": [], "delegate": [], "eliminate": []}
+    data = {"do": "", "schedule": "", "delegate": "", "eliminate": ""}
     for r in rows:
-        data[r["quadrant"]].append(r)
+        data[r["quadrant"]] += r["task_text"] + "\n"
 
     return data
 
@@ -160,15 +138,13 @@ def save_todo(plan_date, form):
 
     payload = []
     for q in ["do", "schedule", "delegate", "eliminate"]:
-        text = form.get(q, "").strip()
-        if text:
-            for line in text.splitlines():
-                if line.strip():
-                    payload.append({
-                        "plan_date": str(plan_date),
-                        "quadrant": q,
-                        "task_text": line.strip()
-                    })
+        for line in form.get(q, "").splitlines():
+            if line.strip():
+                payload.append({
+                    "plan_date": str(plan_date),
+                    "quadrant": q,
+                    "task_text": line.strip()
+                })
 
     if payload:
         post("todo_matrix", payload)
@@ -182,234 +158,163 @@ def plan_of_day():
 
     year = int(request.args.get("year", today.year))
     month = int(request.args.get("month", today.month))
-    day_param = request.args.get("day")
-    plan_date = date(year, month, int(day_param)) if day_param else today
+    day = int(request.args.get("day", today.day))
+    plan_date = date(year, month, day)
 
     if request.method == "POST":
         save_day(plan_date, request.form)
-        return redirect(url_for(
-            "plan_of_day",
-            year=plan_date.year,
-            month=plan_date.month,
-            day=plan_date.day,
-            saved=1
-        ))
+        return redirect(url_for("plan_of_day", year=year, month=month, day=day))
 
     plans, habits, reflection = load_day(plan_date)
-
-    reminder_links = {
-        slot: google_calendar_link(plan_date, slot, plans[slot]["plan"])
-        for slot in range(1, TOTAL_SLOTS + 1)
-    }
 
     days = [date(year, month, d) for d in range(1, calendar.monthrange(year, month)[1] + 1)]
 
     return render_template_string(
-        TEMPLATE,
+        PLANNER_TEMPLATE,
+        plans=plans,
+        days=days,
+        selected_day=day,
+        today=today,
         year=year,
         month=month,
-        days=days,
-        selected_day=plan_date.day,
-        today=today,
-        plans=plans,
-        statuses=STATUSES,
-        total_slots=TOTAL_SLOTS,
-        slot_labels={i: slot_label(i) for i in range(1, TOTAL_SLOTS + 1)},
-        reminder_links=reminder_links,
         now_slot=current_slot() if plan_date == today else None,
-        saved=request.args.get("saved"),
-        habits=habits,
-        reflection=reflection,
+        slot_labels={i: slot_label(i) for i in range(1, TOTAL_SLOTS + 1)},
         habit_list=HABIT_LIST,
         habit_icons=HABIT_ICONS,
+        habits=habits,
+        reflection=reflection,
         calendar=calendar
     )
 
 @app.route("/todo", methods=["GET", "POST"])
 def todo_page():
-    today = datetime.now(IST).date()
-    plan_date = today
+    plan_date = datetime.now(IST).date()
 
     if request.method == "POST":
         save_todo(plan_date, request.form)
-        return redirect(url_for("todo_page", saved=1))
+        return redirect(url_for("todo_page"))
 
     todo = load_todo(plan_date)
 
-    return render_template_string(
-        TODO_TEMPLATE,
-        todo=todo,
-        plan_date=plan_date,
-        saved=request.args.get("saved")
-    )
+    return render_template_string(TODO_TEMPLATE, todo=todo, plan_date=plan_date)
 
 # ===============================
-# TEMPLATE (HTML + JS)
+# PLANNER TEMPLATE
 # ===============================
-TEMPLATE = """
+PLANNER_TEMPLATE = """
 <!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body {
-  font-family: system-ui;
-  background:#f6f7f9;
-  padding:12px;
-  padding-bottom:220px;
-}
-.container {
-  max-width:1100px;
-  margin:auto;
-  background:#fff;
-  padding:20px;
-  padding-top:28px;
-  border-radius:14px;
-}
-.header-bar {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  min-height:36px;
-}
-.header-time { font-weight:700; color:#2563eb; }
-.month-controls, .day-strip { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
-.day-btn {
-  width:36px; height:36px;
-  border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-  border:1px solid #ddd;
-  text-decoration:none; color:#000;
-}
-.day-btn.selected { background:#2563eb; color:#fff; }
-table { width:100%; border-collapse:collapse; }
-td { padding:8px; border-bottom:1px solid #eee; }
-.current-slot { background:#eef2ff; border-left:4px solid #2563eb; }
-textarea { width:100%; min-height:90px; font-size:16px; }
-.floating-bar {
-  position:fixed;
-  bottom:0; left:0; right:0;
-  background:#fff;
-  border-top:1px solid #ddd;
-  display:flex;
-  padding:10px;
-  gap:10px;
-}
-.floating-bar button { flex:1; padding:14px; font-size:16px; }
+body{font-family:system-ui;background:#f6f7f9;padding:12px;padding-bottom:200px}
+.container{max-width:1100px;margin:auto;background:#fff;padding:24px;border-radius:14px}
+.current-slot{background:#eef2ff;border-left:4px solid #2563eb}
+textarea{width:100%;min-height:80px;font-size:16px}
+.day-strip{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.day-btn{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid #ddd;text-decoration:none;color:#000}
+.day-btn.selected{background:#2563eb;color:#fff}
+.floating-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd;display:flex;gap:10px;padding:10px}
+.floating-bar button{flex:1;padding:14px;font-size:16px}
 </style>
 </head>
 
 <body>
-
-{% if saved %}
-<div style="position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
-background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
-✅ Saved successfully
-</div>
-{% endif %}
-
 <div class="container">
-
-<div class="header-bar">
-  <div id="current-date"></div>
-  <div style="display:flex;gap:14px;align-items:center;">
-    <a href="/todo">📋 To-Do Matrix</a>
-    <div class="header-time">🕒 <span id="current-time"></span> IST</div>
-  </div>
-</div>
-
-<form method="get" class="month-controls">
-  <input type="hidden" name="day" value="{{ selected_day }}">
-  <select name="month" onchange="this.form.submit()">
-    {% for m in range(1,13) %}
-      <option value="{{m}}" {% if m==month %}selected{% endif %}>{{ calendar.month_name[m] }}</option>
-    {% endfor %}
-  </select>
-  <select name="year" onchange="this.form.submit()">
-    {% for y in range(year-5, year+6) %}
-      <option value="{{y}}" {% if y==year %}selected{% endif %}>{{y}}</option>
-    {% endfor %}
-  </select>
-</form>
+<a href="/todo">📋 To-Do Matrix</a>
 
 <div class="day-strip">
 {% for d in days %}
-<a href="/?year={{year}}&month={{month}}&day={{d.day}}"
-   class="day-btn {% if d.day==selected_day %}selected{% endif %}">
-{{ d.day }}
-</a>
+<a href="/?year={{year}}&month={{month}}&day={{d.day}}" class="day-btn {% if d.day==selected_day %}selected{% endif %}">{{d.day}}</a>
 {% endfor %}
 </div>
 
 <form method="post" id="planner-form">
-<table>
-{% for slot in range(1,total_slots+1) %}
-<tr class="{% if now_slot==slot %}current-slot{% endif %}" data-slot="{{slot}}">
-  <td>{{ slot_labels[slot] }}</td>
-</tr>
-<tr>
-  <td><textarea name="plan_{{slot}}">{{ plans[slot]['plan'] }}</textarea></td>
-</tr>
+{% for slot in range(1,49) %}
+<div class="{% if now_slot==slot %}current-slot{% endif %}">
+<b>{{slot_labels[slot]}}</b>
+<textarea name="plan_{{slot}}">{{plans[slot]["plan"]}}</textarea>
+</div>
 {% endfor %}
-</table>
 </form>
 </div>
 
 <div class="floating-bar">
-  <button type="submit" form="planner-form">💾 Save</button>
-  <button type="button" onclick="cancelEdit()">❌ Cancel</button>
+<button type="submit" form="planner-form">Save</button>
+<button type="button" onclick="location.reload()">Cancel</button>
 </div>
 
 <script>
-function updateClock(){
-  const ist = new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
-  document.getElementById("current-time").textContent = ist.toLocaleTimeString();
-  document.getElementById("current-date").textContent = ist.toDateString();
-}
-setInterval(updateClock,1000); updateClock();
-
-function cancelEdit(){
-  const url = new URL(window.location.href);
-  url.searchParams.delete("saved");
-  window.location.href = url.toString();
-}
-
-window.addEventListener("load", () => {
-  const dayBtn = document.querySelector(".day-btn.selected");
-  if(dayBtn) dayBtn.scrollIntoView({inline:"center"});
-
-  const currentRow = document.querySelector(".current-slot");
-  if(currentRow){
-    currentRow.scrollIntoView({block:"center"});
-    const textarea = currentRow.nextElementSibling?.querySelector("textarea");
-    if(textarea){
-      textarea.focus();
-      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-    }
-  }
+// Focus only on initial load
+window.addEventListener("load",()=>{
+  const cur=document.querySelector(".current-slot textarea");
+  if(cur){cur.focus();}
 });
 </script>
-
 </body>
 </html>
 """
 
 # ===============================
-# TODO TEMPLATE
+# TODO TEMPLATE (FIXED)
 # ===============================
 TODO_TEMPLATE = """
 <!DOCTYPE html>
 <html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:system-ui;background:#f6f7f9;padding:16px}
+.container{max-width:900px;margin:auto;background:#fff;padding:20px;border-radius:14px}
+.matrix{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.box{border-radius:12px;padding:12px;border:1px solid #ddd}
+textarea{width:100%;min-height:140px;font-size:15px}
+.do{border-left:6px solid #22c55e}
+.schedule{border-left:6px solid #3b82f6}
+.delegate{border-left:6px solid #f59e0b}
+.eliminate{border-left:6px solid #ef4444}
+</style>
+</head>
+
 <body>
-<h2>Eisenhower Matrix – {{ plan_date }}</h2>
-<form method="post">
-<textarea name="do">{% for t in todo.do %}{{t.task_text}}{% endfor %}</textarea>
-<textarea name="schedule">{% for t in todo.schedule %}{{t.task_text}}{% endfor %}</textarea>
-<textarea name="delegate">{% for t in todo.delegate %}{{t.task_text}}{% endfor %}</textarea>
-<textarea name="eliminate">{% for t in todo.eliminate %}{{t.task_text}}{% endfor %}</textarea>
+<div class="container">
+<h2>Eisenhower Matrix – {{plan_date}}</h2>
+<a href="/">⬅ Back to Planner</a>
+
+<form method="post" onsubmit="preserveFocus()">
+<div class="matrix">
+<div class="box do"><h4>Do</h4><textarea name="do">{{todo.do}}</textarea></div>
+<div class="box schedule"><h4>Schedule</h4><textarea name="schedule">{{todo.schedule}}</textarea></div>
+<div class="box delegate"><h4>Delegate</h4><textarea name="delegate">{{todo.delegate}}</textarea></div>
+<div class="box eliminate"><h4>Eliminate</h4><textarea name="eliminate">{{todo.eliminate}}</textarea></div>
+</div>
+<br>
 <button type="submit">Save</button>
+<button type="button" onclick="location.reload()">Cancel</button>
 </form>
-<a href="/">Back</a>
+</div>
+
+<script>
+function preserveFocus(){
+  const el=document.activeElement;
+  if(el && el.name){
+    sessionStorage.setItem("focus",el.name);
+    sessionStorage.setItem("pos",el.selectionStart);
+  }
+}
+window.addEventListener("load",()=>{
+  const name=sessionStorage.getItem("focus");
+  const pos=sessionStorage.getItem("pos");
+  if(name){
+    const el=document.querySelector(`[name='${name}']`);
+    if(el){
+      el.focus();
+      el.setSelectionRange(pos,pos);
+    }
+    sessionStorage.clear();
+  }
+});
+</script>
 </body>
 </html>
 """
