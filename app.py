@@ -203,44 +203,103 @@ TEMPLATE = """
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body { font-family:system-ui; background:#f6f7f9; padding:12px; padding-bottom:220px; }
-.container { max-width:1100px; margin:auto; background:#fff; padding:16px; border-radius:14px; }
+body {
+  font-family: system-ui;
+  background: #f6f7f9;
+  padding: 12px;
+  padding-bottom: 220px;
+}
 
-.toast {
-  position:fixed;
-  top:16px; left:50%;
-  transform:translateX(-50%);
-  background:#111827;
-  color:#fff;
-  padding:10px 16px;
-  border-radius:10px;
-  z-index:10000;
+.container {
+  max-width: 1100px;
+  margin: auto;
+  background: #fff;
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.slot-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 140px;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.slot-time {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.slot-task {
+  width: 100%;
+  min-height: 60px;
+  font-size: 15px;
 }
 
 .status-pill {
-  display:inline-block;
-  padding:6px 12px;
-  border-radius:999px;
-  font-weight:600;
-  cursor:pointer;
+  text-align: center;
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.current-slot {
+  background: #eef2ff;
+  border-left: 4px solid #2563eb;
+  padding-left: 8px;
+}
+
+.toast {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111827;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 10px;
+  z-index: 10000;
 }
 
 .floating-bar {
-  position:fixed;
-  left:0; right:0;
-  bottom:env(safe-area-inset-bottom);
-  background:#fff;
-  border-top:1px solid #ddd;
-  display:flex;
-  gap:10px;
-  padding:10px;
-  z-index:9999;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: env(safe-area-inset-bottom);
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  z-index: 10000;
+  box-shadow: 0 -4px 20px rgba(0,0,0,.08);
 }
-.floating-bar button { flex:1; padding:14px; font-size:16px; }
+
+.floating-bar button {
+  flex: 1;
+  padding: 14px;
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  .slot-row {
+    grid-template-columns: 100px 1fr;
+    grid-template-areas:
+      "time status"
+      "task task";
+  }
+  .slot-time { grid-area: time; }
+  .slot-task { grid-area: task; }
+  .status-pill { grid-area: status; justify-self: end; }
+}
 </style>
 </head>
 
 <body>
+<div class="container">
 
 {% if saved %}
 <div class="toast">✅ Saved successfully</div>
@@ -251,44 +310,75 @@ body { font-family:system-ui; background:#f6f7f9; padding:12px; padding-bottom:2
 
 <form method="post" id="planner-form">
 {% for slot in range(1,49) %}
-<div>
-  <b>{{slot_labels[slot]}}</b>
-  <textarea name="plan_{{slot}}">{{plans[slot]['plan']}}</textarea>
+<div class="slot-row {% if now_slot==slot %}current-slot{% endif %}">
+  <div class="slot-time">{{slot_labels[slot]}}</div>
+
+  <textarea class="slot-task" name="plan_{{slot}}">{{plans[slot]['plan']}}</textarea>
 
   <div class="status-pill"
        style="background:{{status_colors[plans[slot]['status']]}}"
-       onclick="cycleStatus(this)">
+       onclick="openStatusPicker(this)">
     {{plans[slot]['status']}}
   </div>
+
   <input type="hidden" name="status_{{slot}}" value="{{plans[slot]['status']}}">
 </div>
 {% endfor %}
 </form>
+</div>
 
 <div class="floating-bar">
   <button type="submit" form="planner-form">💾 Save</button>
-  <button type="button" onclick="cancel()">❌ Cancel</button>
+  <button type="button" onclick="cancelChanges()">❌ Cancel</button>
+</div>
+
+<div id="status-sheet" style="display:none;position:fixed;left:0;right:0;bottom:0;
+background:#fff;border-top-left-radius:16px;border-top-right-radius:16px;
+box-shadow:0 -10px 30px rgba(0,0,0,.15);z-index:10001;padding:16px;">
+  <h3>Change status</h3>
+  <div id="status-options"></div>
+  <button onclick="closeStatusPicker()" style="margin-top:12px;width:100%;padding:12px;">
+    Cancel
+  </button>
 </div>
 
 <script>
-setTimeout(()=>document.querySelectorAll('.toast').forEach(t=>t.remove()),2000);
+setTimeout(() => document.querySelectorAll('.toast').forEach(t => t.remove()), 2000);
 
+let activeStatusEl = null;
 const STATUS_ORDER = {{statuses|tojson}};
 const STATUS_COLORS = {{status_colors|tojson}};
 
-function cycleStatus(el){
-  const input = el.nextElementSibling;
-  let idx = STATUS_ORDER.indexOf(input.value);
-  idx = (idx + 1) % STATUS_ORDER.length;
-  input.value = STATUS_ORDER[idx];
-  el.textContent = STATUS_ORDER[idx];
-  el.style.background = STATUS_COLORS[input.value];
+function openStatusPicker(el){
+  activeStatusEl = el;
+  const c = document.getElementById("status-options");
+  c.innerHTML = "";
+  STATUS_ORDER.forEach(s => {
+    const b = document.createElement("button");
+    b.textContent = s;
+    b.style.cssText = "width:100%;padding:12px;margin-bottom:8px;border-radius:10px;border:none;background:" + STATUS_COLORS[s];
+    b.onclick = () => setStatus(s);
+    c.appendChild(b);
+  });
+  document.getElementById("status-sheet").style.display = "block";
 }
 
-function cancel(){
-  const url = new URL(window.location);
-  url.searchParams.set("cancelled", "1");
-  window.location = url.toString();
+function setStatus(s){
+  const input = activeStatusEl.nextElementSibling;
+  input.value = s;
+  activeStatusEl.textContent = s;
+  activeStatusEl.style.background = STATUS_COLORS[s];
+  closeStatusPicker();
+}
+
+function closeStatusPicker(){
+  document.getElementById("status-sheet").style.display = "none";
+}
+
+function cancelChanges(){
+  const u = new URL(window.location);
+  u.searchParams.set("cancelled", "1");
+  window.location = u.toString();
 }
 </script>
 
@@ -297,5 +387,5 @@ function cancel(){
 """
 
 if __name__ == "__main__":
-    logger.info("Starting Daily Planner – architect-grade stable build")
+    logger.info("Starting Daily Planner – stabilized UI build")
     app.run(debug=True)
