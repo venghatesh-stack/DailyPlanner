@@ -235,7 +235,7 @@ textarea { width:100%; min-height:90px; font-size:16px; }
 
 <form method="post" id="planner-form">
 {% for slot in range(1,49) %}
-<div class="{% if now_slot==slot %}current-slot{% endif %}">
+<div data-slot="{{slot}}" class="{% if now_slot==slot %}current-slot{% endif %}">
 <b>{{slot_labels[slot]}}</b>
 <textarea name="plan_{{slot}}">{{plans[slot]}}</textarea>
 </div>
@@ -251,13 +251,66 @@ textarea { width:100%; min-height:90px; font-size:16px; }
 
 <script>
 function updateClock(){
-  const ist = new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
+  const ist = new Date(
+    new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"})
+  );
   document.getElementById("current-time").textContent = ist.toLocaleTimeString();
   document.getElementById("current-date").textContent = ist.toDateString();
 }
-setInterval(updateClock,1000);updateClock();
+setInterval(updateClock,1000);
+updateClock();
 </script>
 
+<!-- 🔽 ADD FOCUS FIX SCRIPT HERE -->
+<script>
+/* FOCUS PRESERVATION — DAILY PLANNER ONLY */
+
+let shouldRestoreFocus = false;
+
+document.addEventListener("focusin", (e) => {
+  const el = e.target;
+  if (el.tagName === "TEXTAREA" && el.name) {
+    sessionStorage.setItem("focusName", el.name);
+    sessionStorage.setItem("caretPos", el.selectionStart);
+    sessionStorage.setItem("scrollY", window.scrollY);
+    shouldRestoreFocus = true;
+  }
+});
+
+document.addEventListener("keyup", () => {
+  const el = document.activeElement;
+  if (el && el.tagName === "TEXTAREA" && el.name) {
+    sessionStorage.setItem("caretPos", el.selectionStart);
+  }
+});
+
+function cancelEdit(){
+  shouldRestoreFocus = true;
+  location.reload();
+}
+
+window.addEventListener("load", () => {
+  const name = sessionStorage.getItem("focusName");
+
+  if (shouldRestoreFocus && name) {
+    const el = document.querySelector(`[name='${name}']`);
+    if (el) {
+      el.focus();
+      const pos = parseInt(sessionStorage.getItem("caretPos") || 0);
+      el.setSelectionRange(pos, pos);
+      window.scrollTo(0, parseInt(sessionStorage.getItem("scrollY") || 0));
+      return; // 🚫 DO NOT auto-focus
+    }
+  }
+
+  // First page load only
+  const cur = document.querySelector(".current-slot textarea");
+  if (cur) {
+    cur.scrollIntoView({ block: "center" });
+    cur.focus();
+  }
+});
+</script>
 </body>
 </html>
 """
@@ -295,9 +348,46 @@ textarea{width:100%;min-height:140px;font-size:15px;}
 <button style="margin-top:16px;padding:14px;width:100%;">Save</button>
 </form>
 </div>
+<script>
+function slotToMinutes(slot){
+  return (slot - 1) * 30;
+}
+
+function timeToMinutes(t){
+  const [h,m] = t.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function applyTimeFilter(){
+  const from = document.getElementById("timeFrom")?.value;
+  const to = document.getElementById("timeTo")?.value;
+  if (!from || !to) return;
+
+  const fromMin = timeToMinutes(from);
+  const toMin = timeToMinutes(to);
+
+  document.querySelectorAll("[data-slot]").forEach(row => {
+    const slot = parseInt(row.dataset.slot, 10);
+    const slotStart = slotToMinutes(slot);
+    const slotEnd = slotStart + 30;
+
+    const visible = slotEnd > fromMin && slotStart < toMin;
+    row.style.display = visible ? "" : "none";
+  });
+}
+
+// Bind events
+document.getElementById("timeFrom")?.addEventListener("change", applyTimeFilter);
+document.getElementById("timeTo")?.addEventListener("change", applyTimeFilter);
+
+// Apply default filter on load
+window.addEventListener("load", applyTimeFilter);
+</script>
+
 </body>
 </html>
 """
+
 
 if __name__ == "__main__":
     logger.info("Starting Daily Planner")
