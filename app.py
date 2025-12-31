@@ -664,118 +664,73 @@ TODO_TEMPLATE = """
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body {
-  font-family: system-ui;
-  background:#f6f7f9;
-  padding:16px;
-}
-
-.container {
-  max-width:1100px;
-  margin:auto;
-  background:#fff;
-  padding:20px;
-  border-radius:14px;
-}
-
-.header {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:16px;
-}
-
-.header a {
-  text-decoration:none;
-  font-weight:600;
-  color:#2563eb;
-}
-
-.matrix {
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:16px;
-}
-
-.quadrant {
-  background:#f9fafb;
-  border-radius:12px;
-  padding:14px;
-  min-height:220px;
-  border:1px solid #e5e7eb;
-}
-
-.q-title {
-  font-weight:700;
-  margin-bottom:8px;
-}
-
-.q-desc {
-  font-size:13px;
-  color:#555;
-  margin-bottom:10px;
-}
-
-textarea {
-  width:100%;
-  min-height:140px;
-  resize:vertical;
-  font-size:15px;
-  padding:8px;
-}
-
+body { font-family:system-ui; background:#f6f7f9; padding:16px; }
+.container { max-width:1100px; margin:auto; background:#fff; padding:20px; border-radius:14px; }
+.header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+.matrix { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.quadrant { border-radius:12px; padding:14px; border:1px solid #e5e7eb; background:#f9fafb; }
+textarea { width:100%; min-height:160px; font-size:15px; }
 .do { border-left:6px solid #22c55e; }
 .schedule { border-left:6px solid #3b82f6; }
 .delegate { border-left:6px solid #f59e0b; }
 .eliminate { border-left:6px solid #ef4444; }
-
-@media (max-width:768px) {
-  .matrix {
-    grid-template-columns:1fr;
-  }
-}
+@media(max-width:768px){ .matrix{ grid-template-columns:1fr; } }
 </style>
 </head>
 
 <body>
 <div class="container">
 
-  <div class="header">
-    <h2>📋 Eisenhower To-Do Matrix</h2>
-    <a href="/">⬅ Back to Daily Planner</a>
+<div class="header">
+  <h2>📋 Eisenhower Matrix – {{ plan_date }}</h2>
+  <a href="/">⬅ Daily Planner</a>
+</div>
+
+{% if saved %}
+<div style="margin-bottom:12px;color:green;font-weight:600;">
+  ✅ Saved successfully
+</div>
+{% endif %}
+
+<form method="post">
+
+<div class="matrix">
+
+  <div class="quadrant do">
+    <h3>🔥 Do Now</h3>
+    <textarea name="do">{% for t in todo.do %}{{t.task_text}}
+{% endfor %}</textarea>
   </div>
 
-  <div class="matrix">
+  <div class="quadrant schedule">
+    <h3>📅 Schedule</h3>
+    <textarea name="schedule">{% for t in todo.schedule %}{{t.task_text}}
+{% endfor %}</textarea>
+  </div>
 
-    <div class="quadrant do">
-      <div class="q-title">🔥 Do Now</div>
-      <div class="q-desc">Important & Urgent</div>
-      <textarea placeholder="Tasks you must do immediately"></textarea>
-    </div>
+  <div class="quadrant delegate">
+    <h3>🤝 Delegate</h3>
+    <textarea name="delegate">{% for t in todo.delegate %}{{t.task_text}}
+{% endfor %}</textarea>
+  </div>
 
-    <div class="quadrant schedule">
-      <div class="q-title">📅 Schedule</div>
-      <div class="q-desc">Important but Not Urgent</div>
-      <textarea placeholder="Tasks to plan and schedule"></textarea>
-    </div>
-
-    <div class="quadrant delegate">
-      <div class="q-title">🤝 Delegate</div>
-      <div class="q-desc">Urgent but Not Important</div>
-      <textarea placeholder="Tasks to delegate or automate"></textarea>
-    </div>
-
-    <div class="quadrant eliminate">
-      <div class="q-title">🗑 Eliminate</div>
-      <div class="q-desc">Not Urgent & Not Important</div>
-      <textarea placeholder="Tasks to eliminate or ignore"></textarea>
-    </div>
-
+  <div class="quadrant eliminate">
+    <h3>🗑 Eliminate</h3>
+    <textarea name="eliminate">{% for t in todo.eliminate %}{{t.task_text}}
+{% endfor %}</textarea>
   </div>
 
 </div>
+
+<div style="margin-top:16px;display:flex;gap:12px;">
+  <button type="submit" style="flex:1;padding:14px;font-size:16px;">💾 Save</button>
+</div>
+
+</form>
+</div>
 </body>
 </html>
+
 """
 
 if __name__ == "__main__":
