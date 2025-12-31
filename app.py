@@ -170,11 +170,6 @@ def save_todo(plan_date, form):
         "todo_matrix",
         params={"plan_date": f"eq.{plan_date}"}
     )
-    post(
-        f"todo_matrix?plan_date=eq.{plan_date}",
-        payload=[],
-        prefer="resolution=delete"
-    )
 
     payload = []
     for quadrant in ["do", "schedule", "delegate", "eliminate"]:
