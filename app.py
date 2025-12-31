@@ -154,7 +154,7 @@ def planner():
       save_day(plan_date, request.form)
       save_habits(plan_date, request.form)
       save_reflection(plan_date, request.form)
-      return redirect(url_for("planner", year=year, month=month, day=day))
+      return redirect(url_for("planner", year=year, month=month, day=day,saved="1"))
 
 
     return render_template_string(
@@ -228,6 +228,28 @@ textarea { width:100%; min-height:90px; font-size:16px; }
 </head>
 
 <body>
+{% if request.args.get("saved") %}
+<div id="toast"
+     style="position:fixed;
+            top:16px;
+            left:50%;
+            transform:translateX(-50%);
+            background:#16a34a;
+            color:white;
+            padding:12px 18px;
+            border-radius:10px;
+            font-weight:600;
+            z-index:10000;">
+  ✅ Data saved successfully
+</div>
+<script>
+  setTimeout(()=>{
+    const t=document.getElementById("toast");
+    if(t) t.remove();
+  },2000);
+</script>
+{% endif %}
+
 <div class="container">
 
 <div class="header">
@@ -237,34 +259,10 @@ textarea { width:100%; min-height:90px; font-size:16px; }
 
 <form method="get" style="display:flex;gap:8px;margin-bottom:12px;">
   <input type="hidden" name="day" value="{{selected_day}}">
-  <select name="month" onchange="this.form.submit()">
-    {% for m in range(1,13) %}
-      <option value="{{m}}" {% if m==month %}selected{% endif %}>{{calendar.month_name[m]}}</option>
-    {% endfor %}
-  </select>
-  <select name="year" onchange="this.form.submit()">
-    {% for y in range(year-5, year+6) %}
-      <option value="{{y}}" {% if y==year %}selected{% endif %}>{{y}}</option>
-    {% endfor %}
-  </select>
-  <hr style="margin:24px 0;">
-
-<h3>✅ Habits</h3>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-  {% for h in habit_list %}
-  <label style="display:flex;align-items:center;gap:8px;">
-    <input type="checkbox" name="habit_{{h}}" {% if habits.get(h) %}checked{% endif %}>
-    {{h}}
-  </label>
-  {% endfor %}
-</div>
-
-<hr style="margin:24px 0;">
-
-<h3>📝 Reflection of the Day</h3>
-<textarea name="reflection" style="min-height:120px;">{{reflection}}</textarea>
-
+  <select name="month" onchange="this.form.submit()">...</select>
+  <select name="year" onchange="this.form.submit()">...</select>
 </form>
+
 
 <div class="time-filter">
   <div class="time-wheel">
@@ -301,6 +299,23 @@ textarea { width:100%; min-height:90px; font-size:16px; }
   <textarea name="plan_{{slot}}">{{plans[slot]}}</textarea>
 </div>
 {% endfor %}
+<hr style="margin:24px 0;">
+
+<h3>✅ Habits</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+  {% for h in habit_list %}
+  <label style="display:flex;align-items:center;gap:8px;">
+    <input type="checkbox" name="habit_{{h}}" {% if habits.get(h) %}checked{% endif %}>
+    {{h}}
+  </label>
+  {% endfor %}
+</div>
+
+<hr style="margin:24px 0;">
+
+<h3>📝 Reflection of the Day</h3>
+<textarea name="reflection" style="min-height:120px;">{{reflection}}</textarea>
+
 </form>
 </div>
 
