@@ -255,6 +255,15 @@ textarea { width:100%; min-height:90px; font-size:16px; }
 
 .time-filter { display:flex; gap:20px; margin-bottom:12px; }
 .time-wheel select { height:120px; width:90px; font-size:16px; }
+.status-pill {
+  margin-top:6px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid #ddd;
+  background:#f9fafb;
+  font-size:14px;
+}
+
 </style>
 </head>
 
@@ -305,6 +314,32 @@ textarea { width:100%; min-height:90px; font-size:16px; }
       </option>
     {% endfor %}
   </select>
+  let activeSlot = null;
+
+function openStatusPopup(slot) {
+  activeSlot = slot;
+  document.getElementById("status-popup").style.display = "flex";
+}
+
+function closeStatusPopup() {
+  document.getElementById("status-popup").style.display = "none";
+  activeSlot = null;
+}
+
+function selectStatus(status) {
+  if (!activeSlot) return;
+
+  // update hidden input
+  const input = document.getElementById("status_" + activeSlot);
+  input.value = status;
+
+  // update pill text
+  const pill = input.parentElement.querySelector(".status-pill");
+  pill.textContent = status + " ▾";
+
+  closeStatusPopup();
+}
+
 </form>
 
 
@@ -341,11 +376,24 @@ textarea { width:100%; min-height:90px; font-size:16px; }
 
 
 <form method="post" id="planner-form">
-{% for slot in range(1,49) %}
 <div class="slot {% if now_slot==slot %}current-slot{% endif %}" data-slot="{{slot}}">
   <b>{{slot_labels[slot]}}</b>
+
   <textarea name="plan_{{slot}}">{{plans[slot].text}}</textarea>
+
+  <!-- STATUS -->
+  <input type="hidden"
+         name="status_{{slot}}"
+         id="status_{{slot}}"
+         value="{{plans[slot].status}}">
+
+  <button type="button"
+          class="status-pill"
+          onclick="openStatusPopup({{slot}})">
+    {{plans[slot].status}} ▾
+  </button>
 </div>
+
 {% endfor %}
 <hr style="margin:24px 0;">
 
@@ -416,6 +464,41 @@ window.addEventListener("load",()=>{
   if(cur){cur.focus();cur.scrollIntoView({block:"center"});}
 });
 </script>
+<!-- STATUS POPUP -->
+<div id="status-popup" style="
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.4);
+  z-index:10000;
+  align-items:center;
+  justify-content:center;
+">
+  <div style="
+    background:white;
+    border-radius:12px;
+    width:90%;
+    max-width:320px;
+    padding:12px;
+  ">
+    <h3 style="margin:8px 0;">Select Status</h3>
+
+    {% for s in ["Nothing Planned","Yet to Start","In Progress","Closed","Deferred"] %}
+    <button type="button"
+            style="width:100%;padding:12px;margin:6px 0;font-size:16px;"
+            onclick="selectStatus('{{s}}')">
+      {{s}}
+    </button>
+    {% endfor %}
+
+    <button type="button"
+            style="width:100%;padding:10px;margin-top:8px;"
+            onclick="closeStatusPopup()">
+      Cancel
+    </button>
+  </div>
+</div>
+
 </body>
 </html>
 """
