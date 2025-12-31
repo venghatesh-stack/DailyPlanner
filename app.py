@@ -13,6 +13,15 @@ logger = setup_logger()
 
 TOTAL_SLOTS = 48
 META_SLOT = 0
+STATUSES = [
+    "Nothing Planned",
+    "Yet to Start",
+    "In Progress",
+    "Closed",
+    "Deferred",
+]
+
+DEFAULT_STATUS = "Yet to Start"
 
 # ===============================
 # HELPERS
@@ -30,28 +39,41 @@ def current_slot():
 # DATA – DAILY PLANNER
 # ===============================
 def load_day(plan_date):
-    plans = {i: "" for i in range(1, TOTAL_SLOTS + 1)}
+    plans = {
+    i: {"text": "", "status": DEFAULT_STATUS}
+    for i in range(1, TOTAL_SLOTS + 1)
+    }
+
     rows = get(
-        "daily_slots",
-        params={"plan_date": f"eq.{plan_date}", "select": "slot,plan"},
-    ) or []
+    "daily_slots",
+    params={"plan_date": f"eq.{plan_date}", "select": "slot,plan,status"},
+  ) 
+
 
     for r in rows:
         if r["slot"] != META_SLOT:
-            plans[r["slot"]] = r.get("plan") or ""
+            plans[r["slot"]] = {
+             "text": r.get("plan") or "",
+             "status": r.get("status") or DEFAULT_STATUS,
+      }
+
 
     return plans
 
 def save_day(plan_date, form):
     payload = []
     for slot in range(1, TOTAL_SLOTS + 1):
-        text = form.get(f"plan_{slot}", "").strip()
-        if text:
-            payload.append({
-                "plan_date": str(plan_date),
-                "slot": slot,
-                "plan": text,
-            })
+     text = form.get(f"plan_{slot}", "").strip()
+     status = form.get(f"status_{slot}", DEFAULT_STATUS)
+
+    if text:
+      payload.append({
+        "plan_date": str(plan_date),
+        "slot": slot,
+        "plan": text,
+        "status": status,
+    })
+
 
     if payload:
         post(
@@ -316,7 +338,7 @@ textarea { width:100%; min-height:90px; font-size:16px; }
 {% for slot in range(1,49) %}
 <div class="slot {% if now_slot==slot %}current-slot{% endif %}" data-slot="{{slot}}">
   <b>{{slot_labels[slot]}}</b>
-  <textarea name="plan_{{slot}}">{{plans[slot]}}</textarea>
+  <textarea name="plan_{{slot}}">{{plans[slot].text}}</textarea>
 </div>
 {% endfor %}
 <hr style="margin:24px 0;">
