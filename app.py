@@ -191,9 +191,44 @@ def save_todo(plan_date, form):
 
     if payload:
         post("todo_matrix", payload)
+# ===============================
+# CARRY FORWARD UNFINISHED TASKS
+# ===============================
+def carry_forward_unfinished(from_date: date, to_date: date):
+    # Load unfinished tasks from source date
+    rows = get(
+        "todo_matrix",
+        params={
+            "plan_date": f"eq.{from_date}",
+            "is_done": "eq.false",
+            "select": "quadrant,task_text"
+        }
+    ) or []
+
+    if not rows:
+        return 0
+
+    payload = []
+    position_map = {"do": 0, "schedule": 0, "delegate": 0, "eliminate": 0}
+
+    for r in rows:
+        q = r["quadrant"]
+        payload.append({
+            "plan_date": str(to_date),
+            "quadrant": q,
+            "task_text": r["task_text"],
+            "is_done": False,
+            "position": position_map[q],
+        })
+        position_map[q] += 1
+
+    # Insert carried tasks (append, do not delete tomorrow’s existing tasks)
+    post("todo_matrix", payload)
+
+    return len(payload)
 
 # ===============================
-# ROUTES
+# ROUTES Planner 
 # ===============================
 @app.route("/", methods=["GET", "POST"])
 def planner():
@@ -229,6 +264,9 @@ def planner():
         slot_labels={i: slot_label(i) for i in range(1, TOTAL_SLOTS + 1)},
         calendar=calendar,
     )
+###################################
+##########Routes – TODO MATRIX ##########
+###################################
 
 @app.route("/todo", methods=["GET", "POST"])
 def todo():
@@ -251,6 +289,27 @@ def todo():
         day=day,
         days=[date(year, month, d) for d in range(1, calendar.monthrange(year, month)[1] + 1)],
         calendar=calendar,
+    )
+@app.route("/todo/carry-forward", methods=["POST"])
+def carry_forward():
+    today = datetime.now(IST).date()
+    year = int(request.form["year"])
+    month = int(request.form["month"])
+    day = int(request.form["day"])
+
+    from_date = date(year, month, day)
+    to_date = from_date + timedelta(days=1)
+
+    count = carry_forward_unfinished(from_date, to_date)
+
+    return redirect(
+        url_for(
+            "todo",
+            year=to_date.year,
+            month=to_date.month,
+            day=to_date.day,
+            carried=count,
+        )
     )
 
 # ===============================
@@ -276,6 +335,12 @@ textarea{width:100%;min-height:90px;font-size:16px;}
 .floating-bar button{flex:1;padding:14px;font-size:16px;}
 .time-filter{display:flex;gap:20px;margin-bottom:12px;}
 .time-wheel select{height:120px;width:90px;font-size:16px;}
+.status-nothing-planned { background:#e5e7eb; }
+.status-yet-to-start { background:#fde68a; }
+.status-in-progress { background:#bfdbfe; }
+.status-closed { background:#bbf7d0; }
+.status-deferred { background:#fecaca; }
+
 </style>
 </head>
 <body>
@@ -459,10 +524,25 @@ body { font-family:system-ui; background:#f6f7f9; padding:16px; }
 <body>
 <div class="container">
 
-<div class="header">
+<div class="header" style="display:flex;justify-content:space-between;align-items:center;">
   <h2>📋 Eisenhower Matrix – {{ plan_date }}</h2>
-  <a href="/">⬅ Daily Planner</a>
+
+  <div style="display:flex;gap:10px;align-items:center;">
+    <form method="post" action="/todo/carry-forward"
+          onsubmit="return confirmCarryForward();">
+      <input type="hidden" name="year" value="{{year}}">
+      <input type="hidden" name="month" value="{{month}}">
+      <input type="hidden" name="day" value="{{day}}">
+      <button type="submit"
+              style="padding:8px 12px;font-size:14px;">
+        ⏭ Carry forward unfinished
+      </button>
+    </form>
+
+    <a href="/">⬅ Daily Planner</a>
+  </div>
 </div>
+
 
 <form method="post" onkeydown="return event.key !== 'Enter';">
 
@@ -555,6 +635,13 @@ document.addEventListener("keydown", function(e){
     insertTask(box, row);
   }
 });
+function confirmCarryForward(){
+  return confirm(
+    "Carry forward all unfinished tasks to tomorrow?\n\n" +
+    "Completed tasks will NOT be carried."
+  );
+}
+
 </script>
 
 
