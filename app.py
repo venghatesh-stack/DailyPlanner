@@ -155,23 +155,35 @@ def load_todo(plan_date):
         }
     ) or []
 
-    data = {"do": [], "schedule": [], "delegate": [], "eliminate": []}
+    data = {
+        "do": [],
+        "schedule": [],
+        "delegate": [],
+        "eliminate": [],
+        "notes": ""
+    }
+
     for r in rows:
-        data[r["quadrant"]].append({
-            "id": r["id"],
-            "text": r["task_text"],
-            "done": bool(r.get("is_done")),
-        })
+        if r["quadrant"] == "notes":
+            data["notes"] = r.get("task_text", "")
+        else:
+            data[r["quadrant"]].append({
+                "id": r["id"],
+                "text": r["task_text"],
+                "done": bool(r.get("is_done")),
+            })
+
     return data
 
+
 def save_todo(plan_date, form):
-    # Clear existing tasks for the day
     delete(
         "todo_matrix",
         params={"plan_date": f"eq.{plan_date}"}
     )
 
     payload = []
+
     for quadrant in ["do", "schedule", "delegate", "eliminate"]:
         lines = form.getlist(f"{quadrant}[]")
         done_flags = set(form.getlist("done[]"))
@@ -188,8 +200,20 @@ def save_todo(plan_date, form):
                 "position": idx
             })
 
+    # 📝 Notes (single free-text block)
+    notes = form.get("notes", "").strip()
+    if notes:
+        payload.append({
+            "plan_date": str(plan_date),
+            "quadrant": "notes",
+            "task_text": notes,
+            "is_done": False,
+            "position": 0
+        })
+
     if payload:
         post("todo_matrix", payload)
+
 def google_calendar_link_eisenhower(plan_date, quadrant, task):
     if not task or quadrant == "eliminate":
         return "#"
@@ -244,7 +268,7 @@ def planner():
       plan_date = date(year, month, day)
     else:
       plan_date = today
-      
+
     if request.method == "POST":
         save_day(plan_date, request.form)
         return redirect(url_for("planner", year=year, month=month, day=plan_date.day, saved=1))
@@ -524,6 +548,21 @@ body { font-family: system-ui; background:#f6f7f9; padding:16px; }
 </div>
 
 <br>
+<hr>
+
+<h3>📝 Notes / Thoughts</h3>
+<p style="color:#6b7280; font-size:14px;">
+Use this space for ideas, reflections, or bullet points.
+You can move them into quadrants later.
+</p>
+
+<textarea
+  name="notes"
+  rows="6"
+  style="width:100%; padding:10px; font-size:15px;"
+  placeholder="• Ideas\n• Observations\n• Things to decide later..."
+>{{ todo.notes }}</textarea>
+<br><br>
 <button type="submit">💾 Save</button>
 </form>
 </div>
