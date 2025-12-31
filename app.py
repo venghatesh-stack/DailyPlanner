@@ -74,14 +74,18 @@ def save_day(plan_date, form):
                 "status": status,
             })
 
-    if payload:
-        logger.info("Saving %d planner rows", len(payload))
-        post(
-            "daily_slots?on_conflict=plan_date,slot",
-            payload,
-            prefer="resolution=merge-duplicates",
-        )
+    logger.info("Planner save payload size: %d", len(payload))
 
+    if payload:
+        try:
+            post(
+                "daily_slots?on_conflict=plan_date,slot",
+                payload,
+                prefer="resolution=merge-duplicates",
+            )
+            logger.info("Planner save: Supabase POST success")
+        except Exception as e:
+            logger.exception("Planner save FAILED")
 
 # ===============================
 # DATA – TODO MATRIX
