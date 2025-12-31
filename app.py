@@ -249,7 +249,7 @@ def save_todo(plan_date, form):
             "quadrant": "notes",
             "task_text": "\n".join(remaining_notes),
             "is_done": False,
-            "position": 0
+            "position": -1
         })
 
     if payload:
