@@ -489,64 +489,58 @@ body { font-family:system-ui; background:#f6f7f9; padding:16px; }
 
 </form>
 </div>
-
 <script>
 function addTask(q){
   const box = document.querySelector(`.tasks[data-q='${q}']`);
+  insertTask(box);
+}
+
+function insertTask(box, afterRow=null){
+  const q = box.dataset.q;
   const row = document.createElement("div");
   row.className = "task-row";
   row.innerHTML = `
     <input type="hidden" name="${q}_done[]" value="0">
+    <button type="button" class="del-btn" onclick="deleteTask(this)">−</button>
     <input type="checkbox" onclick="toggleDone(this)">
     <input type="text" name="${q}_text[]" value="">
   `;
-  box.appendChild(row);
+
+  if(afterRow){
+    afterRow.after(row);
+  } else {
+    box.appendChild(row);
+  }
+
   row.querySelector("input[type=text]").focus();
 }
 
 function toggleDone(cb){
-  const row = cb.parentElement;
+  const row = cb.closest(".task-row");
   const hidden = row.querySelector("input[type=hidden]");
-  if(cb.checked){
-    row.classList.add("done");
-    hidden.value = "1";
-  } else {
-    row.classList.remove("done");
-    hidden.value = "0";
-  }
-}
-<script>
-function addTaskBelow(input){
-  const row = input.closest(".task-row");
-  const box = row.parentElement;
-  const q = box.dataset.q;
-
-  const newRow = document.createElement("div");
-  newRow.className = "task-row";
-  newRow.innerHTML = `
-    <input type="hidden" name="${q}_done[]" value="0">
-    <input type="checkbox" onclick="toggleDone(this)">
-    <input type="text" name="${q}_text[]" value="">
-  `;
-
-  row.after(newRow);
-  newRow.querySelector("input[type=text]").focus();
+  hidden.value = cb.checked ? "1" : "0";
+  row.classList.toggle("done", cb.checked);
 }
 
+function deleteTask(btn){
+  const row = btn.closest(".task-row");
+  row.remove();
+}
+
+/* ENTER → add task below */
 document.addEventListener("keydown", function(e){
-  if (
+  if(
     e.key === "Enter" &&
-    e.target.tagName === "INPUT" &&
-    e.target.type === "text" &&
-    e.target.closest(".task-row")
+    e.target.matches(".task-row input[type='text']")
   ){
     e.preventDefault();
-    addTaskBelow(e.target);
+    const row = e.target.closest(".task-row");
+    const box = row.parentElement;
+    insertTask(box, row);
   }
 });
 </script>
 
-</script>
 
 </body>
 </html>
