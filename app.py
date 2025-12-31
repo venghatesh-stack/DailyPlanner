@@ -1,9 +1,7 @@
 from flask import Flask, request, redirect, url_for, render_template_string
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from zoneinfo import ZoneInfo
 import calendar
-import urllib.parse
-import json
 
 from supabase_client import get, post, delete
 from logger import setup_logger
@@ -16,10 +14,6 @@ logger = setup_logger()
 # ===============================
 # CONSTANTS
 # ===============================
-TOTAL_SLOTS = 48
-META_SLOT = 0
-DEFAULT_STATUS = "Nothing Planned"
-
 STATUSES = [
     "Nothing Planned",
     "Yet to Start",
@@ -29,15 +23,14 @@ STATUSES = [
 ]
 
 # ===============================
-# HELPERS
+# ROOT (SAFE PLACEHOLDER)
 # ===============================
-def current_slot():
-    now = datetime.now(IST)
-    return (now.hour * 60 + now.minute) // 30 + 1
-
+@app.route("/", methods=["GET"])
+def index():
+    return redirect(url_for("todo"))
 
 # ===============================
-# TODO: LOAD
+# TODO – DATA
 # ===============================
 def load_todo(plan_date):
     rows = get(
@@ -56,26 +49,23 @@ def load_todo(plan_date):
         "eliminate": []
     }
 
-    random_notes = ""
+    notes = ""
 
     for r in rows:
         if r.get("position") == -1:
-            random_notes = r.get("notes") or ""
+            notes = r.get("notes") or ""
             continue
 
         q = r.get("quadrant")
         if q in todo:
             todo[q].append({
                 "text": r.get("task_text", ""),
-                "done": bool(r.get("is_done")),
+                "done": bool(r.get("is_done"))
             })
 
-    return todo, random_notes
+    return todo, notes
 
 
-# ===============================
-# TODO: SAVE
-# ===============================
 def save_todo(plan_date, form):
     delete("todo_matrix", params={"plan_date": f"eq.{plan_date}"})
 
@@ -92,7 +82,7 @@ def save_todo(plan_date, form):
                     "quadrant": quadrant,
                     "task_text": text.strip(),
                     "is_done": dones[idx] == "1",
-                    "position": idx,
+                    "position": idx
                 })
 
     notes = form.get("random_notes", "").strip()
@@ -103,95 +93,12 @@ def save_todo(plan_date, form):
             "notes": notes
         })
 
-    ### Changed from
-    # if payload:
-    #        
-    #        post("todo_matrix", payload)
-
-    ### Change to
     if payload:
         post("todo_matrix", payload)
 
-
 # ===============================
-# TODO: CARRY FORWARD
+# TODO – ROUTE
 # ===============================
-def carry_forward_unfinished(from_date, to_date):
-    rows = get(
-        "todo_matrix",
-        params={
-            "plan_date": f"eq.{from_date}",
-            "is_done": "eq.false",
-            "select": "quadrant,task_text"
-        }
-    ) or []
-
-    if not rows:
-        return
-
-    ### Changed from
-    # payload = []
-    # delete(...) AFTER insert
-
-    ### Change to
-    delete(
-        "todo_matrix",
-        params={
-            "plan_date": f"eq.{to_date}",
-            "is_done": "eq.false"
-        }
-    )
-
-    existing = get(
-        "todo_matrix",
-        params={
-            "plan_date": f"eq.{to_date}",
-            "select": "quadrant,position"
-        }
-    ) or []
-
-    position_map = {"do": 0, "schedule": 0, "delegate": 0, "eliminate": 0}
-
-    for r in existing:
-        q = r.get("quadrant")
-        pos = r.get("position")
-        if q in position_map and isinstance(pos, int):
-            position_map[q] = max(position_map[q], pos + 1)
-
-    payload = []
-
-    for r in rows:
-        q = r.get("quadrant")
-
-        ### Changed from
-        # payload.append({... position_map[q] ...})
-
-        ### Change to
-        if q not in position_map:
-            continue
-
-        payload.append({
-            "plan_date": str(to_date),
-            "quadrant": q,
-            "task_text": r.get("task_text", "").strip(),
-            "is_done": False,
-            "position": position_map[q],
-        })
-
-        position_map[q] += 1
-
-    if payload:
-        post("todo_matrix", payload)
-
-
-# ===============================
-# ROUTES
-# ===============================
-
-@app.route("/", methods=["GET"])
-def index():
-    return redirect(url_for("todo"))
-
 @app.route("/todo", methods=["GET", "POST"])
 def todo():
     today = datetime.now(IST).date()
@@ -203,16 +110,15 @@ def todo():
 
     if request.method == "POST":
         save_todo(plan_date, request.form)
-        return redirect(url_for("todo", year=year, month=month, day=day, saved=1))
+        return redirect(url_for("todo", year=year, month=month, day=day))
 
-    todo, random_notes = load_todo(plan_date)
-
+    todo, notes = load_todo(plan_date)
     days = [date(year, month, d) for d in range(1, calendar.monthrange(year, month)[1] + 1)]
 
     return render_template_string(
         TODO_TEMPLATE,
         todo=todo,
-        random_notes=random_notes,
+        random_notes=notes,
         plan_date=plan_date,
         year=year,
         month=month,
@@ -221,27 +127,102 @@ def todo():
         calendar=calendar,
     )
 
-
 # ===============================
-# TEMPLATE (ONLY JS FIX SHOWN)
+# TODO – TEMPLATE (FULL, SAFE)
 # ===============================
 TODO_TEMPLATE = """
-<script>
-function cycleStatus(el){
-  const input = el.querySelector("input");
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body { font-family: system-ui; background:#f6f7f9; padding:16px; }
+.container { max-width:1100px; margin:auto; background:#fff; padding:20px; border-radius:14px; }
 
-  ### Changed from
-  // el.textContent = STATUS_ORDER[i];
+.header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.day-strip { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
 
-  ### Change to
-  let idx = STATUS_ORDER.indexOf(input.value);
-  idx = (idx + 1) % STATUS_ORDER.length;
-  input.value = STATUS_ORDER[idx];
-  el.childNodes[0].nodeValue = STATUS_ORDER[idx] + " ";
+.day-btn {
+  width:34px; height:34px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid #ddd; text-decoration:none; color:#000;
 }
-</script>
+.day-btn.selected { background:#2563eb; color:#fff; }
+
+.matrix { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.quad { border:1px solid #e5e7eb; border-radius:12px; padding:12px; background:#f9fafb; }
+
+.task { display:flex; gap:6px; align-items:center; margin-bottom:6px; }
+.task input[type="text"] { flex:1; padding:6px; }
+
+textarea { width:100%; min-height:120px; padding:8px; }
+
+@media(max-width:768px){
+  .matrix { grid-template-columns:1fr; }
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<div class="header">
+  <h2>📋 Eisenhower Matrix – {{ plan_date }}</h2>
+</div>
+
+<div class="day-strip">
+{% for d in days %}
+<a href="/todo?year={{year}}&month={{month}}&day={{d.day}}"
+   class="day-btn {% if d.day==day %}selected{% endif %}">
+{{ d.day }}
+</a>
+{% endfor %}
+</div>
+
+<form method="post">
+
+<div class="matrix">
+{% for q, label in {
+  'do':'🔥 Do',
+  'schedule':'📅 Schedule',
+  'delegate':'🤝 Delegate',
+  'eliminate':'🗑 Eliminate'
+}.items() %}
+<div class="quad">
+  <h3>{{ label }}</h3>
+
+  {% for t in todo[q] %}
+  <div class="task">
+    <input type="hidden" name="{{q}}_done[]" value="{{ 1 if t.done else 0 }}">
+    <input type="checkbox" {% if t.done %}checked{% endif %} disabled>
+    <input type="text" name="{{q}}_text[]" value="{{ t.text }}">
+  </div>
+  {% endfor %}
+
+  <div class="task">
+    <input type="hidden" name="{{q}}_done[]" value="0">
+    <input type="text" name="{{q}}_text[]" placeholder="Add task">
+  </div>
+</div>
+{% endfor %}
+</div>
+
+<h3>🧠 Random Thoughts</h3>
+<textarea name="random_notes">{{ random_notes }}</textarea>
+
+<div style="margin-top:14px;">
+  <button type="submit" style="padding:12px 18px;">💾 Save</button>
+</div>
+
+</form>
+</div>
+</body>
+</html>
 """
 
+# ===============================
+# ENTRY POINT
+# ===============================
 if __name__ == "__main__":
     logger.info("Starting Daily Planner – stable")
     app.run(debug=True)
