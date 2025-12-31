@@ -5,7 +5,7 @@ import calendar
 import urllib.parse
 import json
 
-from supabase_client import get, post,delete
+from supabase_client import get, post, delete
 from logger import setup_logger
 
 IST = ZoneInfo("Asia/Kolkata")
@@ -79,7 +79,7 @@ def google_calendar_link(plan_date, slot, task):
     return "https://calendar.google.com/calendar/render?" + urllib.parse.urlencode(params)
 
 # ===============================
-# DATA ACCESS : Daily Planner
+# DATA ACCESS : DAILY PLANNER
 # ===============================
 def load_day(plan_date):
     plans = {i: {"plan": "", "status": DEFAULT_STATUS} for i in range(1, TOTAL_SLOTS + 1)}
@@ -136,15 +136,16 @@ def save_day(plan_date, form):
         payload,
         prefer="resolution=merge-duplicates"
     )
+
 # ===============================
-# TODO MATRIX Eisenhower Matrix
+# DATA ACCESS : TODO MATRIX
 # ===============================
 def load_todo(plan_date):
     rows = get(
         "todo_matrix",
         params={
             "plan_date": f"eq.{plan_date}",
-            "select": "id,quadrant,task_text,status"
+            "select": "id,quadrant,task_text"
         }
     ) or []
 
@@ -154,32 +155,26 @@ def load_todo(plan_date):
 
     return data
 
-
 def save_todo(plan_date, form):
-    # ✅ Proper DELETE with params dict
-    delete(
-        "todo_matrix",
-        params={"plan_date": f"eq.{plan_date}"}
-    )
+    delete("todo_matrix", params={"plan_date": f"eq.{plan_date}"})
 
     payload = []
     for q in ["do", "schedule", "delegate", "eliminate"]:
         text = form.get(q, "").strip()
         if text:
             for line in text.splitlines():
-                line = line.strip()
-                if line:
+                if line.strip():
                     payload.append({
                         "plan_date": str(plan_date),
                         "quadrant": q,
-                        "task_text": line
+                        "task_text": line.strip()
                     })
 
     if payload:
         post("todo_matrix", payload)
 
 # ===============================
-# ROUTE
+# ROUTES
 # ===============================
 @app.route("/", methods=["GET", "POST"])
 def plan_of_day():
@@ -207,10 +202,7 @@ def plan_of_day():
         for slot in range(1, TOTAL_SLOTS + 1)
     }
 
-    days = [
-        date(year, month, d)
-        for d in range(1, calendar.monthrange(year, month)[1] + 1)
-    ]
+    days = [date(year, month, d) for d in range(1, calendar.monthrange(year, month)[1] + 1)]
 
     return render_template_string(
         TEMPLATE,
@@ -232,24 +224,15 @@ def plan_of_day():
         habit_icons=HABIT_ICONS,
         calendar=calendar
     )
+
 @app.route("/todo", methods=["GET", "POST"])
 def todo_page():
     today = datetime.now(IST).date()
-
-    year = int(request.args.get("year", today.year))
-    month = int(request.args.get("month", today.month))
-    day = int(request.args.get("day", today.day))
-    plan_date = date(year, month, day)
+    plan_date = today
 
     if request.method == "POST":
         save_todo(plan_date, request.form)
-        return redirect(url_for(
-            "todo_page",
-            year=plan_date.year,
-            month=plan_date.month,
-            day=plan_date.day,
-            saved=1
-        ))
+        return redirect(url_for("todo_page", saved=1))
 
     todo = load_todo(plan_date)
 
@@ -261,7 +244,7 @@ def todo_page():
     )
 
 # ===============================
-# TEMPLATE
+# TEMPLATE (HTML + JS)
 # ===============================
 TEMPLATE = """
 <!DOCTYPE html>
@@ -273,24 +256,24 @@ body {
   font-family: system-ui;
   background:#f6f7f9;
   padding:12px;
-  padding-bottom:220px; /* increased */
+  padding-bottom:220px;
 }
-
-.container { max-width:1100px; margin:auto; background:#fff; padding:16px; border-radius:14px; }
-
+.container {
+  max-width:1100px;
+  margin:auto;
+  background:#fff;
+  padding:20px;
+  padding-top:28px;
+  border-radius:14px;
+}
 .header-bar {
   display:flex;
-  align-items:center;
   justify-content:space-between;
-  min-height:32px;
+  align-items:center;
+  min-height:36px;
 }
-#current-date { font-weight:600; }
-
 .header-time { font-weight:700; color:#2563eb; }
-
-.month-controls { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
-.day-strip { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
-
+.month-controls, .day-strip { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
 .day-btn {
   width:36px; height:36px;
   border-radius:50%;
@@ -299,94 +282,27 @@ body {
   text-decoration:none; color:#000;
 }
 .day-btn.selected { background:#2563eb; color:#fff; }
-
 table { width:100%; border-collapse:collapse; }
-td { padding:8px; border-bottom:1px solid #eee; vertical-align:top; }
-
+td { padding:8px; border-bottom:1px solid #eee; }
 .current-slot { background:#eef2ff; border-left:4px solid #2563eb; }
-
-textarea { width:100%; resize:vertical; }
-.slot-task textarea {
-  min-height:100px;
-  font-size:16px;
-  line-height:1.4;
-}
-@media (max-width: 767px) {
-  tr.slot-row:not(.active) textarea,
-  tr.slot-row:not(.active) select { display:none; }
-  tr.slot-row.active textarea { min-height:100px; font-size:16px; }
-}
+textarea { width:100%; min-height:90px; font-size:16px; }
 .floating-bar {
-  position: fixed;
-  bottom: env(safe-area-inset-bottom, 0);
-  left: 0;
-  right: 0;
-  background: #fff;
-  border-top: 1px solid #ddd;
-  padding: 10px;
-  display: flex;
-  gap: 10px;
-  z-index: 9999;
+  position:fixed;
+  bottom:0; left:0; right:0;
+  background:#fff;
+  border-top:1px solid #ddd;
+  display:flex;
+  padding:10px;
+  gap:10px;
 }
-
-/* Mobile keyboard fix */
-@supports (-webkit-touch-callout: none) {
-  .floating-bar {
-    position: sticky;
-    bottom: 0;
-  }
-}
-
 .floating-bar button { flex:1; padding:14px; font-size:16px; }
-.time-filter {
-  display:flex;
-  gap:20px;
-  margin-bottom:12px;
-}
-
-.time-wheel {
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-}
-
-.time-wheel label {
-  font-size:14px;
-  margin-bottom:4px;
-  font-weight:600;
-}
-
-.time-wheel select {
-  height:120px;
-  width:90px;
-  font-size:16px;
-  text-align:center;
-  overflow-y:scroll;
-  scrollbar-width:thin;
-}
-.status-pill {
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-weight: 600;
-  display: inline-block;
-  cursor: pointer;
-}
-
-.status-nothing-planned { background:#e5e7eb; }
-.status-yet-to-start { background:#fde68a; }
-.status-in-progress { background:#bfdbfe; }
-.status-closed { background:#bbf7d0; }
-.status-deferred { background:#fecaca; }
-
-
 </style>
 </head>
 
 <body>
 
 {% if saved %}
-<div id="save-toast" style="position:fixed;bottom:90px;left:50%;
-transform:translateX(-50%);
+<div style="position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
 background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
 ✅ Saved successfully
 </div>
@@ -396,15 +312,11 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
 
 <div class="header-bar">
   <div id="current-date"></div>
-
-  <div style="display:flex; gap:14px; align-items:center;">
-    <a href="/todo" style="text-decoration:none;font-weight:600;color:#2563eb;">
-      📋 To-Do Matrix
-    </a>
+  <div style="display:flex;gap:14px;align-items:center;">
+    <a href="/todo">📋 To-Do Matrix</a>
     <div class="header-time">🕒 <span id="current-time"></span> IST</div>
   </div>
 </div>
-
 
 <form method="get" class="month-controls">
   <input type="hidden" name="day" value="{{ selected_day }}">
@@ -419,38 +331,6 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
     {% endfor %}
   </select>
 </form>
-<!-- Time Filter -->
-<!-- Scrollable Clock Filter -->
-<div class="time-filter">
-  <div class="time-wheel">
-    <label>From</label>
-    <select id="timeFrom">
-      {% for h in range(0,24) %}
-        {% for m in (0,30) %}
-          {% set t = "%02d:%02d"|format(h,m) %}
-          <option value="{{t}}" {% if t=="06:00" %}selected{% endif %}>
-            {{t}}
-          </option>
-        {% endfor %}
-      {% endfor %}
-    </select>
-  </div>
-
-  <div class="time-wheel">
-    <label>To</label>
-    <select id="timeTo">
-      {% for h in range(0,24) %}
-        {% for m in (0,30) %}
-          {% set t = "%02d:%02d"|format(h,m) %}
-          <option value="{{t}}" {% if t=="18:00" %}selected{% endif %}>
-            {{t}}
-          </option>
-        {% endfor %}
-      {% endfor %}
-    </select>
-  </div>
-</div>
-
 
 <div class="day-strip">
 {% for d in days %}
@@ -464,71 +344,14 @@ background:#dcfce7;padding:10px 16px;border-radius:999px;font-weight:600;">
 <form method="post" id="planner-form">
 <table>
 {% for slot in range(1,total_slots+1) %}
-
-<!-- TIME ROW -->
-<tr class="slot-time {% if now_slot==slot %}current-slot{% endif %}" data-slot="{{slot}}">
-  <td colspan="3">
-    <strong>{{ slot_labels[slot] }}</strong>
-    {% if plans[slot]['plan'] %}
-      <a href="{{ reminder_links[slot] }}" target="_blank">⏰</a>
-    {% endif %}
-  </td>
+<tr class="{% if now_slot==slot %}current-slot{% endif %}" data-slot="{{slot}}">
+  <td>{{ slot_labels[slot] }}</td>
 </tr>
-
-<!-- TASK DESCRIPTION ROW -->
-<tr class="slot-task">
-  <td colspan="3">
-    <textarea
-      name="plan_{{slot}}"
-      placeholder="What will you do in this time?"
-    >{{ plans[slot]['plan'] }}</textarea>
-  </td>
+<tr>
+  <td><textarea name="plan_{{slot}}">{{ plans[slot]['plan'] }}</textarea></td>
 </tr>
-
-<!-- STATUS ROW -->
-<tr class="slot-status">
-  <td colspan="3">
-    <div
-      class="status-pill status-{{ plans[slot]['status']|lower|replace(' ','-') }}"
-      onclick="cycleStatus(this)"
-    >
-      {{ plans[slot]['status'] }}
-    </div>
-
-    <select name="status_{{slot}}" hidden>
-      {% for s in statuses %}
-        <option {% if s==plans[slot]['status'] %}selected{% endif %}>{{s}}</option>
-      {% endfor %}
-    </select>
-  </td>
-</tr>
-
-
 {% endfor %}
 </table>
-
-
-<h3>🏃 Habits</h3>
-
-<div>
-{% for h in habit_list %}
-  <div style="margin-bottom:10px;">
-    <label>
-      <input
-        type="checkbox"
-        name="habits"
-        value="{{h}}"
-        {% if h in habits %}checked{% endif %}
-      >
-      {{ habit_icons[h] }} {{h}}
-    </label>
-  </div>
-{% endfor %}
-</div>
-
-<h3>📝 Reflection of the day</h3>
-<textarea name="reflection" rows="3">{{reflection}}</textarea>
-
 </form>
 </div>
 
@@ -543,182 +366,54 @@ function updateClock(){
   document.getElementById("current-time").textContent = ist.toLocaleTimeString();
   document.getElementById("current-date").textContent = ist.toDateString();
 }
-setInterval(updateClock,1000);
-updateClock();
+setInterval(updateClock,1000); updateClock();
 
 function cancelEdit(){
   const url = new URL(window.location.href);
   url.searchParams.delete("saved");
-  window.location.href = url.toString();   // hard reload
-}
-
-function slotToMinutes(slot) {
-  return (slot - 1) * 30;
-}
-function timeToMinutes(timeStr) {
-  const [h, m] = timeStr.split(":").map(Number);
-  return h * 60 + m;
-}
-function minutesToTime(mins) {
-  const h = Math.floor(mins / 60) % 24;
-  const m = mins % 60;
-  return String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0");
-}
-
-function applyTimeFilter() {
-  const fromTime = document.getElementById("timeFrom").value;
-  const toTime = document.getElementById("timeTo").value;
-
-  let fromMin = timeToMinutes(fromTime);
-  let toMin = timeToMinutes(toTime) + 30;
-
-  document.querySelectorAll("tr[data-slot]").forEach(row => {
-    const slot = parseInt(row.dataset.slot,10);
-    const slotMin = slotToMinutes(slot);
-    const visible = slotMin < toMin && (slotMin + 30) > fromMin;
-
-    let r = row;
-    for (let i=0;i<3;i++){
-      if(r){
-        r.style.display = visible ? "" : "none";
-        r = r.nextElementSibling;
-      }
-    }
-  });
+  window.location.href = url.toString();
 }
 
 window.addEventListener("load", () => {
-  applyTimeFilter();
+  const dayBtn = document.querySelector(".day-btn.selected");
+  if(dayBtn) dayBtn.scrollIntoView({inline:"center"});
 
-  // 🔹 Scroll current DATE (day button) into view
-  const selectedDay = document.querySelector(".day-btn.selected");
-  if (selectedDay){
-    selectedDay.scrollIntoView({
-      behavior: "smooth",
-      inline: "center"
-    });
-  }
-
-  // 🔹 Scroll current TIME slot into view
   const currentRow = document.querySelector(".current-slot");
-  if (!currentRow) return;
-
-  currentRow.scrollIntoView({
-    behavior: "smooth",
-    block: "center"
-  });
-
-  // 🔹 Focus textarea of current slot
-  const textarea = currentRow.nextElementSibling?.querySelector("textarea");
-  if (textarea){
-    textarea.focus();
-    textarea.setSelectionRange(
-      textarea.value.length,
-      textarea.value.length
-    );
+  if(currentRow){
+    currentRow.scrollIntoView({block:"center"});
+    const textarea = currentRow.nextElementSibling?.querySelector("textarea");
+    if(textarea){
+      textarea.focus();
+      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    }
   }
 });
-
-document.getElementById("timeFrom").addEventListener("change", applyTimeFilter);
-document.getElementById("timeTo").addEventListener("change", applyTimeFilter);
-
-const STATUSES = {{ statuses | tojson }};
-function cycleStatus(el){
-  const select = el.nextElementSibling;
-  let i = (STATUSES.indexOf(select.value)+1)%STATUSES.length;
-  select.value = STATUSES[i];
-  el.textContent = STATUSES[i];
-  el.className = "status-pill status-" + STATUSES[i].toLowerCase().replaceAll(" ","-");
-}
 </script>
-
 
 </body>
 </html>
 """
+
+# ===============================
+# TODO TEMPLATE
+# ===============================
 TODO_TEMPLATE = """
 <!DOCTYPE html>
 <html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-body { font-family:system-ui; background:#f6f7f9; padding:16px; }
-.container {
-  max-width:1100px;
-  margin:auto;
-  background:#fff;
-  padding:20px;
-  padding-top:28px;   /* 🔑 FIX */
-  border-radius:14px;
-}
-
-.header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
-.matrix { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-.quadrant { border-radius:12px; padding:14px; border:1px solid #e5e7eb; background:#f9fafb; }
-textarea { width:100%; min-height:160px; font-size:15px; }
-.do { border-left:6px solid #22c55e; }
-.schedule { border-left:6px solid #3b82f6; }
-.delegate { border-left:6px solid #f59e0b; }
-.eliminate { border-left:6px solid #ef4444; }
-@media(max-width:768px){ .matrix{ grid-template-columns:1fr; } }
-</style>
-</head>
-
 <body>
-<div class="container">
-
-<div class="header">
-  <h2>📋 Eisenhower Matrix – {{ plan_date }}</h2>
-  <a href="/">⬅ Daily Planner</a>
-</div>
-
-{% if saved %}
-<div style="margin-bottom:12px;color:green;font-weight:600;">
-  ✅ Saved successfully
-</div>
-{% endif %}
-
+<h2>Eisenhower Matrix – {{ plan_date }}</h2>
 <form method="post">
-
-<div class="matrix">
-
-  <div class="quadrant do">
-    <h3>🔥 Do Now</h3>
-    <textarea name="do">{% for t in todo.do %}{{t.task_text}}
-{% endfor %}</textarea>
-  </div>
-
-  <div class="quadrant schedule">
-    <h3>📅 Schedule</h3>
-    <textarea name="schedule">{% for t in todo.schedule %}{{t.task_text}}
-{% endfor %}</textarea>
-  </div>
-
-  <div class="quadrant delegate">
-    <h3>🤝 Delegate</h3>
-    <textarea name="delegate">{% for t in todo.delegate %}{{t.task_text}}
-{% endfor %}</textarea>
-  </div>
-
-  <div class="quadrant eliminate">
-    <h3>🗑 Eliminate</h3>
-    <textarea name="eliminate">{% for t in todo.eliminate %}{{t.task_text}}
-{% endfor %}</textarea>
-  </div>
-
-</div>
-
-<div style="margin-top:16px;display:flex;gap:12px;">
-  <button type="submit" style="flex:1;padding:14px;font-size:16px;">💾 Save</button>
-</div>
-
+<textarea name="do">{% for t in todo.do %}{{t.task_text}}{% endfor %}</textarea>
+<textarea name="schedule">{% for t in todo.schedule %}{{t.task_text}}{% endfor %}</textarea>
+<textarea name="delegate">{% for t in todo.delegate %}{{t.task_text}}{% endfor %}</textarea>
+<textarea name="eliminate">{% for t in todo.eliminate %}{{t.task_text}}{% endfor %}</textarea>
+<button type="submit">Save</button>
 </form>
-</div>
+<a href="/">Back</a>
 </body>
 </html>
-
 """
 
 if __name__ == "__main__":
-    logger.info("Starting Daily Planner (stable + mobile UX + restored controls)")
+    logger.info("Starting Daily Planner")
     app.run(debug=True)
