@@ -156,14 +156,9 @@ def load_todo(plan_date):
 
 
 def save_todo(plan_date, form):
-    # 1️⃣ Delete existing todos for the day
-    post(
-        f"todo_matrix?plan_date=eq.{plan_date}",
-        {},  # EMPTY BODY – required positional argument
-        prefer="resolution=delete"
-    )
+    # ✅ DELETE existing todos for the day (correct method)
+    delete(f"todo_matrix?plan_date=eq.{plan_date}")
 
-    # 2️⃣ Insert new todos
     payload = []
     for q in ["do", "schedule", "delegate", "eliminate"]:
         text = form.get(q, "").strip()
@@ -179,7 +174,6 @@ def save_todo(plan_date, form):
 
     if payload:
         post("todo_matrix", payload)
-
 
 # ===============================
 # ROUTE
