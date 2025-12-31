@@ -259,9 +259,23 @@ textarea { width:100%; min-height:90px; font-size:16px; }
 
 <form method="get" style="display:flex;gap:8px;margin-bottom:12px;">
   <input type="hidden" name="day" value="{{selected_day}}">
-  <select name="month" onchange="this.form.submit()">...</select>
-  <select name="year" onchange="this.form.submit()">...</select>
+  <select name="month" onchange="this.form.submit()">
+    {% for m in range(1,13) %}
+      <option value="{{m}}" {% if m==month %}selected{% endif %}>
+        {{calendar.month_name[m]}}
+      </option>
+    {% endfor %}
+  </select>
+
+  <select name="year" onchange="this.form.submit()">
+    {% for y in range(year-5, year+6) %}
+      <option value="{{y}}" {% if y==year %}selected{% endif %}>
+        {{y}}
+      </option>
+    {% endfor %}
+  </select>
 </form>
+
 
 
 <div class="time-filter">
@@ -273,6 +287,14 @@ textarea { width:100%; min-height:90px; font-size:16px; }
         <option value="{{t}}" {% if t=="06:00" %}selected{% endif %}>{{t}}</option>
       {% endfor %}{% endfor %}
     </select>
+  </div>
+  <div class="day-strip">
+    {% for d in days %}
+    <a href="/?year={{year}}&month={{month}}&day={{d.day}}"
+      class="day-btn {% if d.day==selected_day %}selected{% endif %}">
+      {{d.day}}
+    </a>
+    {% endfor %}
   </div>
   <div class="time-wheel">
     <label>To</label><br>
