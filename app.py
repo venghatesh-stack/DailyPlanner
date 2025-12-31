@@ -284,7 +284,12 @@ setTimeout(()=>{const t=document.getElementById("toast");if(t)t.remove();},2000)
 
 <div class="floating-bar">
   <button type="submit" form="planner-form">Save</button>
-  <button type="button" onclick="handleCancel()">Cancel</button>
+  <button type="button"
+        onmousedown="event.preventDefault()"
+        onclick="handleCancel()">
+        Cancel
+  </button>
+
 </div>
 
 
@@ -332,16 +337,12 @@ function selectStatus(s){
 }
 function handleCancel() {
   const proceed = confirm("Any uncommitted changes would be lost");
-
   if (proceed) {
     window.location.reload();
-  } else {
-    // restore cursor to the same cell
-    if (lastFocusedInput) {
-      lastFocusedInput.focus();
-    }
   }
+  // if Cancel → do nothing, focus never left textarea
 }
+
 
 
 
