@@ -323,9 +323,13 @@ function selectStatus(s){
   closeStatusPopup();
 }
 function handleCancel() {
-  alert("Any uncommitted changes would be lost");
-  // intentionally do nothing else
+  const proceed = confirm("Any uncommitted changes would be lost");
+  if (proceed) {
+    window.location.reload();
+  }
+  // If user clicks Cancel → proceed === false → nothing happens
 }
+
 
 </script>
 </body>
