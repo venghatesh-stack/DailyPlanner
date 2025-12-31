@@ -5,7 +5,7 @@ import calendar
 import urllib.parse
 import json
 
-from supabase_client import get, post
+from supabase_client import get, post,delete 
 from logger import setup_logger
 
 # ==========================================================
@@ -166,6 +166,10 @@ def load_todo(plan_date):
 
 def save_todo(plan_date, form):
     # Clear existing tasks for the day
+    delete(
+        "todo_matrix",
+        params={"plan_date": f"eq.{plan_date}"}
+    )
     post(
         f"todo_matrix?plan_date=eq.{plan_date}",
         payload=[],
