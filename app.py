@@ -47,7 +47,7 @@ def load_day(plan_date):
     rows = get(
     "daily_slots",
     params={"plan_date": f"eq.{plan_date}", "select": "slot,plan,status"},
-  ) 
+  ) or [] 
 
 
     for r in rows:
@@ -59,21 +59,19 @@ def load_day(plan_date):
 
 
     return plans
-
 def save_day(plan_date, form):
     payload = []
     for slot in range(1, TOTAL_SLOTS + 1):
-     text = form.get(f"plan_{slot}", "").strip()
-     status = form.get(f"status_{slot}", DEFAULT_STATUS)
+        text = form.get(f"plan_{slot}", "").strip()
+        status = form.get(f"status_{slot}", DEFAULT_STATUS)
 
-    if text:
-      payload.append({
-        "plan_date": str(plan_date),
-        "slot": slot,
-        "plan": text,
-        "status": status,
-    })
-
+        if text:
+            payload.append({
+                "plan_date": str(plan_date),
+                "slot": slot,
+                "plan": text,
+                "status": status,
+            })
 
     if payload:
         post(
