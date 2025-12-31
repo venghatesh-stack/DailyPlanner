@@ -545,9 +545,14 @@ function activateRow(row){
 
 function cancelEdit(){
   const url = new URL(window.location.href);
+
+  // remove transient params
   url.searchParams.delete("saved");
-  window.location.href = url.toString();
+
+  // hard reload from server (discard client state)
+  window.location.replace(url.toString());
 }
+
 
 {% if saved %}
 setTimeout(()=>{ const t=document.getElementById("save-toast"); if(t) t.remove(); },2500);
@@ -631,7 +636,30 @@ document.getElementById("timeFrom").addEventListener("change", applyTimeFilter);
 document.getElementById("timeTo").addEventListener("change", applyTimeFilter);
 
 // Apply default filter on load
-window.addEventListener("load", applyTimeFilter);
+window.addEventListener("load", () => {
+  applyTimeFilter();
+
+  const currentRow = document.querySelector(".current-slot");
+  if (!currentRow || currentRow.style.display === "none") return;
+
+  currentRow.scrollIntoView({
+    behavior: "smooth",
+    block: "center"
+  });
+
+  const taskRow = currentRow.nextElementSibling;
+  if (taskRow) {
+    const textarea = taskRow.querySelector("textarea");
+    if (textarea) {
+      textarea.focus();
+      textarea.setSelectionRange(
+        textarea.value.length,
+        textarea.value.length
+      );
+    }
+  }
+});
+
 const STATUSES = {{ statuses | tojson }};
 
 function cycleStatus(el){
