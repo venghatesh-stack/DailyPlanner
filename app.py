@@ -2,86 +2,56 @@ from flask import Flask, request, redirect, url_for, render_template_string
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 import calendar
-import urllib.parse
 import json
 
-from supabase_client import get, post
+from supabase_client import get, post, delete
 from logger import setup_logger
 
 IST = ZoneInfo("Asia/Kolkata")
-
 app = Flask(__name__)
 logger = setup_logger()
 
-# ===============================
-# CONSTANTS
-# ===============================
 TOTAL_SLOTS = 48
 META_SLOT = 0
-DEFAULT_STATUS = "Nothing Planned"
-
-STATUSES = [
-    "Nothing Planned",
-    "Yet to Start",
-    "In Progress",
-    "Closed",
-    "Deferred",
-]
-
-STATUS_COLORS = {
-    "Nothing Planned": "#e5e7eb",
-    "Yet to Start": "#fde68a",
-    "In Progress": "#bfdbfe",
-    "Closed": "#bbf7d0",
-    "Deferred": "#fecaca",
-}
 
 # ===============================
 # HELPERS
 # ===============================
-def slot_label(slot: int) -> str:
+def slot_label(slot):
     start = datetime.min + timedelta(minutes=(slot - 1) * 30)
     end = start + timedelta(minutes=30)
     return f"{start.strftime('%I:%M %p')} – {end.strftime('%I:%M %p')}"
 
-def current_slot() -> int:
+def current_slot():
     now = datetime.now(IST)
     return (now.hour * 60 + now.minute) // 30 + 1
 
 # ===============================
-# DATA ACCESS
+# DATA – DAILY PLANNER
 # ===============================
 def load_day(plan_date):
-    plans = {i: {"plan": "", "status": DEFAULT_STATUS} for i in range(1, TOTAL_SLOTS + 1)}
-
+    plans = {i: "" for i in range(1, TOTAL_SLOTS + 1)}
     rows = get(
         "daily_slots",
-        params={"plan_date": f"eq.{plan_date}", "select": "slot,plan,status"},
+        params={"plan_date": f"eq.{plan_date}", "select": "slot,plan"},
     ) or []
 
     for r in rows:
         if r["slot"] != META_SLOT:
-            plans[r["slot"]] = {
-                "plan": r.get("plan") or "",
-                "status": r.get("status") or DEFAULT_STATUS,
-            }
+            plans[r["slot"]] = r.get("plan") or ""
 
     return plans
 
 def save_day(plan_date, form):
     payload = []
     for slot in range(1, TOTAL_SLOTS + 1):
-        plan = form.get(f"plan_{slot}", "").strip()
-        status = form.get(f"status_{slot}", DEFAULT_STATUS)
-        if plan:
-            payload.append(
-                {
-                    "plan_date": str(plan_date),
-                    "slot": slot,
-                    "plan": plan,
-                    "status": status,
-                }
-            )
+        text = form.get(f"plan_{slot}", "").strip()
+        if text:
+            payload.append({
+                "plan_date": str(plan_date),
+                "slot": slot,
+                "plan": text,
+            })
 
     if payload:
         post(
@@ -91,7 +61,31 @@ def save_day(plan_date, form):
         )
 
 # ===============================
-# ROUTE
+# DATA – TODO MATRIX
+# ===============================
+def load_todo(plan_date):
+    rows = get("todo_matrix", params={"plan_date": f"eq.{plan_date}"}) or []
+    data = {"do": [], "schedule": [], "delegate": [], "eliminate": []}
+    for r in rows:
+        data[r["quadrant"]].append(r["task_text"])
+    return data
+
+def save_todo(plan_date, form):
+    delete("todo_matrix", params={"plan_date": f"eq.{plan_date}"})
+    payload = []
+    for q in ["do", "schedule", "delegate", "eliminate"]:
+        for line in form.get(q, "").splitlines():
+            if line.strip():
+                payload.append({
+                    "plan_date": str(plan_date),
+                    "quadrant": q,
+                    "task_text": line.strip(),
+                })
+    if payload:
+        post("todo_matrix", payload)
+
+# ===============================
+# ROUTES
 # ===============================
 @app.route("/", methods=["GET", "POST"])
 def planner():
@@ -101,33 +95,32 @@ def planner():
     day = int(request.args.get("day", today.day))
     plan_date = date(year, month, day)
 
-    saved = request.args.get("saved")
-    cancelled = request.args.get("cancelled")
-
     if request.method == "POST":
         save_day(plan_date, request.form)
-        return redirect(url_for("planner", year=year, month=month, day=day, saved=1))
-
-    plans = load_day(plan_date)
+        return redirect(url_for("planner", year=year, month=month, day=day))
 
     return render_template_string(
         TEMPLATE,
-        plans=plans,
-        statuses=STATUSES,
-        status_colors=STATUS_COLORS,
-        saved=saved,
-        cancelled=cancelled,
+        plans=load_day(plan_date),
+        days=[date(year, month, d) for d in range(1, calendar.monthrange(year, month)[1] + 1)],
         year=year,
         month=month,
         selected_day=day,
-        days=[date(year, month, d) for d in range(1, calendar.monthrange(year, month)[1] + 1)],
         now_slot=current_slot() if plan_date == today else None,
         slot_labels={i: slot_label(i) for i in range(1, TOTAL_SLOTS + 1)},
         calendar=calendar,
     )
 
+@app.route("/todo", methods=["GET", "POST"])
+def todo():
+    plan_date = datetime.now(IST).date()
+    if request.method == "POST":
+        save_todo(plan_date, request.form)
+        return redirect(url_for("todo"))
+    return render_template_string(TODO_TEMPLATE, todo=load_todo(plan_date), plan_date=plan_date)
+
 # ===============================
-# TEMPLATE
+# TEMPLATE – DAILY PLANNER
 # ===============================
 TEMPLATE = """
 <!DOCTYPE html>
@@ -135,117 +128,191 @@ TEMPLATE = """
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body { font-family: system-ui; background:#f6f7f9; padding:12px; padding-bottom:180px; }
-.container { max-width:1100px; margin:auto; background:#fff; padding:16px; border-radius:12px; }
+body { font-family:system-ui; background:#f6f7f9; padding:12px; padding-bottom:140px; }
+.container { max-width:1100px; margin:auto; background:#fff; padding:16px; border-radius:14px; }
 
-table { width:100%; border-collapse:collapse; }
-th, td { padding:8px; vertical-align:top; }
+.header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.header-time { font-weight:700; color:#2563eb; }
 
-th { text-align:left; font-size:14px; color:#374151; }
-textarea { width:100%; min-height:60px; font-size:15px; }
-
-.status-select {
-  padding:6px 8px;
-  border-radius:999px;
-  font-weight:600;
-  border:none;
+.day-strip { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+.day-btn {
+  width:36px; height:36px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid #ddd; text-decoration:none; color:#000;
 }
+.day-btn.selected { background:#2563eb; color:#fff; }
 
-.current-slot td {
-  background:#eef2ff;
-}
+.slot { margin-bottom:12px; }
+.current-slot { background:#eef2ff; border-left:4px solid #2563eb; padding-left:8px; }
 
-.toast {
-  position:fixed;
-  top:16px;
-  left:50%;
-  transform:translateX(-50%);
-  background:#111827;
-  color:#fff;
-  padding:10px 16px;
-  border-radius:10px;
-  z-index:10000;
-}
+textarea { width:100%; min-height:90px; font-size:16px; }
 
 .floating-bar {
   position:fixed;
-  left:0; right:0;
   bottom:env(safe-area-inset-bottom);
+  left:0; right:0;
   background:#fff;
-  border-top:1px solid #e5e7eb;
+  border-top:1px solid #ddd;
   display:flex;
-  gap:12px;
-  padding:12px;
-  z-index:10000;
+  gap:10px;
+  padding:10px;
+  z-index:9999;
 }
-.floating-bar button {
-  flex:1;
-  padding:14px;
-  font-size:16px;
-}
+.floating-bar button { flex:1; padding:14px; font-size:16px; }
+
+.time-filter { display:flex; gap:20px; margin-bottom:12px; }
+.time-wheel select { height:120px; width:90px; font-size:16px; }
 </style>
 </head>
 
 <body>
 <div class="container">
 
-{% if saved %}
-<div class="toast">✅ Saved successfully</div>
-{% endif %}
-{% if cancelled %}
-<div class="toast">❌ Changes discarded</div>
-{% endif %}
+<div class="header">
+  <a href="/todo" style="font-weight:600;color:#2563eb;text-decoration:none;">📋 To-Do Matrix</a>
+  <div class="header-time">🕒 <span id="current-time"></span> IST</div>
+</div>
 
-<table>
-<tr>
-  <th style="width:140px;">Time</th>
-  <th>Task</th>
-  <th style="width:160px;">Status</th>
-</tr>
+<form method="get" style="display:flex;gap:8px;margin-bottom:12px;">
+  <input type="hidden" name="day" value="{{selected_day}}">
+  <select name="month" onchange="this.form.submit()">
+    {% for m in range(1,13) %}
+      <option value="{{m}}" {% if m==month %}selected{% endif %}>{{calendar.month_name[m]}}</option>
+    {% endfor %}
+  </select>
+  <select name="year" onchange="this.form.submit()">
+    {% for y in range(year-5, year+6) %}
+      <option value="{{y}}" {% if y==year %}selected{% endif %}>{{y}}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<div class="time-filter">
+  <div class="time-wheel">
+    <label>From</label><br>
+    <select id="timeFrom">
+      {% for h in range(0,24) %}{% for m in (0,30) %}
+        {% set t="%02d:%02d"|format(h,m) %}
+        <option value="{{t}}" {% if t=="06:00" %}selected{% endif %}>{{t}}</option>
+      {% endfor %}{% endfor %}
+    </select>
+  </div>
+  <div class="time-wheel">
+    <label>To</label><br>
+    <select id="timeTo">
+      {% for h in range(0,24) %}{% for m in (0,30) %}
+        {% set t="%02d:%02d"|format(h,m) %}
+        <option value="{{t}}" {% if t=="18:00" %}selected{% endif %}>{{t}}</option>
+      {% endfor %}{% endfor %}
+    </select>
+  </div>
+</div>
+
+<div class="day-strip">
+{% for d in days %}
+<a href="/?year={{year}}&month={{month}}&day={{d.day}}"
+   class="day-btn {% if d.day==selected_day %}selected{% endif %}">{{d.day}}</a>
+{% endfor %}
+</div>
 
 <form method="post" id="planner-form">
 {% for slot in range(1,49) %}
-<tr class="{% if now_slot==slot %}current-slot{% endif %}">
-  <td>{{slot_labels[slot]}}</td>
-  <td>
-    <textarea name="plan_{{slot}}">{{plans[slot]['plan']}}</textarea>
-  </td>
-  <td>
-    <select name="status_{{slot}}" class="status-select"
-            style="background:{{status_colors[plans[slot]['status']]}}">
-      {% for s in statuses %}
-        <option value="{{s}}" {% if s==plans[slot]['status'] %}selected{% endif %}>
-          {{s}}
-        </option>
-      {% endfor %}
-    </select>
-  </td>
-</tr>
+<div class="slot {% if now_slot==slot %}current-slot{% endif %}" data-slot="{{slot}}">
+  <b>{{slot_labels[slot]}}</b>
+  <textarea name="plan_{{slot}}">{{plans[slot]}}</textarea>
+</div>
 {% endfor %}
 </form>
-</table>
-
 </div>
 
 <div class="floating-bar">
-  <button type="submit" form="planner-form">💾 Save</button>
-  <button type="button" onclick="cancel()">❌ Cancel</button>
+  <button type="submit" form="planner-form">Save</button>
+  <button type="button" onclick="window.history.back()">Cancel</button>
 </div>
 
 <script>
-setTimeout(() => document.querySelectorAll('.toast').forEach(t => t.remove()), 2000);
-
-function cancel(){
-  const u = new URL(window.location);
-  u.searchParams.set("cancelled", "1");
-  window.location = u.toString();
+// CLOCK
+function updateClock(){
+  const ist=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
+  document.getElementById("current-time").textContent=ist.toLocaleTimeString();
 }
-</script>
+setInterval(updateClock,1000);updateClock();
 
+// TIME FILTER
+function mins(t){const[x,y]=t.split(":").map(Number);return x*60+y;}
+function applyFilter(){
+  const f=mins(timeFrom.value), t=mins(timeTo.value);
+  document.querySelectorAll("[data-slot]").forEach(el=>{
+    const s=(el.dataset.slot-1)*30;
+    el.style.display=(s>=f && s<t)?"":"none";
+  });
+}
+timeFrom.onchange=timeTo.onchange=applyFilter;
+applyFilter();
+
+// FOCUS PERSISTENCE
+let lastFocus=null;
+document.addEventListener("focusin",e=>{
+  if(e.target.tagName==="TEXTAREA"){
+    lastFocus={name:e.target.name,pos:e.target.selectionStart,scroll:window.scrollY};
+    sessionStorage.setItem("focus",JSON.stringify(lastFocus));
+  }
+});
+window.addEventListener("load",()=>{
+  const saved=sessionStorage.getItem("focus");
+  if(saved){
+    const f=JSON.parse(saved);
+    const el=document.querySelector(`[name='${f.name}']`);
+    if(el){
+      el.focus();
+      el.setSelectionRange(f.pos,f.pos);
+      window.scrollTo(0,f.scroll);
+      return;
+    }
+  }
+  const cur=document.querySelector(".current-slot textarea");
+  if(cur){cur.focus();cur.scrollIntoView({block:"center"});}
+});
+</script>
+</body>
+</html>
+"""
+
+# ===============================
+# TEMPLATE – TODO (ISOLATED)
+# ===============================
+TODO_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:system-ui;background:#f6f7f9;padding:20px;}
+.container{max-width:1100px;margin:auto;background:#fff;padding:20px;border-radius:14px;}
+.matrix{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.quad{border:1px solid #e5e7eb;border-radius:12px;padding:14px;}
+textarea{width:100%;min-height:140px;font-size:15px;}
+@media(max-width:768px){.matrix{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="container">
+<h2>Eisenhower Matrix – {{plan_date}}</h2>
+<a href="/">⬅ Daily Planner</a>
+<form method="post">
+<div class="matrix">
+<div class="quad"><h3>🔥 Do</h3><textarea name="do">{{todo.do|join("\\n")}}</textarea></div>
+<div class="quad"><h3>📅 Schedule</h3><textarea name="schedule">{{todo.schedule|join("\\n")}}</textarea></div>
+<div class="quad"><h3>🤝 Delegate</h3><textarea name="delegate">{{todo.delegate|join("\\n")}}</textarea></div>
+<div class="quad"><h3>🗑 Eliminate</h3><textarea name="eliminate">{{todo.eliminate|join("\\n")}}</textarea></div>
+</div>
+<button style="margin-top:16px;padding:14px;width:100%;">Save</button>
+</form>
+</div>
 </body>
 </html>
 """
 
 if __name__ == "__main__":
-    logger.info("Starting Daily Planner – rollback stable build")
+    logger.info("Starting Daily Planner (stable)")
     app.run(debug=True)
