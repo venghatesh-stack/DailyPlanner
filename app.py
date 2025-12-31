@@ -352,17 +352,32 @@ function handleCancel() {
 """
 @app.route("/todo", methods=["GET", "POST"])
 def todo():
-    plan_date = datetime.now(IST).date()
+    today = datetime.now(IST).date()
+
+    year = int(request.args.get("year", today.year))
+    month = int(request.args.get("month", today.month))
+    day = int(request.args.get("day", today.day))
+    day = min(day, calendar.monthrange(year, month)[1])
+
+    plan_date = date(year, month, day)
 
     if request.method == "POST":
         save_todo(plan_date, request.form)
-        return redirect(url_for("todo"))
+        return redirect(
+            url_for("todo", year=year, month=month, day=day)
+        )
 
     return render_template_string(
         TODO_TEMPLATE,
         todo=load_todo(plan_date),
-        plan_date=plan_date
+        plan_date=plan_date,
+        year=year,
+        month=month,
+        day=day,
+        days=[date(year, month, d) for d in range(1, calendar.monthrange(year, month)[1] + 1)],
+        calendar=calendar,
     )
+
 # ===============================
 # DATA – TODO MATRIX
 # ===============================
@@ -398,11 +413,62 @@ body{font-family:system-ui;background:#f6f7f9;padding:20px;}
 .quad{border:1px solid #e5e7eb;border-radius:12px;padding:14px;}
 textarea{width:100%;min-height:140px;font-size:15px;}
 @media(max-width:768px){.matrix{grid-template-columns:1fr}}
+.day-strip {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:16px;
+}
+.day-btn {
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid #ddd;
+  text-decoration:none;
+  color:#000;
+}
+.day-btn.selected {
+  background:#2563eb;
+  color:#fff;
+}
+
 </style>
 </head>
 <body>
 <div class="container">
-<h2>Eisenhower Matrix – {{plan_date}}</h2>
+<h2>Eisenhower Matrix</h2>
+
+<form method="get" style="display:flex;gap:8px;margin-bottom:12px;">
+  <input type="hidden" name="day" value="{{day}}">
+  <select name="month" onchange="this.form.submit()">
+    {% for m in range(1,13) %}
+      <option value="{{m}}" {% if m==month %}selected{% endif %}>
+        {{calendar.month_name[m]}}
+      </option>
+    {% endfor %}
+  </select>
+
+  <select name="year" onchange="this.form.submit()">
+    {% for y in range(year-5, year+6) %}
+      <option value="{{y}}" {% if y==year %}selected{% endif %}>
+        {{y}}
+      </option>
+    {% endfor %}
+  </select>
+</form>
+
+<div class="day-strip">
+{% for d in days %}
+<a href="/todo?year={{year}}&month={{month}}&day={{d.day}}"
+   class="day-btn {% if d.day==day %}selected{% endif %}">
+  {{d.day}}
+</a>
+{% endfor %}
+</div>
+
 <a href="/">⬅ Daily Planner</a>
 <form method="post">
 <div class="matrix">
