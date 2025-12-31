@@ -8,7 +8,6 @@ from supabase_client import get, post, delete
 from logger import setup_logger
 
 IST = ZoneInfo("Asia/Kolkata")
-
 app = Flask(__name__)
 logger = setup_logger()
 
@@ -28,14 +27,14 @@ def current_slot():
     return (now.hour * 60 + now.minute) // 30 + 1
 
 # ===============================
-# DAILY PLANNER DATA
+# DATA – DAILY PLANNER
 # ===============================
 def load_day(plan_date):
     plans = {i: "" for i in range(1, TOTAL_SLOTS + 1)}
-    rows = get("daily_slots", params={
-        "plan_date": f"eq.{plan_date}",
-        "select": "slot,plan"
-    }) or []
+    rows = get(
+        "daily_slots",
+        params={"plan_date": f"eq.{plan_date}", "select": "slot,plan"},
+    ) or []
 
     for r in rows:
         if r["slot"] != META_SLOT:
@@ -51,18 +50,18 @@ def save_day(plan_date, form):
             payload.append({
                 "plan_date": str(plan_date),
                 "slot": slot,
-                "plan": text
+                "plan": text,
             })
 
     if payload:
         post(
             "daily_slots?on_conflict=plan_date,slot",
             payload,
-            prefer="resolution=merge-duplicates"
+            prefer="resolution=merge-duplicates",
         )
 
 # ===============================
-# TODO (EISENHOWER MATRIX)
+# DATA – TODO MATRIX
 # ===============================
 def load_todo(plan_date):
     rows = get("todo_matrix", params={"plan_date": f"eq.{plan_date}"}) or []
@@ -80,7 +79,7 @@ def save_todo(plan_date, form):
                 payload.append({
                     "plan_date": str(plan_date),
                     "quadrant": q,
-                    "task_text": line.strip()
+                    "task_text": line.strip(),
                 })
     if payload:
         post("todo_matrix", payload)
@@ -100,19 +99,16 @@ def planner():
         save_day(plan_date, request.form)
         return redirect(url_for("planner", year=year, month=month, day=day))
 
-    plans = load_day(plan_date)
-    days = [date(year, month, d) for d in range(1, calendar.monthrange(year, month)[1] + 1)]
-
     return render_template_string(
         TEMPLATE,
-        plans=plans,
-        days=days,
+        plans=load_day(plan_date),
+        days=[date(year, month, d) for d in range(1, calendar.monthrange(year, month)[1] + 1)],
         year=year,
         month=month,
         selected_day=day,
         now_slot=current_slot() if plan_date == today else None,
         slot_labels={i: slot_label(i) for i in range(1, TOTAL_SLOTS + 1)},
-        calendar=calendar
+        calendar=calendar,
     )
 
 @app.route("/todo", methods=["GET", "POST"])
@@ -121,11 +117,10 @@ def todo():
     if request.method == "POST":
         save_todo(plan_date, request.form)
         return redirect(url_for("todo"))
-    todo = load_todo(plan_date)
-    return render_template_string(TODO_TEMPLATE, todo=todo, plan_date=plan_date)
+    return render_template_string(TODO_TEMPLATE, todo=load_todo(plan_date), plan_date=plan_date)
 
 # ===============================
-# TEMPLATE (PLANNER)
+# TEMPLATE – DAILY PLANNER
 # ===============================
 TEMPLATE = """
 <!DOCTYPE html>
@@ -133,16 +128,10 @@ TEMPLATE = """
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body { font-family:system-ui; background:#f6f7f9; padding:12px; padding-bottom:220px; }
-.container { max-width:1100px; margin:auto; background:#fff; padding:20px; border-radius:14px; }
+body { font-family:system-ui; background:#f6f7f9; padding:12px; padding-bottom:140px; }
+.container { max-width:1100px; margin:auto; background:#fff; padding:16px; border-radius:14px; }
 
-.header-bar {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:12px;
-}
-
+.header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
 .header-time { font-weight:700; color:#2563eb; }
 
 .day-strip { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
@@ -153,43 +142,42 @@ body { font-family:system-ui; background:#f6f7f9; padding:12px; padding-bottom:2
 }
 .day-btn.selected { background:#2563eb; color:#fff; }
 
+.slot { margin-bottom:12px; }
 .current-slot { background:#eef2ff; border-left:4px solid #2563eb; padding-left:8px; }
 
 textarea { width:100%; min-height:90px; font-size:16px; }
 
-.floating {
-  position:fixed; bottom:0; left:0; right:0;
-  background:#fff; border-top:1px solid #ddd;
-  display:flex; gap:10px; padding:10px;
+.floating-bar {
+  position:fixed;
+  bottom:env(safe-area-inset-bottom);
+  left:0; right:0;
+  background:#fff;
+  border-top:1px solid #ddd;
+  display:flex;
+  gap:10px;
+  padding:10px;
+  z-index:9999;
 }
-
-.floating button { flex:1; padding:14px; font-size:16px; }
+.floating-bar button { flex:1; padding:14px; font-size:16px; }
 
 .time-filter { display:flex; gap:20px; margin-bottom:12px; }
 .time-wheel select { height:120px; width:90px; font-size:16px; }
-
 </style>
 </head>
 
 <body>
-
 <div class="container">
 
-<div class="header-bar">
-  <div id="current-date"></div>
-  <div style="display:flex;gap:16px;align-items:center;">
-    <a href="/todo" style="font-weight:600;color:#2563eb;text-decoration:none;">📋 To-Do Matrix</a>
-    <div class="header-time">🕒 <span id="current-time"></span> IST</div>
-  </div>
+<div class="header">
+  <a href="/todo" style="font-weight:600;color:#2563eb;text-decoration:none;">📋 To-Do Matrix</a>
+  <div class="header-time">🕒 <span id="current-time"></span> IST</div>
 </div>
 
 <form method="get" style="display:flex;gap:8px;margin-bottom:12px;">
   <input type="hidden" name="day" value="{{selected_day}}">
   <select name="month" onchange="this.form.submit()">
     {% for m in range(1,13) %}
-      <option value="{{m}}" {% if m==month %}selected{% endif %}>
-        {{calendar.month_name[m]}}
-      </option>
+      <option value="{{m}}" {% if m==month %}selected{% endif %}>{{calendar.month_name[m]}}</option>
     {% endfor %}
   </select>
   <select name="year" onchange="this.form.submit()">
@@ -203,23 +191,19 @@ textarea { width:100%; min-height:90px; font-size:16px; }
   <div class="time-wheel">
     <label>From</label><br>
     <select id="timeFrom">
-      {% for h in range(0,24) %}
-        {% for m in (0,30) %}
-          {% set t="%02d:%02d"|format(h,m) %}
-          <option value="{{t}}" {% if t=="06:00" %}selected{% endif %}>{{t}}</option>
-        {% endfor %}
-      {% endfor %}
+      {% for h in range(0,24) %}{% for m in (0,30) %}
+        {% set t="%02d:%02d"|format(h,m) %}
+        <option value="{{t}}" {% if t=="06:00" %}selected{% endif %}>{{t}}</option>
+      {% endfor %}{% endfor %}
     </select>
   </div>
   <div class="time-wheel">
     <label>To</label><br>
     <select id="timeTo">
-      {% for h in range(0,24) %}
-        {% for m in (0,30) %}
-          {% set t="%02d:%02d"|format(h,m) %}
-          <option value="{{t}}" {% if t=="18:00" %}selected{% endif %}>{{t}}</option>
-        {% endfor %}
-      {% endfor %}
+      {% for h in range(0,24) %}{% for m in (0,30) %}
+        {% set t="%02d:%02d"|format(h,m) %}
+        <option value="{{t}}" {% if t=="18:00" %}selected{% endif %}>{{t}}</option>
+      {% endfor %}{% endfor %}
     </select>
   </div>
 </div>
@@ -227,88 +211,67 @@ textarea { width:100%; min-height:90px; font-size:16px; }
 <div class="day-strip">
 {% for d in days %}
 <a href="/?year={{year}}&month={{month}}&day={{d.day}}"
-   class="day-btn {% if d.day==selected_day %}selected{% endif %}">
-{{d.day}}
-</a>
+   class="day-btn {% if d.day==selected_day %}selected{% endif %}">{{d.day}}</a>
 {% endfor %}
 </div>
 
 <form method="post" id="planner-form">
 {% for slot in range(1,49) %}
-<div data-slot="{{slot}}" class="{% if now_slot==slot %}current-slot{% endif %}">
-<b>{{slot_labels[slot]}}</b>
-<textarea name="plan_{{slot}}">{{plans[slot]}}</textarea>
+<div class="slot {% if now_slot==slot %}current-slot{% endif %}" data-slot="{{slot}}">
+  <b>{{slot_labels[slot]}}</b>
+  <textarea name="plan_{{slot}}">{{plans[slot]}}</textarea>
 </div>
 {% endfor %}
 </form>
-
 </div>
 
-<div class="floating">
-<button type="submit" form="planner-form">Save</button>
-<button type="button" onclick="location.reload()">Cancel</button>
+<div class="floating-bar">
+  <button type="submit" form="planner-form">Save</button>
+  <button type="button" onclick="window.history.back()">Cancel</button>
 </div>
 
 <script>
+// CLOCK
 function updateClock(){
-  const ist = new Date(
-    new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"})
-  );
-  document.getElementById("current-time").textContent = ist.toLocaleTimeString();
-  document.getElementById("current-date").textContent = ist.toDateString();
+  const ist=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
+  document.getElementById("current-time").textContent=ist.toLocaleTimeString();
 }
-setInterval(updateClock,1000);
-updateClock();
-</script>
+setInterval(updateClock,1000);updateClock();
 
-<!-- 🔽 ADD FOCUS FIX SCRIPT HERE -->
-<script>
-/* FOCUS PRESERVATION — DAILY PLANNER ONLY */
+// TIME FILTER
+function mins(t){const[x,y]=t.split(":").map(Number);return x*60+y;}
+function applyFilter(){
+  const f=mins(timeFrom.value), t=mins(timeTo.value);
+  document.querySelectorAll("[data-slot]").forEach(el=>{
+    const s=(el.dataset.slot-1)*30;
+    el.style.display=(s>=f && s<t)?"":"none";
+  });
+}
+timeFrom.onchange=timeTo.onchange=applyFilter;
+applyFilter();
 
-let shouldRestoreFocus = false;
-
-document.addEventListener("focusin", (e) => {
-  const el = e.target;
-  if (el.tagName === "TEXTAREA" && el.name) {
-    sessionStorage.setItem("focusName", el.name);
-    sessionStorage.setItem("caretPos", el.selectionStart);
-    sessionStorage.setItem("scrollY", window.scrollY);
-    shouldRestoreFocus = true;
+// FOCUS PERSISTENCE
+let lastFocus=null;
+document.addEventListener("focusin",e=>{
+  if(e.target.tagName==="TEXTAREA"){
+    lastFocus={name:e.target.name,pos:e.target.selectionStart,scroll:window.scrollY};
+    sessionStorage.setItem("focus",JSON.stringify(lastFocus));
   }
 });
-
-document.addEventListener("keyup", () => {
-  const el = document.activeElement;
-  if (el && el.tagName === "TEXTAREA" && el.name) {
-    sessionStorage.setItem("caretPos", el.selectionStart);
-  }
-});
-
-function cancelEdit(){
-  shouldRestoreFocus = true;
-  location.reload();
-}
-
-window.addEventListener("load", () => {
-  const name = sessionStorage.getItem("focusName");
-
-  if (shouldRestoreFocus && name) {
-    const el = document.querySelector(`[name='${name}']`);
-    if (el) {
+window.addEventListener("load",()=>{
+  const saved=sessionStorage.getItem("focus");
+  if(saved){
+    const f=JSON.parse(saved);
+    const el=document.querySelector(`[name='${f.name}']`);
+    if(el){
       el.focus();
-      const pos = parseInt(sessionStorage.getItem("caretPos") || 0);
-      el.setSelectionRange(pos, pos);
-      window.scrollTo(0, parseInt(sessionStorage.getItem("scrollY") || 0));
-      return; // 🚫 DO NOT auto-focus
+      el.setSelectionRange(f.pos,f.pos);
+      window.scrollTo(0,f.scroll);
+      return;
     }
   }
-
-  // First page load only
-  const cur = document.querySelector(".current-slot textarea");
-  if (cur) {
-    cur.scrollIntoView({ block: "center" });
-    cur.focus();
-  }
+  const cur=document.querySelector(".current-slot textarea");
+  if(cur){cur.focus();cur.scrollIntoView({block:"center"});}
 });
 </script>
 </body>
@@ -316,7 +279,7 @@ window.addEventListener("load", () => {
 """
 
 # ===============================
-# TODO TEMPLATE (UNCHANGED)
+# TEMPLATE – TODO (ISOLATED)
 # ===============================
 TODO_TEMPLATE = """
 <!DOCTYPE html>
@@ -333,11 +296,9 @@ textarea{width:100%;min-height:140px;font-size:15px;}
 </style>
 </head>
 <body>
-
 <div class="container">
 <h2>Eisenhower Matrix – {{plan_date}}</h2>
 <a href="/">⬅ Daily Planner</a>
-
 <form method="post">
 <div class="matrix">
 <div class="quad"><h3>🔥 Do</h3><textarea name="do">{{todo.do|join("\\n")}}</textarea></div>
@@ -348,47 +309,10 @@ textarea{width:100%;min-height:140px;font-size:15px;}
 <button style="margin-top:16px;padding:14px;width:100%;">Save</button>
 </form>
 </div>
-<script>
-function slotToMinutes(slot){
-  return (slot - 1) * 30;
-}
-
-function timeToMinutes(t){
-  const [h,m] = t.split(":").map(Number);
-  return h * 60 + m;
-}
-
-function applyTimeFilter(){
-  const from = document.getElementById("timeFrom")?.value;
-  const to = document.getElementById("timeTo")?.value;
-  if (!from || !to) return;
-
-  const fromMin = timeToMinutes(from);
-  const toMin = timeToMinutes(to);
-
-  document.querySelectorAll("[data-slot]").forEach(row => {
-    const slot = parseInt(row.dataset.slot, 10);
-    const slotStart = slotToMinutes(slot);
-    const slotEnd = slotStart + 30;
-
-    const visible = slotEnd > fromMin && slotStart < toMin;
-    row.style.display = visible ? "" : "none";
-  });
-}
-
-// Bind events
-document.getElementById("timeFrom")?.addEventListener("change", applyTimeFilter);
-document.getElementById("timeTo")?.addEventListener("change", applyTimeFilter);
-
-// Apply default filter on load
-window.addEventListener("load", applyTimeFilter);
-</script>
-
 </body>
 </html>
 """
 
-
 if __name__ == "__main__":
-    logger.info("Starting Daily Planner")
+    logger.info("Starting Daily Planner (stable)")
     app.run(debug=True)
