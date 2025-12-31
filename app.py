@@ -87,7 +87,6 @@ def load_day(plan_date):
     plans = {i: {"plan": "", "status": DEFAULT_STATUS} for i in range(1, TOTAL_SLOTS + 1)}
     habits = set()
     reflection = ""
-    eisenhower_notes = ""  ###Changes one @1.07 am on 1st January
 
     rows = get(
         "daily_slots",
@@ -103,7 +102,6 @@ def load_day(plan_date):
                 meta = json.loads(r.get("plan") or "{}")
                 habits = set(meta.get("habits", []))
                 reflection = meta.get("reflection", "")
-                eisenhower_notes = meta.get("eisenhower_notes", "")  ###Changes one @1.07 am on 1st January
             except Exception:
                 pass
         else:
@@ -112,10 +110,10 @@ def load_day(plan_date):
                 "status": r.get("status") or DEFAULT_STATUS
             }
 
-    return plans, habits, reflection, eisenhower_notes  ###Changes one @1.07 am on 1st January
+    return plans, habits, reflection
 
 
-def save_day(plan_date, form, eisenhower_notes=None):  ###Changes one @1.07 am on 1st January
+def save_day(plan_date, form):
     payload = []
 
     for slot in range(1, TOTAL_SLOTS + 1):
@@ -134,8 +132,7 @@ def save_day(plan_date, form, eisenhower_notes=None):  ###Changes one @1.07 am o
         "slot": META_SLOT,
         "plan": json.dumps({
             "habits": form.getlist("habits"),
-            "reflection": form.get("reflection", "").strip(),
-            "eisenhower_notes": eisenhower_notes or ""  ###Changes one @1.07 am on 1st January
+            "reflection": form.get("reflection", "").strip()
         }),
         "status": DEFAULT_STATUS
     })
@@ -147,7 +144,7 @@ def save_day(plan_date, form, eisenhower_notes=None):  ###Changes one @1.07 am o
     )
 
 # ==========================================================
-# EISENHOWER TASKS (TASKS ONLY)
+# EISENHOWER TASKS
 # ==========================================================
 def load_todo(plan_date):
     rows = get(
@@ -218,7 +215,7 @@ def planner():
         save_day(plan_date, request.form)
         return redirect(url_for("planner", year=year, month=month, day=plan_date.day, saved=1))
 
-    plans, habits, reflection, _ = load_day(plan_date)  ###Changes one @1.07 am on 1st January
+    plans, habits, reflection = load_day(plan_date)
 
     days = [date(year, month, d) for d in range(1, calendar.monthrange(year, month)[1] + 1)]
 
@@ -258,17 +255,13 @@ def todo():
 
     if request.method == "POST":
         save_todo(plan_date, request.form)
-        notes = request.form.get("notes", "").strip()  ###Changes one @1.07 am on 1st January
-        save_day(plan_date, request.form, eisenhower_notes=notes)  ###Changes one @1.07 am on 1st January
         return redirect(url_for("todo", year=year, month=month, day=day))
 
     todo = load_todo(plan_date)
-    _, _, _, notes = load_day(plan_date)  ###Changes one @1.07 am on 1st January
 
     return render_template_string(
         TODO_TEMPLATE,
         todo=todo,
-        notes=notes,  ###Changes one @1.07 am on 1st January
         plan_date=plan_date
     )
 
@@ -294,9 +287,6 @@ TODO_TEMPLATE = """
 {% endfor %}
 <input type="text" name="{{q}}[]" placeholder="+ Add"><br>
 {% endfor %}
-
-<h3>📝 Notes / Thoughts</h3>
-<textarea name="notes" rows="6" style="width:100%;">{{ notes }}</textarea>
 
 <br><button type="submit">💾 Save</button>
 </form>
