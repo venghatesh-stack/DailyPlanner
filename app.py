@@ -101,9 +101,7 @@ def load_habits(plan_date):
         params={"plan_date": f"eq.{plan_date}"}
     ) or []
     return {r["habit"]: r["done"] for r in rows}
-
 def save_habits(plan_date, form):
-    delete("daily_habits", params={"plan_date": f"eq.{plan_date}"})
     payload = []
     for h in HABITS:
         payload.append({
@@ -111,7 +109,14 @@ def save_habits(plan_date, form):
             "habit": h,
             "done": form.get(f"habit_{h}") == "on"
         })
-    post("daily_habits", payload)
+
+    if payload:
+        post(
+            "daily_habits?on_conflict=plan_date,habit",
+            payload,
+            prefer="resolution=merge-duplicates"
+        )
+
 
 def load_reflection(plan_date):
     rows = get(
@@ -122,12 +127,17 @@ def load_reflection(plan_date):
 
 def save_reflection(plan_date, form):
     text = form.get("reflection", "").strip()
-    delete("daily_reflection", params={"plan_date": f"eq.{plan_date}"})
-    if text:
-        post("daily_reflection", {
+    if not text:
+        return
+
+    post(
+        "daily_reflection?on_conflict=plan_date",
+        [{
             "plan_date": str(plan_date),
             "reflection": text
-        })
+        }],
+        prefer="resolution=merge-duplicates"
+    )
 
 # ===============================
 # ROUTES
