@@ -187,6 +187,11 @@ def carry_forward_unfinished(from_date, to_date):
 # ===============================
 # ROUTES
 # ===============================
+
+@app.route("/", methods=["GET"])
+def index():
+    return redirect(url_for("todo"))
+
 @app.route("/todo", methods=["GET", "POST"])
 def todo():
     today = datetime.now(IST).date()
