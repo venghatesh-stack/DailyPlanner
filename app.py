@@ -515,6 +515,37 @@ function toggleDone(cb){
     hidden.value = "0";
   }
 }
+<script>
+function addTaskBelow(input){
+  const row = input.closest(".task-row");
+  const box = row.parentElement;
+  const q = box.dataset.q;
+
+  const newRow = document.createElement("div");
+  newRow.className = "task-row";
+  newRow.innerHTML = `
+    <input type="hidden" name="${q}_done[]" value="0">
+    <input type="checkbox" onclick="toggleDone(this)">
+    <input type="text" name="${q}_text[]" value="">
+  `;
+
+  row.after(newRow);
+  newRow.querySelector("input[type=text]").focus();
+}
+
+document.addEventListener("keydown", function(e){
+  if (
+    e.key === "Enter" &&
+    e.target.tagName === "INPUT" &&
+    e.target.type === "text" &&
+    e.target.closest(".task-row")
+  ){
+    e.preventDefault();
+    addTaskBelow(e.target);
+  }
+});
+</script>
+
 </script>
 
 </body>
