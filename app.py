@@ -325,6 +325,73 @@ function selectStatus(s){
 </body>
 </html>
 """
+@app.route("/todo", methods=["GET", "POST"])
+def todo():
+    plan_date = datetime.now(IST).date()
+
+    if request.method == "POST":
+        save_todo(plan_date, request.form)
+        return redirect(url_for("todo"))
+
+    return render_template_string(
+        TODO_TEMPLATE,
+        todo=load_todo(plan_date),
+        plan_date=plan_date
+    )
+# ===============================
+# DATA – TODO MATRIX
+# ===============================
+def load_todo(plan_date):
+    rows = get("todo_matrix", params={"plan_date": f"eq.{plan_date}"}) or []
+    data = {"do": [], "schedule": [], "delegate": [], "eliminate": []}
+    for r in rows:
+        data[r["quadrant"]].append(r["task_text"])
+    return data
+
+def save_todo(plan_date, form):
+    delete("todo_matrix", params={"plan_date": f"eq.{plan_date}"})
+    payload = []
+    for q in ["do", "schedule", "delegate", "eliminate"]:
+        for line in form.get(q, "").splitlines():
+            if line.strip():
+                payload.append({
+                    "plan_date": str(plan_date),
+                    "quadrant": q,
+                    "task_text": line.strip(),
+                })
+    if payload:
+        post("todo_matrix", payload)
+TODO_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:system-ui;background:#f6f7f9;padding:20px;}
+.container{max-width:1100px;margin:auto;background:#fff;padding:20px;border-radius:14px;}
+.matrix{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.quad{border:1px solid #e5e7eb;border-radius:12px;padding:14px;}
+textarea{width:100%;min-height:140px;font-size:15px;}
+@media(max-width:768px){.matrix{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="container">
+<h2>Eisenhower Matrix – {{plan_date}}</h2>
+<a href="/">⬅ Daily Planner</a>
+<form method="post">
+<div class="matrix">
+<div class="quad"><h3>🔥 Do</h3><textarea name="do">{{todo.do|join("\\n")}}</textarea></div>
+<div class="quad"><h3>📅 Schedule</h3><textarea name="schedule">{{todo.schedule|join("\\n")}}</textarea></div>
+<div class="quad"><h3>🤝 Delegate</h3><textarea name="delegate">{{todo.delegate|join("\\n")}}</textarea></div>
+<div class="quad"><h3>🗑 Eliminate</h3><textarea name="eliminate">{{todo.eliminate|join("\\n")}}</textarea></div>
+</div>
+<button style="margin-top:16px;padding:14px;width:100%;">Save</button>
+</form>
+</div>
+</body>
+</html>
+"""
 
 if __name__ == "__main__":
     logger.info("Starting Daily Planner")
