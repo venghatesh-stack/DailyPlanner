@@ -118,6 +118,7 @@ def load_day(plan_date):
 def save_day(plan_date, form, eisenhower_notes=None):  ###Changes one @1.07 am on 1st January
     payload = []
 
+    # Save planner slots
     for slot in range(1, TOTAL_SLOTS + 1):
         plan = form.get(f"plan_{slot}", "").strip()
         status = form.get(f"status_{slot}", DEFAULT_STATUS)
@@ -129,14 +130,20 @@ def save_day(plan_date, form, eisenhower_notes=None):  ###Changes one @1.07 am o
                 "status": status
             })
 
+    # Build META_SLOT safely
+    meta = {
+        "habits": form.getlist("habits"),
+        "reflection": form.get("reflection", "").strip()
+    }
+
+    # Only include eisenhower_notes when coming from Eisenhower
+    if eisenhower_notes is not None:
+        meta["eisenhower_notes"] = eisenhower_notes  ###Changes one @1.07 am on 1st January
+
     payload.append({
         "plan_date": str(plan_date),
         "slot": META_SLOT,
-        "plan": json.dumps({
-            "habits": form.getlist("habits"),
-            "reflection": form.get("reflection", "").strip(),
-            "eisenhower_notes": eisenhower_notes or ""  ###Changes one @1.07 am on 1st January
-        }),
+        "plan": json.dumps(meta),
         "status": DEFAULT_STATUS
     })
 
