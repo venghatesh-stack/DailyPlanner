@@ -301,6 +301,14 @@ background:rgba(0,0,0,0.4);z-index:10000;align-items:center;justify-content:cent
 </div>
 
 <script>
+let lastFocusedInput = null;
+
+document.addEventListener("focusin", function (e) {
+  if (e.target.tagName === "TEXTAREA") {
+    lastFocusedInput = e.target;
+  }
+});
+
 function updateClock(){
   const ist=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
   document.getElementById("current-time").textContent=ist.toLocaleTimeString();
@@ -324,11 +332,17 @@ function selectStatus(s){
 }
 function handleCancel() {
   const proceed = confirm("Any uncommitted changes would be lost");
+
   if (proceed) {
     window.location.reload();
+  } else {
+    // restore cursor to the same cell
+    if (lastFocusedInput) {
+      lastFocusedInput.focus();
+    }
   }
-  // If user clicks Cancel → proceed === false → nothing happens
 }
+
 
 
 </script>
