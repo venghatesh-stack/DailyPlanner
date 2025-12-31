@@ -387,7 +387,7 @@ timeFrom.onchange=timeTo.onchange=applyFilter;
 applyFilter();
 
 // STATUS
-const STATUS_ORDER = {{ STATUSES | tojson }};
+const STATUS_ORDER = {{statuses| tojson }};
 function cycleStatus(el){
   const input = el.nextElementSibling;
   let idx = STATUS_ORDER.indexOf(input.value);
