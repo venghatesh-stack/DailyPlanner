@@ -175,8 +175,8 @@ def load_todo(plan_date):
 
     return data
 
-
 def save_todo(plan_date, form):
+    # Clear existing tasks for the day
     delete(
         "todo_matrix",
         params={"plan_date": f"eq.{plan_date}"}
@@ -184,6 +184,15 @@ def save_todo(plan_date, form):
 
     payload = []
 
+    # Track next position per quadrant to avoid conflicts
+    position_counter = {
+        "do": 0,
+        "schedule": 0,
+        "delegate": 0,
+        "eliminate": 0
+    }
+
+    # 1️⃣ Save existing quadrant tasks
     for quadrant in ["do", "schedule", "delegate", "eliminate"]:
         lines = form.getlist(f"{quadrant}[]")
         done_flags = set(form.getlist("done[]"))
@@ -192,27 +201,60 @@ def save_todo(plan_date, form):
             text = text.strip()
             if not text:
                 continue
+
             payload.append({
                 "plan_date": str(plan_date),
                 "quadrant": quadrant,
                 "task_text": text,
                 "is_done": str(idx) in done_flags,
-                "position": idx
+                "position": position_counter[quadrant]
             })
+            position_counter[quadrant] += 1
 
-    # 📝 Notes (single free-text block)
-    notes = form.get("notes", "").strip()
-    if notes:
+    # 2️⃣ Notes + move-to-quadrant handling
+    notes_raw = form.get("notes", "")
+    notes_lines = [l.strip() for l in notes_raw.splitlines() if l.strip()]
+
+    move_map = {
+        "do": set(form.getlist("move_to_do")),
+        "schedule": set(form.getlist("move_to_schedule")),
+        "delegate": set(form.getlist("move_to_delegate")),
+        "eliminate": set(form.getlist("move_to_eliminate")),
+    }
+
+    remaining_notes = []
+
+    for line in notes_lines:
+        moved = False
+        for quadrant, items in move_map.items():
+            if line in items:
+                payload.append({
+                    "plan_date": str(plan_date),
+                    "quadrant": quadrant,
+                    "task_text": line,
+                    "is_done": False,
+                    "position": position_counter[quadrant]
+                })
+                position_counter[quadrant] += 1
+                moved = True
+                break
+
+        if not moved:
+            remaining_notes.append(line)
+
+    # 3️⃣ Persist remaining notes
+    if remaining_notes:
         payload.append({
             "plan_date": str(plan_date),
             "quadrant": "notes",
-            "task_text": notes,
+            "task_text": "\n".join(remaining_notes),
             "is_done": False,
             "position": 0
         })
 
     if payload:
         post("todo_matrix", payload)
+
 
 def google_calendar_link_eisenhower(plan_date, quadrant, task):
     if not task or quadrant == "eliminate":
