@@ -188,64 +188,71 @@ def load_todo(plan_date):
     return data
 
 def save_todo(plan_date, form):
-    # Clear existing tasks for the day
     logger.info("Saving Eisenhower matrix")
+
     existing_rows = get(
-    "todo_matrix",
-    params={
-        "plan_date": f"eq.{plan_date}",
-        "select": "id"
-    }
-  ) or []
-
-    existing_ids = {row["id"] for row in existing_rows}
-    seen_ids = set()
-    for quadrant in ["do", "schedule", "delegate", "eliminate"]:
-      texts = form.getlist(f"{quadrant}[]")
-      dates = form.getlist(f"{quadrant}_date[]")
-      times = form.getlist(f"{quadrant}_time[]")
-      ids = form.getlist(f"{quadrant}_id[]")
-      checked_ids = set(form.getlist(f"{quadrant}_done[]"))
-
-      for idx, text in enumerate(texts):
-        text = text.strip()
-        if not text:
-            continue
-
-        task_id = ids[idx] if idx < len(ids) else None
-        task_date = dates[idx] if idx < len(dates) and dates[idx] else None
-        task_time = times[idx] if idx < len(times) and times[idx] else None
-        is_done = task_id in checked_ids if task_id else False
-
-        payload = {
-            "quadrant": quadrant,
-            "task_text": text,
-            "task_date": task_date,
-            "task_time": task_time,
-            "is_done": is_done,
-            "position": idx
+        "todo_matrix",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "select": "id"
         }
+    ) or []
 
-        if task_id and task_id in existing_ids:
-            # ✅ UPDATE existing row
-            seen_ids.add(task_id)
-            update(
-                "todo_matrix",
-                params={"id": f"eq.{task_id}"},
-                json=payload
+    existing_ids = {str(row["id"]) for row in existing_rows}
+    seen_ids = set()
+
+    for quadrant in ["do", "schedule", "delegate", "eliminate"]:
+        texts = form.getlist(f"{quadrant}[]")
+        dates = form.getlist(f"{quadrant}_date[]")
+        times = form.getlist(f"{quadrant}_time[]")
+        ids   = form.getlist(f"{quadrant}_id[]")
+
+        # ✅ Correct: quadrant-specific done state
+        done_state = form.get(f"{quadrant}_done_state", {})
+
+        for idx, text in enumerate(texts):
+            text = text.strip()
+            if not text:
+                continue
+
+            task_id   = ids[idx] if idx < len(ids) else None
+            task_date = dates[idx] if idx < len(dates) and dates[idx] else None
+            task_time = times[idx] if idx < len(times) and times[idx] else None
+
+            # ✅ Correct place to compute done
+            is_done = (
+                done_state.get(str(task_id)) == "1"
+                if task_id else False
             )
-        else:
-            # ✅ INSERT new row
-            payload["plan_date"] = str(plan_date)
-            post("todo_matrix", payload)
 
+            payload = {
+                "quadrant": quadrant,
+                "task_text": text,
+                "task_date": task_date,
+                "task_time": task_time,
+                "is_done": is_done,
+                "position": idx
+            }
+
+            if task_id and str(task_id) in existing_ids:
+                seen_ids.add(str(task_id))
+                update(
+                    "todo_matrix",
+                    params={"id": f"eq.{task_id}"},
+                    json=payload
+                )
+            else:
+                payload["plan_date"] = str(plan_date)
+                post("todo_matrix", payload)
+
+    # ✅ Delete removed tasks
     removed_ids = existing_ids - seen_ids
-
     for task_id in removed_ids:
         delete(
             "todo_matrix",
             params={"id": f"eq.{task_id}"}
         )
+
 
 def copy_open_tasks_from_previous_day(plan_date):
     prev_date = plan_date - timedelta(days=1)
@@ -834,11 +841,15 @@ summary::-webkit-details-marker {
             <!-- LINE 1: serial + checkbox + text + delete -->
             <div class="task-main">
               <span class="task-index">{{ loop.index }}.</span>
+              <input type="hidden"
+                    name="{{q}}_done_state[{{ t.id }}]"
+                    value="0">
 
               <input type="checkbox"
-                    name="{{q}}_done[]"
-                    value="{{ t.id }}"
+                    name="{{q}}_done_state[{{ t.id }}]"
+                    value="1"
                     {% if t.done %}checked{% endif %}>
+
 
               <input type="text"
                 name="{{q}}[]"
