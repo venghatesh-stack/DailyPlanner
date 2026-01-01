@@ -152,18 +152,21 @@ def load_todo(plan_date):
         "todo_matrix",
         params={
             "plan_date": f"eq.{plan_date}",
-            "select": "id,quadrant,task_text,is_done,position",
+            "select": "id,quadrant,task_text,is_done,position,task_date,task_time",
             "order": "position.asc"
         }
     ) or []
 
     data = {"do": [], "schedule": [], "delegate": [], "eliminate": []}
     for r in rows:
-        data[r["quadrant"]].append({
+      data[r["quadrant"]].append({
             "id": r["id"],
             "text": r["task_text"],
             "done": bool(r.get("is_done")),
+            "task_date": r.get("task_date"),
+            "task_time": r.get("task_time")
         })
+
     return data
 
 def save_todo(plan_date, form):
@@ -178,10 +181,13 @@ def save_todo(plan_date, form):
     payload = []
     for quadrant in ["do", "schedule", "delegate", "eliminate"]:
       texts = form.getlist(f"{quadrant}[]")
+      dates = form.getlist(f"{quadrant}_date[]")
+      times = form.getlist(f"{quadrant}_time[]")
+
       checked_indexes = {
-            int(i)
-            for i in form.getlist(f"{quadrant}_done[]")
-            if i.isdigit()
+              int(i)
+              for i in form.getlist(f"{quadrant}_done[]")
+              if i.isdigit()
       }
 
 
@@ -191,13 +197,19 @@ def save_todo(plan_date, form):
         if not text:
             continue
         is_done = idx in checked_indexes
+        task_date = dates[idx] if idx < len(dates) and dates[idx] else None
+        task_time = times[idx] if idx < len(times) and times[idx] else None
+
         payload.append({
             "plan_date": str(plan_date),
             "quadrant": quadrant,
             "task_text": text,
             "is_done": is_done,
+            "task_date": task_date,
+            "task_time": task_time,
             "position": idx
         })
+
 
     if payload:
         post("todo_matrix", payload)
@@ -212,7 +224,7 @@ def copy_open_tasks_from_previous_day(plan_date):
         "todo_matrix",
         params={
             "plan_date": f"eq.{prev_date}",
-            "select": "quadrant,task_text,is_done,position",
+            "select": "quadrant,task_text,is_done,position,task_date,task_time",
             "order": "position.asc"
         }
     ) or []
@@ -242,12 +254,15 @@ def copy_open_tasks_from_previous_day(plan_date):
             continue
 
         payload.append({
-            "plan_date": str(plan_date),
-            "quadrant": r["quadrant"],
-            "task_text": r["task_text"],
-            "is_done": False,
-            "position": r.get("position", 0)
-        })
+          "plan_date": str(plan_date),
+          "quadrant": r["quadrant"],
+          "task_text": r["task_text"],
+          "is_done": False,
+          "task_date": r.get("task_date"),
+          "task_time": r.get("task_time"),
+          "position": r.get("position", 0)
+      })
+
 
     if payload:
         post("todo_matrix", payload)
@@ -534,6 +549,10 @@ body { font-family: system-ui; background:#f6f7f9; padding:16px; }
 .quad { border:1px solid #e5e7eb; border-radius:12px; padding:12px; }
 .task { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
 .task input[type=text] { flex:1; padding:6px; }
+.task input[type=date],
+.task input[type=time] {
+  min-width: 110px;
+}
 @media(max-width:768px){ .matrix{ grid-template-columns:1fr; } }
 </style>
 </head>
@@ -603,8 +622,19 @@ body { font-family: system-ui; background:#f6f7f9; padding:16px; }
        {% if t.done %}checked{% endif %}>
 
     <input type="text" name="{{q}}[]" value="{{t.text}}">
+    <input type="date"
+       name="{{q}}_date[]"
+       value="{{ t.task_date or '' }}"
+       style="font-size:12px;">
 
+    <input type="time"
+          name="{{q}}_time[]"
+          value="{{ t.task_time or '' }}"
+          style="font-size:12px;">
     <button type="button" onclick="this.parentElement.remove()">−</button>
+
+
+
   </div>
 {% endfor %}
 </div>
@@ -641,11 +671,12 @@ function addTask(q){
   row.innerHTML = `
     <input type="checkbox" name="${q}_done[]">
     <input type="text" name="${q}[]" autofocus>
+    <input type="date" name="${q}_date[]">
+    <input type="time" name="${q}_time[]">
     <button type="button" onclick="this.parentElement.remove()">−</button>
   `;
   div.appendChild(row);
 }
-
 </script>
 
 </body>
