@@ -741,15 +741,16 @@ summary::-webkit-details-marker {
 /* ===== Motivational Quote ===== */
 
 .motivation {
-  margin: 14px 0 18px;
-  padding: 14px 16px;
-  border-radius: 12px;
+  position: relative;   /* 👈 REQUIRED */
+  margin: 20px 0 36px;
+  padding: 16px 18px;
+  border-radius: 14px;
   background: linear-gradient(135deg, #f8fafc, #eef2ff);
+  border-left: 4px solid #6366f1;
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  color: #1f2937;
+  gap: 14px;
 }
+
 
 .motivation-icon {
   font-size: 22px;
@@ -759,10 +760,38 @@ summary::-webkit-details-marker {
 .motivation-text {
   font-size: 14px;
   font-style: italic;
+  max-width: 640px;
   line-height: 1.5;
   color: #374151;
 }
+.motivation::before {
+  content: "Reflection";
+  position: absolute;
+  top: -12px;
+  left: 16px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6366f1;
+  font-weight: 600;
+  background: #fff;
+  padding: 0 6px;
+}
 
+.motivation {
+  animation: quoteFade 0.4s ease-out;
+}
+
+@keyframes quoteFade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 /* Mobile tuning */
 @media (max-width: 767px) {
   .motivation {
@@ -776,14 +805,9 @@ summary::-webkit-details-marker {
 
 <body>
 <div class="container">
-<h2>📋 Eisenhower Matrix – {{ plan_date }}</h2>
 <a href="/">⬅ Back to Daily Planner</a>
-{% if quote %}
-<div class="motivation">
-  <span class="motivation-icon">{{ quote.icon }}</span>
-  <span class="motivation-text">{{ quote.text }}</span>
-</div>
-{% endif %}
+<h2>📋 Eisenhower Matrix – {{ plan_date }}</h2>
+
 
 <form method="get" style="margin:12px 0;">
   <input type="hidden" name="day" value="{{ plan_date.day }}">
@@ -834,6 +858,12 @@ summary::-webkit-details-marker {
   </a>
 {% endfor %}
 </div>
+{% if quote %}
+<div class="motivation">
+  <span class="motivation-icon">{{ quote.icon }}</span>
+  <span class="motivation-text">{{ quote.text }}</span>
+</div>
+{% endif %}
 <form method="post" id="todo-form">
 
   <!-- ============================= -->
@@ -997,9 +1027,13 @@ function toggleDone(checkbox) {
     clearTimeout(autoSaveTimer);
   }
 
-  autoSaveTimer = setTimeout(() => {
-    document.getElementById("todo-form").requestSubmit();
-  }, 300);
+ autoSaveTimer = setTimeout(() => {
+  const form = document.getElementById("todo-form");
+  if (form) {
+    form.submit(); // IMPORTANT: use submit(), not requestSubmit()
+  }
+}, 0);
+
 }
 
 </script>
