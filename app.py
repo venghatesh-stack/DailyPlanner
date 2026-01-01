@@ -1,5 +1,4 @@
-## Code working fine. No changes needed.
-## Eisenhower Matrix + Daily Planner integrated.
+## Eisenhower Matrix + Daily Planner integrated. Calender control working
 from flask import Flask, request, redirect, url_for, render_template_string
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
