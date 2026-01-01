@@ -835,7 +835,7 @@ summary::-webkit-details-marker {
     ] %}
 
       <!-- ONE QUADRANT -->
-      <details class="quad">
+      <details class="quad" open>
 
         <!-- Quadrant title -->
         <summary>{{ label }}</summary>
