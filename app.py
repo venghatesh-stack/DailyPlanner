@@ -328,11 +328,21 @@ def todo():
 
     todo = load_todo(plan_date)
 
+    days = [
+        date(year, month, d)
+        for d in range(1, calendar.monthrange(year, month)[1] + 1)
+    ]
+
     return render_template_string(
         TODO_TEMPLATE,
         todo=todo,
-        plan_date=plan_date
+        plan_date=plan_date,
+        year=year,
+        month=month,
+        days=days,
+        calendar=calendar
     )
+
 @app.route("/todo/copy-prev", methods=["POST"])
 def copy_prev_todo():
     today = datetime.now(IST).date()
@@ -532,9 +542,47 @@ body { font-family: system-ui; background:#f6f7f9; padding:16px; }
 <div class="container">
 <h2>📋 Eisenhower Matrix – {{ plan_date }}</h2>
 <a href="/">⬅ Back to Daily Planner</a>
+<form method="get" style="margin:12px 0;">
+  <input type="hidden" name="day" value="{{ plan_date.day }}">
+
+  <select name="month" onchange="this.form.submit()">
+    {% for m in range(1,13) %}
+      <option value="{{m}}" {% if m==month %}selected{% endif %}>
+        {{ calendar.month_name[m] }}
+      </option>
+    {% endfor %}
+  </select>
+
+  <select name="year" onchange="this.form.submit()">
+    {% for y in range(year-5, year+6) %}
+      <option value="{{y}}" {% if y==year %}selected{% endif %}>{{y}}</option>
+    {% endfor %}
+  </select>
+</form>
+<div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;">
+{% for d in days %}
+  <a href="/todo?year={{year}}&month={{month}}&day={{d.day}}"
+     style="
+       width:36px;height:36px;
+       display:flex;align-items:center;justify-content:center;
+       border-radius:50%;
+       text-decoration:none;
+       border:1px solid #ddd;
+       color:#000;
+       {% if d.day == plan_date.day %}
+         background:#2563eb;color:#fff;
+       {% endif %}
+     ">
+    {{ d.day }}
+  </a>
+{% endfor %}
+</div>
 
 <form method="post">
 <div class="matrix">
+<input type="hidden" name="year" value="{{ year }}">
+<input type="hidden" name="month" value="{{ month }}">
+<input type="hidden" name="day" value="{{ plan_date.day }}">
 
 {% for q,label in [
  ('do','🔥 Do Now'),
