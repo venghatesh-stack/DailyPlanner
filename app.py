@@ -486,7 +486,7 @@ def todo():
 
     if request.method == "POST":
         save_todo(plan_date, request.form)
-        return redirect(url_for("todo", year=year, month=month, day=day))
+        return redirect(url_for("todo", year=year, month=month, day=day,saved=1))
 
     todo = load_todo(plan_date)
 
@@ -1174,6 +1174,31 @@ function toggleDone(checkbox) {
 }
 
 </script>
+{% if request.args.get('saved') %}
+<div id="toast"
+     style="
+       position: fixed;
+       bottom: 90px;
+       left: 50%;
+       transform: translateX(-50%);
+       background: #2563eb;
+       color: white;
+       padding: 12px 20px;
+       border-radius: 999px;
+       font-weight: 600;
+       box-shadow: 0 10px 25px rgba(0,0,0,.15);
+       z-index: 9999;
+     ">
+  ✅ Saved successfully
+</div>
+
+<script>
+  setTimeout(() => {
+    const toast = document.getElementById("toast");
+    if (toast) toast.remove();
+  }, 2500);
+</script>
+{% endif %}
 
 </body>
 </html>
