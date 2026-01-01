@@ -556,7 +556,12 @@ TODO_TEMPLATE = """
 <style>
 body { font-family: system-ui; background:#f6f7f9; padding:16px; }
 .container { max-width:1100px; margin:auto; background:#fff; padding:20px; border-radius:14px; }
-.matrix { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media (max-width: 767px) {
+  .matrix {
+    grid-template-columns: 1fr;
+  }
+}
+
 .quad { border:1px solid #e5e7eb; border-radius:12px; padding:12px; }
 .task { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
 .task input[type=text] { flex:1; padding:6px; }
@@ -564,7 +569,54 @@ body { font-family: system-ui; background:#f6f7f9; padding:16px; }
 .task input[type=time] {
   min-width: 110px;
 }
-@media(max-width:768px){ .matrix{ grid-template-columns:1fr; } }
+.matrix {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 767px) {
+  .task {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+  }
+
+  .task input[type="checkbox"] {
+    transform: scale(1.3);
+  }
+
+  .task button {
+    font-size: 18px;
+    padding: 6px 10px;
+  }
+
+  .task input[type="text"] {
+    width: 100%;
+    font-size: 16px;
+  }
+
+  .task input[type="date"],
+  .task input[type="time"] {
+    width: 100%;
+    font-size: 14px;
+  }
+}
+
+summary {
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  list-style: none;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
 </style>
 </head>
 
@@ -624,70 +676,102 @@ body { font-family: system-ui; background:#f6f7f9; padding:16px; }
   </a>
 {% endfor %}
 </div>
-
 <form method="post">
-<div class="matrix">
-<input type="hidden" name="year" value="{{ year }}">
-<input type="hidden" name="month" value="{{ month }}">
-<input type="hidden" name="day" value="{{ plan_date.day }}">
 
-{% for q,label in [
- ('do','🔥 Do Now'),
- ('schedule','📅 Schedule'),
- ('delegate','🤝 Delegate'),
- ('eliminate','🗑 Eliminate')
-] %}
-<div class="quad">
-<h3>{{label}}</h3>
+  <!-- ============================= -->
+  <!-- MATRIX CONTAINER (GRID)       -->
+  <!-- ============================= -->
+  <div class="matrix">
 
-<div id="{{q}}">
-{% for t in todo[q] %}
-  <div class="task">
-    
-   <input type="checkbox"
-       name="{{q}}_done[]"
-       value="{{ loop.index0 }}"
-       {% if t.done %}checked{% endif %}>
+    <!-- Hidden inputs: belong to the form -->
+    <input type="hidden" name="year" value="{{ year }}">
+    <input type="hidden" name="month" value="{{ month }}">
+    <input type="hidden" name="day" value="{{ plan_date.day }}">
 
-    <input type="text" name="{{q}}[]" value="{{t.text}}">
-    <input type="date"
-       name="{{q}}_date[]"
-       value="{{ t.task_date or '' }}"
-       style="font-size:12px;">
+    <!-- ================================= -->
+    <!-- START: QUADRANT LOOP (4 times)   -->
+    <!-- ================================= -->
+    {% for q, label in [
+      ('do','🔥 Do Now'),
+      ('schedule','📅 Schedule'),
+      ('delegate','🤝 Delegate'),
+      ('eliminate','🗑 Eliminate')
+    ] %}
 
-    <input type="time"
-          name="{{q}}_time[]"
-          value="{{ t.task_time or '' }}"
-          style="font-size:12px;">
-    <button type="button" onclick="this.parentElement.remove()">−</button>
+      <!-- ONE QUADRANT -->
+      <details class="quad">
 
+        <!-- Quadrant title -->
+        <summary>{{ label }}</summary>
 
+        <!-- Tasks container for this quadrant -->
+        <div id="{{ q }}">
+
+          <!-- START: TASK LOOP (N times) -->
+          {% for t in todo[q] %}
+            <div class="task">
+
+              <input type="checkbox"
+                     name="{{ q }}_done[]"
+                     value="{{ loop.index0 }}"
+                     {% if t.done %}checked{% endif %}>
+
+              <input type="text"
+                     name="{{ q }}[]"
+                     value="{{ t.text }}">
+
+              <input type="date"
+                     name="{{ q }}_date[]"
+                     value="{{ t.task_date or '' }}">
+
+              <input type="time"
+                     name="{{ q }}_time[]"
+                     value="{{ t.task_time or '' }}">
+
+              <button type="button"
+                      onclick="this.parentElement.remove()">−</button>
+
+            </div>
+          {% endfor %}
+          <!-- END: TASK LOOP -->
+
+        </div>
+
+        <!-- Add button belongs to THIS quadrant -->
+        <button type="button" onclick="addTask('{{ q }}')">
+          + Add
+        </button>
+
+      </details>
+      <!-- END ONE QUADRANT -->
+
+      <br>
+
+    {% endfor %}
+    <!-- ================================= -->
+    <!-- END: QUADRANT LOOP                -->
+    <!-- ================================= -->
 
   </div>
-{% endfor %}
-</div>
+  <!-- END MATRIX -->
 
-<button type="button" onclick="addTask('{{q}}')">+ Add</button>
-</div>
-{% endfor %}
+  <!-- ================================= -->
+  <!-- ACTION BUTTONS (ONCE ONLY)        -->
+  <!-- ================================= -->
 
-</div>
+  <button
+    type="submit"
+    formaction="/todo/copy-prev"
+    style="margin-bottom:12px;">
+    📥 Copy open tasks from previous day
+  </button>
 
-<br>
-<input type="hidden" name="year" value="{{ plan_date.year }}">
-<input type="hidden" name="month" value="{{ plan_date.month }}">
-<input type="hidden" name="day" value="{{ plan_date.day }}">
+  <button type="submit">
+    💾 Save
+  </button>
 
-<button
-  type="submit"
-  formaction="/todo/copy-prev"
-  style="margin-bottom:12px;"
->
-  📥 Copy open tasks from previous day
-</button>
-
-<button type="submit">💾 Save</button>
 </form>
+
 </div>
 
 
