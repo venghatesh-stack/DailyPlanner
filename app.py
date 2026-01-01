@@ -216,15 +216,8 @@ def save_todo(plan_date, form):
           task_date = dates[idx] if idx < len(dates) and dates[idx] else None
           task_time = times[idx] if idx < len(times) and times[idx] else None
 
-          # Checkbox value = task.id
-          is_done = False
-          if idx < len(form.getlist(f"{quadrant}_done[]")):
-              is_done = any(
-                  int(i) == checked_id
-                  for checked_id in checked_ids
-                  for i in checked_ids
-              )
-
+          task_id = ids[idx] if idx < len(ids) else ""
+          is_done = bool(task_id) and task_id in checked_ids
           payload.append({
               "plan_date": str(plan_date),
               "quadrant": quadrant,
