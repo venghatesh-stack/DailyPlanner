@@ -532,6 +532,7 @@ PLANNER_TEMPLATE = """
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
+
 body { font-family: system-ui; background:#f6f7f9; padding:12px; padding-bottom:220px; }
 .container { max-width:1100px; margin:auto; background:#fff; padding:16px; border-radius:14px; }
 
@@ -676,6 +677,31 @@ function cycleStatus(el){
   el.childNodes[0].nodeValue = STATUS_ORDER[idx] + " ";
 }
 </script>
+{% if saved %}
+<div id="toast"
+     style="
+       position: fixed;
+       bottom: 90px;
+       left: 50%;
+       transform: translateX(-50%);
+       background: #16a34a;
+       color: white;
+       padding: 12px 20px;
+       border-radius: 999px;
+       font-weight: 600;
+       box-shadow: 0 10px 25px rgba(0,0,0,.15);
+       z-index: 9999;
+     ">
+  ✅ Saved successfully
+</div>
+
+<script>
+  setTimeout(() => {
+    const toast = document.getElementById("toast");
+    if (toast) toast.remove();
+  }, 2500);
+</script>
+{% endif %}
 
 </body>
 </html>
