@@ -188,7 +188,7 @@ def save_todo(plan_date, form):
         text = text.strip()
         if not text:
             continue
-       
+        is_done = idx in checked_indexes
         payload.append({
             "plan_date": str(plan_date),
             "quadrant": quadrant,
