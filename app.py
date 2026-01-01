@@ -48,7 +48,18 @@ HABIT_ICONS = {
     "8 hrs sleep": "😴",
     "Daily prayers": "🙏"
 }
-
+MOTIVATIONAL_QUOTES = [
+    {"icon": "🎯", "text": "Focus on what matters, not what screams loudest."},
+    {"icon": "⏳", "text": "Urgent is not always important."},
+    {"icon": "🧠", "text": "Clarity comes from prioritization."},
+    {"icon": "📌", "text": "Do the right thing, not everything."},
+    {"icon": "📅", "text": "What you schedule gets done."},
+    {"icon": "🌱", "text": "Small progress each day adds up."},
+    {"icon": "✂️", "text": "Decide what not to do."},
+    {"icon": "🧭", "text": "Your priorities shape your future."},
+    {"icon": "⚡", "text": "Action beats intention."},
+    {"icon": "☀️", "text": "Important tasks deserve calm attention."}
+]
 # ==========================================================
 # HELPERS
 # ==========================================================
@@ -346,7 +357,7 @@ def todo():
         date(year, month, d)
         for d in range(1, calendar.monthrange(year, month)[1] + 1)
     ]
-
+    quote = MOTIVATIONAL_QUOTES[plan_date.day % len(MOTIVATIONAL_QUOTES)]
     return render_template_string(
         TODO_TEMPLATE,
         todo=todo,
@@ -354,7 +365,8 @@ def todo():
         year=year,
         month=month,
         days=days,
-        calendar=calendar
+        calendar=calendar,
+        quote=quote
     )
 
 @app.route("/todo/copy-prev", methods=["POST"])
@@ -560,6 +572,23 @@ body { font-family: system-ui; background:#f6f7f9; padding:16px; }
 <div class="container">
 <h2>📋 Eisenhower Matrix – {{ plan_date }}</h2>
 <a href="/">⬅ Back to Daily Planner</a>
+{% if quote %}
+<div style="
+  margin: 12px 0 16px 0;
+  padding: 10px 14px;
+  background: #f1f5f9;
+  border-left: 4px solid #2563eb;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #334155;
+">
+  <span style="font-size:20px;">{{ quote.icon }}</span>
+  <span style="font-style: italic;">{{ quote.text }}</span>
+</div>
+{% endif %}
+
 <form method="get" style="margin:12px 0;">
   <input type="hidden" name="day" value="{{ plan_date.day }}">
 
