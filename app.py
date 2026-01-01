@@ -176,9 +176,12 @@ def save_todo(plan_date, form):
     payload = []
     for quadrant in ["do", "schedule", "delegate", "eliminate"]:
       texts = form.getlist(f"{quadrant}[]")
-      checked_indexes = set(
-                int(i) for i in form.getlist(f"{quadrant}_done[]")
-      )
+      checked_indexes = {
+            int(i)
+            for i in form.getlist(f"{quadrant}_done[]")
+            if i.isdigit()
+      }
+
 
 
       for idx, text in enumerate(texts):
