@@ -756,9 +756,9 @@ summary::-webkit-details-marker {
 
           <!-- START: TASK LOOP (N times) -->
           {% for t in todo[q] %}
-          <input type="hidden" name="{{ q }}_id[]" value="{{ t.id }}">
+         
            <div class="task">
-
+            <input type="hidden" name="{{ q }}_id[]" value="{{ t.id }}">
             <!-- LINE 1: serial + checkbox + text + delete -->
             <div class="task-main">
               <span class="task-index">{{ loop.index }}.</span>
