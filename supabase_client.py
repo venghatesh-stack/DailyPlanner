@@ -42,3 +42,25 @@ def delete(path, params):
         params=params,
     )
     r.raise_for_status()
+def update(table, params, json):
+    """
+    Update rows in a Supabase table.
+    params example: {"id": "eq.123"}
+    json example: {"is_done": True}
+    """
+    url = f"{SUPABASE_URL}/rest/v1/{table}"
+
+    response = requests.patch(
+        url,
+        headers=HEADERS,
+        params=params,
+        json=json,
+        timeout=10
+    )
+
+    if not response.ok:
+        raise Exception(
+            f"UPDATE failed {response.status_code}: {response.text}"
+        )
+
+    return response.json() if response.text else None

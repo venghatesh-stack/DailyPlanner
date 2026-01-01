@@ -6,7 +6,7 @@ import calendar
 import urllib.parse
 import json
 
-from supabase_client import get, post,delete 
+from supabase_client import get, post,delete,update  
 from logger import setup_logger
 
 # ==========================================================
@@ -190,45 +190,63 @@ def load_todo(plan_date):
 def save_todo(plan_date, form):
     # Clear existing tasks for the day
     logger.info("Saving Eisenhower matrix")
+    existing_rows = get(
+    "todo_matrix",
+    params={
+        "plan_date": f"eq.{plan_date}",
+        "select": "id"
+    }
+  ) or []
 
-    delete(
-        "todo_matrix",
-        params={"plan_date": f"eq.{plan_date}"}
-    )
-
-    payload = []
+    existing_ids = {row["id"] for row in existing_rows}
+    seen_ids = set()
     for quadrant in ["do", "schedule", "delegate", "eliminate"]:
       texts = form.getlist(f"{quadrant}[]")
       dates = form.getlist(f"{quadrant}_date[]")
       times = form.getlist(f"{quadrant}_time[]")
-
-      checked_ids = set(form.getlist(f"{quadrant}_done[]"))
       ids = form.getlist(f"{quadrant}_id[]")
+      checked_ids = set(form.getlist(f"{quadrant}_done[]"))
+
       for idx, text in enumerate(texts):
-          text = text.strip()
-          if not text:
-              continue
+        text = text.strip()
+        if not text:
+            continue
 
-          task_date = dates[idx] if idx < len(dates) and dates[idx] else None
-          task_time = times[idx] if idx < len(times) and times[idx] else None
+        task_id = ids[idx] if idx < len(ids) else None
+        task_date = dates[idx] if idx < len(dates) and dates[idx] else None
+        task_time = times[idx] if idx < len(times) and times[idx] else None
+        is_done = task_id in checked_ids if task_id else False
 
-          task_id = ids[idx] if idx < len(ids) else ""
-          is_done = bool(task_id) and task_id in checked_ids
-          payload.append({
-              "plan_date": str(plan_date),
-              "quadrant": quadrant,
-              "task_text": text,
-              "is_done": is_done,
-              "task_date": task_date,
-              "task_time": task_time,
-              "position": idx
-          })
+        payload = {
+            "quadrant": quadrant,
+            "task_text": text,
+            "task_date": task_date,
+            "task_time": task_time,
+            "is_done": is_done,
+            "position": idx
+        }
 
-    if payload:
-        post("todo_matrix", payload)
-    logger.info(
-    f"Eisenhower saved: date={plan_date}, tasks={len(payload)}"
-)
+        if task_id and task_id in existing_ids:
+            # ✅ UPDATE existing row
+            seen_ids.add(task_id)
+            update(
+                "todo_matrix",
+                params={"id": f"eq.{task_id}"},
+                json=payload
+            )
+        else:
+            # ✅ INSERT new row
+            payload["plan_date"] = str(plan_date)
+            post("todo_matrix", payload)
+
+    removed_ids = existing_ids - seen_ids
+
+    for task_id in removed_ids:
+        delete(
+            "todo_matrix",
+            params={"id": f"eq.{task_id}"}
+        )
+
 def copy_open_tasks_from_previous_day(plan_date):
     prev_date = plan_date - timedelta(days=1)
 
@@ -275,10 +293,8 @@ def copy_open_tasks_from_previous_day(plan_date):
           "task_time": r.get("task_time"),
           "position": r.get("position", 0)
       })
-
-
     if payload:
-        post("todo_matrix", payload)
+      post("todo_matrix", payload)
 
     return len(payload)
 
