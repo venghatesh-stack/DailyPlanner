@@ -174,11 +174,11 @@ def save_todo(plan_date, form):
     )
 
     payload = []
-   for quadrant in ["do", "schedule", "delegate", "eliminate"]:
-    texts = form.getlist(f"{quadrant}[]")
-    dones = form.getlist(f"{quadrant}_done[]")
+    for quadrant in ["do", "schedule", "delegate", "eliminate"]:
+      texts = form.getlist(f"{quadrant}[]")
+      dones = form.getlist(f"{quadrant}_done[]")
 
-    for idx, text in enumerate(texts):
+      for idx, text in enumerate(texts):
         text = text.strip()
         if not text:
             continue
