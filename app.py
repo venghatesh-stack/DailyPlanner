@@ -663,6 +663,36 @@ summary::-webkit-details-marker {
   gap: 8px;
   padding-left: 30px; /* aligns under text */
 }
+.floating-bar {
+  position: fixed;
+  bottom: env(safe-area-inset-bottom, 0);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-top: 1px solid #e5e7eb;
+  padding: 10px;
+  display: flex;
+  gap: 10px;
+  z-index: 999;
+}
+
+.floating-bar button {
+  flex: 1;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: none;
+}
+
+.floating-bar .save {
+  background: #2563eb;
+  color: white;
+}
+
+.floating-bar .cancel {
+  background: #e5e7eb;
+}
 
 </style>
 </head>
@@ -705,6 +735,20 @@ summary::-webkit-details-marker {
     {% endfor %}
   </select>
 </form>
+<div class="floating-bar">
+  <button type="submit"
+          form="todo-form"
+          class="save">
+    💾 Save
+  </button>
+
+  <button type="button"
+          class="cancel"
+          onclick="window.location.reload()">
+    ❌ Cancel
+  </button>
+</div>
+
 <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;">
 {% for d in days %}
   <a href="/todo?year={{year}}&month={{month}}&day={{d.day}}"
@@ -723,7 +767,7 @@ summary::-webkit-details-marker {
   </a>
 {% endfor %}
 </div>
-<form method="post">
+<form method="post" id="todo-form">
 
   <!-- ============================= -->
   <!-- MATRIX CONTAINER (GRID)       -->
