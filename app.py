@@ -173,23 +173,27 @@ def save_todo(plan_date, form):
 
     payload = []
     for quadrant in ["do", "schedule", "delegate", "eliminate"]:
-        lines = form.getlist(f"{quadrant}[]")
-        done_flags = set(form.getlist("done[]"))
+      lines = form.getlist(f"{quadrant}[]")
+      done_flags = set(form.getlist(f"done_{quadrant}[]"))
 
-        for idx, text in enumerate(lines):
-            text = text.strip()
-            if not text:
-                continue
-            payload.append({
-                "plan_date": str(plan_date),
-                "quadrant": quadrant,
-                "task_text": text,
-                "is_done": str(idx) in done_flags,
-                "position": idx
-            })
+      for idx, text in enumerate(lines):
+          text = text.strip()
+          if not text:
+              continue
+
+          payload.append({
+              "plan_date": str(plan_date),
+              "quadrant": quadrant,
+              "task_text": text,
+              "is_done": str(idx) in done_flags,
+              "position": idx
+          })
 
     if payload:
         post("todo_matrix", payload)
+    logger.info(
+    f"Eisenhower saved: date={plan_date}, tasks={len(payload)}"
+)
 
 # ==========================================================
 # ROUTES – DAILY PLANNER
@@ -472,7 +476,11 @@ body { font-family: system-ui; background:#f6f7f9; padding:16px; }
 <div id="{{q}}">
 {% for t in todo[q] %}
   <div class="task">
-    <input type="checkbox" name="done[]" value="{{loop.index0}}" {% if t.done %}checked{% endif %}>
+    <input type="checkbox"
+       name="done_{{q}}[]"
+       value="{{loop.index0}}"
+       {% if t.done %}checked{% endif %}>
+   {% if t.done %}checked{% endif %}>
     <input type="text" name="{{q}}[]" value="{{t.text}}">
     <button type="button" onclick="this.parentElement.remove()">−</button>
   </div>
