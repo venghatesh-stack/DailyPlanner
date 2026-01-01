@@ -204,6 +204,55 @@ def save_todo(plan_date, form):
     logger.info(
     f"Eisenhower saved: date={plan_date}, tasks={len(payload)}"
 )
+def copy_open_tasks_from_previous_day(plan_date):
+    prev_date = plan_date - timedelta(days=1)
+
+    # Load yesterday's tasks
+    prev_rows = get(
+        "todo_matrix",
+        params={
+            "plan_date": f"eq.{prev_date}",
+            "select": "quadrant,task_text,is_done,position",
+            "order": "position.asc"
+        }
+    ) or []
+
+    if not prev_rows:
+        return 0
+
+    # Load today's tasks to see which quadrants already exist
+    today_rows = get(
+        "todo_matrix",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "select": "quadrant"
+        }
+    ) or []
+
+    existing_quadrants = {r["quadrant"] for r in today_rows}
+
+    payload = []
+    for r in prev_rows:
+        # Copy ONLY open tasks
+        if r.get("is_done"):
+            continue
+
+        # Copy ONLY if quadrant is missing today
+        if r["quadrant"] in existing_quadrants:
+            continue
+
+        payload.append({
+            "plan_date": str(plan_date),
+            "quadrant": r["quadrant"],
+            "task_text": r["task_text"],
+            "is_done": False,
+            "position": r.get("position", 0)
+        })
+
+    if payload:
+        post("todo_matrix", payload)
+
+    return len(payload)
 
 # ==========================================================
 # ROUTES – DAILY PLANNER
@@ -548,55 +597,6 @@ function addTask(q){
   `;
   div.appendChild(row);
 }
-def copy_open_tasks_from_previous_day(plan_date):
-    prev_date = plan_date - timedelta(days=1)
-
-    # Load yesterday's tasks
-    prev_rows = get(
-        "todo_matrix",
-        params={
-            "plan_date": f"eq.{prev_date}",
-            "select": "quadrant,task_text,is_done,position",
-            "order": "position.asc"
-        }
-    ) or []
-
-    if not prev_rows:
-        return 0
-
-    # Load today's tasks to see which quadrants already exist
-    today_rows = get(
-        "todo_matrix",
-        params={
-            "plan_date": f"eq.{plan_date}",
-            "select": "quadrant"
-        }
-    ) or []
-
-    existing_quadrants = {r["quadrant"] for r in today_rows}
-
-    payload = []
-    for r in prev_rows:
-        # Copy ONLY open tasks
-        if r.get("is_done"):
-            continue
-
-        # Copy ONLY if quadrant is missing today
-        if r["quadrant"] in existing_quadrants:
-            continue
-
-        payload.append({
-            "plan_date": str(plan_date),
-            "quadrant": r["quadrant"],
-            "task_text": r["task_text"],
-            "is_done": False,
-            "position": r.get("position", 0)
-        })
-
-    if payload:
-        post("todo_matrix", payload)
-
-    return len(payload)
 
 </script>
 
