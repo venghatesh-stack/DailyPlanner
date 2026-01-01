@@ -284,6 +284,19 @@ def todo():
         todo=todo,
         plan_date=plan_date
     )
+@app.route("/todo/copy-prev", methods=["POST"])
+def copy_prev_todo():
+    today = datetime.now(IST).date()
+
+    year = int(request.form.get("year", today.year))
+    month = int(request.form.get("month", today.month))
+    day = int(request.form.get("day", today.day))
+    plan_date = date(year, month, day)
+
+    copied = copy_open_tasks_from_previous_day(plan_date)
+    logger.info(f"Copied {copied} Eisenhower tasks from previous day")
+
+    return redirect(url_for("todo", year=year, month=month, day=day))
 
 # ==========================================================
 # TEMPLATE – DAILY PLANNER (UNCHANGED, STABLE)
@@ -506,6 +519,18 @@ body { font-family: system-ui; background:#f6f7f9; padding:16px; }
 </div>
 
 <br>
+<input type="hidden" name="year" value="{{ plan_date.year }}">
+<input type="hidden" name="month" value="{{ plan_date.month }}">
+<input type="hidden" name="day" value="{{ plan_date.day }}">
+
+<button
+  type="submit"
+  formaction="/todo/copy-prev"
+  style="margin-bottom:12px;"
+>
+  📥 Copy open tasks from previous day
+</button>
+
 <button type="submit">💾 Save</button>
 </form>
 </div>
@@ -523,6 +548,56 @@ function addTask(q){
   `;
   div.appendChild(row);
 }
+def copy_open_tasks_from_previous_day(plan_date):
+    prev_date = plan_date - timedelta(days=1)
+
+    # Load yesterday's tasks
+    prev_rows = get(
+        "todo_matrix",
+        params={
+            "plan_date": f"eq.{prev_date}",
+            "select": "quadrant,task_text,is_done,position",
+            "order": "position.asc"
+        }
+    ) or []
+
+    if not prev_rows:
+        return 0
+
+    # Load today's tasks to see which quadrants already exist
+    today_rows = get(
+        "todo_matrix",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "select": "quadrant"
+        }
+    ) or []
+
+    existing_quadrants = {r["quadrant"] for r in today_rows}
+
+    payload = []
+    for r in prev_rows:
+        # Copy ONLY open tasks
+        if r.get("is_done"):
+            continue
+
+        # Copy ONLY if quadrant is missing today
+        if r["quadrant"] in existing_quadrants:
+            continue
+
+        payload.append({
+            "plan_date": str(plan_date),
+            "quadrant": r["quadrant"],
+            "task_text": r["task_text"],
+            "is_done": False,
+            "position": r.get("position", 0)
+        })
+
+    if payload:
+        post("todo_matrix", payload)
+
+    return len(payload)
+
 </script>
 
 </body>
