@@ -198,10 +198,18 @@ def save_todo(plan_date, form):
 def planner():
     today = datetime.now(IST).date()
 
-    year = int(request.args.get("year", today.year))
-    month = int(request.args.get("month", today.month))
-    day_param = request.args.get("day")
-    plan_date = date(year, month, int(day_param)) if day_param else today
+    if request.method == "POST":
+      year = int(request.form["year"])
+      month = int(request.form["month"])
+      day = int(request.form["day"])
+    else:
+      year = int(request.args.get("year", today.year))
+      month = int(request.args.get("month", today.month))
+      day = int(request.args.get("day", today.day))
+
+    plan_date = date(year, month, day)
+    logger.info(f"Saving planner for date={plan_date}")
+
 
     if request.method == "POST":
         save_day(plan_date, request.form)
@@ -364,6 +372,10 @@ textarea { width:100%; min-height:90px; font-size:15px; }
 </div>
 
 <form method="post" id="planner-form">
+<input type="hidden" name="year" value="{{ year }}">
+<input type="hidden" name="month" value="{{ month }}">
+<input type="hidden" name="day" value="{{ selected_day }}">
+
 {% for slot in plans %}
 <div class="slot {% if now_slot==slot %}current{% endif %}">
   <strong>{{ slot_labels[slot] }}</strong>
