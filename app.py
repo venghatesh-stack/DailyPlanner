@@ -1,5 +1,7 @@
 ## Eisenhower Matrix + Daily Planner integrated. Calender control working
-from flask import Flask, request, redirect, url_for, render_template_string
+from flask import Flask, request, redirect, url_for, render_template_string, session
+from functools import wraps
+import os
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 import calendar
@@ -15,6 +17,24 @@ from logger import setup_logger
 IST = ZoneInfo("Asia/Kolkata")
 app = Flask(__name__)
 logger = setup_logger()
+# ==========================================================
+# Log in codestarts here
+# ==========================================================
+
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "change-this-secret")
+APP_PASSWORD = os.environ.get("APP_PASSWORD", "changeme")
+
+def login_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if not session.get("authenticated"):
+            return redirect(url_for("login"))
+        return fn(*args, **kwargs)
+    return wrapper
+
+# ==========================================================
+# Log in code ends here
+# ==========================================================
 
 # ==========================================================
 # CONSTANTS
@@ -314,11 +334,91 @@ def copy_open_tasks_from_previous_day(plan_date):
       post("todo_matrix", payload)
 
     return len(payload)
+# ==========================================================
+# Log in codestarts here
+# ==========================================================
+
+LOGIN_TEMPLATE = """
+<!doctype html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login</title>
+  <style>
+    body {
+      font-family: system-ui;
+      background: #f6f7f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .login-box {
+      background: #fff;
+      padding: 24px;
+      border-radius: 14px;
+      width: 300px;
+      box-shadow: 0 10px 25px rgba(0,0,0,.08);
+    }
+    h3 { margin-top: 0; }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 15px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 14px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .error {
+      color: #dc2626;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <form method="post" class="login-box">
+    <h3>🔒 Login</h3>
+    <input type="password" name="password" placeholder="Password" autofocus>
+    <button type="submit">Continue</button>
+    {% if error %}
+      <div class="error">{{ error }}</div>
+    {% endif %}
+  </form>
+</body>
+</html>
+"""
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        if request.form.get("password") == APP_PASSWORD:
+            session["authenticated"] = True
+            return redirect(url_for("planner"))
+        return render_template_string(LOGIN_TEMPLATE, error="Invalid password")
+
+    return render_template_string(LOGIN_TEMPLATE)
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+# ==========================================================
+# Log in code ends here
+# ==========================================================
 
 # ==========================================================
 # ROUTES – DAILY PLANNER
 # ==========================================================
 @app.route("/", methods=["GET", "POST"])
+@login_required
 def planner():
     today = datetime.now(IST).date()
 
@@ -375,6 +475,7 @@ def planner():
 # ROUTES – EISENHOWER MATRIX
 # ==========================================================
 @app.route("/todo", methods=["GET", "POST"])
+@login_required
 def todo():
     today = datetime.now(IST).date()
 
@@ -406,6 +507,7 @@ def todo():
     )
 
 @app.route("/todo/copy-prev", methods=["POST"])
+@login_required
 def copy_prev_todo():
     today = datetime.now(IST).date()
 
