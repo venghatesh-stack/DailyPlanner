@@ -582,41 +582,13 @@ body { font-family: system-ui; background:#f6f7f9; padding:16px; }
 }
 
 .quad { border:1px solid #e5e7eb; border-radius:12px; padding:12px; }
+.quad > div {
+  margin-top: 8px;
+}
 .matrix {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-}
-
-@media (max-width: 767px) {
-  .task {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 8px;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-  }
-
-  .task input[type="checkbox"] {
-    transform: scale(1.3);
-  }
-
-  .task button {
-    font-size: 18px;
-    padding: 6px 10px;
-  }
-
-  .task input[type="text"] {
-    width: 100%;
-    font-size: 16px;
-  }
-
-  .task input[type="date"],
-  .task input[type="time"] {
-    width: 100%;
-    font-size: 14px;
-  }
 }
 
 summary {
@@ -629,40 +601,7 @@ summary {
 summary::-webkit-details-marker {
   display: none;
 }
-.task {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 8px;
-}
 
-.task-main {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.task-index {
-  font-weight: 600;
-  min-width: 22px;
-  text-align: right;
-  color: #64748b;
-}
-
-.task-main input[type="text"] {
-  flex: 1;
-}
-
-.task-delete {
-  font-size: 18px;
-  padding: 4px 8px;
-}
-
-.task-meta {
-  display: flex;
-  gap: 8px;
-  padding-left: 30px; /* aligns under text */
-}
 .floating-bar {
   position: fixed;
   bottom: env(safe-area-inset-bottom, 0);
@@ -692,6 +631,95 @@ summary::-webkit-details-marker {
 
 .floating-bar .cancel {
   background: #e5e7eb;
+}
+/* ===== Google Tasks–style Eisenhower ===== */
+
+.task {
+  padding: 10px 0;
+}
+
+.task + .task {
+  border-top: 1px solid #eee;
+}
+
+/* Main row */
+.task-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Index */
+.task-index {
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+/* Checkbox */
+.task-main input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+}
+
+/* Task text */
+.task-main input[type="text"] {
+  flex: 1;
+  border: none;
+  font-size: 16px;
+  background: transparent;
+  padding: 4px 0;
+}
+
+.task-main input[type="text"]:focus {
+  outline: none;
+  border-bottom: 2px solid #2563eb;
+}
+
+/* Delete button */
+.task-delete {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #9ca3af;
+}
+
+.task-delete:hover {
+  color: #ef4444;
+}
+
+/* Meta row */
+.task-meta input {
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+.task-meta {
+  margin-left: 34px;
+  margin-top: 6px;
+  display: flex;
+  gap: 10px;
+}
+
+
+/* Completed task */
+.task.done {
+  opacity: 0.6;
+}
+
+.task.done input[type="text"] {
+  text-decoration: line-through;
+}
+@media (max-width: 767px) {
+  .task-main input[type="checkbox"] {
+    transform: scale(1.25);
+  }
+
+  .task-delete {
+    font-size: 20px;
+  }
 }
 
 </style>
@@ -801,7 +829,7 @@ summary::-webkit-details-marker {
           <!-- START: TASK LOOP (N times) -->
           {% for t in todo[q] %}
          
-           <div class="task">
+           <div class="task {% if t.done %}done{% endif %}">
             <input type="hidden" name="{{ q }}_id[]" value="{{ t.id }}">
             <!-- LINE 1: serial + checkbox + text + delete -->
             <div class="task-main">
@@ -813,12 +841,16 @@ summary::-webkit-details-marker {
                     {% if t.done %}checked{% endif %}>
 
               <input type="text"
-                    name="{{q}}[]"
-                    value="{{ t.text }}">
+                name="{{q}}[]"
+                value="{{ t.text }}"
+                placeholder="Add a task">
+
 
               <button type="button"
-                      class="task-delete"
-                      onclick="this.closest('.task').remove()">−</button>
+                  class="task-delete"
+                  title="Delete"
+                  onclick="this.closest('.task').remove()">🗑</button>
+
             </div>
 
             <!-- LINE 2: date + time -->
