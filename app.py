@@ -202,12 +202,8 @@ def save_todo(plan_date, form):
       dates = form.getlist(f"{quadrant}_date[]")
       times = form.getlist(f"{quadrant}_time[]")
 
-      checked_ids = {
-          int(i)
-          for i in form.getlist(f"{quadrant}_done[]")
-          if i.isdigit()
-      }
-
+      checked_ids = set(form.getlist(f"{quadrant}_done[]"))
+      ids = form.getlist(f"{quadrant}_id[]")
       for idx, text in enumerate(texts):
           text = text.strip()
           if not text:
