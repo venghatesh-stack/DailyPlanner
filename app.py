@@ -925,16 +925,11 @@ summary::-webkit-details-marker {
   <!-- ACTION BUTTONS (ONCE ONLY)        -->
   <!-- ================================= -->
 
-  <button
-    type="submit"
-    formaction="/todo/copy-prev"
-    style="margin-bottom:12px;">
-    📥 Copy open tasks from previous day
-  </button>
-
-  <button type="submit">
-    💾 Save
-  </button>
+<button type="submit"
+        formaction="/todo/copy-prev"
+        style="margin:16px 0;">
+  📥 Copy open tasks from previous day
+</button>
 
 </form>
 
@@ -947,30 +942,33 @@ function addTask(q){
   const row = document.createElement("div");
   row.className = "task";
 
- row.innerHTML = `
-  <div class="task-main">
-    <span class="task-index">*</span>
-    <input type="hidden" name="${q}_id[]" value="">
+  const id = "new_" + Date.now();
 
-    <input type="hidden" name="${q}_done_state[new_${Date.now()}]" value="0">
-    <input type="checkbox" name="${q}_done_state[new_${Date.now()}]" value="1">
+  row.innerHTML = `
+    <div class="task-main">
+      <span class="task-index">*</span>
 
-    <input type="text" name="${q}[]" autofocus>
+      <input type="hidden" name="${q}_id[]" value="${id}">
 
-    <button type="button"
-            class="task-delete"
-            onclick="this.closest('.task').remove()">🗑</button>
-  </div>
+      <input type="hidden" name="${q}_done_state[${id}]" value="0">
+      <input type="checkbox" name="${q}_done_state[${id}]" value="1">
 
-  <div class="task-meta">
-    <input type="date" name="${q}_date[]">
-    <input type="time" name="${q}_time[]">
-  </div>
-`;
+      <input type="text" name="${q}[]" autofocus>
 
+      <button type="button"
+              class="task-delete"
+              onclick="this.closest('.task').remove()">🗑</button>
+    </div>
+
+    <div class="task-meta">
+      <input type="date" name="${q}_date[]">
+      <input type="time" name="${q}_time[]">
+    </div>
+  `;
 
   div.appendChild(row);
 }
+
 
 </script>
 
