@@ -692,7 +692,7 @@ TODO_TEMPLATE = """
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body { font-family: system-ui; background:#f6f7f9; padding:16px; }
+body { font-family: system-ui; background:#f6f7f9; padding:16px;padding-bottom: calc(120px + env(safe-area-inset-bottom)); /* 👈 ADD THIS */ }
 .container { max-width:1100px; margin:auto; background:#fff; padding:20px; border-radius:14px; }
 @media (max-width: 767px) {
   .matrix {
@@ -794,17 +794,23 @@ summary::-webkit-details-marker {
   border-bottom: 2px solid #2563eb;
 }
 
-/* Delete button */
 .task-delete {
   background: none;
   border: none;
-  font-size: 18px;
-  color: #9ca3af;
+  font-size: 20px;
+  color: #dc2626;          /* 👈 visible red */
+  cursor: pointer;
+  padding: 8px;           /* 👈 touch target */
+  border-radius: 8px;
+  opacity: 0.85;
 }
 
-.task-delete:hover {
-  color: #ef4444;
+.task-delete:hover,
+.task-delete:active {
+  background: rgba(220, 38, 38, 0.12);
+  opacity: 1;
 }
+
 
 /* Meta row */
 .task-meta input {
@@ -1137,7 +1143,7 @@ function toggleDone(checkbox) {
   if (form) {
     form.submit(); // IMPORTANT: use submit(), not requestSubmit()
   }
-}, 0);
+}, 700);
 
 }
 
