@@ -190,6 +190,9 @@ def load_todo(plan_date):
 def save_todo(plan_date, form):
     logger.info("Saving Eisenhower matrix")
 
+    # -----------------------------------
+    # Load existing task IDs for the day
+    # -----------------------------------
     existing_rows = get(
         "todo_matrix",
         params={
@@ -201,29 +204,38 @@ def save_todo(plan_date, form):
     existing_ids = {str(row["id"]) for row in existing_rows}
     seen_ids = set()
 
+    # -----------------------------------
+    # Process each quadrant independently
+    # -----------------------------------
     for quadrant in ["do", "schedule", "delegate", "eliminate"]:
+
         texts = form.getlist(f"{quadrant}[]")
         dates = form.getlist(f"{quadrant}_date[]")
         times = form.getlist(f"{quadrant}_time[]")
         ids   = form.getlist(f"{quadrant}_id[]")
 
-        # ✅ Correct: quadrant-specific done state
-        done_state = form.get(f"{quadrant}_done_state", {})
+        # done_state is a dict like:
+        # { "123": ["0","1"], "new_456": ["0"] }
+        done_state = form.to_dict(flat=False).get(
+            f"{quadrant}_done_state", {}
+        )
 
         for idx, text in enumerate(texts):
             text = text.strip()
             if not text:
                 continue
 
-            task_id   = ids[idx] if idx < len(ids) else None
+            task_id = ids[idx] if idx < len(ids) else None
+            if not task_id:
+                continue  # safety guard
+
             task_date = dates[idx] if idx < len(dates) and dates[idx] else None
             task_time = times[idx] if idx < len(times) and times[idx] else None
 
-            # ✅ Correct place to compute done
-            is_done = (
-                done_state.get(str(task_id)) == "1"
-                if task_id else False
-            )
+            # -----------------------------------
+            # Done state (single unified logic)
+            # -----------------------------------
+            is_done = "1" in done_state.get(str(task_id), [])
 
             payload = {
                 "quadrant": quadrant,
@@ -234,18 +246,27 @@ def save_todo(plan_date, form):
                 "position": idx
             }
 
-            if task_id and str(task_id) in existing_ids:
+            # -----------------------------------
+            # UPDATE existing task
+            # -----------------------------------
+            if str(task_id) in existing_ids:
                 seen_ids.add(str(task_id))
                 update(
                     "todo_matrix",
                     params={"id": f"eq.{task_id}"},
                     json=payload
                 )
+
+            # -----------------------------------
+            # INSERT new task
+            # -----------------------------------
             else:
                 payload["plan_date"] = str(plan_date)
                 post("todo_matrix", payload)
 
-    # ✅ Delete removed tasks
+    # -----------------------------------
+    # Delete tasks removed from the UI
+    # -----------------------------------
     removed_ids = existing_ids - seen_ids
     for task_id in removed_ids:
         delete(
@@ -926,24 +947,27 @@ function addTask(q){
   const row = document.createElement("div");
   row.className = "task";
 
-  row.innerHTML = `
-    <div class="task-main">
-      <span class="task-index">*</span>
-      <input type="hidden" name="${q}_id[]" value="">
+ row.innerHTML = `
+  <div class="task-main">
+    <span class="task-index">*</span>
+    <input type="hidden" name="${q}_id[]" value="">
 
-      <input type="checkbox" name="${q}_done[]">
-      <input type="text" name="${q}[]" autofocus>
+    <input type="hidden" name="${q}_done_state[new_${Date.now()}]" value="0">
+    <input type="checkbox" name="${q}_done_state[new_${Date.now()}]" value="1">
 
-      <button type="button"
-              class="task-delete"
-              onclick="this.closest('.task').remove()">−</button>
-    </div>
+    <input type="text" name="${q}[]" autofocus>
 
-    <div class="task-meta">
-      <input type="date" name="${q}_date[]">
-      <input type="time" name="${q}_time[]">
-    </div>
-  `;
+    <button type="button"
+            class="task-delete"
+            onclick="this.closest('.task').remove()">🗑</button>
+  </div>
+
+  <div class="task-meta">
+    <input type="date" name="${q}_date[]">
+    <input type="time" name="${q}_time[]">
+  </div>
+`;
+
 
   div.appendChild(row);
 }
