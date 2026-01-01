@@ -869,7 +869,7 @@ summary::-webkit-details-marker {
               <input type="checkbox"
                     name="{{q}}_done_state[{{ t.id }}]"
                     value="1"
-                    {% if t.done %}checked{% endif %}>
+                    {% if t.done %}checked{% endif %} onchange="toggleDone(this)">
 
 
               <input type="text"
@@ -951,7 +951,7 @@ function addTask(q){
       <input type="hidden" name="${q}_id[]" value="${id}">
 
       <input type="hidden" name="${q}_done_state[${id}]" value="0">
-      <input type="checkbox" name="${q}_done_state[${id}]" value="1">
+      <input type="checkbox" name="${q}_done_state[${id}]" value="1" onchange="toggleDone(this)">
 
       <input type="text" name="${q}[]" autofocus>
 
@@ -968,7 +968,16 @@ function addTask(q){
 
   div.appendChild(row);
 }
+function toggleDone(checkbox) {
+  const task = checkbox.closest(".task");
+  if (!task) return;
 
+  if (checkbox.checked) {
+    task.classList.add("done");
+  } else {
+    task.classList.remove("done");
+  }
+}
 
 </script>
 
