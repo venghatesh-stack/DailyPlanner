@@ -173,10 +173,10 @@ def save_todo(plan_date, form):
 
     payload = []
     for quadrant in ["do", "schedule", "delegate", "eliminate"]:
-      lines = form.getlist(f"{quadrant}[]")
-      done_flags = set(form.getlist(f"done_{quadrant}[]"))
+      texts = form.getlist(f"{quadrant}[]")
+      dones = form.getlist(f"{quadrant}_done[]")
 
-      for idx, text in enumerate(lines):
+      for idx, text in enumerate(texts):
           text = text.strip()
           if not text:
               continue
@@ -185,7 +185,7 @@ def save_todo(plan_date, form):
               "plan_date": str(plan_date),
               "quadrant": quadrant,
               "task_text": text,
-              "is_done": str(idx) in done_flags,
+              "is_done": dones[idx] == "1",
               "position": idx
           })
 
@@ -476,11 +476,14 @@ body { font-family: system-ui; background:#f6f7f9; padding:16px; }
 <div id="{{q}}">
 {% for t in todo[q] %}
   <div class="task">
+    <input type="hidden" name="do_done[]" value="0">
     <input type="checkbox"
-       name="done_{{q}}[]"
-       value="{{loop.index0}}"
+       name="do_done[]"
+       value="1"
        {% if t.done %}checked{% endif %}>
-   {% if t.done %}checked{% endif %}>
+
+    <input type="text" name="do[]" value="{{t.text}}">
+
     <input type="text" name="{{q}}[]" value="{{t.text}}">
     <button type="button" onclick="this.parentElement.remove()">−</button>
   </div>
@@ -504,10 +507,12 @@ function addTask(q){
   const row = document.createElement("div");
   row.className="task";
   row.innerHTML = `
-    <input type="checkbox" disabled>
-    <input type="text" name="${q}[]" autofocus>
-    <button type="button" onclick="this.parentElement.remove()">−</button>
-  `;
+  <input type="hidden" name="${q}_done[]" value="0">
+  <input type="checkbox" name="${q}_done[]" value="1">
+  <input type="text" name="${q}[]" autofocus>
+  <button type="button" onclick="this.parentElement.remove()">−</button>
+`;
+
   div.appendChild(row);
 }
 </script>
