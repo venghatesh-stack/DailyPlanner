@@ -190,9 +190,6 @@ def load_todo(plan_date):
 def save_todo(plan_date, form):
     logger.info("Saving Eisenhower matrix")
 
-    # -----------------------------------
-    # Load existing task IDs for the day
-    # -----------------------------------
     existing_rows = get(
         "todo_matrix",
         params={
@@ -204,9 +201,6 @@ def save_todo(plan_date, form):
     existing_ids = {str(row["id"]) for row in existing_rows}
     seen_ids = set()
 
-    # -----------------------------------
-    # Process each quadrant independently
-    # -----------------------------------
     for quadrant in ["do", "schedule", "delegate", "eliminate"]:
 
         texts = form.getlist(f"{quadrant}[]")
@@ -214,12 +208,20 @@ def save_todo(plan_date, form):
         times = form.getlist(f"{quadrant}_time[]")
         ids   = form.getlist(f"{quadrant}_id[]")
 
-        # done_state is a dict like:
-        # { "123": ["0","1"], "new_456": ["0"] }
-        done_state = form.to_dict(flat=False).get(
-            f"{quadrant}_done_state", {}
-        )
+        # -----------------------------------
+        # 1️⃣ Build done_state FIRST
+        # -----------------------------------
+        done_state = {}
+        prefix = f"{quadrant}_done_state["
 
+        for key, values in form.to_dict(flat=False).items():
+            if key.startswith(prefix) and key.endswith("]"):
+                task_id = key[len(prefix):-1]
+                done_state[task_id] = values
+
+        # -----------------------------------
+        # 2️⃣ Now process tasks ONCE
+        # -----------------------------------
         for idx, text in enumerate(texts):
             text = text.strip()
             if not text:
@@ -227,14 +229,11 @@ def save_todo(plan_date, form):
 
             task_id = ids[idx] if idx < len(ids) else None
             if not task_id:
-                continue  # safety guard
+                continue
 
             task_date = dates[idx] if idx < len(dates) and dates[idx] else None
             task_time = times[idx] if idx < len(times) and times[idx] else None
 
-            # -----------------------------------
-            # Done state (single unified logic)
-            # -----------------------------------
             is_done = "1" in done_state.get(str(task_id), [])
 
             payload = {
@@ -246,9 +245,6 @@ def save_todo(plan_date, form):
                 "position": idx
             }
 
-            # -----------------------------------
-            # UPDATE existing task
-            # -----------------------------------
             if str(task_id) in existing_ids:
                 seen_ids.add(str(task_id))
                 update(
@@ -256,17 +252,10 @@ def save_todo(plan_date, form):
                     params={"id": f"eq.{task_id}"},
                     json=payload
                 )
-
-            # -----------------------------------
-            # INSERT new task
-            # -----------------------------------
             else:
                 payload["plan_date"] = str(plan_date)
                 post("todo_matrix", payload)
 
-    # -----------------------------------
-    # Delete tasks removed from the UI
-    # -----------------------------------
     removed_ids = existing_ids - seen_ids
     for task_id in removed_ids:
         delete(
@@ -968,15 +957,27 @@ function addTask(q){
 
   div.appendChild(row);
 }
+let autoSaveTimer = null;
+
 function toggleDone(checkbox) {
   const task = checkbox.closest(".task");
   if (!task) return;
 
+  // UI update (already correct)
   if (checkbox.checked) {
     task.classList.add("done");
   } else {
     task.classList.remove("done");
   }
+
+  // Debounced auto-save (prevents rapid submits)
+  if (autoSaveTimer) {
+    clearTimeout(autoSaveTimer);
+  }
+
+  autoSaveTimer = setTimeout(() => {
+    document.getElementById("todo-form").requestSubmit();
+  }, 300);
 }
 
 </script>
