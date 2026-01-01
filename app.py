@@ -738,6 +738,38 @@ summary::-webkit-details-marker {
     font-size: 20px;
   }
 }
+/* ===== Motivational Quote ===== */
+
+.motivation {
+  margin: 14px 0 18px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f8fafc, #eef2ff);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: #1f2937;
+}
+
+.motivation-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.motivation-text {
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.5;
+  color: #374151;
+}
+
+/* Mobile tuning */
+@media (max-width: 767px) {
+  .motivation {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+}
 
 </style>
 </head>
@@ -747,19 +779,9 @@ summary::-webkit-details-marker {
 <h2>📋 Eisenhower Matrix – {{ plan_date }}</h2>
 <a href="/">⬅ Back to Daily Planner</a>
 {% if quote %}
-<div style="
-  margin: 12px 0 16px 0;
-  padding: 10px 14px;
-  background: #f1f5f9;
-  border-left: 4px solid #2563eb;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #334155;
-">
-  <span style="font-size:20px;">{{ quote.icon }}</span>
-  <span style="font-style: italic;">{{ quote.text }}</span>
+<div class="motivation">
+  <span class="motivation-icon">{{ quote.icon }}</span>
+  <span class="motivation-text">{{ quote.text }}</span>
 </div>
 {% endif %}
 
