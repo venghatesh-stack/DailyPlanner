@@ -225,15 +225,15 @@ def save_todo(plan_date, form):
                   for i in checked_ids
               )
 
-              payload.append({
-                  "plan_date": str(plan_date),
-                  "quadrant": quadrant,
-                  "task_text": text,
-                  "is_done": is_done,
-                  "task_date": task_date,
-                  "task_time": task_time,
-                  "position": idx
-              })
+          payload.append({
+              "plan_date": str(plan_date),
+              "quadrant": quadrant,
+              "task_text": text,
+              "is_done": is_done,
+              "task_date": task_date,
+              "task_time": task_time,
+              "position": idx
+          })
 
     if payload:
         post("todo_matrix", payload)
