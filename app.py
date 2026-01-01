@@ -751,6 +751,7 @@ summary::-webkit-details-marker {
 
           <!-- START: TASK LOOP (N times) -->
           {% for t in todo[q] %}
+          <input type="hidden" name="{{ q }}_id[]" value="{{ t.id }}">
            <div class="task">
 
             <!-- LINE 1: serial + checkbox + text + delete -->
@@ -836,6 +837,7 @@ function addTask(q){
   row.innerHTML = `
     <div class="task-main">
       <span class="task-index">*</span>
+      <input type="hidden" name="${q}_id[]" value="">
 
       <input type="checkbox" name="${q}_done[]">
       <input type="text" name="${q}[]" autofocus>
