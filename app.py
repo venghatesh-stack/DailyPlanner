@@ -176,6 +176,14 @@ def load_todo(plan_date):
             "task_date": r.get("task_date"),
             "task_time": r.get("task_time")
         })
+    for q in data:
+        data[q].sort(
+            key=lambda t: (
+                t["task_date"] is None,   # False first (has date), True last (no date)
+                t["task_date"] or ""
+            )
+        )
+
 
     return data
 
@@ -563,7 +571,6 @@ body { font-family: system-ui; background:#f6f7f9; padding:16px; }
 }
 
 .quad { border:1px solid #e5e7eb; border-radius:12px; padding:12px; }
-.task { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
 .task input[type=text] { flex:1; padding:6px; }
 .task input[type=date],
 .task input[type=time] {
@@ -615,6 +622,40 @@ summary {
 
 summary::-webkit-details-marker {
   display: none;
+}
+.task {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.task-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.task-index {
+  font-weight: 600;
+  min-width: 22px;
+  text-align: right;
+  color: #64748b;
+}
+
+.task-main input[type="text"] {
+  flex: 1;
+}
+
+.task-delete {
+  font-size: 18px;
+  padding: 4px 8px;
+}
+
+.task-meta {
+  display: flex;
+  gap: 8px;
+  padding-left: 30px; /* aligns under text */
 }
 
 </style>
@@ -709,29 +750,39 @@ summary::-webkit-details-marker {
 
           <!-- START: TASK LOOP (N times) -->
           {% for t in todo[q] %}
-            <div class="task">
+           <div class="task">
+
+            <!-- LINE 1: serial + checkbox + text + delete -->
+            <div class="task-main">
+              <span class="task-index">{{ loop.index }}.</span>
 
               <input type="checkbox"
-                     name="{{ q }}_done[]"
-                     value="{{ loop.index0 }}"
-                     {% if t.done %}checked{% endif %}>
+                    name="{{q}}_done[]"
+                    value="{{ loop.index0 }}"
+                    {% if t.done %}checked{% endif %}>
 
               <input type="text"
-                     name="{{ q }}[]"
-                     value="{{ t.text }}">
-
-              <input type="date"
-                     name="{{ q }}_date[]"
-                     value="{{ t.task_date or '' }}">
-
-              <input type="time"
-                     name="{{ q }}_time[]"
-                     value="{{ t.task_time or '' }}">
+                    name="{{q}}[]"
+                    value="{{ t.text }}">
 
               <button type="button"
-                      onclick="this.parentElement.remove()">−</button>
-
+                      class="task-delete"
+                      onclick="this.closest('.task').remove()">−</button>
             </div>
+
+            <!-- LINE 2: date + time -->
+              <div class="task-meta">
+                <input type="date"
+                      name="{{q}}_date[]"
+                      value="{{ t.task_date or '' }}">
+
+                <input type="time"
+                      name="{{q}}_time[]"
+                      value="{{ t.task_time or '' }}">
+              </div>
+
+          </div>
+
           {% endfor %}
           <!-- END: TASK LOOP -->
 
@@ -780,15 +831,28 @@ function addTask(q){
   const div = document.getElementById(q);
   const row = document.createElement("div");
   row.className = "task";
+
   row.innerHTML = `
-    <input type="checkbox" name="${q}_done[]">
-    <input type="text" name="${q}[]" autofocus>
-    <input type="date" name="${q}_date[]">
-    <input type="time" name="${q}_time[]">
-    <button type="button" onclick="this.parentElement.remove()">−</button>
+    <div class="task-main">
+      <span class="task-index">*</span>
+
+      <input type="checkbox" name="${q}_done[]">
+      <input type="text" name="${q}[]" autofocus>
+
+      <button type="button"
+              class="task-delete"
+              onclick="this.closest('.task').remove()">−</button>
+    </div>
+
+    <div class="task-meta">
+      <input type="date" name="${q}_date[]">
+      <input type="time" name="${q}_time[]">
+    </div>
   `;
+
   div.appendChild(row);
 }
+
 </script>
 
 </body>
