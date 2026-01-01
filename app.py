@@ -166,28 +166,34 @@ def load_todo(plan_date):
 
 def save_todo(plan_date, form):
     # Clear existing tasks for the day
+    logger.info("Saving Eisenhower matrix")
+
     delete(
         "todo_matrix",
         params={"plan_date": f"eq.{plan_date}"}
     )
 
     payload = []
-    for quadrant in ["do", "schedule", "delegate", "eliminate"]:
-      texts = form.getlist(f"{quadrant}[]")
-      dones = form.getlist(f"{quadrant}_done[]")
+   for quadrant in ["do", "schedule", "delegate", "eliminate"]:
+    texts = form.getlist(f"{quadrant}[]")
+    dones = form.getlist(f"{quadrant}_done[]")
 
-      for idx, text in enumerate(texts):
-          text = text.strip()
-          if not text:
-              continue
+    for idx, text in enumerate(texts):
+        text = text.strip()
+        if not text:
+            continue
 
-          payload.append({
-              "plan_date": str(plan_date),
-              "quadrant": quadrant,
-              "task_text": text,
-              "is_done": dones[idx] == "1",
-              "position": idx
-          })
+        is_done = False
+        if idx < len(dones):
+            is_done = dones[idx] == "1"
+
+        payload.append({
+            "plan_date": str(plan_date),
+            "quadrant": quadrant,
+            "task_text": text,
+            "is_done": is_done,
+            "position": idx
+        })
 
     if payload:
         post("todo_matrix", payload)
@@ -476,15 +482,13 @@ body { font-family: system-ui; background:#f6f7f9; padding:16px; }
 <div id="{{q}}">
 {% for t in todo[q] %}
   <div class="task">
-    <input type="hidden" name="do_done[]" value="0">
+    <input type="hidden" name="{{q}}_done[]" value="0">
     <input type="checkbox"
-       name="do_done[]"
+       name="{{q}}_done[]"
        value="1"
        {% if t.done %}checked{% endif %}>
-
-    <input type="text" name="do[]" value="{{t.text}}">
-
     <input type="text" name="{{q}}[]" value="{{t.text}}">
+
     <button type="button" onclick="this.parentElement.remove()">−</button>
   </div>
 {% endfor %}
