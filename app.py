@@ -176,17 +176,16 @@ def save_todo(plan_date, form):
     payload = []
     for quadrant in ["do", "schedule", "delegate", "eliminate"]:
       texts = form.getlist(f"{quadrant}[]")
-      dones = form.getlist(f"{quadrant}_done[]")
+      checked_indexes = set(
+                int(i) for i in form.getlist(f"{quadrant}_done[]")
+      )
+
 
       for idx, text in enumerate(texts):
         text = text.strip()
         if not text:
             continue
-
-        is_done = False
-        if idx < len(dones):
-            is_done = dones[idx] == "1"
-
+       
         payload.append({
             "plan_date": str(plan_date),
             "quadrant": quadrant,
@@ -482,7 +481,7 @@ body { font-family: system-ui; background:#f6f7f9; padding:16px; }
 <div id="{{q}}">
 {% for t in todo[q] %}
   <div class="task">
-    <input type="hidden" name="{{q}}_done[]" value="0">
+    
     <input type="checkbox"
        name="{{q}}_done[]"
        value="1"
@@ -511,8 +510,12 @@ function addTask(q){
   const row = document.createElement("div");
   row.className="task";
   row.innerHTML = `
-  <input type="hidden" name="${q}_done[]" value="0">
-  <input type="checkbox" name="${q}_done[]" value="1">
+  <input type="checkbox"
+       name="{{q}}_done[]"
+       value="{{ loop.index0 }}"
+       {% if t.done %}checked{% endif %}>
+
+  
   <input type="text" name="${q}[]" autofocus>
   <button type="button" onclick="this.parentElement.remove()">−</button>
 `;
