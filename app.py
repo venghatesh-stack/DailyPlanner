@@ -758,11 +758,12 @@ summary::-webkit-details-marker {
 }
 
 .motivation-text {
-  font-size: 14px;
+  font-size: 17px;
   font-style: italic;
+  font-weight: 500;     /* 👈 semi-bold, tasteful */
+  line-height: 1.6;
+  color: #1f2937;
   max-width: 640px;
-  line-height: 1.5;
-  color: #374151;
 }
 .motivation::before {
   content: "Reflection";
