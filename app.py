@@ -202,32 +202,38 @@ def save_todo(plan_date, form):
       dates = form.getlist(f"{quadrant}_date[]")
       times = form.getlist(f"{quadrant}_time[]")
 
-      checked_indexes = {
-              int(i)
-              for i in form.getlist(f"{quadrant}_done[]")
-              if i.isdigit()
+      checked_ids = {
+          int(i)
+          for i in form.getlist(f"{quadrant}_done[]")
+          if i.isdigit()
       }
 
-
-
       for idx, text in enumerate(texts):
-        text = text.strip()
-        if not text:
-            continue
-        is_done = idx in checked_indexes
-        task_date = dates[idx] if idx < len(dates) and dates[idx] else None
-        task_time = times[idx] if idx < len(times) and times[idx] else None
+          text = text.strip()
+          if not text:
+              continue
 
-        payload.append({
-            "plan_date": str(plan_date),
-            "quadrant": quadrant,
-            "task_text": text,
-            "is_done": is_done,
-            "task_date": task_date,
-            "task_time": task_time,
-            "position": idx
-        })
+          task_date = dates[idx] if idx < len(dates) and dates[idx] else None
+          task_time = times[idx] if idx < len(times) and times[idx] else None
 
+          # Checkbox value = task.id
+          is_done = False
+          if idx < len(form.getlist(f"{quadrant}_done[]")):
+              is_done = any(
+                  int(i) == checked_id
+                  for checked_id in checked_ids
+                  for i in checked_ids
+              )
+
+              payload.append({
+                  "plan_date": str(plan_date),
+                  "quadrant": quadrant,
+                  "task_text": text,
+                  "is_done": is_done,
+                  "task_date": task_date,
+                  "task_time": task_time,
+                  "position": idx
+              })
 
     if payload:
         post("todo_matrix", payload)
@@ -571,11 +577,6 @@ body { font-family: system-ui; background:#f6f7f9; padding:16px; }
 }
 
 .quad { border:1px solid #e5e7eb; border-radius:12px; padding:12px; }
-.task input[type=text] { flex:1; padding:6px; }
-.task input[type=date],
-.task input[type=time] {
-  min-width: 110px;
-}
 .matrix {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -758,7 +759,7 @@ summary::-webkit-details-marker {
 
               <input type="checkbox"
                     name="{{q}}_done[]"
-                    value="{{ loop.index0 }}"
+                    value="{{ t.id }}"
                     {% if t.done %}checked{% endif %}>
 
               <input type="text"
