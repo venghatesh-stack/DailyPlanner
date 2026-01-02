@@ -3,7 +3,8 @@ import requests
 
 SUPABASE_URL = "https://gidpxopleslvmrrycood.supabase.co"
 SUPABASE_KEY = "sb_publishable_jv6-xI--WU4Tsm2Sq8wRYg_9Vf85OOi"
-
+print("SUPABASE_URL =", SUPABASE_URL)
+print("SUPABASE_KEY present =", bool(SUPABASE_KEY))
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise RuntimeError("Supabase env vars not set")
 
