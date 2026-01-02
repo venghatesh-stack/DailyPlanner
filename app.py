@@ -716,6 +716,54 @@ def make_recurring():
     })
 
     return ("", 204)
+@app.route("/set_recurrence", methods=["POST"])
+@login_required
+@app.route("/set_recurrence", methods=["POST"])
+@login_required
+def set_recurrence():
+    data = request.get_json()
+    task_id = data["task_id"]
+    recurrence = data.get("recurrence")
+
+    # Safety: block unsaved tasks
+    if task_id.startswith("new_"):
+        return ("", 204)
+
+    # Load the task instance
+    task = get(
+        "todo_matrix",
+        params={"id": f"eq.{task_id}"}
+    )[0]
+
+    # ----------------------------
+    # FIX 3: prevent duplicate rules
+    # ----------------------------
+    existing = get(
+        "recurring_tasks",
+        params={
+            "task_text": f"eq.{task['task_text']}",
+            "quadrant": f"eq.{task['quadrant']}",
+            "is_active": "eq.true"
+        }
+    )
+
+    if existing:
+        # Rule already exists → do nothing (idempotent)
+        return ("", 204)
+
+    # ----------------------------
+    # Create recurring rule
+    # ----------------------------
+    post("recurring_tasks", {
+        "quadrant": task["quadrant"],
+        "task_text": task["task_text"],
+        "recurrence": recurrence,
+        "start_date": task["plan_date"],
+        "is_active": True
+    })
+
+    return ("", 204)
+
 
 # ==========================================================
 # TEMPLATE – DAILY PLANNER (UNCHANGED, STABLE)
@@ -1139,6 +1187,15 @@ summary::-webkit-details-marker {
 .task-main span[title] {
   margin-right: 4px;
 }
+.repeat-select {
+  font-size: 12px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #374151;
+}
+
 </style>
 </head>
 
@@ -1258,16 +1315,11 @@ summary::-webkit-details-marker {
             <div class="task-main">
               <span class="task-index">{{ loop.index }}.</span>
               {% if t.recurring %}
-                <span
-                  title="Recurring task — deleting removes today only"
-                  style="
-                    font-size:14px;
-                    color:#6366f1;
-                    cursor: help;
-                  ">
-                  🔁
+                <span title="Repeats daily" style="font-size:13px;color:#6366f1;">
+                🔁 Daily
                 </span>
               {% endif %}
+
 
               <input type="hidden"
                     name="{{q}}_done_state[{{ t.id }}]"
@@ -1279,11 +1331,26 @@ summary::-webkit-details-marker {
                     {% if t.done %}checked{% endif %} onchange="toggleDone(this)">
 
 
-           <textarea name="{{q}}[]"
-            class="task-text"
-            rows="1"
-            placeholder="Add a task"
-            oninput="autoGrow(this)">{{ t.text }}</textarea>
+                <textarea name="{{q}}[]"
+                  class="task-text"
+                  rows="1"
+                  placeholder="Add a task"
+                  oninput="autoGrow(this)">{{ t.text }}</textarea>
+                
+               {% if not t.recurring %}
+                <select class="repeat-select"
+                  onchange="setRecurrence('{{ t.id }}', this.value)">
+                  <option value="">Repeat…</option>
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+              {% endif %}
+              {% if t.recurring %}
+                <span title="Repeats daily" style="font-size:13px;color:#6366f1;">
+                  🔁 Daily
+                </span>
+              {% endif %}
 
 
 
@@ -1291,12 +1358,7 @@ summary::-webkit-details-marker {
                   class="task-delete"
                   title="Delete"
                   onclick="this.closest('.task').remove()">🗑</button>
-              <button type="button"
-                  title="Make this task recurring"
-                  onclick="makeRecurring('{{ t.id }}')"
-                  style="border:none;background:none;cursor:pointer;">
-                  🔁
-                </button>
+             
 
             </div>
 
@@ -1425,16 +1487,21 @@ function autoGrow(textarea) {
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("textarea.task-text").forEach(autoGrow);
 });
-function makeRecurring(taskId) {
-  if (!confirm("Make this task recurring daily?")) return;
-
-  fetch("/make_recurring", {
+function setRecurrence(taskId, recurrence) {
+  if (taskId.startsWith("new_")) {
+    alert("Please save the task before making it recurring.");
+    return;
+  }
+  fetch("/set_recurrence", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ task_id: taskId })
-  })
-  .then(() => location.reload());
+    body: JSON.stringify({
+      task_id: taskId,
+      recurrence: recurrence
+    })
+  }).then(() => location.reload());
 }
+
 </script>
 {% if request.args.get('saved') %}
 <div id="toast"
