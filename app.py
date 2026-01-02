@@ -179,13 +179,15 @@ def save_day(plan_date, form):
 # ==========================================================
 def load_todo(plan_date):
     rows = get(
-        "todo_matrix",
-        params={
-            "plan_date": f"eq.{plan_date}",
-            "select": "id,quadrant,task_text,is_done,position,task_date,task_time",
-            "order": "position.asc"
-        }
-    ) or []
+      "todo_matrix",
+      params={
+          "plan_date": f"eq.{plan_date}",
+          "is_deleted": "eq.false",
+          "select": "id,quadrant,task_text,is_done,position,task_date,task_time",
+          "order": "position.asc"
+      }
+      ) or []
+
 
     data = {"do": [], "schedule": [], "delegate": [], "eliminate": []}
     for r in rows:
@@ -211,12 +213,14 @@ def save_todo(plan_date, form):
     logger.info("Saving Eisenhower matrix")
 
     existing_rows = get(
-        "todo_matrix",
-        params={
-            "plan_date": f"eq.{plan_date}",
-            "select": "id"
-        }
+    "todo_matrix",
+    params={
+        "plan_date": f"eq.{plan_date}",
+        "is_deleted": "eq.false",
+        "select": "id"
+     }
     ) or []
+
 
     existing_ids = {str(row["id"]) for row in existing_rows}
     seen_ids = set()
@@ -286,22 +290,26 @@ def save_todo(plan_date, form):
     removed_ids = existing_ids - seen_ids - form_ids
 
     for task_id in removed_ids:
-        delete(
-            "todo_matrix",
-            params={"id": f"eq.{task_id}"}
-        )
+      update(
+        "todo_matrix",
+        params={"id": f"eq.{task_id}"},
+        json={"is_deleted": True}
+      )
+
 
 
 def copy_open_tasks_from_previous_day(plan_date):
     prev_date = plan_date - timedelta(days=1)
 
     prev_rows = get(
-        "todo_matrix",
-        params={
-            "plan_date": f"eq.{prev_date}",
-            "select": "quadrant,task_text,is_done,task_date,task_time"
-        }
+      "todo_matrix",
+       params={
+        "plan_date": f"eq.{prev_date}",
+        "is_deleted": "eq.false",
+        "select": "quadrant,task_text,is_done,task_date,task_time"
+    }
     ) or []
+
 
     if not prev_rows:
         return 0
@@ -310,7 +318,8 @@ def copy_open_tasks_from_previous_day(plan_date):
         "todo_matrix",
         params={
             "plan_date": f"eq.{plan_date}",
-            "select": "quadrant,task_text,position"
+            "select": "quadrant,task_text,position",
+            "is_deleted": "eq.false"
         }
     ) or []
 
