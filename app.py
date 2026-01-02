@@ -287,75 +287,64 @@ def save_todo(plan_date, form):
 def copy_open_tasks_from_previous_day(plan_date):
     prev_date = plan_date - timedelta(days=1)
 
-    # Load yesterday's tasks
     prev_rows = get(
         "todo_matrix",
         params={
             "plan_date": f"eq.{prev_date}",
-            "select": "quadrant,task_text,is_done,position,task_date,task_time"
+            "select": "quadrant,task_text,is_done,task_date,task_time"
         }
     ) or []
 
     if not prev_rows:
         return 0
 
-    # Load today's tasks (for deduplication)
     today_rows = get(
         "todo_matrix",
         params={
             "plan_date": f"eq.{plan_date}",
-            "select": "quadrant,task_text"
+            "select": "quadrant,task_text,position"
         }
     ) or []
 
-    # Build lookup: (quadrant, normalized text)
     today_tasks = {
         (r["quadrant"], (r["task_text"] or "").strip().lower())
         for r in today_rows
     }
 
+    # Build max position per quadrant ONCE
+    max_pos = {}
+    for r in today_rows:
+        q = r["quadrant"]
+        max_pos[q] = max(max_pos.get(q, -1), r.get("position", -1))
+
     payload = []
 
     for r in prev_rows:
-        # Copy ONLY open tasks
         if r.get("is_done"):
             continue
 
         key = (r["quadrant"], (r["task_text"] or "").strip().lower())
-
-        # Skip if task already exists today
         if key in today_tasks:
             continue
 
-        # Get max position per quadrant for today
-        pos_rows = get(
-              "todo_matrix",
-              params={
-                  "plan_date": f"eq.{plan_date}",
-                  "select": "quadrant,position"
-              }
-          ) or []
+        next_pos = max_pos.get(r["quadrant"], -1) + 1
+        max_pos[r["quadrant"]] = next_pos
 
-        max_pos = {}
-        for row in pos_rows:
-            q = row["quadrant"]
-            max_pos[q] = max(max_pos.get(q, -1), row.get("position", -1))
-
-            payload.append({
-                  "plan_date": str(plan_date),
-                  "quadrant": r["quadrant"],
-                  "task_text": r["task_text"],
-                  "is_done": False,
-                  "task_date": r.get("task_date"),
-                  "task_time": r.get("task_time"),
-                  "position": max_pos.get(r["quadrant"], -1) + 1
-              })
-
+        payload.append({
+            "plan_date": str(plan_date),
+            "quadrant": r["quadrant"],
+            "task_text": r["task_text"],
+            "is_done": False,
+            "task_date": r.get("task_date"),
+            "task_time": r.get("task_time"),
+            "position": next_pos
+        })
 
     if payload:
         post("todo_matrix", payload)
 
     return len(payload)
+
 
 # ==========================================================
 # Log in codestarts here
