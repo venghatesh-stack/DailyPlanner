@@ -225,6 +225,11 @@ def save_todo(plan_date, form):
             "select": "id, recurring_id"
         }
     ) or []
+    
+    existing_recurring_map = {
+      str(r["id"]): r.get("recurring_id")
+      for r in existing_rows
+    }
 
     existing_ids = {str(r["id"]) for r in existing_rows}
     seen_ids = set()
@@ -277,18 +282,19 @@ def save_todo(plan_date, form):
 
             if task_id in existing_ids:
               payload = {
-                  "id": task_id,
-                  "plan_date": str(plan_date),
-                  **base_payload
+                "id": task_id,
+                "plan_date": str(plan_date),
+                "recurring_id": existing_recurring_map.get(task_id),
+                **base_payload
               }
-
               seen_ids.add(task_id)
               updates.append(payload)
             else:
                 payload = {
-                    "plan_date": str(plan_date),
-                    **base_payload
+                "plan_date": str(plan_date),
+                **base_payload
                 }
+
                 inserts.append(payload)
 
 
