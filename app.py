@@ -1054,10 +1054,12 @@ summary::-webkit-details-marker {
                     {% if t.done %}checked{% endif %} onchange="toggleDone(this)">
 
 
-              <input type="text"
-                name="{{q}}[]"
-                value="{{ t.text }}"
-                placeholder="Add a task">
+           <textarea name="{{q}}[]"
+            class="task-text"
+            rows="1"
+            placeholder="Add a task"
+            oninput="autoGrow(this)">{{ t.text }}</textarea>
+
 
 
               <button type="button"
