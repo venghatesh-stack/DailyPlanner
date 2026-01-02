@@ -327,15 +327,30 @@ def copy_open_tasks_from_previous_day(plan_date):
         if key in today_tasks:
             continue
 
-        payload.append({
-            "plan_date": str(plan_date),
-            "quadrant": r["quadrant"],
-            "task_text": r["task_text"],
-            "is_done": False,
-            "task_date": r.get("task_date"),
-            "task_time": r.get("task_time"),
-            "position": r.get("position", 0)
-        })
+        # Get max position per quadrant for today
+            pos_rows = get(
+              "todo_matrix",
+              params={
+                  "plan_date": f"eq.{plan_date}",
+                  "select": "quadrant,position"
+              }
+          ) or []
+
+            max_pos = {}
+            for row in pos_rows:
+                  q = row["quadrant"]
+                  max_pos[q] = max(max_pos.get(q, -1), row.get("position", -1))
+
+            payload.append({
+                  "plan_date": str(plan_date),
+                  "quadrant": r["quadrant"],
+                  "task_text": r["task_text"],
+                  "is_done": False,
+                  "task_date": r.get("task_date"),
+                  "task_time": r.get("task_time"),
+                  "position": max_pos.get(r["quadrant"], -1) + 1
+              })
+
 
     if payload:
         post("todo_matrix", payload)
@@ -534,7 +549,7 @@ def copy_prev_todo():
     copied = copy_open_tasks_from_previous_day(plan_date)
     logger.info(f"Copied {copied} Eisenhower tasks from previous day")
 
-    return redirect(url_for("todo", year=year, month=month, day=day))
+    return redirect(url_for("todo", year=year, month=month, day=day,copied=1))
 
 # ==========================================================
 # TEMPLATE – DAILY PLANNER (UNCHANGED, STABLE)
@@ -1212,6 +1227,31 @@ function toggleDone(checkbox) {
 <script>
   setTimeout(() => {
     const toast = document.getElementById("toast");
+    if (toast) toast.remove();
+  }, 2500);
+</script>
+{% endif %}
+{% if request.args.get('copied') %}
+<div id="copied-toast"
+     style="
+       position: fixed;
+       bottom: 140px;   /* 👈 slightly higher than Save toast */
+       left: 50%;
+       transform: translateX(-50%);
+       background: #16a34a;
+       color: white;
+       padding: 12px 20px;
+       border-radius: 999px;
+       font-weight: 600;
+       box-shadow: 0 10px 25px rgba(0,0,0,.15);
+       z-index: 9999;
+     ">
+  📥 Open tasks copied
+</div>
+
+<script>
+  setTimeout(() => {
+    const toast = document.getElementById("copied-toast");
     if (toast) toast.remove();
   }, 2500);
 </script>
