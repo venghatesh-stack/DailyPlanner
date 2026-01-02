@@ -210,21 +210,29 @@ def load_todo(plan_date):
     return data
 
 def save_todo(plan_date, form):
-    logger.info("Saving Eisenhower matrix")
+    logger.info("Saving Eisenhower matrix (batched)")
 
+    # -----------------------------------
+    # Load existing (non-deleted) IDs
+    # -----------------------------------
     existing_rows = get(
-    "todo_matrix",
-    params={
-        "plan_date": f"eq.{plan_date}",
-        "is_deleted": "eq.false",
-        "select": "id"
-     }
+        "todo_matrix",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "is_deleted": "eq.false",
+            "select": "id"
+        }
     ) or []
 
-
-    existing_ids = {str(row["id"]) for row in existing_rows}
+    existing_ids = {str(r["id"]) for r in existing_rows}
     seen_ids = set()
 
+    updates = []
+    inserts = []
+
+    # -----------------------------------
+    # Process quadrants
+    # -----------------------------------
     for quadrant in ["do", "schedule", "delegate", "eliminate"]:
 
         texts = form.getlist(f"{quadrant}[]")
@@ -232,9 +240,7 @@ def save_todo(plan_date, form):
         times = form.getlist(f"{quadrant}_time[]")
         ids   = form.getlist(f"{quadrant}_id[]")
 
-        # -----------------------------------
-        # 1️⃣ Build done_state FIRST
-        # -----------------------------------
+        # Build done_state
         done_state = {}
         prefix = f"{quadrant}_done_state["
 
@@ -243,59 +249,78 @@ def save_todo(plan_date, form):
                 task_id = key[len(prefix):-1]
                 done_state[task_id] = values
 
-        # -----------------------------------
-        # 2️⃣ Now process tasks ONCE
-        # -----------------------------------
         for idx, text in enumerate(texts):
             text = text.strip()
             if not text:
                 continue
 
-            task_id = ids[idx] if idx < len(ids) else None
-            if not task_id:
+            if idx >= len(ids):
                 continue
+
+            task_id = str(ids[idx])
 
             task_date = dates[idx] if idx < len(dates) and dates[idx] else None
             task_time = times[idx] if idx < len(times) and times[idx] else None
-
-            is_done = "1" in done_state.get(str(task_id), [])
+            is_done = "1" in done_state.get(task_id, [])
 
             payload = {
+                "id": task_id,
                 "quadrant": quadrant,
                 "task_text": text,
                 "task_date": task_date,
                 "task_time": task_time,
                 "is_done": is_done,
-                "position": idx
+                "position": idx,
+                "is_deleted": False
             }
 
-            if str(task_id) in existing_ids:
-                seen_ids.add(str(task_id))
-                update(
-                    "todo_matrix",
-                    params={"id": f"eq.{task_id}"},
-                    json=payload
-                )
+            if task_id in existing_ids:
+                seen_ids.add(task_id)
+                updates.append(payload)
             else:
                 payload["plan_date"] = str(plan_date)
-                post("todo_matrix", payload)
+                inserts.append(payload)
 
-    # Only delete tasks that were rendered in this form
+    # -----------------------------------
+    # BULK UPSERT existing rows
+    # -----------------------------------
+    if updates:
+        post(
+            "todo_matrix?on_conflict=id",
+            updates,
+            prefer="resolution=merge-duplicates"
+        )
+
+    # -----------------------------------
+    # BULK INSERT new rows
+    # -----------------------------------
+    if inserts:
+        post("todo_matrix", inserts)
+
+    # -----------------------------------
+    # BULK SOFT DELETE removed rows
+    # -----------------------------------
     form_ids = {
         task_id
-        for quadrant in ["do","schedule","delegate","eliminate"]
+        for quadrant in ["do", "schedule", "delegate", "eliminate"]
         for task_id in form.getlist(f"{quadrant}_id[]")
     }
 
     removed_ids = existing_ids - seen_ids - form_ids
 
-    for task_id in removed_ids:
-      update(
-        "todo_matrix",
-        params={"id": f"eq.{task_id}"},
-        json={"is_deleted": True}
-      )
+    if removed_ids:
+        update(
+            "todo_matrix",
+            params={"id": f"in.({','.join(removed_ids)})"},
+            json={"is_deleted": True}
+        )
 
+    logger.info(
+        "Eisenhower save complete: %d updates, %d inserts, %d deletions",
+        len(updates),
+        len(inserts),
+        len(removed_ids)
+    )
 
 
 def copy_open_tasks_from_previous_day(plan_date):
