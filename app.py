@@ -962,11 +962,20 @@ summary::-webkit-details-marker {
 <a href="/">⬅ Back to Daily Planner</a>
 <div class="page-header">
   <h2>📋 Eisenhower Matrix – {{ plan_date }}</h2>
-  <button type="submit"
-          formaction="/todo/copy-prev"
-          style="margin:16px 0;">
+ <form method="post"
+      action="/todo/copy-prev"
+      style="margin:16px 0;">
+
+  <input type="hidden" name="year" value="{{ year }}">
+  <input type="hidden" name="month" value="{{ month }}">
+  <input type="hidden" name="day" value="{{ plan_date.day }}">
+
+  <button type="submit">
     📥 Copy open tasks from previous day
   </button>
+
+  </form>
+
 </div>
 
 <form method="get" style="margin:12px 0;">
