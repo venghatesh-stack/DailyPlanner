@@ -276,7 +276,15 @@ def save_todo(plan_date, form):
                 payload["plan_date"] = str(plan_date)
                 post("todo_matrix", payload)
 
-    removed_ids = existing_ids - seen_ids
+    # Only delete tasks that were rendered in this form
+    form_ids = {
+        task_id
+        for quadrant in ["do","schedule","delegate","eliminate"]
+        for task_id in form.getlist(f"{quadrant}_id[]")
+    }
+
+    removed_ids = existing_ids - seen_ids - form_ids
+
     for task_id in removed_ids:
         delete(
             "todo_matrix",
@@ -872,6 +880,11 @@ summary::-webkit-details-marker {
   display: flex;
   gap: 10px;
 }
+.task-text {
+  resize: none;
+  overflow: hidden;
+  line-height: 1.4;
+}
 
 
 /* Completed task */
@@ -879,9 +892,10 @@ summary::-webkit-details-marker {
   opacity: 0.6;
 }
 
-.task.done textarea[type="text"] {
+.task.done textarea {
   text-decoration: line-through;
 }
+
 @media (max-width: 767px) {
   .task-main input[type="checkbox"] {
     transform: scale(1.25);
@@ -1161,7 +1175,12 @@ function addTask(q){
       <input type="hidden" name="${q}_done_state[${id}]" value="0">
       <input type="checkbox" name="${q}_done_state[${id}]" value="1" onchange="toggleDone(this)">
 
-      <input type="text" name="${q}[]" autofocus>
+      <textarea name="${q}[]"
+          class="task-text"
+          rows="1"
+          oninput="autoGrow(this)"
+          autofocus></textarea>
+
 
       <button type="button"
               class="task-delete"
@@ -1194,14 +1213,29 @@ function toggleDone(checkbox) {
     clearTimeout(autoSaveTimer);
   }
 
- autoSaveTimer = setTimeout(() => {
+  autoSaveTimer = setTimeout(() => {
   const form = document.getElementById("todo-form");
+  const textarea = task.querySelector("textarea");
+  if (textarea) autoGrow(textarea);
   if (form) {
     form.submit(); // IMPORTANT: use submit(), not requestSubmit()
   }
 }, 500);
 
 }
+function autoGrow(textarea) {
+  if (!textarea) return;
+
+  // Reset height so shrink also works
+  textarea.style.height = "auto";
+
+  // Set height to scroll height
+  textarea.style.height = textarea.scrollHeight + "px";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll("textarea.task-text").forEach(autoGrow);
+});
 
 </script>
 {% if request.args.get('saved') %}
