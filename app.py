@@ -274,12 +274,14 @@ def save_todo(plan_date, form):
           }
 
             if task_id in existing_ids:
-                payload = {
-                    "id": task_id,
-                    **base_payload
-                }
-                seen_ids.add(task_id)
-                updates.append(payload)
+              payload = {
+                  "id": task_id,
+                  "plan_date": str(plan_date),
+                  **base_payload
+              }
+
+              seen_ids.add(task_id)
+              updates.append(payload)
             else:
                 payload = {
                     "plan_date": str(plan_date),
