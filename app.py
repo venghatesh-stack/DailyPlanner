@@ -183,7 +183,7 @@ def load_todo(plan_date):
       params={
           "plan_date": f"eq.{plan_date}",
           "is_deleted": "eq.false",
-          "select": "id,quadrant,task_text,is_done,position,task_date,task_time",
+          "select": "id,quadrant,task_text,is_done,position,task_date,task_time,recurring_id",
           "order": "position.asc"
       }
       ) or []
@@ -192,12 +192,14 @@ def load_todo(plan_date):
     data = {"do": [], "schedule": [], "delegate": [], "eliminate": []}
     for r in rows:
       data[r["quadrant"]].append({
-            "id": r["id"],
-            "text": r["task_text"],
-            "done": bool(r.get("is_done")),
-            "task_date": r.get("task_date"),
-            "task_time": r.get("task_time")
-        })
+        "id": r["id"],
+        "text": r["task_text"],
+        "done": bool(r.get("is_done")),
+        "task_date": r.get("task_date"),
+        "task_time": r.get("task_time"),
+        "recurring": bool(r.get("recurring_id"))   # 👈 ADD THIS
+    })
+
     for q in data:
         data[q].sort(
             key=lambda t: (
@@ -220,7 +222,7 @@ def save_todo(plan_date, form):
         params={
             "plan_date": f"eq.{plan_date}",
             "is_deleted": "eq.false",
-            "select": "id"
+            "select": "id, recurring_id"
         }
     ) or []
 
@@ -315,7 +317,18 @@ def save_todo(plan_date, form):
         for task_id in form.getlist(f"{quadrant}_id[]")
     }
 
-    removed_ids = existing_ids - seen_ids - form_ids
+    existing = {
+      r["id"]: r.get("recurring_id")
+      for r in existing_rows
+    }
+
+    removed_ids = {
+        tid for tid, rid in existing.items()
+        if tid not in seen_ids
+        and tid not in form_ids
+        and rid is None          # 👈 IMPORTANT
+    }
+
 
     if removed_ids:
         update(
@@ -331,6 +344,87 @@ def save_todo(plan_date, form):
         len(removed_ids)
     )
 
+def materialize_recurring_tasks(plan_date):
+    """
+    Create daily todo_matrix rows for recurring tasks
+    (idempotent – safe to run multiple times)
+    """
+
+    rules = get(
+        "recurring_tasks",
+        params={
+            "is_active": "eq.true",
+            "start_date": f"lte.{plan_date}",
+            "select": "id,quadrant,task_text,recurrence,days_of_week,day_of_month,end_date"
+        }
+    ) or []
+
+    if not rules:
+        return
+    existing = get(
+        "todo_matrix",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "is_deleted": "eq.false",   # 👈 REQUIRED
+            "select": "recurring_id"
+        }
+    )
+
+   
+
+    existing_recurring_ids = {
+        r["recurring_id"] for r in existing if r.get("recurring_id")
+    }
+    max_row = get(
+    "todo_matrix",
+    params={
+        "plan_date": f"eq.{plan_date}",
+        "is_deleted": "eq.false",
+        "select": "position",
+        "order": "position.desc",
+        "limit": 1
+      }
+    )
+
+    next_pos = (max_row[0]["position"] + 1) if max_row and len(max_row) > 0 else 0
+
+
+    payload = []
+
+    for r in rules:
+        if r.get("end_date") and plan_date > date.fromisoformat(r["end_date"]):
+            continue
+
+        applies = False
+
+        if r["recurrence"] == "daily":
+            applies = True
+
+        elif r["recurrence"] == "weekly":
+            if r["days_of_week"] and plan_date.weekday() in r["days_of_week"]:
+                applies = True
+
+        elif r["recurrence"] == "monthly":
+            if r["day_of_month"] == plan_date.day:
+                applies = True
+
+        if not applies:
+            continue
+
+        if r["id"] in existing_recurring_ids:
+            continue
+
+        payload.append({
+            "plan_date": str(plan_date),
+            "quadrant": r["quadrant"],
+            "task_text": r["task_text"],
+            "is_done": False,
+            "position": next_pos,              # bottom
+            "recurring_id": r["id"]
+        })
+
+    if payload:
+        post("todo_matrix", payload)
 
 def copy_open_tasks_from_previous_day(plan_date):
     prev_date = plan_date - timedelta(days=1)
@@ -558,7 +652,9 @@ def todo():
         save_todo(plan_date, request.form)
         return redirect(url_for("todo", year=year, month=month, day=day,saved=1))
 
+    materialize_recurring_tasks(plan_date)
     todo = load_todo(plan_date)
+
 
     days = [
         date(year, month, d)
@@ -1010,7 +1106,9 @@ summary::-webkit-details-marker {
     font-size: 13px;
   }
 }
-
+.task-main span[title] {
+  margin-right: 4px;
+}
 </style>
 </head>
 
@@ -1129,6 +1227,18 @@ summary::-webkit-details-marker {
             <!-- LINE 1: serial + checkbox + text + delete -->
             <div class="task-main">
               <span class="task-index">{{ loop.index }}.</span>
+              {% if t.recurring %}
+                <span
+                  title="Recurring task — deleting removes today only"
+                  style="
+                    font-size:14px;
+                    color:#6366f1;
+                    cursor: help;
+                  ">
+                  🔁
+                </span>
+              {% endif %}
+
               <input type="hidden"
                     name="{{q}}_done_state[{{ t.id }}]"
                     value="0">
