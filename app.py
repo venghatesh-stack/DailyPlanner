@@ -421,13 +421,15 @@ def materialize_recurring_tasks(plan_date):
             continue
 
         payload.append({
-            "plan_date": str(plan_date),
-            "quadrant": r["quadrant"],
-            "task_text": r["task_text"],
-            "is_done": False,
-            "position": next_pos,              # bottom
-            "recurring_id": r["id"]
-        })
+              "plan_date": str(plan_date),
+              "quadrant": r["quadrant"],
+              "task_text": r["task_text"],
+              "is_done": False,
+              "is_deleted": False,      # 👈 THIS IS THE MISSING PIECE
+              "position": next_pos,
+              "recurring_id": r["id"]
+          })
+
 
     if payload:
         post("todo_matrix", payload)
@@ -482,14 +484,16 @@ def copy_open_tasks_from_previous_day(plan_date):
         max_pos[r["quadrant"]] = next_pos
 
         payload.append({
-            "plan_date": str(plan_date),
-            "quadrant": r["quadrant"],
-            "task_text": r["task_text"],
-            "is_done": False,
-            "task_date": r.get("task_date"),
-            "task_time": r.get("task_time"),
-            "position": next_pos
-        })
+              "plan_date": str(plan_date),
+              "quadrant": r["quadrant"],
+              "task_text": r["task_text"],
+              "is_done": False,
+              "is_deleted": False,   # 👈 REQUIRED
+              "task_date": r.get("task_date"),
+              "task_time": r.get("task_time"),
+              "position": next_pos
+          })
+
 
     if payload:
         post("todo_matrix", payload)
