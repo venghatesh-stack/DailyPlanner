@@ -1315,12 +1315,7 @@ summary::-webkit-details-marker {
             <!-- LINE 1: serial + checkbox + text + delete -->
             <div class="task-main">
               <span class="task-index">{{ loop.index }}.</span>
-              {% if t.recurring %}
-                <span title="Repeats daily" style="font-size:13px;color:#6366f1;">
-                🔁 {{ t.recurrence or "Recurring" }}
-
-                </span>
-              {% endif %}
+            
 
 
               <input type="hidden"
@@ -1338,7 +1333,12 @@ summary::-webkit-details-marker {
                   rows="1"
                   placeholder="Add a task"
                   oninput="autoGrow(this)">{{ t.text }}</textarea>
-                
+                  {% if t.recurring %}
+                <span title="Repeats daily" style="font-size:13px;color:#6366f1;">
+                🔁 {{ t.recurrence or "Recurring" }}
+
+                </span>
+              {% endif %}
                {% if not t.recurring %}
                 <select class="repeat-select"
                   onchange="setRecurrence('{{ t.id }}', this.value)">
