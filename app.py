@@ -696,6 +696,26 @@ def copy_prev_todo():
     logger.info(f"Copied {copied} Eisenhower tasks from previous day")
 
     return redirect(url_for("todo", year=year, month=month, day=day,copied=1))
+  
+@app.route("/make_recurring", methods=["POST"])
+def make_recurring():
+    data = request.get_json()
+    task_id = data["task_id"]
+
+    task = get(
+        "todo_matrix",
+        params={"id": f"eq.{task_id}"},
+    )[0]
+
+    post("recurring_tasks", {
+        "quadrant": task["quadrant"],
+        "task_text": task["task_text"],
+        "recurrence": "daily",
+        "start_date": task["plan_date"],
+        "is_active": True
+    })
+
+    return ("", 204)
 
 # ==========================================================
 # TEMPLATE – DAILY PLANNER (UNCHANGED, STABLE)
@@ -1271,6 +1291,12 @@ summary::-webkit-details-marker {
                   class="task-delete"
                   title="Delete"
                   onclick="this.closest('.task').remove()">🗑</button>
+              <button type="button"
+                  title="Make this task recurring"
+                  onclick="makeRecurring('{{ t.id }}')"
+                  style="border:none;background:none;cursor:pointer;">
+                  🔁
+                </button>
 
             </div>
 
@@ -1399,7 +1425,16 @@ function autoGrow(textarea) {
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("textarea.task-text").forEach(autoGrow);
 });
+function makeRecurring(taskId) {
+  if (!confirm("Make this task recurring daily?")) return;
 
+  fetch("/make_recurring", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ task_id: taskId })
+  })
+  .then(() => location.reload());
+}
 </script>
 {% if request.args.get('saved') %}
 <div id="toast"
