@@ -738,13 +738,15 @@ def set_recurrence():
     # FIX 3: prevent duplicate rules
     # ----------------------------
     existing = get(
-        "recurring_tasks",
-        params={
-            "task_text": f"eq.{task['task_text']}",
-            "quadrant": f"eq.{task['quadrant']}",
-            "is_active": "eq.true"
-        }
+    "recurring_tasks",
+    params={
+        "task_text": f"eq.{task['task_text']}",
+        "quadrant": f"eq.{task['quadrant']}",
+        "start_date": f"eq.{task['plan_date']}",
+        "is_active": "eq.true"
+    }
     )
+
 
     if existing:
         # Rule already exists → do nothing (idempotent)
@@ -1315,7 +1317,8 @@ summary::-webkit-details-marker {
               <span class="task-index">{{ loop.index }}.</span>
               {% if t.recurring %}
                 <span title="Repeats daily" style="font-size:13px;color:#6366f1;">
-                🔁 Daily
+                🔁 {{ t.recurrence or "Recurring" }}
+
                 </span>
               {% endif %}
 
