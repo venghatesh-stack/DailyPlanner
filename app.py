@@ -879,7 +879,7 @@ summary::-webkit-details-marker {
   opacity: 0.6;
 }
 
-.task.done input[type="text"] {
+.task.done textarea[type="text"] {
   text-decoration: line-through;
 }
 @media (max-width: 767px) {
