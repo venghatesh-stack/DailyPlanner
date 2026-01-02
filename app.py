@@ -197,7 +197,7 @@ def load_todo(plan_date):
         "done": bool(r.get("is_done")),
         "task_date": r.get("task_date"),
         "task_time": r.get("task_time"),
-        "recurring": bool(r.get("recurring_id"))   # 👈 ADD THIS
+        "recurring": bool(r.get("recurring_id")),  # 👈 ADD THIS
     })
 
     for q in data:
@@ -716,8 +716,7 @@ def make_recurring():
     })
 
     return ("", 204)
-@app.route("/set_recurrence", methods=["POST"])
-@login_required
+
 @app.route("/set_recurrence", methods=["POST"])
 @login_required
 def set_recurrence():
@@ -1346,11 +1345,7 @@ summary::-webkit-details-marker {
                   <option value="monthly">Monthly</option>
                 </select>
               {% endif %}
-              {% if t.recurring %}
-                <span title="Repeats daily" style="font-size:13px;color:#6366f1;">
-                  🔁 Daily
-                </span>
-              {% endif %}
+         
 
 
 
