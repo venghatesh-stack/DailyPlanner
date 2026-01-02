@@ -328,7 +328,7 @@ def copy_open_tasks_from_previous_day(plan_date):
             continue
 
         # Get max position per quadrant for today
-            pos_rows = get(
+        pos_rows = get(
               "todo_matrix",
               params={
                   "plan_date": f"eq.{plan_date}",
@@ -336,10 +336,10 @@ def copy_open_tasks_from_previous_day(plan_date):
               }
           ) or []
 
-            max_pos = {}
-            for row in pos_rows:
-                  q = row["quadrant"]
-                  max_pos[q] = max(max_pos.get(q, -1), row.get("position", -1))
+        max_pos = {}
+        for row in pos_rows:
+            q = row["quadrant"]
+            max_pos[q] = max(max_pos.get(q, -1), row.get("position", -1))
 
             payload.append({
                   "plan_date": str(plan_date),
