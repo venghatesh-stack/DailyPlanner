@@ -263,23 +263,30 @@ def save_todo(plan_date, form):
             task_time = times[idx] if idx < len(times) and times[idx] else None
             is_done = "1" in done_state.get(task_id, [])
 
-            payload = {
-                "id": task_id,
-                "quadrant": quadrant,
-                "task_text": text,
-                "task_date": task_date,
-                "task_time": task_time,
-                "is_done": is_done,
-                "position": idx,
-                "is_deleted": False
-            }
+            base_payload = {
+              "quadrant": quadrant,
+              "task_text": text,
+              "task_date": task_date,
+              "task_time": task_time,
+              "is_done": is_done,
+              "position": idx,
+              "is_deleted": False
+          }
 
             if task_id in existing_ids:
+                payload = {
+                    "id": task_id,
+                    **base_payload
+                }
                 seen_ids.add(task_id)
                 updates.append(payload)
             else:
-                payload["plan_date"] = str(plan_date)
+                payload = {
+                    "plan_date": str(plan_date),
+                    **base_payload
+                }
                 inserts.append(payload)
+
 
     # -----------------------------------
     # BULK UPSERT existing rows
