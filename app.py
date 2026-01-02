@@ -422,6 +422,8 @@ def health():
 @app.route("/", methods=["GET", "POST"])
 @login_required
 def planner():
+    if request.method == "HEAD":
+        return "", 200
     today = datetime.now(IST).date()
 
     if request.method == "POST":
@@ -434,10 +436,11 @@ def planner():
       day = int(request.args.get("day", today.day))
 
     plan_date = date(year, month, day)
-    logger.info(f"Saving planner for date={plan_date}")
+
 
 
     if request.method == "POST":
+        logger.info(f"Saving planner for date={plan_date}")
         save_day(plan_date, request.form)
         return redirect(url_for("planner", year=year, month=month, day=plan_date.day, saved=1))
 
@@ -479,6 +482,8 @@ def planner():
 @app.route("/todo", methods=["GET", "POST"])
 @login_required
 def todo():
+    if request.method == "HEAD":
+        return "", 200
     today = datetime.now(IST).date()
 
     year = int(request.args.get("year", today.year))
