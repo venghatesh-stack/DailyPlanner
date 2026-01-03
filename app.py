@@ -180,45 +180,70 @@ def save_day(plan_date, form):
 # ==========================================================
 # DATA ACCESS – EISENHOWER
 # ==========================================================
+# ==========================================================
+# DATA ACCESS – EISENHOWER
+# ==========================================================
 def load_todo(plan_date):
+    # ----------------------------
+    # Load today's todo items
+    # ----------------------------
     rows = get(
-    "todo_matrix",
-    params={
-        "plan_date": f"eq.{plan_date}",
-        "is_deleted": "eq.false",
-        "select": (
-            "id,quadrant,task_text,is_done,position,task_date,task_time,"
-            "recurring_id,"
-            "recurring_tasks!inner(recurrence)"
-        )
-    }
+        "todo_matrix",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "is_deleted": "eq.false",
+            "select": (
+                "id,quadrant,task_text,is_done,position,"
+                "task_date,task_time,recurring_id"
+            )
+        }
     ) or []
 
+    # ----------------------------
+    # Load recurrence metadata
+    # ----------------------------
+    recurring_rows = get(
+        "recurring_tasks",
+        params={
+            "is_active": "eq.true",
+            "select": "id,recurrence"
+        }
+    ) or []
 
+    recurring_map = {
+        r["id"]: r.get("recurrence")
+        for r in recurring_rows
+    }
+
+    # ----------------------------
+    # Build quadrant buckets
+    # ----------------------------
     data = {"do": [], "schedule": [], "delegate": [], "eliminate": []}
-    for r in rows:
-      data[r["quadrant"]].append({
-        "id": r["id"],
-        "text": r["task_text"],
-        "done": bool(r.get("is_done")),
-        "task_date": r.get("task_date"),
-        "task_time": r.get("task_time"),
-        "recurring": bool(r.get("recurring_id")),  # 👈 ADD THIS
-        "recurrence": (
-          r.get("recurring_tasks", {}) or {}
-        ).get("recurrence")
-    })
 
+    for r in rows:
+        data[r["quadrant"]].append({
+            "id": r["id"],
+            "text": r["task_text"],
+            "done": bool(r.get("is_done")),
+            "task_date": r.get("task_date"),
+            "task_time": r.get("task_time"),
+            "recurring": bool(r.get("recurring_id")),
+            "recurrence": recurring_map.get(r.get("recurring_id"))
+        })
+
+    # ----------------------------
+    # Sort within each quadrant
+    # ----------------------------
     for q in data:
         data[q].sort(
             key=lambda t: (
-                t["task_date"] is None,   # False first (has date), True last (no date)
+                t["task_date"] is None,
                 t["task_date"] or ""
             )
         )
 
-
     return data
+
 
 
 def save_todo(plan_date, form):
