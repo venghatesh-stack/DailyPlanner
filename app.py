@@ -396,6 +396,8 @@ def save_todo(plan_date, form):
         dates = form.getlist(f"{quadrant}_date[]")
         times = form.getlist(f"{quadrant}_time[]")
         ids = form.getlist(f"{quadrant}_id[]")
+        deleted_flags = form.getlist(f"{quadrant}_deleted[]")
+
 
         # Build done_state
         done_state = {}
@@ -407,6 +409,10 @@ def save_todo(plan_date, form):
                 done_state[task_id] = values
 
         for idx, text in enumerate(texts):
+            if idx < len(deleted_flags) and deleted_flags[idx] == "1":
+              # Explicitly deleted by user → skip saving
+              continue
+
             text = text.strip()
             if not text:
                 continue
@@ -929,6 +935,8 @@ def todo():
         days=days,
         calendar=calendar,
         quote=quote,
+        TASK_CATEGORIES=TASK_CATEGORIES,
+        STATIC_TRAVEL_SUBGROUPS=STATIC_TRAVEL_SUBGROUPS,
     )
 
 
@@ -1732,14 +1740,16 @@ select {
 
               {% if category == "Travel" %}
                 {# -------- Travel: static subgroups -------- #}
-                {% for sub, icon in STATIC_TRAVEL_SUBGROUPS %}
+                {% for sub, icon in STATIC_TRAVEL_SUBGROUPS.items() %}
+
                   <details open style="margin-left:12px;">
                     <summary>{{ icon }} {{ sub }}</summary>
 
                     {% for t in subs.get(sub, []) %}
                       <div class="task {% if t.done %}done{% endif %}">
                         <input type="hidden" name="{{ q }}_id[]" value="{{ t.id }}">
-
+                        <!-- 👇 ADD THIS LINE -->
+                        <input type="hidden" name="{{ q }}_deleted[]" value="0">
                         <div class="task-main">
                           <span class="task-index">{{ loop.index }}.</span>
 
@@ -1771,7 +1781,11 @@ select {
                             <button type="button"
                                     class="task-delete"
                                     title="Removed after Save"
-                                    onclick="this.closest('.task').classList.add('removed');">🗑</button>
+                                    onclick="
+                                              const task = this.closest('.task');
+                                              task.classList.add('removed');
+                                              task.querySelector('input[name$=_deleted\\[\\]]').value = '1';
+                                            ">🗑</button>
                           {% endif %}
 
                           {% if t.recurring %}
@@ -1808,7 +1822,8 @@ select {
                   {% for t in tasks %}
                     <div class="task {% if t.done %}done{% endif %}">
                       <input type="hidden" name="{{ q }}_id[]" value="{{ t.id }}">
-
+                      <!-- 👇 ADD THIS LINE -->
+                      <input type="hidden" name="{{ q }}_deleted[]" value="0">
                       <div class="task-main">
                         <span class="task-index">{{ loop.index }}.</span>
 
@@ -1839,7 +1854,11 @@ select {
                           <button type="button"
                                   class="task-delete"
                                   title="Removed after Save"
-                                  onclick="this.closest('.task').classList.add('removed');">🗑</button>
+                                  onclick="
+                                        const task = this.closest('.task');
+                                        task.classList.add('removed');
+                                        task.querySelector('input[name$=_deleted\\[\\]]').value = '1';
+                                      ">🗑</button>
                         {% endif %}
 
                         {% if t.recurring %}
@@ -1888,7 +1907,6 @@ select {
 
 
 <script>
-<script>
 function addTask(q, category = "General", subcategory = "General") {
   const container = document.getElementById(q);
   if (!container) return;
@@ -1900,6 +1918,7 @@ function addTask(q, category = "General", subcategory = "General") {
 
   row.innerHTML = `
     <input type="hidden" name="${q}_id[]" value="${id}">
+    <input type="hidden" name="${q}_deleted[]" value="0">
     <input type="hidden" name="${q}_category[]" value="${category}">
     <input type="hidden" name="${q}_subcategory[]" value="${subcategory}">
     <input type="hidden" name="${q}_done_state[${id}]" value="0">
