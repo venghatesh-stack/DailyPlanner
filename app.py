@@ -177,6 +177,9 @@ def save_day(plan_date, form):
 # ==========================================================
 # DATA ACCESS – EISENHOWER
 # ==========================================================
+# ==========================================================
+# DATA ACCESS – EISENHOWER
+# ==========================================================
 def load_todo(plan_date):
     rows = get(
     "todo_matrix",
@@ -186,7 +189,7 @@ def load_todo(plan_date):
         "select": (
             "id,quadrant,task_text,is_done,position,task_date,task_time,"
             "recurring_id,"
-            "recurring_tasks(recurrence)"
+            "recurring_tasks!inner(recurrence)"
         )
     }
     ) or []
@@ -216,6 +219,7 @@ def load_todo(plan_date):
 
 
     return data
+
 
 def save_todo(plan_date, form):
     logger.info("Saving Eisenhower matrix (batched)")
