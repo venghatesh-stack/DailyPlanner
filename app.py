@@ -1082,6 +1082,7 @@ summary::-webkit-details-marker {
   border-radius: 12px;
   background: #ffffff;
   margin-bottom: 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04); /* Improves Scannability */
 }
 
 .task + .task {
@@ -1193,7 +1194,25 @@ textarea,
 select {
   font-size: 16px !important;
 }
+####
+/* ========================= This section handles Desktop */
+####
+@media (min-width: 768px) {
 
+  .task {
+    position: relative;
+  }
+
+  .task-main {
+    align-items: center;
+  }
+
+  .task-meta {
+    margin-left: auto;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+}
 /* =========================
    MOBILE (≤767px)
    ========================= */
@@ -1210,11 +1229,13 @@ select {
     width: 100%;
     min-width: 0;
   }
-
+  .task {
+    position: relative;
+  }
   /* Task row layout */
   .task-main {
     display: flex;
-    align-items: flex-start;
+    align-items: Center;
     flex-wrap: wrap;
     width: 100%;
     min-width: 0;          /* 👈 CRITICAL */
@@ -1237,6 +1258,7 @@ select {
     min-width: 40px;
     flex-shrink: 0;
     margin-left: auto;
+    background: #fee2e2;
   }
 
   .motivation {
@@ -1246,6 +1268,11 @@ select {
 
   details.quad {
     overflow: visible;
+  }
+  .task-meta {
+    margin-left: auto;
+    justify-content: flex-end;
+    gap: 8px;
   }
 }
 
