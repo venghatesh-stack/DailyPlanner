@@ -1431,11 +1431,7 @@ select {
                     {% if t.done %}checked{% endif %} onchange="toggleDone(this)">
 
 
-                <textarea name="{{q}}[]"
-                  class="task-text"
-                  rows="1"
-                  placeholder="Add a task"
-                  oninput="autoGrow(this)">{{ t.text }}</textarea>
+               
                   {% if t.recurring %}
                 <span title="Repeats {{ t.recurrence }}" style="font-size:13px;color:#6366f1;">
                 🔁 {{ t.recurrence or "Recurring" }}
@@ -1470,7 +1466,11 @@ select {
                   🗑
                 </button>
               {% endif %}
-
+               <textarea name="{{q}}[]"
+                  class="task-text"
+                  rows="1"
+                  placeholder="Add a task"
+                  oninput="autoGrow(this)">{{ t.text }}</textarea>
              
 
             </div>
