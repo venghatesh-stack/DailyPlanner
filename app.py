@@ -80,6 +80,64 @@ MOTIVATIONAL_QUOTES = [
     {"icon": "⚡", "text": "Action beats intention."},
     {"icon": "☀️", "text": "Important tasks deserve calm attention."}
 ]
+
+### Travel mode Code Changes ###
+
+TRAVEL_MODE_TASKS = [
+    # Home & Utilities
+    ("do", "Geyser switched off"),
+    ("do", "Toilet valves closed"),
+    ("do", "AquaGuard valve closed & switched off"),
+    ("do", "Fridge switched off"),
+    ("do", "No food left inside fridge"),
+    ("do", "Fridge door kept open"),
+    ("do", "Washing machine switched off"),
+    ("do", "Dishwasher switched off"),
+    ("do", "Iron box switched off"),
+    ("do", "Inverter switched off"),
+    ("do", "Router switched off"),
+    ("do", "All lights switched off"),
+    ("do", "Main power switched off (Bengaluru)"),
+    ("do", "All vessels washed"),
+    ("do", "Pooja room checked"),
+
+    # Security
+    ("schedule", "Blankets & pillows stored inside"),
+    ("schedule", "All doors closed"),
+    ("schedule", "Door locked"),
+    ("schedule", "Bengaluru & Chennai house keys taken"),
+
+    # Vehicle
+    ("schedule", "Petrol level checked"),
+    ("schedule", "Tyre air pressure checked"),
+    ("schedule", "Car wipers checked"),
+
+    # Essentials
+    ("delegate", "Purse"),
+    ("delegate", "Travel pouch"),
+    ("delegate", "Tickets (if applicable)"),
+    ("delegate", "ID card"),
+
+    # Gadgets
+    ("delegate", "Mobile phones (2)"),
+    ("delegate", "Watches (2)"),
+    ("delegate", "Power bank"),
+    ("delegate", "AirPods (2)"),
+    ("delegate", "Galaxy tablet"),
+    ("delegate", "iPad"),
+    ("delegate", "HP laptop"),
+    ("delegate", "Office laptop"),
+    ("delegate", "Laptop charger"),
+    ("delegate", "Floor robo cleaner packed"),
+
+    # Personal
+    ("eliminate", "Clothes packed"),
+    ("eliminate", "Homeopathy tablets"),
+    ("eliminate", "Any vessels / groceries / vegetables to be taken"),
+]
+
+### Travel mode Code Changes ###
+
 # ==========================================================
 # HELPERS
 # ==========================================================
@@ -535,6 +593,67 @@ def copy_open_tasks_from_previous_day(plan_date):
 
     return len(payload)
 
+### Travel mode Code Changes ###
+
+def enable_travel_mode(plan_date):
+    """
+    Insert Travel Mode tasks for the day.
+    Idempotent: inserts only missing tasks.
+    """
+
+    existing = get(
+        "todo_matrix",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "is_deleted": "eq.false",
+            "select": "quadrant,task_text"
+        }
+    ) or []
+
+    existing_keys = {
+        (r["quadrant"], (r["task_text"] or "").strip().lower())
+        for r in existing
+    }
+
+    payload = []
+    max_rows = get(
+    "todo_matrix",
+    params={
+        "plan_date": f"eq.{plan_date}",
+        "is_deleted": "eq.false",
+        "select": "quadrant,position"
+    }
+      ) or []
+
+    position_map = {}
+    for r in max_rows:
+        q = r["quadrant"]
+        position_map[q] = max(position_map.get(q, -1), r.get("position", -1))
+
+    for quadrant, text in TRAVEL_MODE_TASKS:
+        key = (quadrant, text.lower())
+        if key in existing_keys:
+            continue
+
+        pos = position_map.get(quadrant, -1) + 1
+        position_map[quadrant] = pos
+
+        payload.append({
+            "plan_date": str(plan_date),
+            "quadrant": quadrant,
+            "task_text": text,
+            "is_done": False,
+            "is_deleted": False,
+            "position": pos,
+            "travel_mode": True   # 👈 SAFE extra marker
+        })
+
+    if payload:
+        post("todo_matrix", payload)
+
+    return len(payload)
+
+### Travel mode Code Changes ###
 
 # ==========================================================
 # Log in codestarts here
@@ -814,6 +933,22 @@ def delete_recurring():
     )
 
     return ("", 204)
+### Travel mode Code Changes ###
+
+@app.route("/todo/travel-mode", methods=["POST"])
+@login_required
+def travel_mode():
+    year = int(request.form["year"])
+    month = int(request.form["month"])
+    day = int(request.form["day"])
+    plan_date = date(year, month, day)
+
+    added = enable_travel_mode(plan_date)
+    logger.info(f"Travel Mode enabled: {added} tasks added")
+
+    return redirect(url_for("todo", year=year, month=month, day=day, travel=1))
+
+### Travel mode Code Changes ###
 
 # ==========================================================
 # TEMPLATE – DAILY PLANNER (UNCHANGED, STABLE)
@@ -1388,6 +1523,14 @@ select {
   </form>
 
 </div>
+### Travel mode Code Changes ###
+<form method="post" action="/todo/travel-mode" style="margin:12px 0;">
+  <input type="hidden" name="year" value="{{ year }}">
+  <input type="hidden" name="month" value="{{ month }}">
+  <input type="hidden" name="day" value="{{ plan_date.day }}">
+  <button type="submit">✈️ Enable Travel Mode</button>
+</form>
+### Travel mode Code Changes ###
 
 <form method="get" style="margin:12px 0;">
   <input type="hidden" name="day" value="{{ plan_date.day }}">
@@ -1444,6 +1587,20 @@ select {
   <span class="motivation-text">{{ quote.text }}</span>
 </div>
 {% endif %}
+{% if request.args.get('travel') %}
+<div style="
+  margin:12px 0;
+  padding:8px 12px;
+  border-radius:999px;
+  background:#eef2ff;
+  color:#3730a3;
+  font-weight:600;
+  display:inline-block;
+">
+  ✈️ Travel Mode Active
+</div>
+{% endif %}
+
 <form method="post" id="todo-form">
 
   <!-- ============================= -->
