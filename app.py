@@ -1077,11 +1077,19 @@ summary::-webkit-details-marker {
 /* ===== Google Tasks–style Eisenhower ===== */
 
 .task {
-  padding: 10px 0;
+  padding: 12px 14px;
+  border: 2px solid #cbd5e1;   /* 👈 THICK, visible border */
+  border-radius: 12px;
+  background: #ffffff;
+  margin-bottom: 12px;
 }
 
 .task + .task {
   border-top: none;
+}
+.task:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
 }
 
 /* Main row */
@@ -1169,15 +1177,15 @@ summary::-webkit-details-marker {
 /* Completed task */
 .task.done {
   background: #f8fafc;
-  opacity: 0.6;
+  border-color: #94a3b8;
 }
 
 .task.done textarea {
   text-decoration: line-through;
 }
 .task.removed {
-  background: #fef2f2;
-  opacity: 0.4;
+ background: #fef2f2;
+ border-color: #fca5a5;
 }
 /* Prevent mobile auto-zoom */
 input,
@@ -1219,7 +1227,7 @@ select {
   }
 
   .task-text {
-    flex: 1 1 100%;
+    flex: 1 1 auto;
     min-width: 0;
     box-sizing: border-box;
   }
@@ -1440,32 +1448,11 @@ select {
                   rows="1"
                   placeholder="Add a task"
                   oninput="autoGrow(this)">{{ t.text }}</textarea>
-               <br>
+               
               <input type="checkbox"
                     name="{{q}}_done_state[{{ t.id }}]"
                     value="1"
                     {% if t.done %}checked{% endif %} onchange="toggleDone(this)">
-
-
-               
-                  {% if t.recurring %}
-                <span title="Repeats {{ t.recurrence }}" style="font-size:13px;color:#6366f1;">
-                🔁 {{ t.recurrence or "Recurring" }}
-
-                </span>
-              {% endif %}
-               {% if not t.recurring %}
-                <select class="repeat-select"
-                  onchange="setRecurrence('{{ t.id }}', this.value)">
-                  <option value="">Repeat…</option>
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                </select>
-              {% endif %}
-         
-
-
 
             {% if t.recurring %}
                 <button type="button"
@@ -1482,7 +1469,22 @@ select {
                   🗑
                 </button>
               {% endif %}
-            
+              {% if t.recurring %}
+                <span title="Repeats {{ t.recurrence }}" style="font-size:13px;color:#6366f1;">
+                🔁 {{ t.recurrence or "Recurring" }}
+
+                </span>
+              {% endif %}
+               {% if not t.recurring %}
+                <select class="repeat-select"
+                  onchange="setRecurrence('{{ t.id }}', this.value)">
+                  <option value="">Repeat…</option>
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+              {% endif %}
+         
 
             </div>
 
