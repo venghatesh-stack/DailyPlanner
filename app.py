@@ -1015,11 +1015,7 @@ TODO_TEMPLATE = """
 body { font-family: system-ui; background:#f6f7f9; padding:16px;padding-bottom: calc(120px + env(safe-area-inset-bottom)); /* 👈 ADD THIS */ }
 .container { max-width:1100px; margin:auto; background:#fff; padding:20px; border-radius:14px; /* 👇 ADD THIS */
   padding-bottom: 140px; }
-@media (max-width: 767px) {
-  .matrix {
-    grid-template-columns: 1fr;
-  }
-}
+
 
 .quad { border:1px solid #e5e7eb; border-radius:12px; padding:12px; }
 .quad > div {
@@ -1172,25 +1168,68 @@ summary::-webkit-details-marker {
 .task.removed {
   opacity: 0.4;
 }
+/* Prevent mobile auto-zoom */
+input,
+textarea,
+select {
+  font-size: 16px !important;
+}
 
+/* =========================
+   MOBILE (≤767px)
+   ========================= */
 @media (max-width: 767px) {
-  .task-main {
-    align-items: flex-start;
+
+  /* Grid → single column */
+  .matrix {
+    grid-template-columns: 1fr;
+    width: 100%;
+    max-width: 100%;
   }
+
+  .quad {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Task row layout */
+  .task-main {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    width: 100%;
+    min-width: 0;          /* 👈 CRITICAL */
+    box-sizing: border-box;
+  }
+
   .task-main input[type="checkbox"] {
     transform: scale(1.25);
+    margin-top: 2px;
+  }
+
+  .task-text {
+    flex: 1 1 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   .task-delete {
     font-size: 20px;
+    min-width: 40px;
     flex-shrink: 0;
+    margin-left: auto;
   }
+
+  .motivation {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+
   details.quad {
     overflow: visible;
   }
-
-
 }
+
 /* ===== Motivational Quote ===== */
 
 .motivation {
@@ -1246,13 +1285,7 @@ summary::-webkit-details-marker {
     transform: translateY(0);
   }
 }
-/* Mobile tuning */
-@media (max-width: 767px) {
-  .motivation {
-    padding: 12px 14px;
-    font-size: 13px;
-  }
-}
+
 
 .task-main span[title] {
   margin-right: 4px;
@@ -1265,11 +1298,7 @@ summary::-webkit-details-marker {
   background: #f9fafb;
   color: #374151;
 }
-@media (max-width: 767px) {
-  details.quad {
-    overflow: visible;
-  }
-}
+
 
 </style>
 </head>
