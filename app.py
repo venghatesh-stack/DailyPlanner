@@ -1081,7 +1081,7 @@ summary::-webkit-details-marker {
 }
 
 .task + .task {
-  border-top: 1px solid #eee;
+  border-top: none;
 }
 
 /* Main row */
@@ -1093,9 +1093,18 @@ summary::-webkit-details-marker {
 
 /* Index */
 .task-index {
-  color: #9ca3af;
-  font-size: 14px;
+  min-width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
+
 
 /* Checkbox */
 .task-main input[type="checkbox"] {
@@ -1159,6 +1168,7 @@ summary::-webkit-details-marker {
 
 /* Completed task */
 .task.done {
+  background: #f8fafc;
   opacity: 0.6;
 }
 
@@ -1166,6 +1176,7 @@ summary::-webkit-details-marker {
   text-decoration: line-through;
 }
 .task.removed {
+  background: #fef2f2;
   opacity: 0.4;
 }
 /* Prevent mobile auto-zoom */
@@ -1424,7 +1435,12 @@ select {
               <input type="hidden"
                     name="{{q}}_done_state[{{ t.id }}]"
                     value="0">
-
+                <textarea name="{{q}}[]"
+                  class="task-text"
+                  rows="1"
+                  placeholder="Add a task"
+                  oninput="autoGrow(this)">{{ t.text }}</textarea>
+               <br>
               <input type="checkbox"
                     name="{{q}}_done_state[{{ t.id }}]"
                     value="1"
@@ -1466,12 +1482,7 @@ select {
                   🗑
                 </button>
               {% endif %}
-               <textarea name="{{q}}[]"
-                  class="task-text"
-                  rows="1"
-                  placeholder="Add a task"
-                  oninput="autoGrow(this)">{{ t.text }}</textarea>
-             
+            
 
             </div>
 
