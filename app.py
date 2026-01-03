@@ -1025,11 +1025,17 @@ body { font-family: system-ui; background:#f6f7f9; padding:16px;padding-bottom: 
 .quad > div {
   margin-top: 8px;
 }
-.matrix {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+.quad:last-child {
+  margin-bottom: 40px;
 }
+
+.matrix {
+   display: grid;
+   grid-template-columns: 1fr 1fr;
+   gap: 16px;
++  padding-bottom: 160px;
+}
+
 
 summary {
   font-weight: 600;
