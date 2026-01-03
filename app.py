@@ -1013,7 +1013,8 @@ TODO_TEMPLATE = """
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 body { font-family: system-ui; background:#f6f7f9; padding:16px;padding-bottom: calc(120px + env(safe-area-inset-bottom)); /* 👈 ADD THIS */ }
-.container { max-width:1100px; margin:auto; background:#fff; padding:20px; border-radius:14px; }
+.container { max-width:1100px; margin:auto; background:#fff; padding:20px; border-radius:14px; /* 👇 ADD THIS */
+  padding-bottom: 140px; }
 @media (max-width: 767px) {
   .matrix {
     grid-template-columns: 1fr;
