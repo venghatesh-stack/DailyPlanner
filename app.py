@@ -1033,7 +1033,7 @@ body { font-family: system-ui; background:#f6f7f9; padding:16px;padding-bottom: 
    display: grid;
    grid-template-columns: 1fr 1fr;
    gap: 16px;
-+  padding-bottom: 160px;
+  padding-bottom: 160px;
 }
 
 
@@ -1169,15 +1169,27 @@ summary::-webkit-details-marker {
 .task.done textarea {
   text-decoration: line-through;
 }
+.task.removed {
+  opacity: 0.4;
+}
 
 @media (max-width: 767px) {
+  .task-main {
+    align-items: flex-start;
+  }
   .task-main input[type="checkbox"] {
     transform: scale(1.25);
   }
 
   .task-delete {
     font-size: 20px;
+    flex-shrink: 0;
   }
+  details.quad {
+    overflow: visible;
+  }
+
+
 }
 /* ===== Motivational Quote ===== */
 
@@ -1241,6 +1253,7 @@ summary::-webkit-details-marker {
     font-size: 13px;
   }
 }
+
 .task-main span[title] {
   margin-right: 4px;
 }
@@ -1251,6 +1264,11 @@ summary::-webkit-details-marker {
   border: 1px solid #e5e7eb;
   background: #f9fafb;
   color: #374151;
+}
+@media (max-width: 767px) {
+  details.quad {
+    overflow: visible;
+  }
 }
 
 </style>
@@ -1418,8 +1436,8 @@ summary::-webkit-details-marker {
               {% else %}
                 <button type="button"
                         class="task-delete"
-                        title="Delete"
-                        onclick="this.closest('.task').remove()">
+                        title="Removed after Save"
+                        onclick="this.closest('.task').classList.add('removed');">
                   🗑
                 </button>
               {% endif %}
