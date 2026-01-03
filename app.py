@@ -1229,36 +1229,59 @@ select {
     width: 100%;
     min-width: 0;
   }
+
   .task {
     position: relative;
   }
+
   /* Task row layout */
   .task-main {
     display: flex;
-    align-items: Center;
+    align-items: center;
     flex-wrap: wrap;
     width: 100%;
-    min-width: 0;          /* 👈 CRITICAL */
+    min-width: 0;          /* 👈 critical */
+    gap: 6px;
     box-sizing: border-box;
   }
 
+  /* Checkbox */
   .task-main input[type="checkbox"] {
     transform: scale(1.25);
+    margin: 0;
     margin-top: 2px;
   }
 
+  /* Task text */
   .task-text {
     flex: 1 1 auto;
     min-width: 0;
     box-sizing: border-box;
   }
 
+  /* Delete icon — NO auto margin */
   .task-delete {
     font-size: 20px;
-    min-width: 40px;
+    min-width: 36px;
     flex-shrink: 0;
-    margin-left: auto;
+    margin: 0;
+    padding: 4px;
     background: #fee2e2;
+    border-radius: 8px;
+  }
+
+  /* Repeat dropdown — close to delete */
+  .task-repeat {
+    margin-left: 4px;
+  }
+
+  /* Meta row (date/time goes next line naturally) */
+  .task-meta {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+    gap: 8px;
+    margin-top: 6px;
   }
 
   .motivation {
@@ -1269,12 +1292,8 @@ select {
   details.quad {
     overflow: visible;
   }
-  .task-meta {
-    margin-left: auto;
-    justify-content: flex-end;
-    gap: 8px;
-  }
 }
+
 
 /* ===== Motivational Quote ===== */
 
