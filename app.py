@@ -179,14 +179,17 @@ def save_day(plan_date, form):
 # ==========================================================
 def load_todo(plan_date):
     rows = get(
-      "todo_matrix",
-      params={
-          "plan_date": f"eq.{plan_date}",
-          "is_deleted": "eq.false",
-          "select": "id,quadrant,task_text,is_done,position,task_date,task_time,recurring_id",
-          "order": "position.asc"
-      }
-      ) or []
+    "todo_matrix",
+    params={
+        "plan_date": f"eq.{plan_date}",
+        "is_deleted": "eq.false",
+        "select": (
+            "id,quadrant,task_text,is_done,position,task_date,task_time,"
+            "recurring_id,"
+            "recurring_tasks(recurrence)"
+        )
+    }
+    ) or []
 
 
     data = {"do": [], "schedule": [], "delegate": [], "eliminate": []}
@@ -198,6 +201,9 @@ def load_todo(plan_date):
         "task_date": r.get("task_date"),
         "task_time": r.get("task_time"),
         "recurring": bool(r.get("recurring_id")),  # 👈 ADD THIS
+        "recurrence": (
+          r.get("recurring_tasks", {}) or {}
+        ).get("recurrence")
     })
 
     for q in data:
@@ -697,25 +703,6 @@ def copy_prev_todo():
 
     return redirect(url_for("todo", year=year, month=month, day=day,copied=1))
   
-@app.route("/make_recurring", methods=["POST"])
-def make_recurring():
-    data = request.get_json()
-    task_id = data["task_id"]
-
-    task = get(
-        "todo_matrix",
-        params={"id": f"eq.{task_id}"},
-    )[0]
-
-    post("recurring_tasks", {
-        "quadrant": task["quadrant"],
-        "task_text": task["task_text"],
-        "recurrence": "daily",
-        "start_date": task["plan_date"],
-        "is_active": True
-    })
-
-    return ("", 204)
 
 @app.route("/set_recurrence", methods=["POST"])
 @login_required
@@ -765,6 +752,39 @@ def set_recurrence():
 
     return ("", 204)
 
+@app.route("/delete_recurring", methods=["POST"])
+@login_required
+def delete_recurring():
+    data = request.get_json()
+    task_id = data["task_id"]
+
+    # Load the task instance for TODAY
+    task = get(
+        "todo_matrix",
+        params={"id": f"eq.{task_id}"},
+    )[0]
+
+    recurring_id = task.get("recurring_id")
+    if not recurring_id:
+        return ("", 204)
+
+    # Stop recurrence from yesterday onwards
+    end_date = date.fromisoformat(task["plan_date"]) - timedelta(days=1)
+
+    update(
+        "recurring_tasks",
+        params={"id": f"eq.{recurring_id}"},
+        json={"end_date": str(end_date)}
+    )
+
+    # Also remove TODAY's instance
+    update(
+        "todo_matrix",
+        params={"id": f"eq.{task_id}"},
+        json={"is_deleted": True}
+    )
+
+    return ("", 204)
 
 # ==========================================================
 # TEMPLATE – DAILY PLANNER (UNCHANGED, STABLE)
@@ -1334,7 +1354,7 @@ summary::-webkit-details-marker {
                   placeholder="Add a task"
                   oninput="autoGrow(this)">{{ t.text }}</textarea>
                   {% if t.recurring %}
-                <span title="Repeats daily" style="font-size:13px;color:#6366f1;">
+                <span title="Repeats {{ t.recurrence }}" style="font-size:13px;color:#6366f1;">
                 🔁 {{ t.recurrence or "Recurring" }}
 
                 </span>
@@ -1352,10 +1372,22 @@ summary::-webkit-details-marker {
 
 
 
-              <button type="button"
-                  class="task-delete"
-                  title="Delete"
-                  onclick="this.closest('.task').remove()">🗑</button>
+            {% if t.recurring %}
+                <button type="button"
+                        class="task-delete"
+                        title="Delete this and future occurrences"
+                        onclick="deleteRecurring('{{ t.id }}')">
+                  🗑
+                </button>
+              {% else %}
+                <button type="button"
+                        class="task-delete"
+                        title="Delete"
+                        onclick="this.closest('.task').remove()">
+                  🗑
+                </button>
+              {% endif %}
+
              
 
             </div>
@@ -1499,6 +1531,19 @@ function setRecurrence(taskId, recurrence) {
     })
   }).then(() => location.reload());
 }
+
+function deleteRecurring(taskId) {
+  if (!confirm("Delete this task from today onwards? Past entries will remain.")) {
+    return;
+  }
+
+  fetch("/delete_recurring", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ task_id: taskId })
+  }).then(() => location.reload());
+}
+
 
 </script>
 {% if request.args.get('saved') %}
