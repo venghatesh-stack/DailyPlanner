@@ -8,7 +8,7 @@ import calendar
 import urllib.parse
 import json
 
-from supabase_client import get, post,delete,update  
+from supabase_client import get, post, delete, update
 from logger import setup_logger
 
 # ==========================================================
@@ -24,13 +24,16 @@ logger = setup_logger()
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "change-this-secret")
 APP_PASSWORD = os.environ.get("APP_PASSWORD", "changeme")
 
+
 def login_required(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         if not session.get("authenticated"):
             return redirect(url_for("login"))
         return fn(*args, **kwargs)
+
     return wrapper
+
 
 # ==========================================================
 # Log in code ends here
@@ -43,13 +46,7 @@ TOTAL_SLOTS = 48
 META_SLOT = 0
 DEFAULT_STATUS = "Nothing Planned"
 
-STATUSES = [
-    "Nothing Planned",
-    "Yet to Start",
-    "In Progress",
-    "Closed",
-    "Deferred"
-]
+STATUSES = ["Nothing Planned", "Yet to Start", "In Progress", "Closed", "Deferred"]
 
 HABIT_LIST = [
     "Walking",
@@ -57,7 +54,7 @@ HABIT_LIST = [
     "No Shopping",
     "No TimeWastage",
     "8 hrs sleep",
-    "Daily prayers"
+    "Daily prayers",
 ]
 
 HABIT_ICONS = {
@@ -66,7 +63,7 @@ HABIT_ICONS = {
     "No Shopping": "🛑🛍️",
     "No TimeWastage": "⏳",
     "8 hrs sleep": "😴",
-    "Daily prayers": "🙏"
+    "Daily prayers": "🙏",
 }
 MOTIVATIONAL_QUOTES = [
     {"icon": "🎯", "text": "Focus on what matters, not what screams loudest."},
@@ -78,65 +75,94 @@ MOTIVATIONAL_QUOTES = [
     {"icon": "✂️", "text": "Decide what not to do."},
     {"icon": "🧭", "text": "Your priorities shape your future."},
     {"icon": "⚡", "text": "Action beats intention."},
-    {"icon": "☀️", "text": "Important tasks deserve calm attention."}
+    {"icon": "☀️", "text": "Important tasks deserve calm attention."},
 ]
 
 ### Travel mode Code Changes ###
+TASK_CATEGORIES = {
+    "Office": "🏢",
+    "Personal": "👤",
+    "Family": "👨‍👩‍👧",
+    "Travel": "✈️",
+    "Health": "🩺",
+    "Finance": "💰",
+    "General": "📁",
+}
+
+
+STATIC_TRAVEL_SUBGROUPS = {
+    "Utilities": "⚙️",
+    "Security": "🔐",
+    "Vehicle": "🚗",
+    "Documents": "📄",
+    "Gadgets": "🔌",
+    "Personal": "🧳",
+}
+
+### Travel mode Code Changes ###
+### Category, Sub Category Changes start here ###
 
 TRAVEL_MODE_TASKS = [
-    # Home & Utilities
-    ("do", "Geyser switched off"),
-    ("do", "Toilet valves closed"),
-    ("do", "AquaGuard valve closed & switched off"),
-    ("do", "Fridge switched off"),
-    ("do", "No food left inside fridge"),
-    ("do", "Fridge door kept open"),
-    ("do", "Washing machine switched off"),
-    ("do", "Dishwasher switched off"),
-    ("do", "Iron box switched off"),
-    ("do", "Inverter switched off"),
-    ("do", "Router switched off"),
-    ("do", "All lights switched off"),
-    ("do", "Main power switched off (Bengaluru)"),
-    ("do", "All vessels washed"),
-    ("do", "Pooja room checked"),
-
-    # Security
-    ("schedule", "Blankets & pillows stored inside"),
-    ("schedule", "All doors closed"),
-    ("schedule", "Door locked"),
-    ("schedule", "Bengaluru & Chennai house keys taken"),
-
+    # =========================
+    # Utilities (Home shutdown)
+    # =========================
+    ("do", "Geyser switched off", "Utilities"),
+    ("do", "Toilet valves closed", "Utilities"),
+    ("do", "Fridge switched off", "Utilities"),
+    ("do", "No food left inside fridge", "Utilities"),
+    ("do", "Fridge door kept open", "Utilities"),
+    ("do", "Washing machine switched off", "Utilities"),
+    ("do", "Dishwasher switched off", "Utilities"),
+    ("do", "Iron box switched off", "Utilities"),
+    ("do", "AquaGuard valve closed & switched off", "Utilities"),
+    ("do", "Router switched off", "Utilities"),
+    ("do", "Inverter switched off", "Utilities"),
+    ("do", "Main power switched off (Bengaluru)", "Utilities"),
+    ("do", "All lights switched off", "Utilities"),
+    ("do", "All vessels washed", "Utilities"),
+    # =========================
+    # Security & Housekeeping
+    # =========================
+    ("do", "Blankets and pillows kept inside", "Security"),
+    ("do", "All doors closed", "Security"),
+    ("do", "Door locked", "Security"),
+    ("do", "Pooja room check", "Security"),
+    ("do", "Bengaluru and Chennai house keys taken", "Security"),
+    # =========================
     # Vehicle
-    ("schedule", "Petrol level checked"),
-    ("schedule", "Tyre air pressure checked"),
-    ("schedule", "Car wipers checked"),
-
-    # Essentials
-    ("delegate", "Purse"),
-    ("delegate", "Travel pouch"),
-    ("delegate", "Tickets (if applicable)"),
-    ("delegate", "ID card"),
-
-    # Gadgets
-    ("delegate", "Mobile phones (2)"),
-    ("delegate", "Watches (2)"),
-    ("delegate", "Power bank"),
-    ("delegate", "AirPods (2)"),
-    ("delegate", "Galaxy tablet"),
-    ("delegate", "iPad"),
-    ("delegate", "HP laptop"),
-    ("delegate", "Office laptop"),
-    ("delegate", "Laptop charger"),
-    ("delegate", "Floor robo cleaner packed"),
-
-    # Personal
-    ("eliminate", "Clothes packed"),
-    ("eliminate", "Homeopathy tablets"),
-    ("eliminate", "Any vessels / groceries / vegetables to be taken"),
+    # =========================
+    ("do", "Petrol and tyre air pressure checked", "Vehicle"),
+    ("do", "Car wiper checked", "Vehicle"),
+    # =========================
+    # Gadgets & Electronics
+    # =========================
+    ("do", "Mobile phones (2)", "Gadgets"),
+    ("do", "Watches (2)", "Gadgets"),
+    ("do", "Power bank", "Gadgets"),
+    ("do", "AirPods (2)", "Gadgets"),
+    ("do", "Galaxy tablet", "Gadgets"),
+    ("do", "iPad", "Gadgets"),
+    ("do", "HP laptop", "Gadgets"),
+    ("do", "Office laptop", "Gadgets"),
+    ("do", "Laptop charger", "Gadgets"),
+    ("do", "Floor robo cleaner packed", "Gadgets"),
+    # =========================
+    # Documents & Essentials
+    # =========================
+    ("do", "Purse", "Documents"),
+    ("do", "Travel pouch", "Documents"),
+    ("do", "Tickets (if applicable)", "Documents"),
+    ("do", "ID card", "Documents"),
+    # =========================
+    # Personal & Misc
+    # =========================
+    ("do", "Clothes packed", "Personal"),
+    ("do", "Homeopathy tablets", "Personal"),
+    ("do", "Any vessels, groceries, or vegetables to be taken", "Personal"),
 ]
 
-### Travel mode Code Changes ###
+### Category, Subcategory code ends here ###
+
 
 # ==========================================================
 # HELPERS
@@ -146,14 +172,19 @@ def slot_label(slot: int) -> str:
     end = start + timedelta(minutes=30)
     return f"{start.strftime('%I:%M %p')} – {end.strftime('%I:%M %p')}"
 
+
 def slot_start_end(plan_date: date, slot: int):
-    start = datetime.combine(plan_date, datetime.min.time(), tzinfo=IST) + timedelta(minutes=(slot - 1) * 30)
+    start = datetime.combine(plan_date, datetime.min.time(), tzinfo=IST) + timedelta(
+        minutes=(slot - 1) * 30
+    )
     end = start + timedelta(minutes=30)
     return start, end
+
 
 def current_slot() -> int:
     now = datetime.now(IST)
     return (now.hour * 60 + now.minute) // 30 + 1
+
 
 def google_calendar_link(plan_date, slot, task):
     if not task:
@@ -166,25 +197,30 @@ def google_calendar_link(plan_date, slot, task):
         "text": task,
         "dates": f"{start_utc.strftime('%Y%m%dT%H%M%SZ')}/{end_utc.strftime('%Y%m%dT%H%M%SZ')}",
         "details": "Created from Daily Planner",
-        "trp": "false"
+        "trp": "false",
     }
-    return "https://calendar.google.com/calendar/render?" + urllib.parse.urlencode(params)
+    return "https://calendar.google.com/calendar/render?" + urllib.parse.urlencode(
+        params
+    )
+
 
 # ==========================================================
 # DATA ACCESS – DAILY PLANNER
 # ==========================================================
 def load_day(plan_date):
-    plans = {i: {"plan": "", "status": DEFAULT_STATUS} for i in range(1, TOTAL_SLOTS + 1)}
+    plans = {
+        i: {"plan": "", "status": DEFAULT_STATUS} for i in range(1, TOTAL_SLOTS + 1)
+    }
     habits = set()
     reflection = ""
 
-    rows = get(
-        "daily_slots",
-        params={
-            "plan_date": f"eq.{plan_date}",
-            "select": "slot,plan,status"
-        }
-    ) or []
+    rows = (
+        get(
+            "daily_slots",
+            params={"plan_date": f"eq.{plan_date}", "select": "slot,plan,status"},
+        )
+        or []
+    )
 
     for r in rows:
         if r["slot"] == META_SLOT:
@@ -197,10 +233,11 @@ def load_day(plan_date):
         else:
             plans[r["slot"]] = {
                 "plan": r.get("plan") or "",
-                "status": r.get("status") or DEFAULT_STATUS
+                "status": r.get("status") or DEFAULT_STATUS,
             }
 
     return plans, habits, reflection
+
 
 def save_day(plan_date, form):
     payload = []
@@ -209,28 +246,35 @@ def save_day(plan_date, form):
         plan = form.get(f"plan_{slot}", "").strip()
         status = form.get(f"status_{slot}", DEFAULT_STATUS)
         if plan:
-            payload.append({
-                "plan_date": str(plan_date),
-                "slot": slot,
-                "plan": plan,
-                "status": status
-            })
+            payload.append(
+                {
+                    "plan_date": str(plan_date),
+                    "slot": slot,
+                    "plan": plan,
+                    "status": status,
+                }
+            )
 
-    payload.append({
-        "plan_date": str(plan_date),
-        "slot": META_SLOT,
-        "plan": json.dumps({
-            "habits": form.getlist("habits"),
-            "reflection": form.get("reflection", "").strip()
-        }),
-        "status": DEFAULT_STATUS
-    })
+    payload.append(
+        {
+            "plan_date": str(plan_date),
+            "slot": META_SLOT,
+            "plan": json.dumps(
+                {
+                    "habits": form.getlist("habits"),
+                    "reflection": form.get("reflection", "").strip(),
+                }
+            ),
+            "status": DEFAULT_STATUS,
+        }
+    )
 
     post(
         "daily_slots?on_conflict=plan_date,slot",
         payload,
-        prefer="resolution=merge-duplicates"
+        prefer="resolution=merge-duplicates",
     )
+
 
 # ==========================================================
 # DATA ACCESS – EISENHOWER
@@ -245,33 +289,34 @@ def load_todo(plan_date):
     # ----------------------------
     # Load today's todo items
     # ----------------------------
-    rows = get(
-        "todo_matrix",
-        params={
-            "plan_date": f"eq.{plan_date}",
-            "is_deleted": "eq.false",
-            "select": (
-                "id,quadrant,task_text,is_done,position,"
-                "task_date,task_time,recurring_id"
-            )
-        }
-    ) or []
+    rows = (
+        get(
+            "todo_matrix",
+            params={
+                "plan_date": f"eq.{plan_date}",
+                "is_deleted": "eq.false",
+                "select": (
+                    "id,quadrant,task_text,is_done,position,"
+                    "task_date,task_time,recurring_id,"
+                    "category,subcategory"
+                ),
+            },
+        )
+        or []
+    )
 
     # ----------------------------
     # Load recurrence metadata
     # ----------------------------
-    recurring_rows = get(
-        "recurring_tasks",
-        params={
-            "is_active": "eq.true",
-            "select": "id,recurrence"
-        }
-    ) or []
+    recurring_rows = (
+        get(
+            "recurring_tasks",
+            params={"is_active": "eq.true", "select": "id,recurrence"},
+        )
+        or []
+    )
 
-    recurring_map = {
-        r["id"]: r.get("recurrence")
-        for r in recurring_rows
-    }
+    recurring_map = {r["id"]: r.get("recurrence") for r in recurring_rows}
 
     # ----------------------------
     # Build quadrant buckets
@@ -279,29 +324,40 @@ def load_todo(plan_date):
     data = {"do": [], "schedule": [], "delegate": [], "eliminate": []}
 
     for r in rows:
-        data[r["quadrant"]].append({
-            "id": r["id"],
-            "text": r["task_text"],
-            "done": bool(r.get("is_done")),
-            "task_date": r.get("task_date"),
-            "task_time": r.get("task_time"),
-            "recurring": bool(r.get("recurring_id")),
-            "recurrence": recurring_map.get(r.get("recurring_id"))
-        })
+        data[r["quadrant"]].append(
+            {
+                "id": r["id"],
+                "text": r["task_text"],
+                "done": bool(r.get("is_done")),
+                "task_date": r.get("task_date"),
+                "task_time": r.get("task_time"),
+                "recurring": bool(r.get("recurring_id")),
+                "recurrence": recurring_map.get(r.get("recurring_id")),
+                "category": r.get("category") or "General",
+                "subcategory": r.get("subcategory") or "General",
+            }
+        )
 
     # ----------------------------
     # Sort within each quadrant
     # ----------------------------
     for q in data:
-        data[q].sort(
-            key=lambda t: (
-                t["task_date"] is None,
-                t["task_date"] or ""
-            )
-        )
+        data[q].sort(key=lambda t: (t["task_date"] is None, t["task_date"] or ""))
+    ### Category, Sub Category Changes start here ###
 
-    return data
+    grouped = {}
 
+    for q in data:
+        grouped[q] = {}
+        for t in data[q]:
+            cat = t["category"]
+            sub = t["subcategory"]
+            grouped[q].setdefault(cat, {}).setdefault(sub, []).append(t)
+
+    return grouped
+
+
+### Category, Subcategory code ends here ###
 
 
 def save_todo(plan_date, form):
@@ -310,18 +366,20 @@ def save_todo(plan_date, form):
     # -----------------------------------
     # Load existing (non-deleted) IDs
     # -----------------------------------
-    existing_rows = get(
-        "todo_matrix",
-        params={
-            "plan_date": f"eq.{plan_date}",
-            "is_deleted": "eq.false",
-            "select": "id, recurring_id"
-        }
-    ) or []
-    
+    existing_rows = (
+        get(
+            "todo_matrix",
+            params={
+                "plan_date": f"eq.{plan_date}",
+                "is_deleted": "eq.false",
+                "select": "id, recurring_id",
+            },
+        )
+        or []
+    )
+
     existing_recurring_map = {
-      str(r["id"]): r.get("recurring_id")
-      for r in existing_rows
+        str(r["id"]): r.get("recurring_id") for r in existing_rows
     }
 
     existing_ids = {str(r["id"]) for r in existing_rows}
@@ -334,11 +392,10 @@ def save_todo(plan_date, form):
     # Process quadrants
     # -----------------------------------
     for quadrant in ["do", "schedule", "delegate", "eliminate"]:
-
         texts = form.getlist(f"{quadrant}[]")
         dates = form.getlist(f"{quadrant}_date[]")
         times = form.getlist(f"{quadrant}_time[]")
-        ids   = form.getlist(f"{quadrant}_id[]")
+        ids = form.getlist(f"{quadrant}_id[]")
 
         # Build done_state
         done_state = {}
@@ -346,7 +403,7 @@ def save_todo(plan_date, form):
 
         for key, values in form.to_dict(flat=False).items():
             if key.startswith(prefix) and key.endswith("]"):
-                task_id = key[len(prefix):-1]
+                task_id = key[len(prefix) : -1]
                 done_state[task_id] = values
 
         for idx, text in enumerate(texts):
@@ -364,41 +421,54 @@ def save_todo(plan_date, form):
             is_done = "1" in done_state.get(task_id, [])
 
             base_payload = {
-              "quadrant": quadrant,
-              "task_text": text,
-              "task_date": task_date,
-              "task_time": task_time,
-              "is_done": is_done,
-              "position": idx,
-              "is_deleted": False
-          }
+                "quadrant": quadrant,
+                "task_text": text,
+                "task_date": task_date,
+                "task_time": task_time,
+                "is_done": is_done,
+                "position": idx,
+                "is_deleted": False,
+            }
+            ### Category, Sub Category Changes start here ###
+            ### Category, Sub Category Changes start here ###
+            ### Category, Sub Category Changes start here ###
+            categories = form.getlist(f"{quadrant}_category[]")
+            subcategories = form.getlist(f"{quadrant}_subcategory[]")
+            ### Category, Subcategory code ends here ###
+
+            base_payload.update(
+                {
+                    "category": categories[idx] if idx < len(categories) else "General",
+                    "subcategory": subcategories[idx]
+                    if idx < len(subcategories)
+                    else "General",
+                }
+            )
+
+            ### Category, Subcategory code ends here ###
+
+            ### Category, Subcategory code ends here ###
 
             if task_id in existing_ids:
-              payload = {
-                "id": task_id,
-                "plan_date": str(plan_date),
-                "recurring_id": existing_recurring_map.get(task_id),
-                **base_payload
-              }
-              seen_ids.add(task_id)
-              updates.append(payload)
-            else:
                 payload = {
-                "plan_date": str(plan_date),
-                **base_payload
+                    "id": task_id,
+                    "plan_date": str(plan_date),
+                    "recurring_id": existing_recurring_map.get(task_id),
+                    **base_payload,
                 }
+                seen_ids.add(task_id)
+                updates.append(payload)
+            else:
+                payload = {"plan_date": str(plan_date), **base_payload}
 
                 inserts.append(payload)
-
 
     # -----------------------------------
     # BULK UPSERT existing rows
     # -----------------------------------
     if updates:
         post(
-            "todo_matrix?on_conflict=id",
-            updates,
-            prefer="resolution=merge-duplicates"
+            "todo_matrix?on_conflict=id", updates, prefer="resolution=merge-duplicates"
         )
 
     # -----------------------------------
@@ -416,32 +486,28 @@ def save_todo(plan_date, form):
         for task_id in form.getlist(f"{quadrant}_id[]")
     }
 
-    existing = {
-      r["id"]: r.get("recurring_id")
-      for r in existing_rows
-    }
+    existing = {r["id"]: r.get("recurring_id") for r in existing_rows}
 
     removed_ids = {
-        tid for tid, rid in existing.items()
-        if tid not in seen_ids
-        and tid not in form_ids
-        and rid is None          # 👈 IMPORTANT
+        tid
+        for tid, rid in existing.items()
+        if tid not in seen_ids and tid not in form_ids and rid is None  # 👈 IMPORTANT
     }
-
 
     if removed_ids:
         update(
             "todo_matrix",
             params={"id": f"in.({','.join(removed_ids)})"},
-            json={"is_deleted": True}
+            json={"is_deleted": True},
         )
 
     logger.info(
         "Eisenhower save complete: %d updates, %d inserts, %d deletions",
         len(updates),
         len(inserts),
-        len(removed_ids)
+        len(removed_ids),
     )
+
 
 def materialize_recurring_tasks(plan_date):
     """
@@ -449,14 +515,17 @@ def materialize_recurring_tasks(plan_date):
     (idempotent – safe to run multiple times)
     """
 
-    rules = get(
-        "recurring_tasks",
-        params={
-            "is_active": "eq.true",
-            "start_date": f"lte.{plan_date}",
-            "select": "id,quadrant,task_text,recurrence,days_of_week,day_of_month,end_date"
-        }
-    ) or []
+    rules = (
+        get(
+            "recurring_tasks",
+            params={
+                "is_active": "eq.true",
+                "start_date": f"lte.{plan_date}",
+                "select": "id,quadrant,task_text,recurrence,days_of_week,day_of_month,end_date",
+            },
+        )
+        or []
+    )
 
     if not rules:
         return
@@ -464,29 +533,26 @@ def materialize_recurring_tasks(plan_date):
         "todo_matrix",
         params={
             "plan_date": f"eq.{plan_date}",
-            "is_deleted": "eq.false",   # 👈 REQUIRED
-            "select": "recurring_id"
-        }
+            "is_deleted": "eq.false",  # 👈 REQUIRED
+            "select": "recurring_id",
+        },
     )
-
-   
 
     existing_recurring_ids = {
         r["recurring_id"] for r in existing if r.get("recurring_id")
     }
     max_row = get(
-    "todo_matrix",
-    params={
-        "plan_date": f"eq.{plan_date}",
-        "is_deleted": "eq.false",
-        "select": "position",
-        "order": "position.desc",
-        "limit": 1
-      }
+        "todo_matrix",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "is_deleted": "eq.false",
+            "select": "position",
+            "order": "position.desc",
+            "limit": 1,
+        },
     )
 
     next_pos = (max_row[0]["position"] + 1) if max_row and len(max_row) > 0 else 0
-
 
     payload = []
 
@@ -513,48 +579,56 @@ def materialize_recurring_tasks(plan_date):
         if r["id"] in existing_recurring_ids:
             continue
 
-        payload.append({
-              "plan_date": str(plan_date),
-              "quadrant": r["quadrant"],
-              "task_text": r["task_text"],
-              "is_done": False,
-              "is_deleted": False,      # 👈 THIS IS THE MISSING PIECE
-              "position": next_pos,
-              "recurring_id": r["id"]
-          })
-
+        payload.append(
+            {
+                "plan_date": str(plan_date),
+                "quadrant": r["quadrant"],
+                "task_text": r["task_text"],
+                "category": r.get("category") or "General",
+                "subcategory": r.get("subcategory") or "General",
+                "is_done": False,
+                "is_deleted": False,
+                "position": next_pos,
+                "recurring_id": r["id"],
+            }
+        )
 
     if payload:
         post("todo_matrix", payload)
 
+
 def copy_open_tasks_from_previous_day(plan_date):
     prev_date = plan_date - timedelta(days=1)
 
-    prev_rows = get(
-      "todo_matrix",
-       params={
-        "plan_date": f"eq.{prev_date}",
-        "is_deleted": "eq.false",
-        "select": "quadrant,task_text,is_done,task_date,task_time"
-    }
-    ) or []
-
+    prev_rows = (
+        get(
+            "todo_matrix",
+            params={
+                "plan_date": f"eq.{prev_date}",
+                "is_deleted": "eq.false",
+                "select": "quadrant,task_text,is_done,task_date,task_time,category,subcategory",
+            },
+        )
+        or []
+    )
 
     if not prev_rows:
         return 0
 
-    today_rows = get(
-        "todo_matrix",
-        params={
-            "plan_date": f"eq.{plan_date}",
-            "select": "quadrant,task_text,position",
-            "is_deleted": "eq.false"
-        }
-    ) or []
+    today_rows = (
+        get(
+            "todo_matrix",
+            params={
+                "plan_date": f"eq.{plan_date}",
+                "select": "quadrant,task_text,position",
+                "is_deleted": "eq.false",
+            },
+        )
+        or []
+    )
 
     today_tasks = {
-        (r["quadrant"], (r["task_text"] or "").strip().lower())
-        for r in today_rows
+        (r["quadrant"], (r["task_text"] or "").strip().lower()) for r in today_rows
     }
 
     # Build max position per quadrant ONCE
@@ -576,24 +650,29 @@ def copy_open_tasks_from_previous_day(plan_date):
         next_pos = max_pos.get(r["quadrant"], -1) + 1
         max_pos[r["quadrant"]] = next_pos
 
-        payload.append({
-              "plan_date": str(plan_date),
-              "quadrant": r["quadrant"],
-              "task_text": r["task_text"],
-              "is_done": False,
-              "is_deleted": False,   # 👈 REQUIRED
-              "task_date": r.get("task_date"),
-              "task_time": r.get("task_time"),
-              "position": next_pos
-          })
-
+        payload.append(
+            {
+                "plan_date": str(plan_date),
+                "quadrant": r["quadrant"],
+                "task_text": r["task_text"],
+                "is_done": False,
+                "is_deleted": False,  # 👈 REQUIRED
+                "task_date": r.get("task_date"),
+                "task_time": r.get("task_time"),
+                "position": next_pos,
+                "category": r.get("category") or "General",
+                "subcategory": r.get("subcategory") or "General",
+            }
+        )
 
     if payload:
         post("todo_matrix", payload)
 
     return len(payload)
 
+
 ### Travel mode Code Changes ###
+
 
 def enable_travel_mode(plan_date):
     """
@@ -601,36 +680,41 @@ def enable_travel_mode(plan_date):
     Idempotent: inserts only missing tasks.
     """
 
-    existing = get(
-        "todo_matrix",
-        params={
-            "plan_date": f"eq.{plan_date}",
-            "is_deleted": "eq.false",
-            "select": "quadrant,task_text"
-        }
-    ) or []
+    existing = (
+        get(
+            "todo_matrix",
+            params={
+                "plan_date": f"eq.{plan_date}",
+                "is_deleted": "eq.false",
+                "select": "quadrant,task_text",
+            },
+        )
+        or []
+    )
 
     existing_keys = {
-        (r["quadrant"], (r["task_text"] or "").strip().lower())
-        for r in existing
+        (r["quadrant"], (r["task_text"] or "").strip().lower()) for r in existing
     }
 
     payload = []
-    max_rows = get(
-    "todo_matrix",
-    params={
-        "plan_date": f"eq.{plan_date}",
-        "is_deleted": "eq.false",
-        "select": "quadrant,position"
-    }
-      ) or []
+    max_rows = (
+        get(
+            "todo_matrix",
+            params={
+                "plan_date": f"eq.{plan_date}",
+                "is_deleted": "eq.false",
+                "select": "quadrant,position",
+            },
+        )
+        or []
+    )
 
     position_map = {}
     for r in max_rows:
         q = r["quadrant"]
         position_map[q] = max(position_map.get(q, -1), r.get("position", -1))
 
-    for quadrant, text in TRAVEL_MODE_TASKS:
+    for quadrant, text, subcat in TRAVEL_MODE_TASKS:
         key = (quadrant, text.lower())
         if key in existing_keys:
             continue
@@ -638,20 +722,28 @@ def enable_travel_mode(plan_date):
         pos = position_map.get(quadrant, -1) + 1
         position_map[quadrant] = pos
 
-        payload.append({
-            "plan_date": str(plan_date),
-            "quadrant": quadrant,
-            "task_text": text,
-            "is_done": False,
-            "is_deleted": False,
-            "position": pos,
-            "travel_mode": True   # 👈 SAFE extra marker
-        })
+        ### Category, Sub Category Changes start here ###
+
+        payload.append(
+            {
+                "plan_date": str(plan_date),
+                "quadrant": quadrant,
+                "task_text": text,
+                "category": "Travel",
+                "subcategory": subcat,
+                "is_done": False,
+                "is_deleted": False,
+                "position": pos,
+            }
+        )
+
+        ### Category, Subcategory code ends here ###
 
     if payload:
         post("todo_matrix", payload)
 
     return len(payload)
+
 
 ### Travel mode Code Changes ###
 
@@ -716,6 +808,7 @@ LOGIN_TEMPLATE = """
 </html>
 """
 
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -726,10 +819,12 @@ def login():
 
     return render_template_string(LOGIN_TEMPLATE)
 
+
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("login"))
+
 
 # ==========================================================
 # Log in code ends here
@@ -737,6 +832,8 @@ def logout():
 @app.route("/health", methods=["GET", "HEAD"])
 def health():
     return "OK", 200
+
+
 # ==========================================================
 # ROUTES – DAILY PLANNER
 # ==========================================================
@@ -748,28 +845,27 @@ def planner():
     today = datetime.now(IST).date()
 
     if request.method == "POST":
-      year = int(request.form["year"])
-      month = int(request.form["month"])
-      day = int(request.form["day"])
+        year = int(request.form["year"])
+        month = int(request.form["month"])
+        day = int(request.form["day"])
     else:
-      year = int(request.args.get("year", today.year))
-      month = int(request.args.get("month", today.month))
-      day = int(request.args.get("day", today.day))
+        year = int(request.args.get("year", today.year))
+        month = int(request.args.get("month", today.month))
+        day = int(request.args.get("day", today.day))
 
     plan_date = date(year, month, day)
-
-
 
     if request.method == "POST":
         logger.info(f"Saving planner for date={plan_date}")
         save_day(plan_date, request.form)
-        return redirect(url_for("planner", year=year, month=month, day=plan_date.day, saved=1))
+        return redirect(
+            url_for("planner", year=year, month=month, day=plan_date.day, saved=1)
+        )
 
     plans, habits, reflection = load_day(plan_date)
 
     days = [
-        date(year, month, d)
-        for d in range(1, calendar.monthrange(year, month)[1] + 1)
+        date(year, month, d) for d in range(1, calendar.monthrange(year, month)[1] + 1)
     ]
 
     reminder_links = {
@@ -794,8 +890,9 @@ def planner():
         reflection=reflection,
         habit_list=HABIT_LIST,
         habit_icons=HABIT_ICONS,
-        calendar=calendar
+        calendar=calendar,
     )
+
 
 # ==========================================================
 # ROUTES – EISENHOWER MATRIX
@@ -814,15 +911,13 @@ def todo():
 
     if request.method == "POST":
         save_todo(plan_date, request.form)
-        return redirect(url_for("todo", year=year, month=month, day=day,saved=1))
+        return redirect(url_for("todo", year=year, month=month, day=day, saved=1))
 
     materialize_recurring_tasks(plan_date)
     todo = load_todo(plan_date)
 
-
     days = [
-        date(year, month, d)
-        for d in range(1, calendar.monthrange(year, month)[1] + 1)
+        date(year, month, d) for d in range(1, calendar.monthrange(year, month)[1] + 1)
     ]
     quote = MOTIVATIONAL_QUOTES[plan_date.day % len(MOTIVATIONAL_QUOTES)]
     return render_template_string(
@@ -833,8 +928,9 @@ def todo():
         month=month,
         days=days,
         calendar=calendar,
-        quote=quote
+        quote=quote,
     )
+
 
 @app.route("/todo/copy-prev", methods=["POST"])
 @login_required
@@ -849,8 +945,8 @@ def copy_prev_todo():
     copied = copy_open_tasks_from_previous_day(plan_date)
     logger.info(f"Copied {copied} Eisenhower tasks from previous day")
 
-    return redirect(url_for("todo", year=year, month=month, day=day,copied=1))
-  
+    return redirect(url_for("todo", year=year, month=month, day=day, copied=1))
+
 
 @app.route("/set_recurrence", methods=["POST"])
 @login_required
@@ -864,24 +960,20 @@ def set_recurrence():
         return ("", 204)
 
     # Load the task instance
-    task = get(
-        "todo_matrix",
-        params={"id": f"eq.{task_id}"}
-    )[0]
+    task = get("todo_matrix", params={"id": f"eq.{task_id}"})[0]
 
     # ----------------------------
     # FIX 3: prevent duplicate rules
     # ----------------------------
     existing = get(
-    "recurring_tasks",
-    params={
-        "task_text": f"eq.{task['task_text']}",
-        "quadrant": f"eq.{task['quadrant']}",
-        "start_date": f"eq.{task['plan_date']}",
-        "is_active": "eq.true"
-    }
+        "recurring_tasks",
+        params={
+            "task_text": f"eq.{task['task_text']}",
+            "quadrant": f"eq.{task['quadrant']}",
+            "start_date": f"eq.{task['plan_date']}",
+            "is_active": "eq.true",
+        },
     )
-
 
     if existing:
         # Rule already exists → do nothing (idempotent)
@@ -890,15 +982,19 @@ def set_recurrence():
     # ----------------------------
     # Create recurring rule
     # ----------------------------
-    post("recurring_tasks", {
-        "quadrant": task["quadrant"],
-        "task_text": task["task_text"],
-        "recurrence": recurrence,
-        "start_date": task["plan_date"],
-        "is_active": True
-    })
+    post(
+        "recurring_tasks",
+        {
+            "quadrant": task["quadrant"],
+            "task_text": task["task_text"],
+            "recurrence": recurrence,
+            "start_date": task["plan_date"],
+            "is_active": True,
+        },
+    )
 
     return ("", 204)
+
 
 @app.route("/delete_recurring", methods=["POST"])
 @login_required
@@ -922,18 +1018,17 @@ def delete_recurring():
     update(
         "recurring_tasks",
         params={"id": f"eq.{recurring_id}"},
-        json={"end_date": str(end_date)}
+        json={"end_date": str(end_date)},
     )
 
     # Also remove TODAY's instance
-    update(
-        "todo_matrix",
-        params={"id": f"eq.{task_id}"},
-        json={"is_deleted": True}
-    )
+    update("todo_matrix", params={"id": f"eq.{task_id}"}, json={"is_deleted": True})
 
     return ("", 204)
+
+
 ### Travel mode Code Changes ###
+
 
 @app.route("/todo/travel-mode", methods=["POST"])
 @login_required
@@ -947,6 +1042,7 @@ def travel_mode():
     logger.info(f"Travel Mode enabled: {added} tasks added")
 
     return redirect(url_for("todo", year=year, month=month, day=day, travel=1))
+
 
 ### Travel mode Code Changes ###
 
@@ -1608,7 +1704,7 @@ select {
   <!-- ============================= -->
   <div class="matrix">
 
-    <!-- Hidden inputs: belong to the form -->
+    <!-- Hidden inputs -->
     <input type="hidden" name="year" value="{{ year }}">
     <input type="hidden" name="month" value="{{ month }}">
     <input type="hidden" name="day" value="{{ plan_date.day }}">
@@ -1623,100 +1719,161 @@ select {
       ('eliminate','🗑 Eliminate')
     ] %}
 
-      <!-- ONE QUADRANT -->
       <details class="quad" open>
-
-        <!-- Quadrant title -->
         <summary>{{ label }}</summary>
-
-        <!-- Tasks container for this quadrant -->
         <div id="{{ q }}">
 
-          <!-- START: TASK LOOP (N times) -->
-          {% for t in todo[q] %}
-         
-           <div class="task {% if t.done %}done{% endif %}">
-            <input type="hidden" name="{{ q }}_id[]" value="{{ t.id }}">
-            <!-- LINE 1: serial + checkbox + text + delete -->
-            <div class="task-main">
-              <span class="task-index">{{ loop.index }}.</span>
-            
+          <!-- =============================== -->
+          <!-- CATEGORY / TASK RENDERING       -->
+          <!-- =============================== -->
+          {% for category, subs in todo[q].items() %}
+            <details open>
+              <summary>{{ TASK_CATEGORIES.get(category, "📁") }} {{ category }}</summary>
 
+              {% if category == "Travel" %}
+                {# -------- Travel: static subgroups -------- #}
+                {% for sub, icon in STATIC_TRAVEL_SUBGROUPS %}
+                  <details open style="margin-left:12px;">
+                    <summary>{{ icon }} {{ sub }}</summary>
 
-              <input type="hidden"
-                    name="{{q}}_done_state[{{ t.id }}]"
-                    value="0">
-                <textarea name="{{q}}[]"
-                  class="task-text"
-                  rows="1"
-                  placeholder="Add a task"
-                  oninput="autoGrow(this)">{{ t.text }}</textarea>
-               
-              <input type="checkbox"
-                    name="{{q}}_done_state[{{ t.id }}]"
-                    value="1"
-                    {% if t.done %}checked{% endif %} onchange="toggleDone(this)">
+                    {% for t in subs.get(sub, []) %}
+                      <div class="task {% if t.done %}done{% endif %}">
+                        <input type="hidden" name="{{ q }}_id[]" value="{{ t.id }}">
 
-            {% if t.recurring %}
-                <button type="button"
-                        class="task-delete"
-                        title="Delete this and future occurrences"
-                        onclick="deleteRecurring('{{ t.id }}')">
-                  🗑
-                </button>
+                        <div class="task-main">
+                          <span class="task-index">{{ loop.index }}.</span>
+
+                          <!-- Preserve category / subcategory -->
+                          <input type="hidden" name="{{ q }}_category[]" value="{{ t.category }}">
+                          <input type="hidden" name="{{ q }}_subcategory[]" value="{{ t.subcategory }}">
+                          <input type="hidden"
+                                 name="{{ q }}_done_state[{{ t.id }}]"
+                                 value="0">
+
+                          <textarea name="{{ q }}[]"
+                                    class="task-text"
+                                    rows="1"
+                                    placeholder="Add a task"
+                                    oninput="autoGrow(this)">{{ t.text }}</textarea>
+
+                          <input type="checkbox"
+                                 name="{{ q }}_done_state[{{ t.id }}]"
+                                 value="1"
+                                 {% if t.done %}checked{% endif %}
+                                 onchange="toggleDone(this)">
+
+                          {% if t.recurring %}
+                            <button type="button"
+                                    class="task-delete"
+                                    title="Delete this and future occurrences"
+                                    onclick="deleteRecurring('{{ t.id }}')">🗑</button>
+                          {% else %}
+                            <button type="button"
+                                    class="task-delete"
+                                    title="Removed after Save"
+                                    onclick="this.closest('.task').classList.add('removed');">🗑</button>
+                          {% endif %}
+
+                          {% if t.recurring %}
+                            <span title="Repeats {{ t.recurrence }}" style="font-size:13px;color:#6366f1;">
+                              🔁 {{ t.recurrence or "Recurring" }}
+                            </span>
+                          {% else %}
+                            <select class="repeat-select"
+                                    onchange="setRecurrence('{{ t.id }}', this.value)">
+                              <option value="">Repeat…</option>
+                              <option value="daily">Daily</option>
+                              <option value="weekly">Weekly</option>
+                              <option value="monthly">Monthly</option>
+                            </select>
+                          {% endif %}
+                        </div>
+
+                        <div class="task-meta">
+                          <input type="date" name="{{ q }}_date[]" value="{{ t.task_date or '' }}">
+                          <input type="time" name="{{ q }}_time[]" value="{{ t.task_time or '' }}">
+                        </div>
+                      </div>
+                    {% endfor %}
+
+                    {% if not subs.get(sub) %}
+                      <div class="empty-group">No tasks</div>
+                    {% endif %}
+                  </details>
+                {% endfor %}
+
               {% else %}
-                <button type="button"
-                        class="task-delete"
-                        title="Removed after Save"
-                        onclick="this.closest('.task').classList.add('removed');">
-                  🗑
-                </button>
+                {# -------- Non-Travel categories: flat list -------- #}
+                {% for tasks in subs.values() %}
+                  {% for t in tasks %}
+                    <div class="task {% if t.done %}done{% endif %}">
+                      <input type="hidden" name="{{ q }}_id[]" value="{{ t.id }}">
+
+                      <div class="task-main">
+                        <span class="task-index">{{ loop.index }}.</span>
+
+                        <input type="hidden" name="{{ q }}_category[]" value="{{ t.category }}">
+                        <input type="hidden" name="{{ q }}_subcategory[]" value="{{ t.subcategory }}">
+                        <input type="hidden"
+                               name="{{ q }}_done_state[{{ t.id }}]"
+                               value="0">
+
+                        <textarea name="{{ q }}[]"
+                                  class="task-text"
+                                  rows="1"
+                                  placeholder="Add a task"
+                                  oninput="autoGrow(this)">{{ t.text }}</textarea>
+
+                        <input type="checkbox"
+                               name="{{ q }}_done_state[{{ t.id }}]"
+                               value="1"
+                               {% if t.done %}checked{% endif %}
+                               onchange="toggleDone(this)">
+
+                        {% if t.recurring %}
+                          <button type="button"
+                                  class="task-delete"
+                                  title="Delete this and future occurrences"
+                                  onclick="deleteRecurring('{{ t.id }}')">🗑</button>
+                        {% else %}
+                          <button type="button"
+                                  class="task-delete"
+                                  title="Removed after Save"
+                                  onclick="this.closest('.task').classList.add('removed');">🗑</button>
+                        {% endif %}
+
+                        {% if t.recurring %}
+                          <span title="Repeats {{ t.recurrence }}" style="font-size:13px;color:#6366f1;">
+                            🔁 {{ t.recurrence or "Recurring" }}
+                          </span>
+                        {% else %}
+                          <select class="repeat-select"
+                                  onchange="setRecurrence('{{ t.id }}', this.value)">
+                            <option value="">Repeat…</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                          </select>
+                        {% endif %}
+                      </div>
+
+                      <div class="task-meta">
+                        <input type="date" name="{{ q }}_date[]" value="{{ t.task_date or '' }}">
+                        <input type="time" name="{{ q }}_time[]" value="{{ t.task_time or '' }}">
+                      </div>
+                    </div>
+                  {% endfor %}
+                {% endfor %}
               {% endif %}
-              {% if t.recurring %}
-                <span title="Repeats {{ t.recurrence }}" style="font-size:13px;color:#6366f1;">
-                🔁 {{ t.recurrence or "Recurring" }}
 
-                </span>
-              {% endif %}
-               {% if not t.recurring %}
-                <select class="repeat-select"
-                  onchange="setRecurrence('{{ t.id }}', this.value)">
-                  <option value="">Repeat…</option>
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                </select>
-              {% endif %}
-         
-
-            </div>
-
-            <!-- LINE 2: date + time -->
-              <div class="task-meta">
-                <input type="date"
-                      name="{{q}}_date[]"
-                      value="{{ t.task_date or '' }}">
-
-                <input type="time"
-                      name="{{q}}_time[]"
-                      value="{{ t.task_time or '' }}">
-              </div>
-
-          </div>
-
+            </details>
           {% endfor %}
-          <!-- END: TASK LOOP -->
-
         </div>
 
-        <!-- Add button belongs to THIS quadrant -->
-        <button type="button" onclick="addTask('{{ q }}')">
-          + Add
-        </button>
+        <!-- Add button for this quadrant -->
+        <button type="button" onclick="addTask('{{ q }}')">+ Add</button>
 
       </details>
-      <!-- END ONE QUADRANT -->
-
       <br>
 
     {% endfor %}
@@ -1725,45 +1882,46 @@ select {
     <!-- ================================= -->
 
   </div>
-  <!-- END MATRIX -->
-
-  <!-- ================================= -->
-  <!-- ACTION BUTTONS (ONCE ONLY)        -->
-  <!-- ================================= -->
-
-
-
 </form>
 
 </div>
 
 
 <script>
-function addTask(q){
-  const div = document.getElementById(q);
+<script>
+function addTask(q, category = "General", subcategory = "General") {
+  const container = document.getElementById(q);
+  if (!container) return;
+
   const row = document.createElement("div");
   row.className = "task";
 
   const id = "new_" + Date.now();
 
   row.innerHTML = `
+    <input type="hidden" name="${q}_id[]" value="${id}">
+    <input type="hidden" name="${q}_category[]" value="${category}">
+    <input type="hidden" name="${q}_subcategory[]" value="${subcategory}">
+    <input type="hidden" name="${q}_done_state[${id}]" value="0">
+
     <div class="task-main">
       <span class="task-index">*</span>
 
-      <input type="hidden" name="${q}_id[]" value="${id}">
-
-      <input type="hidden" name="${q}_done_state[${id}]" value="0">
-      <input type="checkbox" name="${q}_done_state[${id}]" value="1" onchange="toggleDone(this)">
-
       <textarea name="${q}[]"
-          class="task-text"
-          rows="1"
-          oninput="autoGrow(this)"
-          autofocus></textarea>
+                class="task-text"
+                rows="1"
+                placeholder="Add a task"
+                oninput="autoGrow(this)"
+                autofocus></textarea>
 
+      <input type="checkbox"
+             name="${q}_done_state[${id}]"
+             value="1"
+             onchange="toggleDone(this)">
 
       <button type="button"
               class="task-delete"
+              title="Remove before save"
               onclick="this.closest('.task').remove()">🗑</button>
     </div>
 
@@ -1773,8 +1931,14 @@ function addTask(q){
     </div>
   `;
 
-  div.appendChild(row);
+  container.appendChild(row);
+
+  // Auto-grow immediately
+  const textarea = row.querySelector("textarea");
+  if (textarea) autoGrow(textarea);
 }
+</script>
+
 let autoSaveTimer = null;
 
 function toggleDone(checkbox) {
