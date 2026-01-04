@@ -867,7 +867,7 @@ def planner():
         logger.info(f"Saving planner for date={plan_date}")
         save_day(plan_date, request.form)
         return redirect(
-            url_for("planner", year=year, month=month, day=plan_date.day, saved=1)
+            url_for("planner", year=plan_date.year, month=plan_date.month, day=plan_date.day, saved=1)
         )
 
     plans, habits, reflection = load_day(plan_date)
@@ -919,7 +919,7 @@ def todo():
 
     if request.method == "POST":
         save_todo(plan_date, request.form)
-        return redirect(url_for("todo", year=year, month=month, day=day, saved=1))
+        return redirect(url_for("todo", year=plan_date.year, month=plan_date.month, day=plan_date.day, saved=1))
 
     materialize_recurring_tasks(plan_date)
     todo = load_todo(plan_date)
@@ -955,7 +955,7 @@ def copy_prev_todo():
     copied = copy_open_tasks_from_previous_day(plan_date)
     logger.info(f"Copied {copied} Eisenhower tasks from previous day")
 
-    return redirect(url_for("todo", year=year, month=month, day=day, copied=1))
+    return redirect(url_for("todo", year=plan_date.year, month=plan_date.month, day=plan_date.day, copied=1))
 
 
 @app.route("/set_recurrence", methods=["POST"])
@@ -1063,7 +1063,7 @@ def travel_mode():
     added = enable_travel_mode(plan_date)
     logger.info(f"Travel Mode enabled: {added} tasks added")
 
-    return redirect(url_for("todo", year=year, month=month, day=day, travel=1))
+    return redirect(url_for("todo", year=plan_date.year, month=plan_date.month, day=plan_date.day, travel=1))
 
 
 ### Travel mode Code Changes ###
