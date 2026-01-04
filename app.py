@@ -576,8 +576,12 @@ def materialize_recurring_tasks(plan_date):
                 applies = True
 
         elif r["recurrence"] == "monthly":
-            if r["day_of_month"] == plan_date.day:
+            last_day = calendar.monthrange(plan_date.year, plan_date.month)[1]
+
+            if plan_date.day == r["day_of_month"]:
                 applies = True
+            elif r["day_of_month"] > last_day and plan_date.day == last_day:
+                applies = True  
 
         if not applies:
             continue
