@@ -749,7 +749,9 @@ def enable_travel_mode(plan_date):
         post("todo_matrix", payload)
 
     return len(payload)
-
+def safe_date(year: int, month: int, day: int) -> date:
+    last_day = calendar.monthrange(year, month)[1]
+    return date(year, month, min(day, last_day))
 
 ### Travel mode Code Changes ###
 
@@ -859,7 +861,7 @@ def planner():
         month = int(request.args.get("month", today.month))
         day = int(request.args.get("day", today.day))
 
-    plan_date = date(year, month, day)
+    plan_date = safe_date(year, month, day)
 
     if request.method == "POST":
         logger.info(f"Saving planner for date={plan_date}")
@@ -913,7 +915,7 @@ def todo():
     year = int(request.args.get("year", today.year))
     month = int(request.args.get("month", today.month))
     day = int(request.args.get("day", today.day))
-    plan_date = date(year, month, day)
+    plan_date = safe_date(year, month, day)
 
     if request.method == "POST":
         save_todo(plan_date, request.form)
