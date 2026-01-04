@@ -527,7 +527,7 @@ def materialize_recurring_tasks(plan_date):
             params={
                 "is_active": "eq.true",
                 "start_date": f"lte.{plan_date}",
-                "select": "id,quadrant,task_text,recurrence,days_of_week,day_of_month,end_date",
+                "select": "id,quadrant,task_text,category,subcategory,recurrence,days_of_week,day_of_month,end_date",
             },
         )
         or []
@@ -1000,7 +1000,19 @@ def set_recurrence():
             "recurrence": recurrence,
             "start_date": task["plan_date"],
             "is_active": True,
-        },
+            "category": task.get("category") or "General",
+            "subcategory": task.get("subcategory") or "General",
+            "day_of_month": (
+            date.fromisoformat(task["plan_date"]).day
+            if recurrence == "monthly"
+            else None
+            ),
+            "days_of_week": (
+                [date.fromisoformat(task["plan_date"]).weekday()]
+                if recurrence == "weekly"
+                else None
+            ),
+         },
     )
 
     return ("", 204)
