@@ -1627,14 +1627,14 @@ select {
   </form>
 
 </div>
-### Travel mode Code Changes ###
+<!-- Travel mode Code Changes  -->
 <form method="post" action="/todo/travel-mode" style="margin:12px 0;">
   <input type="hidden" name="year" value="{{ year }}">
   <input type="hidden" name="month" value="{{ month }}">
   <input type="hidden" name="day" value="{{ plan_date.day }}">
   <button type="submit">✈️ Enable Travel Mode</button>
 </form>
-### Travel mode Code Changes ###
+<!-- Travel mode Code Changes -->
 
 <form method="get" style="margin:12px 0;">
   <input type="hidden" name="day" value="{{ plan_date.day }}">
@@ -1957,6 +1957,7 @@ function addTask(q, category = "General", subcategory = "General") {
   if (textarea) autoGrow(textarea);
 }
 </script>
+<script>
 
 let autoSaveTimer = null;
 
