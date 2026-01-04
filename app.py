@@ -996,7 +996,7 @@ def set_recurrence():
     # ----------------------------
     # Create recurring rule
     # ----------------------------
-    post(
+    rule=post(
         "recurring_tasks",
         {
             "quadrant": task["quadrant"],
@@ -1017,6 +1017,11 @@ def set_recurrence():
                 else None
             ),
          },
+    )
+    update(
+    "todo_matrix",
+    params={"id": f"eq.{task_id}"},
+    json={"recurring_id": rule[0]["id"]},
     )
 
     return ("", 204)
