@@ -1435,12 +1435,11 @@ Workout @6am to 7am $High %Personal
 
 </form>
 </div>
-<!-- Temporary disabled floating bar
+
 <div class="floating-bar">
   <button type="submit" form="planner-form">💾 Save</button>
   <button type="button" onclick="window.location.reload()">❌ Cancel</button>
 </div>
--->
 <script>
 function updateClock(){
   const ist = new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
