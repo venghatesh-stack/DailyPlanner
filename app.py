@@ -861,12 +861,23 @@ def extract_tags(text):
     return list(set(tag.lower() for tag in re.findall(r"#(\w+)", text)))
 
 def parse_time_token(token, plan_date):
-    token = token.lower().replace(" ", "")
-    fmt = "%I:%M%p" if ":" in token else "%I%p"
+    token = token.lower().strip()
+
+    # Normalize separators
+    token = token.replace(" ", "")
+    token = token.replace(".", ":")
+
+    # Decide format
+    if ":" in token:
+        fmt = "%I:%M%p"
+    else:
+        fmt = "%I%p"
+
     return datetime.strptime(
         f"{plan_date} {token}",
         f"%Y-%m-%d {fmt}",
     )
+
 
 def parse_planner_input(raw_text, plan_date):
     time_match = re.search(r"@(.+?)\s+to\s+(.+?)(\s|$)", raw_text, re.I)
