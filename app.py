@@ -358,38 +358,47 @@ def save_day(plan_date, form):
         "reflection": form.get("reflection", "").strip(),
     }
 
-    payload.append(
-        {
-            "plan_date": str(plan_date),
-            "slot": META_SLOT,
-            "plan": json.dumps(meta),
-            "status": DEFAULT_STATUS,
-        }
-    )
+    meta_payload = {
+      "plan_date": str(plan_date),
+      "slot": META_SLOT,
+      "plan": json.dumps(meta),
+      "status": DEFAULT_STATUS,
+    }
+
 
     # -------------------------------------------------
     # FINAL WRITE (REQUIRED)
     # -------------------------------------------------
-    if payload:
-      ALLOWED_DAILY_COLUMNS = {
-            "plan_date",
-            "slot",
-            "plan",
-            "status",
-            "tags",
-        }
+   # -------------------------------------------------
+    # FINAL WRITE (REQUIRED)
+    # -------------------------------------------------
+    ALLOWED_DAILY_COLUMNS = {
+        "plan_date",
+        "slot",
+        "plan",
+        "status",
+        "tags",
+    }
 
-      clean_payload = [
-            {k: v for k, v in row.items() if k in ALLOWED_DAILY_COLUMNS}
-            for row in payload
-        ]
-      logger.error("DAILY_SLOTS PAYLOAD = %s", clean_payload)
+    clean_payload = [
+        {k: v for k, v in row.items() if k in ALLOWED_DAILY_COLUMNS}
+        for row in payload
+        if row.get("slot") != META_SLOT   # ✅ EXCLUDE META
+    ]
 
-      post(
+    if clean_payload:
+        post(
             "daily_slots?on_conflict=plan_date,slot",
             clean_payload,
             prefer="resolution=merge-duplicates",
         )
+
+    post(
+        "daily_slots?on_conflict=plan_date,slot",
+        meta_payload,
+        prefer="resolution=merge-duplicates",
+    )
+
 
 
 
