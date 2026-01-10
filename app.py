@@ -161,6 +161,20 @@ TRAVEL_MODE_TASKS = [
     ("do", "Any vessels, groceries, or vegetables to be taken", "Personal"),
 ]
 
+# ============================
+# PLANNER PARSING CONFIG
+# ============================
+
+PRIORITY_RANK = {
+    "Critical": 1,
+    "High": 2,
+    "Medium": 3,
+    "Low": 4,
+}
+
+DEFAULT_PRIORITY = "Medium"
+DEFAULT_CATEGORY = "Office"
+
 ### Category, Subcategory code ends here ###
 
 
@@ -202,12 +216,11 @@ def google_calendar_link(plan_date, slot, task):
     return "https://calendar.google.com/calendar/render?" + urllib.parse.urlencode(
         params
     )
-
-
 # ==========================================================
 # DATA ACCESS – DAILY PLANNER
 # ==========================================================
-def load_day(plan_date):
+
+def load_day(plan_date, tag=None):
     plans = {
         i: {"plan": "", "status": DEFAULT_STATUS} for i in range(1, TOTAL_SLOTS + 1)
     }
@@ -217,7 +230,10 @@ def load_day(plan_date):
     rows = (
         get(
             "daily_slots",
-            params={"plan_date": f"eq.{plan_date}", "select": "slot,plan,status"},
+            params={
+                "plan_date": f"eq.{plan_date}",
+                "select": "slot,plan,status,tags",
+            },
         )
         or []
     )
@@ -230,22 +246,99 @@ def load_day(plan_date):
                 reflection = meta.get("reflection", "")
             except Exception:
                 pass
-        else:
-            plans[r["slot"]] = {
-                "plan": r.get("plan") or "",
-                "status": r.get("status") or DEFAULT_STATUS,
-            }
+            continue
+
+        row_tags = []
+        if r.get("tags"):
+            try:
+                row_tags = json.loads(r["tags"])
+            except Exception:
+                pass
+
+        if tag and tag not in row_tags:
+            continue
+
+        plans[r["slot"]] = {
+            "plan": r.get("plan") or "",
+            "status": r.get("status") or DEFAULT_STATUS,
+        }
 
     return plans, habits, reflection
 
 
+
+
+
 def save_day(plan_date, form):
     payload = []
+    # Track slots already filled by smart parsing
+    smart_block = form.get("smart_plan", "").strip()
 
-    for slot in range(1, TOTAL_SLOTS + 1):
-        plan = form.get(f"plan_{slot}", "").strip()
-        status = form.get(f"status_{slot}", DEFAULT_STATUS)
-        if plan:
+    # -------------------------------------------------
+    # SMART MULTI-LINE INPUT (GLOBAL)
+    # -------------------------------------------------
+    if smart_block:
+        for line in smart_block.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            if "@" not in line:
+                continue
+
+            try:
+                parsed = parse_planner_input(line, plan_date)
+                slots = generate_half_hour_slots(parsed)
+
+                affected_slots = set()
+
+                for s in slots:
+                    start_h, start_m = map(int, s["time"].split(" - ")[0].split(":"))
+                    target_slot = (start_h * 60 + start_m) // 30 + 1
+                    if 1 <= target_slot <= TOTAL_SLOTS:
+                        affected_slots.add(target_slot)
+
+                # Clear existing tasks in affected slots
+                if affected_slots:
+                    delete(
+                        "daily_slots",
+                        params={
+                            "plan_date": f"eq.{plan_date}",
+                            "slot": f"in.({','.join(str(s) for s in affected_slots if s != META_SLOT)})",
+                        },
+                    )
+
+                # Re-insert smart slots
+                for s in slots:
+                    start_h, start_m = map(int, s["time"].split(" - ")[0].split(":"))
+                    target_slot = (start_h * 60 + start_m) // 30 + 1
+                    if 1 <= target_slot <= TOTAL_SLOTS:
+                        payload.append(
+                            {
+                                "plan_date": str(plan_date),
+                                "slot": target_slot,
+                                "plan": s["task"],
+                                "status": DEFAULT_STATUS,
+                                "priority": s["priority"],
+                                "category": s["category"],
+                                "tags": json.dumps(s["tags"]),
+                            }
+                        )
+            except Exception as e:
+                logger.error(
+                    f"Smart planner parse failed for line '{line}': {e}"
+                )
+
+    # -------------------------------------------------
+    # MANUAL ENTRY (only if smart planner not used)
+    # -------------------------------------------------
+    if not smart_block:
+        for slot in range(1, TOTAL_SLOTS + 1):
+            plan = form.get(f"plan_{slot}", "").strip()
+            status = form.get(f"status_{slot}", DEFAULT_STATUS)
+
+            if not plan:
+                continue
+
             payload.append(
                 {
                     "plan_date": str(plan_date),
@@ -255,25 +348,31 @@ def save_day(plan_date, form):
                 }
             )
 
+    # ---- SAVE META (habits + reflection) ----
+    meta = {
+        "habits": form.getlist("habits"),
+        "reflection": form.get("reflection", "").strip(),
+    }
+
     payload.append(
         {
             "plan_date": str(plan_date),
             "slot": META_SLOT,
-            "plan": json.dumps(
-                {
-                    "habits": form.getlist("habits"),
-                    "reflection": form.get("reflection", "").strip(),
-                }
-            ),
+            "plan": json.dumps(meta),
             "status": DEFAULT_STATUS,
         }
     )
 
-    post(
-        "daily_slots?on_conflict=plan_date,slot",
-        payload,
-        prefer="resolution=merge-duplicates",
-    )
+    # -------------------------------------------------
+    # FINAL WRITE (REQUIRED)
+    # -------------------------------------------------
+    if payload:
+        post(
+            "daily_slots?on_conflict=plan_date,slot",
+            payload,
+            prefer="resolution=merge-duplicates",
+        )
+
 
 
 # ==========================================================
@@ -756,6 +855,78 @@ def enable_travel_mode(plan_date):
 def safe_date(year: int, month: int, day: int) -> date:
     last_day = calendar.monthrange(year, month)[1]
     return date(year, month, min(day, last_day))
+import re
+
+def extract_tags(text):
+    return list(set(tag.lower() for tag in re.findall(r"#(\w+)", text)))
+
+def parse_time_token(token, plan_date):
+    token = token.lower().replace(" ", "")
+    fmt = "%I:%M%p" if ":" in token else "%I%p"
+    return datetime.strptime(
+        f"{plan_date} {token}",
+        f"%Y-%m-%d {fmt}",
+    )
+
+def parse_planner_input(raw_text, plan_date):
+    time_match = re.search(r"@(.+?)\s+to\s+(.+?)(\s|$)", raw_text, re.I)
+    priority_match = re.search(r"\$(critical|high|medium|low)", raw_text, re.I)
+    category_match = re.search(r"%(office|personal)", raw_text, re.I)
+
+    if not time_match:
+        raise ValueError("Time range missing")
+
+    start_raw, end_raw = time_match.groups()[:2]
+
+    priority = (
+        priority_match.group(1).capitalize()
+        if priority_match
+        else DEFAULT_PRIORITY
+    )
+
+    category = (
+        category_match.group(1).capitalize()
+        if category_match
+        else DEFAULT_CATEGORY
+    )
+
+    title = re.sub(r"\s[@$%].*", "", raw_text).strip()
+    tags = extract_tags(raw_text)
+
+    start_dt = parse_time_token(start_raw, plan_date)
+    end_dt = parse_time_token(end_raw, plan_date)
+    # ⛔ SAFETY CHECK
+    if end_dt <= start_dt:
+        raise ValueError("End time must be after start time")
+    return {
+        "title": title,
+        "start": start_dt,
+        "end": end_dt,
+        "priority": priority,
+        "priority_rank": PRIORITY_RANK[priority],
+        "category": category,
+        "tags": tags,
+    }
+def generate_half_hour_slots(parsed):
+    slots = []
+    current = parsed["start"]
+
+    while current < parsed["end"]:
+        slot_end = min(current + timedelta(minutes=30), parsed["end"])
+
+        slots.append({
+            "task": parsed["title"],
+            "time": f"{current.strftime('%H:%M')} - {slot_end.strftime('%H:%M')}",
+            "priority": parsed["priority"],
+            "priority_rank": parsed["priority_rank"],
+            "category": parsed["category"],
+            "tags": parsed["tags"],
+            "status": "open",
+        })
+
+        current = slot_end
+
+    return slots
 
 ### Travel mode Code Changes ###
 
@@ -1182,6 +1353,59 @@ textarea { width:100%; min-height:90px; font-size:15px; }
 <input type="hidden" name="year" value="{{ year }}">
 <input type="hidden" name="month" value="{{ month }}">
 <input type="hidden" name="day" value="{{ selected_day }}">
+<details style="
+  background:#f8fafc;
+  border-left:4px solid #2563eb;
+  padding:10px 14px;
+  margin-bottom:12px;
+  border-radius:8px;
+  font-size:14px;
+">
+  <summary style="
+    font-weight:600;
+    cursor:pointer;
+    list-style:none;
+    outline:none;
+  ">
+    🧠 How to write a smart task
+  </summary>
+
+  <div style="margin-top:10px;">
+    <code>
+      Task description @start time to end time $Priority %Category #tag
+    </code>
+
+    <div style="margin-top:8px;">
+      <strong>Examples:</strong>
+      <ul style="margin:6px 0 0 18px;">
+        <li><code>Meeting with Chitra @9am to 10am $Critical %Office #review</code></li>
+        <li><code>Workout @6am to 7am $High %Personal #health</code></li>
+        <li><code>Pay electricity bill @8pm to 8:30pm $Medium %Personal #finance</code></li>
+      </ul>
+    </div>
+
+    <div style="margin-top:8px; color:#475569;">
+      • <b>@</b> time is required<br>
+      • <b>$</b> Priority: Critical | High | Medium | Low<br>
+      • <b>%</b> Category: Office | Personal<br>
+      • <b>#</b> Tags (optional, multiple allowed)<br>
+      • One task per line<br>
+      • Slots auto-fill in 30-minute blocks
+    </div>
+  </div>
+</details>
+
+<h3>🧠 Smart Planner Input</h3>
+<textarea
+  name="smart_plan"
+  placeholder="
+One task per line.
+Example:
+Meeting with Chitra @9am to 10am $Critical %Office #review
+Workout @6am to 7am $High %Personal
+"
+  style="width:100%; min-height:120px; margin-bottom:16px;"
+></textarea>
 
 {% for slot in plans %}
 <div class="slot {% if now_slot==slot %}current{% endif %}">
