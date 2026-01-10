@@ -250,10 +250,14 @@ def load_day(plan_date, tag=None):
 
         row_tags = []
         if r.get("tags"):
-            try:
-                row_tags = json.loads(r["tags"])
-            except Exception:
-                pass
+          if isinstance(r["tags"], list):
+              row_tags = r["tags"]
+          elif isinstance(r["tags"], str):
+              try:
+                  row_tags = json.loads(r["tags"])
+              except Exception:
+                  row_tags = []
+
 
         if tag and tag not in row_tags:
             continue
@@ -320,7 +324,7 @@ def save_day(plan_date, form):
                                 "status": DEFAULT_STATUS,
                                 "priority": s["priority"],
                                 "category": s["category"],
-                                "tags": json.dumps(s["tags"]),
+                                "tags": s["tags"],
                             }
                         )
             except Exception as e:
@@ -367,9 +371,23 @@ def save_day(plan_date, form):
     # FINAL WRITE (REQUIRED)
     # -------------------------------------------------
     if payload:
-        post(
+      ALLOWED_DAILY_COLUMNS = {
+            "plan_date",
+            "slot",
+            "plan",
+            "status",
+            "tags",
+        }
+
+      clean_payload = [
+            {k: v for k, v in row.items() if k in ALLOWED_DAILY_COLUMNS}
+            for row in payload
+        ]
+      logger.error("DAILY_SLOTS PAYLOAD = %s", clean_payload)
+
+      post(
             "daily_slots?on_conflict=plan_date,slot",
-            payload,
+            clean_payload,
             prefer="resolution=merge-duplicates",
         )
 
