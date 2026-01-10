@@ -881,11 +881,12 @@ def extract_tags(text):
 def parse_time_token(token, plan_date):
     token = token.lower().strip()
 
-    # Normalize separators
+    # 🔒 strip anything after time
+    token = re.split(r"[^0-9apm:]", token)[0]
+
     token = token.replace(" ", "")
     token = token.replace(".", ":")
 
-    # Decide format
     if ":" in token:
         fmt = "%I:%M%p"
     else:
@@ -897,8 +898,14 @@ def parse_time_token(token, plan_date):
     )
 
 
+
 def parse_planner_input(raw_text, plan_date):
-    time_match = re.search(r"@(.+?)\s+to\s+(.+?)(\s|$)", raw_text, re.I)
+    time_match = re.search(
+    r"@([0-9:\.apm\s]+)\s+to\s+([0-9:\.apm\s]+)",
+    raw_text,
+    re.I,
+    )
+
     priority_match = re.search(r"\$(critical|high|medium|low)", raw_text, re.I)
     category_match = re.search(r"%(office|personal)", raw_text, re.I)
 
