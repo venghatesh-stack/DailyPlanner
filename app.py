@@ -2739,14 +2739,16 @@ select {
                             <button type="button"
                                     class="task-delete"
                                     title="Removed after Save"  
-                                   onclick="
-                                          const task = this.closest('.task');
-                                          task.classList.add('removed');
-                                          task.querySelector("input[name='{{ q }}_deleted[{{ t.id }}]']").value = "1";
+                                    onclick="
+                                      const task = this.closest('.task');
+                                      task.classList.add('removed');
 
-                                          const textarea = task.querySelector('textarea');
-                                          if (textarea) textarea.disabled = true;
-                                        "
+                                      const del = task.querySelector('input[type=hidden][name^=\'{{ q }}_deleted\']');
+                                      if (del) del.value = '1';
+
+                                      const textarea = task.querySelector('textarea');
+                                      if (textarea) textarea.disabled = true;"
+
                               >
                               🗑
                             </button>
@@ -2823,12 +2825,16 @@ select {
                                   class="task-delete"
                                   title="Removed after Save"
                                   onclick="
-                                        const task = this.closest('.task');
-                                        task.classList.add('removed');
-                                        task.querySelector("input[name='{{ q }}_deleted[{{ t.id }}]']").value = "1";
-                                        const textarea = task.querySelector('textarea');
-                                        if (textarea) textarea.disabled = true;
-                                      ">🗑</button>
+                                      const task = this.closest('.task');
+                                      task.classList.add('removed');
+
+                                      const del = task.querySelector('input[type=hidden][name^=\'{{ q }}_deleted\']');
+                                      if (del) del.value = '1';
+
+                                      const textarea = task.querySelector('textarea');
+                                      if (textarea) textarea.disabled = true;
+                                    "
+                            >🗑</button>
                         {% endif %}
 
                         {% if t.recurring %}
