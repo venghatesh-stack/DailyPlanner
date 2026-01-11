@@ -1878,7 +1878,21 @@ def schedule_untimed():
     if plan_date < datetime.now(IST).date():
       return ("Cannot schedule in the past", 400)
     task_id = data["id"]
-    text = data.get("final_text") or data["text"]
+    # Resolve text from META (never trust client)
+    rows = get(
+          "daily_slots",
+          params={
+              "plan_date": f"eq.{plan_date}",
+              "slot": f"eq.{META_SLOT}",
+              "select": "plan",
+          },
+      )
+
+    meta = json.loads(rows[0]["plan"]) if rows else {}
+    task = next(t for t in meta.get("untimed_tasks", []) if t["id"] == task_id)
+
+    text = data.get("final_text") or task["text"]
+
     start_slot = int(data["start_slot"])
     slot_count = int(data["slot_count"])
 
@@ -2352,21 +2366,22 @@ function confirmSchedule(id) {
     const modal = document.getElementById("modal");
     const content = document.getElementById("modal-content");
 
-    content.innerHTML = `
-      <h3>✏️ Confirm Planner Content</h3>
-      <p>You can edit before saving:</p>
+   content.innerHTML = `
+  <h3>✏️ Confirm Planner Content</h3>
+  <p>You can edit before saving:</p>
 
-      <textarea id="finalText"
-                style="width:100%;min-height:160px;"></textarea>
-      document.getElementById("finalText").value = combined;
+  <textarea id="finalText"
+            style="width:100%;min-height:160px;"></textarea>
 
-      <br><br>
-      <button type="button" onclick="modal.style.display='none'">Cancel</button>
-      <button type="button"
-              onclick="saveFinalSchedule('${id}','${date}',${start_slot},${slots})">
-        Save
-      </button>
-    `;
+  <br><br>
+  <button type="button" onclick="modal.style.display='none'">Cancel</button>
+  <button type="button"
+          onclick="saveFinalSchedule('${id}','${date}',${start_slot},${slots})">
+    Save
+  </button>
+`;
+document.getElementById("finalText").value = combined;
+
   });
 }
 function saveFinalSchedule(id, date, start_slot, slots) {
