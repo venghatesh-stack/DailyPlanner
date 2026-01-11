@@ -2170,7 +2170,26 @@ function confirmSchedule(id){
     headers:{ "Content-Type":"application/json" },
     body:JSON.stringify({ plan_date:date,start_slot,slot_count:slots })
   }).then(r=>r.json()).then(preview=>{
-    const combined = preview.map(p=>p.existing?p.existing+"\\n---\\n"+newText:newText).join("\\n\\n");
+    // ✅ Append the untimed task ONLY ONCE
+    let combined = "";
+    let appended = false;
+
+    preview.forEach(p => {
+      if (p.existing) {
+        combined += p.existing;
+        if (!appended) {
+          combined += "\n---\n" + newText;
+          appended = true;
+        }
+      } else if (!appended) {
+        combined += newText;
+        appended = true;
+      }
+      combined += "\n\n";
+    });
+
+    combined = combined.trim();
+
 
     const modal = document.getElementById("modal");
     const content = document.getElementById("modal-content");
