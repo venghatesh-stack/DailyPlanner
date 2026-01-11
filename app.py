@@ -858,10 +858,14 @@ def save_todo(plan_date, form):
             task_id = str(ids[idx])
 
             # ✅ SOFT DELETE (ID-based, authoritative)
-            if deleted_map.get(task_id) == "1":
-                deleted_ids.add(task_id)
-                seen_ids.add(task_id)
-                continue
+           # PRE-COMPUTE deleted IDs per quadrant
+            deleted_ids |= {
+                tid for tid, flag in deleted_map.items() if flag == "1"
+            }
+            if task_id in deleted_ids:
+              seen_ids.add(task_id)
+              continue
+
 
             text = (text or "").strip()
             if not text:
@@ -2747,7 +2751,7 @@ select {
                                       if (del) del.value = '1';
 
                                       const textarea = task.querySelector('textarea');
-                                      if (textarea) textarea.disabled = true;"
+                                      if (textarea) textarea.readOnly = true;"
 
                               >
                               🗑
@@ -2832,7 +2836,7 @@ select {
                                       if (del) del.value = '1';
 
                                       const textarea = task.querySelector('textarea');
-                                      if (textarea) textarea.disabled = true;
+                                      if (textarea) textarea.readOnly = true;
                                     "
                             >🗑</button>
                         {% endif %}
