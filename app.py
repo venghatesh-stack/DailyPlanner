@@ -1063,17 +1063,22 @@ def parse_planner_input(raw_text, plan_date):
     # --------------------------------
     # TIME PARSING (existing logic)
     # --------------------------------
-    range_match = re.search(
-      r"(?:@|from)\s*([0-9:\.\s]*[apm]+)\s+to\s+([0-9:\.\s]*[apm]+)",
-      raw_text,
-      re.I,
-      )
+ # --------------------------------
+# TIME PARSING (expanded)
+# --------------------------------
 
-    single_match = re.search(
-        r"(?:@|from)\s*([0-9:\.\s]*[apm]+)",
+    range_match = re.search(
+        r"(?:@|from)\s*([0-9:\.apm\s]+)\s+to\s+([0-9:\.apm\s]+)",
         raw_text,
         re.I,
     )
+
+    single_match = re.search(
+        r"@\s*([0-9:\.apm\s]+)",
+        raw_text,
+        re.I,
+    )
+
 
 
     if range_match:
