@@ -837,14 +837,22 @@ def save_todo(plan_date, form):
                 done_state[task_id] = values
 
         for idx, text in enumerate(texts):
+            # ===============================
+            # ### FIX 1: guard invalid index
+            # ===============================
+            if idx >= len(ids):
+                continue
+            task_id = str(ids[idx])
+
+            # ===============================
+            # ### FIX 2: handle soft delete
+            # ===============================
             if idx < len(deleted_flags) and deleted_flags[idx] == "1":
-              updates.append({
-                  "id": task_id,
-                  "is_deleted": True,
-              })
-              continue
-
-
+                updates.append({
+                    "id": task_id,
+                    "is_deleted": True,
+                })
+                continue
             text = text.strip()
             if not text:
                 continue
@@ -2749,7 +2757,7 @@ select {
                                               const task = this.closest('.task');
                                               task.classList.add('removed');
                                               task.querySelector('input[name$=_deleted\\[\\]]').value = '1';
-                                              task.remove(); /* ### changed: remove from UI immediately */
+                                              task.remove(); 
                                             ">🗑</button>
                           {% endif %}
 
