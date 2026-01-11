@@ -230,6 +230,133 @@ def google_calendar_link(plan_date, slot, task):
     return "https://calendar.google.com/calendar/render?" + urllib.parse.urlencode(
         params
     )
+    
+from collections import defaultdict
+
+def daily_summary(plan_date):
+    rows = get(
+        "daily_slots",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "slot": f"neq.{META_SLOT}",
+            "select": "plan,priority,tags",
+        },
+    ) or []
+
+    summary = defaultdict(lambda: defaultdict(list))
+
+    for r in rows:
+        tags = r.get("tags") or ["untagged"]
+        priority = r.get("priority") or "Medium"
+
+        for t in tags:
+            summary[t][priority].append(r["plan"])
+
+    return summary
+def weekly_summary(start_date, end_date):
+    rows = get(
+        "daily_slots",
+        params={
+            "plan_date": f"gte.{start_date}&lte.{end_date}",
+            "slot": f"neq.{META_SLOT}",
+            "select": "plan_date,priority,tags",
+        },
+    ) or []
+
+    by_day = defaultdict(lambda: defaultdict(int))
+    by_tag = defaultdict(int)
+    by_priority = defaultdict(int)
+
+    for r in rows:
+        day = r["plan_date"]
+        priority = r.get("priority") or "Medium"
+        tags = r.get("tags") or ["untagged"]
+
+        by_day[day][priority] += 1
+        by_priority[priority] += 1
+        for t in tags:
+            by_tag[t] += 1
+
+    return {
+        "by_day": dict(by_day),
+        "by_tag": dict(by_tag),
+        "by_priority": dict(by_priority),
+    }
+def slots_to_timerange(slots):
+    slots = sorted(slots)
+    start_min = (slots[0] - 1) * 30
+    end_min = slots[-1] * 30
+
+    start = datetime.min + timedelta(minutes=start_min)
+    end = datetime.min + timedelta(minutes=end_min)
+
+    return f"{start.strftime('%I:%M %p').lstrip('0')}–{end.strftime('%I:%M %p').lstrip('0')}"
+from collections import defaultdict
+
+def get_daily_summary(plan_date):
+    rows = get(
+        "daily_slots",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "slot": f"neq.{META_SLOT}",
+            "select": "slot,plan,priority,tags",
+        },
+    ) or []
+
+    grouped = defaultdict(lambda: {"slots": [], "priority": "Medium", "tags": []})
+
+    for r in rows:
+        if not r.get("plan"):
+            continue
+
+        tags = r.get("tags") or ["untagged"]
+        key = (r["plan"], tuple(sorted(tags)))
+
+        grouped[key]["slots"].append(r["slot"])
+        grouped[key]["priority"] = r.get("priority") or "Medium"
+        grouped[key]["tags"] = tags
+
+    summary = defaultdict(lambda: defaultdict(list))
+
+    for (task, _), data in grouped.items():
+        time_range = slots_to_timerange(data["slots"])
+        label = f"{task}@{time_range}"
+
+        for tag in data["tags"]:
+            summary[tag][data["priority"]].append(label)
+
+    return summary
+def get_weekly_summary(start_date, end_date):
+    rows = get(
+        "daily_slots",
+        params={
+            "plan_date": f"gte.{start_date}&lte.{end_date}",
+            "slot": f"neq.{META_SLOT}",
+            "select": "plan_date,slot,plan,priority,tags",
+        },
+    ) or []
+
+    grouped = defaultdict(lambda: defaultdict(lambda: {"slots": [], "priority": "Medium"}))
+
+    for r in rows:
+        if not r.get("plan"):
+            continue
+
+        day = r["plan_date"]
+        key = (r["plan"], tuple(sorted(r.get("tags") or ["untagged"])))
+
+        grouped[day][key]["slots"].append(r["slot"])
+        grouped[day][key]["priority"] = r.get("priority") or "Medium"
+
+    summary = defaultdict(list)
+
+    for day, tasks in grouped.items():
+        for (task, _), data in tasks.items():
+            time_range = slots_to_timerange(data["slots"])
+            summary[day].append(f"{task}@{time_range}")
+
+    return dict(summary)
+
 # ==========================================================
 # DATA ACCESS – DAILY PLANNER
 # ==========================================================
@@ -1564,6 +1691,31 @@ def travel_mode():
     logger.info(f"Travel Mode enabled: {added} tasks added")
 
     return redirect(url_for("todo", year=plan_date.year, month=plan_date.month, day=plan_date.day, travel=1))
+@app.route("/summary")
+@login_required
+def summary():
+    today = datetime.now(IST).date()
+    view = request.args.get("view", "daily")
+
+    if view == "weekly":
+        start = today - timedelta(days=6)
+        data = get_weekly_summary(start, today)
+        return render_template_string(
+            SUMMARY_TEMPLATE,
+            view="weekly",
+            data=data,
+            start=start,
+            end=today,
+        )
+
+    # Default: daily
+    data = get_daily_summary(today)
+    return render_template_string(
+        SUMMARY_TEMPLATE,
+        view="daily",
+        data=data,
+        date=today,
+    )
 
 
 ### Travel mode Code Changes ###
@@ -2677,6 +2829,56 @@ function deleteRecurring(taskId) {
 </script>
 {% endif %}
 
+</body>
+</html>
+"""
+SUMMARY_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body { font-family: system-ui; background:#f6f7f9; padding:16px; }
+.container { max-width:900px; margin:auto; background:#fff; padding:20px; border-radius:14px; }
+h2 { margin-top:0; }
+.tag { margin-top:16px; }
+.priority { margin-left:16px; color:#475569; }
+.task { margin-left:32px; }
+.day { margin-top:18px; font-weight:600; }
+</style>
+</head>
+
+<body>
+<div class="container">
+<a href="/">⬅ Back to Planner</a>
+
+{% if view == "daily" %}
+  <h2>📊 Daily Summary – {{ date }}</h2>
+
+  {% for tag, priorities in data.items() %}
+    <div class="tag">
+      <strong>#{{ tag }}</strong>
+      {% for p, tasks in priorities.items() %}
+        <div class="priority">{{ p }}</div>
+        {% for t in tasks %}
+          <div class="task">• {{ t }}</div>
+        {% endfor %}
+      {% endfor %}
+    </div>
+  {% endfor %}
+
+{% else %}
+  <h2>📈 Weekly Summary ({{ start }} → {{ end }})</h2>
+
+  {% for day, tasks in data.items() %}
+    <div class="day">{{ day }}</div>
+    {% for t in tasks %}
+      <div class="task">• {{ t }}</div>
+    {% endfor %}
+  {% endfor %}
+{% endif %}
+
+</div>
 </body>
 </html>
 """
