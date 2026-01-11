@@ -2242,7 +2242,9 @@ function cycleStatus(el){
 /* ===============================
    GLOBALS
    =============================== */
-const PLAN_DATE = {{ plan_date | tojson }};
+
+const PLAN_DATE = "{{ plan_date }}";
+
 
 /* ===============================
    PROMOTE UNTYPED
