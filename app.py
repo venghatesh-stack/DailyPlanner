@@ -2035,6 +2035,17 @@ textarea { width:100%; min-height:90px; font-size:15px; }
 <input type="hidden" name="month" value="{{ month }}">
 <input type="hidden" name="day" value="{{ selected_day }}">
 
+
+<h3>🧠 Smart Planner Input</h3>
+<textarea
+  name="smart_plan"
+  placeholder="One task per line.
+Example:
+Meeting with Chitra @9am to 10am $Critical %Office #review
+Workout @6am to 7am $High %Personal"
+  style="width:100%; min-height:120px; margin-bottom:16px;"
+></textarea>
+
 <h3>🗒 Tasks (No Time Yet)</h3>
 
 {% for t in untimed_tasks %}
@@ -2049,22 +2060,6 @@ textarea { width:100%; min-height:90px; font-size:15px; }
   <button type="button" onclick="scheduleUntimed('{{ t.id }}')">🕒 Schedule</button>
 </div>
 {% endfor %}
-<h3>🧠 Smart Planner Input</h3>
-<textarea
-  name="smart_plan"
-  placeholder="One task per line.
-Example:
-Meeting with Chitra @9am to 10am $Critical %Office #review
-Workout @6am to 7am $High %Personal"
-  style="width:100%; min-height:120px; margin-bottom:16px;"
-></textarea>
-
-<h3>🗒 Tasks (No Time Yet)</h3>
-<textarea
-  name="untimed_tasks"
-  placeholder="Tasks without a specific time"
-  style="width:100%; min-height:120px; margin-bottom:12px;"
-></textarea>
 
 {% for slot in plans %}
 <div class="slot {% if now_slot==slot %}current{% endif %}">
