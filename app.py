@@ -594,16 +594,19 @@ def save_day(plan_date, form):
         except Exception:
             existing_meta = {}
 
-    untimed_raw = form.get("untimed_tasks", "").strip()
+    untimed_raw = form.get("untimed_tasks", "")
+    untimed_raw = untimed_raw.strip() if untimed_raw is not None else ""
+    new_untimed = []
 
-    new_untimed = [
-    {
-        "id": f"u_{int(datetime.now().timestamp() * 1000)}_{i}",
-        "text": line.strip()
-    }
-    for i, line in enumerate(untimed_raw.splitlines())
-    if line.strip()
-    ]
+    if untimed_raw:
+        new_untimed = [
+            {
+                "id": f"u_{int(datetime.now().timestamp() * 1000)}_{i}",
+                "text": line.strip()
+            }
+            for i, line in enumerate(untimed_raw.splitlines())
+            if line.strip()
+        ]
 
 
     raw_existing = existing_meta.get("untimed_tasks", [])
@@ -1194,10 +1197,22 @@ def remove_untimed_task(plan_date, task_id):
 
     meta = json.loads(row.get("plan") or "{}")
 
-    meta["untimed_tasks"] = [
-        t for t in meta.get("untimed_tasks", [])
-        if t.get("id") != task_id
-    ]
+    cleaned = []
+
+    for t in meta.get("untimed_tasks", []):
+        if isinstance(t, str):
+            # Legacy string → skip only if text matches
+            if f"legacy_{hash(t)}" != task_id:
+                cleaned.append({
+                    "id": f"legacy_{hash(t)}",
+                    "text": t
+                })
+        else:
+            if t.get("id") != task_id:
+                cleaned.append(t)
+
+    meta["untimed_tasks"] = cleaned
+
 
     update(
         "daily_slots",
@@ -1954,7 +1969,7 @@ textarea { width:100%; min-height:90px; font-size:15px; }
     </div>
 
    <div style="margin-top:8px; color:#475569;">
-      • <b>@</b> Time is required (e.g. @9am or @9am to 10am)<br>
+      • <b>@</b> • @ Time is optional (tasks without time go to Untimed)(e.g. @9am or @9am to 10am)<br>
       • <b>on</b> Date (optional): tomorrow | next monday | on 15Feb<br>
       • <b>Q1–Q4</b> Eisenhower quadrant (optional)<br>
       • <b>$</b> Priority: Critical | High | Medium | Low<br>
