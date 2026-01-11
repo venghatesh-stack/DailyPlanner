@@ -2742,7 +2742,7 @@ select {
                                    onclick="
                                           const task = this.closest('.task');
                                           task.classList.add('removed');
-                                          task.querySelector("input[name^='{{ q }}_deleted']").value = "1";
+                                          task.querySelector("input[name='{{ q }}_deleted[{{ t.id }}]']").value = "1";
 
                                           const textarea = task.querySelector('textarea');
                                           if (textarea) textarea.disabled = true;
@@ -2825,7 +2825,7 @@ select {
                                   onclick="
                                         const task = this.closest('.task');
                                         task.classList.add('removed');
-                                        task.querySelector("input[name^='{{ q }}_deleted']").value = "1";
+                                        task.querySelector("input[name='{{ q }}_deleted[{{ t.id }}]']").value = "1";
                                         const textarea = task.querySelector('textarea');
                                         if (textarea) textarea.disabled = true;
                                       ">🗑</button>
