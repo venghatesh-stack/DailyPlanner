@@ -2239,6 +2239,8 @@ function cycleStatus(el){
 </script>
 {% endif %}
 <script>
+### CHANGED: define JS-safe plan date once
+const PLAN_DATE = {{ plan_date | tojson }};
 function promoteUntimed(btn) {
   const modal = document.getElementById("modal");
   const content = document.getElementById("modal-content");
@@ -2280,13 +2282,14 @@ function promoteUntimed(btn) {
 
 
 function confirmPromote(id, quadrant) {
+  
   fetch("/untimed/promote", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       id,
       quadrant,
-      plan_date: {{ plan_date |tojson }}
+      plan_date: PLAN_DATE
     })
   }).then(() => location.reload());
 }
@@ -2304,7 +2307,7 @@ function scheduleUntimed(id) {
     <div id="task-preview" style="margin-bottom:8px;"></div>
 
     <label>Date</label>
-    <input type="date" id="d" value={{ plan_date | tojson }}><br><br>
+    <input type="date" id="d" value="${PLAN_DATE}"><br><br>
 
     <label>Start Time</label>
     <input type="time" id="t"><br><br>
