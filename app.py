@@ -1763,14 +1763,21 @@ def summary():
 
 @app.route("/untimed/promote", methods=["POST"])
 @login_required
+@app.route("/untimed/promote", methods=["POST"])
+@login_required
 def promote_untimed():
     data = request.get_json()
+
     plan_date = date.fromisoformat(data["plan_date"])
     task_id = data["id"]
     text = data["text"]
-    quadrant = data["quadrant"]
 
-    # 1️⃣ Insert into Eisenhower
+    raw_q = data["quadrant"].upper()
+    if raw_q not in QUADRANT_MAP:
+        return ("Invalid quadrant", 400)
+
+    quadrant = QUADRANT_MAP[raw_q]
+
     post(
         "todo_matrix",
         {
@@ -1785,10 +1792,9 @@ def promote_untimed():
         },
     )
 
-    # 2️⃣ Remove from untimed
     remove_untimed_task(plan_date, task_id)
-
     return ("", 204)
+
 @app.route("/untimed/schedule", methods=["POST"])
 @login_required
 def schedule_untimed():
