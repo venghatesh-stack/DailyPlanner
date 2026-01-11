@@ -2202,6 +2202,7 @@ function confirmSchedule(id){
 
     document.getElementById("finalText").value = combined;
   });
+  modal.style.display = "flex";
 }
 
 function saveFinalSchedule(id,date,start_slot,slots){
