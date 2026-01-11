@@ -847,7 +847,10 @@ def save_todo(plan_date, form):
             for key, value in form.items()
             if key.startswith(f"{quadrant}_deleted[")
         }
-
+        # ✅ ADD THIS HERE (once)
+        deleted_ids |= {
+            tid for tid, flag in deleted_map.items() if flag == "1"
+        }
         # -----------------------------------
         # Iterate tasks
         # -----------------------------------
@@ -856,12 +859,6 @@ def save_todo(plan_date, form):
                 continue
 
             task_id = str(ids[idx])
-
-            # ✅ SOFT DELETE (ID-based, authoritative)
-           # PRE-COMPUTE deleted IDs per quadrant
-            deleted_ids |= {
-                tid for tid, flag in deleted_map.items() if flag == "1"
-            }
             if task_id in deleted_ids:
               seen_ids.add(task_id)
               continue
@@ -2745,7 +2742,10 @@ select {
                                     title="Removed after Save"  
                                     onclick="
                                       const task = this.closest('.task');
+                                      
                                       task.classList.add('removed');
+                                      task.style.transition = "background 0.15s ease";
+                                      task.offsetHeight; // 👈 force repaint
 
                                       const del = task.querySelector('input[type=hidden][name^=\'{{ q }}_deleted\']');
                                       if (del) del.value = '1';
@@ -2830,7 +2830,10 @@ select {
                                   title="Removed after Save"
                                   onclick="
                                       const task = this.closest('.task');
+                                      
                                       task.classList.add('removed');
+                                      task.style.transition = "background 0.15s ease";
+                                      task.offsetHeight; // 👈 force repaint
 
                                       const del = task.querySelector('input[type=hidden][name^=\'{{ q }}_deleted\']');
                                       if (del) del.value = '1';
