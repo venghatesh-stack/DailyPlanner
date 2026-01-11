@@ -2239,7 +2239,6 @@ function cycleStatus(el){
 </script>
 {% endif %}
 <script>
-### CHANGED: define JS-safe plan date once
 const PLAN_DATE = {{ plan_date | tojson }};
 function promoteUntimed(btn) {
   const modal = document.getElementById("modal");
