@@ -2888,7 +2888,7 @@ function addTask(q, category = "General", subcategory = "General") {
 
   row.innerHTML = `
     <input type="hidden" name="${q}_id[]" value="${id}">
-    <input type="hidden" name="${q}_deleted[]" value="0">
+    <input type="hidden" name="${q}_deleted[${id}]" value="0">
     <input type="hidden" name="${q}_category[]" value="${category}">
     <input type="hidden" name="${q}_subcategory[]" value="${subcategory}">
     <input type="hidden" name="${q}_done_state[${id}]" value="0">
