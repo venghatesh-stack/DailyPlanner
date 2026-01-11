@@ -4,10 +4,11 @@ from functools import wraps
 import os
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
+from collections import defaultdict
 import calendar
 import urllib.parse
 import json
-
+import re
 from supabase_client import get, post, delete, update
 from logger import setup_logger
 
@@ -231,57 +232,8 @@ def google_calendar_link(plan_date, slot, task):
         params
     )
     
-from collections import defaultdict
 
-def daily_summary(plan_date):
-    rows = get(
-        "daily_slots",
-        params={
-            "plan_date": f"eq.{plan_date}",
-            "slot": f"neq.{META_SLOT}",
-            "select": "plan,priority,tags",
-        },
-    ) or []
 
-    summary = defaultdict(lambda: defaultdict(list))
-
-    for r in rows:
-        tags = r.get("tags") or ["untagged"]
-        priority = r.get("priority") or "Medium"
-
-        for t in tags:
-            summary[t][priority].append(r["plan"])
-
-    return summary
-def weekly_summary(start_date, end_date):
-    rows = get(
-        "daily_slots",
-        params={
-            "plan_date": f"gte.{start_date}&lte.{end_date}",
-            "slot": f"neq.{META_SLOT}",
-            "select": "plan_date,priority,tags",
-        },
-    ) or []
-
-    by_day = defaultdict(lambda: defaultdict(int))
-    by_tag = defaultdict(int)
-    by_priority = defaultdict(int)
-
-    for r in rows:
-        day = r["plan_date"]
-        priority = r.get("priority") or "Medium"
-        tags = r.get("tags") or ["untagged"]
-
-        by_day[day][priority] += 1
-        by_priority[priority] += 1
-        for t in tags:
-            by_tag[t] += 1
-
-    return {
-        "by_day": dict(by_day),
-        "by_tag": dict(by_tag),
-        "by_priority": dict(by_priority),
-    }
 def slots_to_timerange(slots):
     slots = sorted(slots)
     start_min = (slots[0] - 1) * 30
@@ -291,7 +243,8 @@ def slots_to_timerange(slots):
     end = datetime.min + timedelta(minutes=end_min)
 
     return f"{start.strftime('%I:%M %p').lstrip('0')}–{end.strftime('%I:%M %p').lstrip('0')}"
-from collections import defaultdict
+
+
 
 def get_daily_summary(plan_date):
     rows = get(
@@ -303,7 +256,12 @@ def get_daily_summary(plan_date):
         },
     ) or []
 
-    grouped = defaultdict(lambda: {"slots": [], "priority": "Medium", "tags": []})
+    # Phase 1: group slots by task + tags
+    grouped = defaultdict(lambda: {
+        "slots": [],
+        "priority": "Medium",
+        "tags": []
+    })
 
     for r in rows:
         if not r.get("plan"):
@@ -316,9 +274,13 @@ def get_daily_summary(plan_date):
         grouped[key]["priority"] = r.get("priority") or "Medium"
         grouped[key]["tags"] = tags
 
+    # Phase 2: build summary (sorted by start time)
     summary = defaultdict(lambda: defaultdict(list))
 
-    for (task, _), data in grouped.items():
+    for (task, _), data in sorted(
+        grouped.items(),
+        key=lambda x: min(x[1]["slots"])
+    ):
         time_range = slots_to_timerange(data["slots"])
         label = f"{task}@{time_range}"
 
@@ -326,6 +288,10 @@ def get_daily_summary(plan_date):
             summary[tag][data["priority"]].append(label)
 
     return summary
+# NOTE:
+# Weekly summary is intentionally compact (day → tasks with time).
+# Tag and priority aggregation is handled only in daily summary to avoid noise.
+
 def get_weekly_summary(start_date, end_date):
     rows = get(
         "daily_slots",
@@ -350,12 +316,18 @@ def get_weekly_summary(start_date, end_date):
 
     summary = defaultdict(list)
 
-    for day, tasks in grouped.items():
-        for (task, _), data in tasks.items():
+    # ✅ FIXED indentation + sorted by time
+    for day in sorted(grouped.keys()):
+        tasks = grouped[day]
+        for (task, _), data in sorted(
+            tasks.items(),
+            key=lambda x: min(x[1]["slots"])
+        ):
             time_range = slots_to_timerange(data["slots"])
             summary[day].append(f"{task}@{time_range}")
 
     return dict(summary)
+
 
 # ==========================================================
 # DATA ACCESS – DAILY PLANNER
@@ -1146,7 +1118,6 @@ def enable_travel_mode(plan_date):
 def safe_date(year: int, month: int, day: int) -> date:
     last_day = calendar.monthrange(year, month)[1]
     return date(year, month, min(day, last_day))
-import re
 
 def extract_tags(text):
     return list(set(tag.lower() for tag in re.findall(r"#(\w+)", text)))
