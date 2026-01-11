@@ -2149,8 +2149,8 @@ function scheduleUntimed(id){
     "<button onclick=\\"modal.style.display='none'\\">Cancel</button> " +
     "<button onclick=\\"confirmSchedule('" + id + "')\\">Continue</button>";
 
-  content.querySelector("#preview").textContent = text;
-  modal.style.display = "flex";
+    content.querySelector("#preview").textContent = text;
+    modal.style.display = "flex";
 }
 
 function confirmSchedule(id){
@@ -2201,8 +2201,9 @@ function confirmSchedule(id){
       "<button onclick=\\"saveFinalSchedule('" + id + "','" + date + "',"+start_slot+","+slots+")\\">Save</button>";
 
     document.getElementById("finalText").value = combined;
+     modal.style.display = "flex";
   });
-  modal.style.display = "flex";
+ 
 }
 
 function saveFinalSchedule(id,date,start_slot,slots){
