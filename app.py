@@ -792,7 +792,7 @@ def save_todo(plan_date, form):
     logger.info("Saving Eisenhower matrix (batched)")
 
     # -----------------------------------
-    # Load existing (non-deleted) IDs
+    # Load existing (non-deleted) rows
     # -----------------------------------
     existing_rows = (
         get(
@@ -806,17 +806,16 @@ def save_todo(plan_date, form):
         or []
     )
 
+    existing_ids = {str(r["id"]) for r in existing_rows}
     existing_recurring_map = {
         str(r["id"]): r.get("recurring_id") for r in existing_rows
     }
+    existing = {str(r["id"]): r.get("recurring_id") for r in existing_rows}
 
-    existing_ids = {str(r["id"]) for r in existing_rows}
     seen_ids = set()
     deleted_ids = set()
     updates = []
     inserts = []
-    existing = {r["id"]: r.get("recurring_id") for r in existing_rows}
-    
 
     # -----------------------------------
     # Process quadrants
@@ -826,42 +825,47 @@ def save_todo(plan_date, form):
         dates = form.getlist(f"{quadrant}_date[]")
         times = form.getlist(f"{quadrant}_time[]")
         ids = form.getlist(f"{quadrant}_id[]")
-        deleted_flags = form.getlist(f"{quadrant}_deleted[]")
+        categories = form.getlist(f"{quadrant}_category[]")
+        subcategories = form.getlist(f"{quadrant}_subcategory[]")
 
-
-        # Build done_state
+        # -----------------------------------
+        # Build DONE state map (by ID)
+        # -----------------------------------
         done_state = {}
         prefix = f"{quadrant}_done_state["
 
         for key, values in form.to_dict(flat=False).items():
             if key.startswith(prefix) and key.endswith("]"):
-                task_id = key[len(prefix) : -1]
+                task_id = key[len(prefix):-1]
                 done_state[task_id] = values
 
+        # -----------------------------------
+        # Build DELETE map (by ID)  ✅ FIX
+        # -----------------------------------
+        deleted_map = {
+            key[len(f"{quadrant}_deleted["):-1]: value
+            for key, value in form.items()
+            if key.startswith(f"{quadrant}_deleted[")
+        }
+
+        # -----------------------------------
+        # Iterate tasks
+        # -----------------------------------
         for idx, text in enumerate(texts):
-            # ===============================
-            # ### FIX 1: guard invalid index
-            # ===============================
             if idx >= len(ids):
                 continue
+
             task_id = str(ids[idx])
 
-            # ===============================
-            # ### FIX 2: handle soft delete
-            # ===============================
-            if idx < len(deleted_flags) and deleted_flags[idx] == "1":
-              deleted_ids.add(task_id)   # ### FIX 2B
-              seen_ids.add(task_id)
-              continue                   # stop processing completely
+            # ✅ SOFT DELETE (ID-based, authoritative)
+            if deleted_map.get(task_id) == "1":
+                deleted_ids.add(task_id)
+                seen_ids.add(task_id)
+                continue
 
-            text = text.strip()
+            text = (text or "").strip()
             if not text:
                 continue
-
-            if idx >= len(ids):
-                continue
-
-            task_id = str(ids[idx])
 
             task_date = dates[idx] if idx < len(dates) and dates[idx] else None
             task_time = times[idx] if idx < len(times) and times[idx] else None
@@ -875,47 +879,32 @@ def save_todo(plan_date, form):
                 "is_done": is_done,
                 "position": idx,
                 "is_deleted": False,
+                "category": categories[idx] if idx < len(categories) else "General",
+                "subcategory": subcategories[idx] if idx < len(subcategories) else "General",
             }
-            ### Category, Sub Category Changes start here ###
-            ### Category, Sub Category Changes start here ###
-            ### Category, Sub Category Changes start here ###
-            categories = form.getlist(f"{quadrant}_category[]")
-            subcategories = form.getlist(f"{quadrant}_subcategory[]")
-            ### Category, Subcategory code ends here ###
-
-            base_payload.update(
-                {
-                    "category": categories[idx] if idx < len(categories) else "General",
-                    "subcategory": subcategories[idx]
-                    if idx < len(subcategories)
-                    else "General",
-                }
-            )
-
-            ### Category, Subcategory code ends here ###
-
-            ### Category, Subcategory code ends here ###
 
             if task_id in existing_ids:
-                payload = {
+                updates.append({
                     "id": task_id,
                     "plan_date": str(plan_date),
                     "recurring_id": existing_recurring_map.get(task_id),
                     **base_payload,
-                }
+                })
                 seen_ids.add(task_id)
-                updates.append(payload)
             else:
-                payload = {"plan_date": str(plan_date), **base_payload}
-
-                inserts.append(payload)
+                inserts.append({
+                    "plan_date": str(plan_date),
+                    **base_payload,
+                })
 
     # -----------------------------------
-    # BULK UPSERT existing rows
+    # BULK UPSERT updates
     # -----------------------------------
     if updates:
         post(
-            "todo_matrix?on_conflict=id", updates, prefer="resolution=merge-duplicates"
+            "todo_matrix?on_conflict=id",
+            updates,
+            prefer="resolution=merge-duplicates",
         )
 
     # -----------------------------------
@@ -925,11 +914,8 @@ def save_todo(plan_date, form):
         post("todo_matrix", inserts)
 
     # -----------------------------------
-    # BULK SOFT DELETE removed rows
+    # FINAL SOFT DELETE (authoritative)
     # -----------------------------------
-    # -----------------------------------
-# FINAL SOFT DELETE (authoritative)
-# -----------------------------------
     all_deleted = deleted_ids | {
         tid
         for tid, rid in existing.items()
@@ -943,13 +929,13 @@ def save_todo(plan_date, form):
             json={"is_deleted": True},
         )
 
-
     logger.info(
         "Eisenhower save complete: %d updates, %d inserts, %d deletions",
         len(updates),
         len(inserts),
         len(all_deleted),
     )
+
 
 
 def materialize_recurring_tasks(plan_date):
@@ -2718,7 +2704,10 @@ select {
                       <div class="task {% if t.done %}done{% endif %}">
                         <input type="hidden" name="{{ q }}_id[]" value="{{ t.id }}">
                         <!-- 👇 ADD THIS LINE -->
-                        <input type="hidden" name="{{ q }}_deleted[]" value="0">
+                        <input type="hidden"
+                          name="{{ q }}_deleted[{{ t.id }}]"
+                          value="0">
+
                         <div class="task-main">
                           <span class="task-index">{{ loop.index }}.</span>
 
@@ -2753,7 +2742,8 @@ select {
                                    onclick="
                                           const task = this.closest('.task');
                                           task.classList.add('removed');
-                                          task.querySelector('input[name$=_deleted\\[\\]]').value = '1';
+                                          task.querySelector("input[name^='{{ q }}_deleted']").value = "1";
+
                                           const textarea = task.querySelector('textarea');
                                           if (textarea) textarea.disabled = true;
                                         "
@@ -2798,7 +2788,10 @@ select {
                     <div class="task {% if t.done %}done{% endif %}">
                       <input type="hidden" name="{{ q }}_id[]" value="{{ t.id }}">
                       <!-- 👇 ADD THIS LINE -->
-                      <input type="hidden" name="{{ q }}_deleted[]" value="0">
+                      <input type="hidden"
+                      name="{{ q }}_deleted[{{ t.id }}]"
+                      value="0">
+
                       <div class="task-main">
                         <span class="task-index">{{ loop.index }}.</span>
 
@@ -2832,7 +2825,7 @@ select {
                                   onclick="
                                         const task = this.closest('.task');
                                         task.classList.add('removed');
-                                        task.querySelector('input[name$=_deleted\\[\\]]').value = '1';
+                                        task.querySelector("input[name^='{{ q }}_deleted']").value = "1";
                                         const textarea = task.querySelector('textarea');
                                         if (textarea) textarea.disabled = true;
                                       ">🗑</button>
