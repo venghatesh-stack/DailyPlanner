@@ -919,24 +919,20 @@ def save_todo(plan_date, form):
     # -----------------------------------
     # FINAL SOFT DELETE (authoritative)
     # -----------------------------------
-    all_deleted = deleted_ids | {
-        tid
-        for tid, rid in existing.items()
-        if tid not in seen_ids and rid is None
-    }
+    if deleted_ids:
+      update(
+          "todo_matrix",
+          params={"id": f"in.({','.join(deleted_ids)})"},
+          json={"is_deleted": True},
+      )
 
-    if all_deleted:
-        update(
-            "todo_matrix",
-            params={"id": f"in.({','.join(all_deleted)})"},
-            json={"is_deleted": True},
-        )
+   
 
     logger.info(
         "Eisenhower save complete: %d updates, %d inserts, %d deletions",
         len(updates),
         len(inserts),
-        len(all_deleted),
+        len(deleted_ids),
     )
 
 
