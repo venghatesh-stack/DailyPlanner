@@ -391,7 +391,11 @@ def load_day(plan_date, tag=None):
         plans[r["slot"]] = {
             "plan": r.get("plan") or "",
             "status": r.get("status") or DEFAULT_STATUS,
+            "priority": r.get("priority"),
+            "category": r.get("category"),
+            "tags": row_tags,
         }
+
 
     return plans, habits, reflection,untimed_tasks
 
@@ -2254,6 +2258,23 @@ function confirmSchedule(id, text) {
 }
 
 </script>
+<!-- Modal (REQUIRED for Promote / Schedule) -->
+<div id="modal" style="
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.35);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+">
+  <div style="
+    background:#fff;
+    padding:18px;
+    width:320px;
+    border-radius:14px;
+  " id="modal-content"></div>
+</div>
 
 </body>
 </html>
