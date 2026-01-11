@@ -300,9 +300,11 @@ def save_day(plan_date, form):
             line = line.strip()
             if not line:
                 continue
-            if "@" not in line:
-              logger.warning(f"Smart planner skipped (missing time): {line}")
-              continue
+            # Accept "@9am" OR "from 9am to 10am"
+            if not re.search(r"(@\s*\d|\bfrom\s+\d)", line, re.I):
+                logger.warning(f"Smart planner skipped (missing time): {line}")
+                continue
+
             try:
                 parsed = parse_planner_input(line, plan_date)
                 task_date = parsed["date"]
