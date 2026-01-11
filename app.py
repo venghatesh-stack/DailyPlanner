@@ -1763,8 +1763,6 @@ def summary():
 
 @app.route("/untimed/promote", methods=["POST"])
 @login_required
-@app.route("/untimed/promote", methods=["POST"])
-@login_required
 def promote_untimed():
     data = request.get_json()
 
