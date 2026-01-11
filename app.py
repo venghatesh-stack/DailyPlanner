@@ -346,7 +346,7 @@ def load_day(plan_date, tag=None):
             "daily_slots",
             params={
                 "plan_date": f"eq.{plan_date}",
-                "select": "slot,plan,status,tags",
+                "select": "slot,plan,status,priority,category,tags",
             },
         )
         or []
@@ -2286,7 +2286,7 @@ function confirmPromote(id, quadrant) {
     body: JSON.stringify({
       id,
       quadrant,
-      plan_date: "{{ plan_date }}"
+      plan_date: "{{ plan_date |tojson }}"
     })
   }).then(() => location.reload());
 }
