@@ -863,7 +863,6 @@ def save_todo(plan_date, form):
 
             task_id = str(ids[idx])
             if task_id in deleted_ids:
-              seen_ids.add(task_id)
               continue
 
 
