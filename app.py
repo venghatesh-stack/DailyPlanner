@@ -939,20 +939,30 @@ def extract_tags(text):
 def parse_time_token(token, plan_date):
     token = token.lower().strip()
 
-    # 🔒 strip anything after time
-    token = re.split(r"[^0-9apm:]", token)[0]
+    # 🔒 Extract time safely FIRST (space-aware)
+    match = re.search(
+        r"\b(\d{1,2})(?:[:\.](\d{2}))?\s*(am|pm)\b",
+        token
+    )
 
-    token = token.replace(" ", "")
-    token = token.replace(".", ":")
+    if not match:
+        raise ValueError(f"Invalid time token: {token}")
 
-    if ":" in token:
-        fmt = "%I:%M%p"
-    else:
-        fmt = "%I%p"
+    hour, minute, meridiem = match.groups()
+
+    # Normalize
+    minute = minute or "00"
+    token = f"{hour}:{minute}{meridiem}"
+
+    # Validate ranges
+    if not (1 <= int(hour) <= 12):
+        raise ValueError(f"Invalid hour in time: {token}")
+    if not (0 <= int(minute) < 60):
+        raise ValueError(f"Invalid minute in time: {token}")
 
     return datetime.strptime(
         f"{plan_date} {token}",
-        f"%Y-%m-%d {fmt}",
+        "%Y-%m-%d %I:%M%p",
     )
 
 def extract_date(raw_text, default_date):
@@ -1054,16 +1064,17 @@ def parse_planner_input(raw_text, plan_date):
     # TIME PARSING (existing logic)
     # --------------------------------
     range_match = re.search(
-        r"@([0-9:\.apm\s]+)\s+to\s+([0-9:\.apm\s]+)",
+      r"(?:@|from)\s*([0-9:\.\s]*[apm]+)\s+to\s+([0-9:\.\s]*[apm]+)",
+      raw_text,
+      re.I,
+      )
+
+    single_match = re.search(
+        r"(?:@|from)\s*([0-9:\.\s]*[apm]+)",
         raw_text,
         re.I,
     )
 
-    single_match = re.search(
-        r"@([0-9:\.apm\s]+)",
-        raw_text,
-        re.I,
-    )
 
     if range_match:
         start_raw, end_raw = range_match.groups()
