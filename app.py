@@ -852,6 +852,7 @@ def save_todo(plan_date, form):
                     "id": task_id,
                     "is_deleted": True,
                 })
+                seen_ids.add(task_id)   # 👈 IMPORTANT
                 continue
             text = text.strip()
             if not text:
@@ -2754,11 +2755,14 @@ select {
                                     class="task-delete"
                                     title="Removed after Save"
                                     onclick="
-                                              const task = this.closest('.task');
-                                              task.classList.add('removed');
-                                              task.querySelector('input[name$=_deleted\\[\\]]').value = '1';
-                                              task.remove(); 
-                                            ">🗑</button>
+                                      const task = this.closest('.task');
+                                      task.classList.add('removed');
+                                      task.style.display = 'none';   // 👈 hide visually
+                                      task.querySelector('input[name$=_deleted\\[\\]]').value = '1';
+                                    ">
+                              🗑
+                            </button>
+
                           {% endif %}
 
                           {% if t.recurring %}
