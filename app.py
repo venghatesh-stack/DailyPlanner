@@ -787,99 +787,74 @@ def load_todo(plan_date):
 
 ### Category, Subcategory code ends here ###
 
-
 def save_todo(plan_date, form):
     logger.info("Saving Eisenhower matrix (batched)")
 
-    # -----------------------------------
-    # Load existing (non-deleted) rows
-    # -----------------------------------
-    existing_rows = (
-        get(
-            "todo_matrix",
-            params={
-                "plan_date": f"eq.{plan_date}",
-                "is_deleted": "eq.false",
-                "select": "id, recurring_id",
-            },
-        )
-        or []
-    )
+    existing_rows = get(
+        "todo_matrix",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "is_deleted": "eq.false",
+            "select": "id,recurring_id",
+        },
+    ) or []
 
     existing_ids = {str(r["id"]) for r in existing_rows}
     existing_recurring_map = {
         str(r["id"]): r.get("recurring_id") for r in existing_rows
     }
-    existing = {str(r["id"]): r.get("recurring_id") for r in existing_rows}
 
-    seen_ids = set()
-    deleted_ids = set()
     updates = []
     inserts = []
+    deleted_ids = set()
 
     # -----------------------------------
     # Process quadrants
     # -----------------------------------
     for quadrant in ["do", "schedule", "delegate", "eliminate"]:
         texts = form.getlist(f"{quadrant}[]")
+        ids = form.getlist(f"{quadrant}_id[]")
         dates = form.getlist(f"{quadrant}_date[]")
         times = form.getlist(f"{quadrant}_time[]")
-        ids = form.getlist(f"{quadrant}_id[]")
         categories = form.getlist(f"{quadrant}_category[]")
         subcategories = form.getlist(f"{quadrant}_subcategory[]")
 
-        # -----------------------------------
-        # Build DONE state map (by ID)
-        # -----------------------------------
+        # ---- DONE STATE ----
         done_state = {}
-        prefix = f"{quadrant}_done_state["
+        for k, v in form.to_dict(flat=False).items():
+            if k.startswith(f"{quadrant}_done_state["):
+                tid = k[len(f"{quadrant}_done_state["):-1]
+                done_state[tid] = v
 
-        for key, values in form.to_dict(flat=False).items():
-            if key.startswith(prefix) and key.endswith("]"):
-                task_id = key[len(prefix):-1]
-                done_state[task_id] = values
-
-        # -----------------------------------
-        # Build DELETE map (by ID)  ✅ FIX
-        # -----------------------------------
+        # ---- DELETE STATE (AUTHORITATIVE) ----
         deleted_map = {}
+        for k, v in form.to_dict(flat=False).items():
+            if k.startswith(f"{quadrant}_deleted["):
+                tid = k[len(f"{quadrant}_deleted["):-1]
+                deleted_map[tid] = v[-1]
 
-        for key, values in form.to_dict(flat=False).items():
-            if key.startswith(f"{quadrant}_deleted[") and key.endswith("]"):
-                task_id = key[len(f"{quadrant}_deleted["):-1]
-                # values is a list → take last
-                deleted_map[task_id] = values[-1]
-
-        # ✅ ADD THIS HERE (once)
-        deleted_ids |= {
-            tid for tid, flag in deleted_map.items() if flag == "1"
-        }
-        # -----------------------------------
-        # Iterate tasks
-        # -----------------------------------
+        # ---- ITERATE TASKS ----
         for idx, text in enumerate(texts):
             if idx >= len(ids):
                 continue
 
             task_id = str(ids[idx])
-            if task_id in deleted_ids:
-              continue
 
+            # ✅ HARD DELETE DECISION
+            if deleted_map.get(task_id) == "1":
+                deleted_ids.add(task_id)
+                continue
 
             text = (text or "").strip()
             if not text:
                 continue
 
-            task_date = dates[idx] if idx < len(dates) and dates[idx] else None
-            task_time = times[idx] if idx < len(times) and times[idx] else None
-            is_done = "1" in done_state.get(task_id, [])
-
-            base_payload = {
+            payload = {
                 "quadrant": quadrant,
                 "task_text": text,
-                "task_date": task_date,
-                "task_time": task_time,
-                "is_done": is_done,
+                "task_date": dates[idx] if idx < len(dates) else None,
+                "task_time": times[idx] if idx < len(times) else None,
+                "is_done": "1" in done_state.get(task_id, []),
                 "position": idx,
                 "is_deleted": False,
                 "category": categories[idx] if idx < len(categories) else "General",
@@ -891,42 +866,29 @@ def save_todo(plan_date, form):
                     "id": task_id,
                     "plan_date": str(plan_date),
                     "recurring_id": existing_recurring_map.get(task_id),
-                    **base_payload,
+                    **payload,
                 })
-                seen_ids.add(task_id)
             else:
                 inserts.append({
                     "plan_date": str(plan_date),
-                    **base_payload,
+                    **payload,
                 })
 
     # -----------------------------------
-    # BULK UPSERT updates
+    # WRITE CHANGES
     # -----------------------------------
     if updates:
-        post(
-            "todo_matrix?on_conflict=id",
-            updates,
-            prefer="resolution=merge-duplicates",
-        )
+        post("todo_matrix?on_conflict=id", updates, prefer="resolution=merge-duplicates")
 
-    # -----------------------------------
-    # BULK INSERT new rows
-    # -----------------------------------
     if inserts:
         post("todo_matrix", inserts)
 
-    # -----------------------------------
-    # FINAL SOFT DELETE (authoritative)
-    # -----------------------------------
     if deleted_ids:
-      update(
-          "todo_matrix",
-          params={"id": f"in.({','.join(deleted_ids)})"},
-          json={"is_deleted": True},
-      )
-
-   
+        update(
+            "todo_matrix",
+            params={"id": f"in.({','.join(deleted_ids)})"},
+            json={"is_deleted": True},
+        )
 
     logger.info(
         "Eisenhower save complete: %d updates, %d inserts, %d deletions",
