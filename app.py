@@ -390,6 +390,8 @@ def load_day(plan_date, tag=None):
 
 def save_day(plan_date, form):
     payload = []
+    auto_untimed = []
+
     # Track slots already filled by smart parsing
     smart_block = form.get("smart_plan", "").strip()
 
@@ -452,11 +454,12 @@ def save_day(plan_date, form):
             # -------------------------------------------------
             # CASE 2: No time and no quadrant → skip
             # -------------------------------------------------
-            if not has_time:
-                logger.warning(f"Smart planner skipped (missing time): {line}")
+            # CASE 2: No time and no quadrant → append to untimed tasks
+            if not has_time and not quadrant_match:
+                auto_untimed.append(line)
+                logger.info(f"Smart planner → untimed task: {line}")
                 continue
-    
-
+            existing_untimed = existing_meta.get("untimed_tasks", [])    
             try:
                 parsed = parse_planner_input(line, plan_date)
                 task_date = parsed["date"]
@@ -587,16 +590,14 @@ def save_day(plan_date, form):
     existing_untimed = existing_meta.get("untimed_tasks", [])
 
     meta = {
-        "habits": form.getlist("habits"),
-        "reflection": form.get("reflection", "").strip(),
+      "habits": form.getlist("habits"),
+      "reflection": form.get("reflection", "").strip(),
 
-        # 🔒 CRITICAL FIX:
-        # If textarea is empty, preserve existing untimed tasks
-        "untimed_tasks": new_untimed if untimed_raw else existing_untimed,
-    }
-
-
-
+      # ✅ Always append, never overwrite
+      "untimed_tasks": list(dict.fromkeys(
+          existing_untimed + auto_untimed + new_untimed
+      )),
+   }
     meta_payload = {
       "plan_date": str(plan_date),
       "slot": META_SLOT,
