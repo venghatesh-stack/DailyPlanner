@@ -297,6 +297,7 @@ def save_day(plan_date, form):
 
             try:
                 parsed = parse_planner_input(line, plan_date)
+                task_date = parsed["date"]
                 # --------------------------------------------
                 # AUTO-INSERT INTO EISENHOWER MATRIX (Q1–Q4)
                 # --------------------------------------------
@@ -305,7 +306,7 @@ def save_day(plan_date, form):
                     quadrant = parsed["quadrant"]
 
                     task_time = parsed["start"].strftime("%H:%M")
-                    task_date = parsed["date"]
+                   
                     existing = get(
                         "todo_matrix",
                         params={
