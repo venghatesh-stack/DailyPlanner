@@ -842,11 +842,14 @@ def save_todo(plan_date, form):
         # -----------------------------------
         # Build DELETE map (by ID)  ✅ FIX
         # -----------------------------------
-        deleted_map = {
-            key[len(f"{quadrant}_deleted["):-1]: value
-            for key, value in form.items()
-            if key.startswith(f"{quadrant}_deleted[")
-        }
+        deleted_map = {}
+
+        for key, values in form.to_dict(flat=False).items():
+            if key.startswith(f"{quadrant}_deleted[") and key.endswith("]"):
+                task_id = key[len(f"{quadrant}_deleted["):-1]
+                # values is a list → take last
+                deleted_map[task_id] = values[-1]
+
         # ✅ ADD THIS HERE (once)
         deleted_ids |= {
             tid for tid, flag in deleted_map.items() if flag == "1"
