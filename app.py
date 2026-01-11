@@ -460,17 +460,42 @@ def save_day(plan_date, form):
             )
 
     # ---- SAVE META (habits + reflection) ----
+    # ---- LOAD EXISTING META (for safe merge) ----
+    existing_meta = {}
+    existing_rows = get(
+        "daily_slots",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "slot": f"eq.{META_SLOT}",
+            "select": "plan",
+        },
+    )
+
+    if existing_rows:
+        try:
+            existing_meta = json.loads(existing_rows[0].get("plan") or "{}")
+        except Exception:
+            existing_meta = {}
+
     untimed_raw = form.get("untimed_tasks", "").strip()
+
+    new_untimed = [
+        line.strip()
+        for line in untimed_raw.splitlines()
+        if line.strip()
+    ]
+
+    existing_untimed = existing_meta.get("untimed_tasks", [])
 
     meta = {
         "habits": form.getlist("habits"),
         "reflection": form.get("reflection", "").strip(),
-        "untimed_tasks": [
-            line.strip()
-            for line in untimed_raw.splitlines()
-            if line.strip()
-        ],
+
+        # 🔒 CRITICAL FIX:
+        # If textarea is empty, preserve existing untimed tasks
+        "untimed_tasks": new_untimed if untimed_raw else existing_untimed,
     }
+
 
 
     meta_payload = {
