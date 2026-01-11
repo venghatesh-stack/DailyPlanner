@@ -2239,7 +2239,14 @@ function cycleStatus(el){
 </script>
 {% endif %}
 <script>
+/* ===============================
+   GLOBALS
+   =============================== */
 const PLAN_DATE = {{ plan_date | tojson }};
+
+/* ===============================
+   PROMOTE UNTYPED
+   =============================== */
 function promoteUntimed(btn) {
   const modal = document.getElementById("modal");
   const content = document.getElementById("modal-content");
@@ -2250,117 +2257,109 @@ function promoteUntimed(btn) {
   }
 
   const id = btn.dataset.id;
-
-  // 🔒 Always read text from DOM, never inject into JS strings
   const item = btn.closest(".untimed-item");
   if (!item) return;
 
   const text = item.dataset.text || "";
 
-  // Build structure WITHOUT user text
-  content.innerHTML = `
-    <h3>📋 Promote Task</h3>
-    <div id="task-preview" style="margin-bottom:12px;"></div>
-
-    <button type="button" onclick="confirmPromote('${id}','Q1')">🔥 Do Now</button><br>
-    <button type="button" onclick="confirmPromote('${id}','Q2')">📅 Schedule</button><br>
-    <button type="button" onclick="confirmPromote('${id}','Q3')">🤝 Delegate</button><br>
-    <button type="button" onclick="confirmPromote('${id}','Q4')">🗑 Eliminate</button><br><br>
-
-    <button type="button" onclick="modal.style.display='none'">Cancel</button>
-  `;
-
-  // ✅ Inject text safely
-  const preview = content.querySelector("#task-preview");
-  if (preview) {
-    preview.textContent = text;
-  }
-
-  modal.style.display = "flex";
-}
-
-
-function confirmPromote(id, quadrant) {
-  
-  fetch("/untimed/promote", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      id,
-      quadrant,
-      plan_date: PLAN_DATE
-    })
-  }).then(() => location.reload());
-}
-function scheduleUntimed(id) {
-  const item = document.querySelector(`.untimed-item[data-id="${id}"]`);
-  if (!item) return;
-
-  const text = item.dataset.text || "";
-
-  const modal = document.getElementById("modal");
-  const content = document.getElementById("modal-content");
-
-  content.innerHTML = `
-    <h3>🕒 Schedule Task</h3>
-    <div id="task-preview" style="margin-bottom:8px;"></div>
-
-    <label>Date</label>
-    <input type="date" id="d" value="${PLAN_DATE}"><br><br>
-
-    <label>Start Time</label>
-    <input type="time" id="t"><br><br>
-
-    <label>Duration</label><br>
-    <select id="dur">
-      <option value="1">30 min</option>
-      <option value="2">1 hr</option>
-      <option value="3">1.5 hr</option>
-      <option value="4">2 hr</option>
-    </select><br><br>
-
-    <button type="button" onclick="modal.style.display='none'">Cancel</button>
-    <button type="button" onclick="confirmSchedule('${id}')">Continue</button>
-  `;
+  content.innerHTML =
+    '<h3>📋 Promote Task</h3>' +
+    '<div id="task-preview" style="margin-bottom:12px;"></div>' +
+    '<button type="button" onclick="confirmPromote(\'' + id + '\',\'Q1\')">🔥 Do Now</button><br>' +
+    '<button type="button" onclick="confirmPromote(\'' + id + '\',\'Q2\')">📅 Schedule</button><br>' +
+    '<button type="button" onclick="confirmPromote(\'' + id + '\',\'Q3\')">🤝 Delegate</button><br>' +
+    '<button type="button" onclick="confirmPromote(\'' + id + '\',\'Q4\')">🗑 Eliminate</button><br><br>' +
+    '<button type="button" onclick="modal.style.display=\'none\'">Cancel</button>';
 
   content.querySelector("#task-preview").textContent = text;
   modal.style.display = "flex";
 }
 
+function confirmPromote(id, quadrant) {
+  fetch("/untimed/promote", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: id,
+      quadrant: quadrant,
+      plan_date: PLAN_DATE
+    })
+  }).then(() => location.reload());
+}
+
+/* ===============================
+   SCHEDULE UNTYPED
+   =============================== */
+function scheduleUntimed(id) {
+  const item = document.querySelector('.untimed-item[data-id="' + id + '"]');
+  if (!item) return;
+
+  const text = item.dataset.text || "";
+  const modal = document.getElementById("modal");
+  const content = document.getElementById("modal-content");
+
+  content.innerHTML =
+    '<h3>🕒 Schedule Task</h3>' +
+    '<div id="task-preview" style="margin-bottom:8px;"></div>' +
+
+    '<label>Date</label>' +
+    '<input type="date" id="d" value="' + PLAN_DATE + '"><br><br>' +
+
+    '<label>Start Time</label>' +
+    '<input type="time" id="t"><br><br>' +
+
+    '<label>Duration</label><br>' +
+    '<select id="dur">' +
+      '<option value="1">30 min</option>' +
+      '<option value="2">1 hr</option>' +
+      '<option value="3">1.5 hr</option>' +
+      '<option value="4">2 hr</option>' +
+    '</select><br><br>' +
+
+    '<button type="button" onclick="modal.style.display=\'none\'">Cancel</button>' +
+    '<button type="button" onclick="confirmSchedule(\'' + id + '\')">Continue</button>';
+
+  content.querySelector("#task-preview").textContent = text;
+  modal.style.display = "flex";
+}
+
+/* ===============================
+   CONFIRM SCHEDULE
+   =============================== */
 function confirmSchedule(id) {
-  const item = document.querySelector(`.untimed-item[data-id="${id}"]`);
+  const item = document.querySelector('.untimed-item[data-id="' + id + '"]');
   if (!item) return;
 
   const newText = item.dataset.text;
-
   const date = document.getElementById("d").value;
   const time = document.getElementById("t").value;
-  const slots = parseInt(document.getElementById("dur").value);
+  const slots = parseInt(document.getElementById("dur").value, 10);
 
   if (!time) {
     alert("Select start time");
     return;
   }
 
-  const [h, m] = time.split(":").map(Number);
+  const parts = time.split(":");
+  const h = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10);
   const start_slot = Math.floor((h * 60 + m) / 30) + 1;
 
-  // 🔹 Fetch existing planner content
   fetch("/untimed/slot-preview", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       plan_date: date,
-      start_slot,
+      start_slot: start_slot,
       slot_count: slots
     })
   })
   .then(r => r.json())
   .then(preview => {
 
-    const combined = preview.map(p => {
+    const combined = preview.map(function (p) {
       if (p.existing) {
-        return `${p.existing}\n---\n${newText}`;
+        return p.existing + "\n---\n" + newText;
       }
       return newText;
     }).join("\n\n");
@@ -2368,24 +2367,22 @@ function confirmSchedule(id) {
     const modal = document.getElementById("modal");
     const content = document.getElementById("modal-content");
 
-   content.innerHTML = `
-  <h3>✏️ Confirm Planner Content</h3>
-  <p>You can edit before saving:</p>
+    content.innerHTML =
+      '<h3>✏️ Confirm Planner Content</h3>' +
+      '<p>You can edit before saving:</p>' +
+      '<textarea id="finalText" style="width:100%;min-height:160px;"></textarea><br><br>' +
+      '<button type="button" onclick="modal.style.display=\'none\'">Cancel</button>' +
+      '<button type="button" onclick="saveFinalSchedule(\'' +
+        id + '\',\'' + date + '\',' + start_slot + ',' + slots +
+      ')">Save</button>';
 
-  <textarea id="finalText"
-            style="width:100%;min-height:160px;"></textarea>
-
-  <br><br>
-  <button type="button" onclick="modal.style.display='none'">Cancel</button>
-  <button type="button"
-          onclick="saveFinalSchedule('${id}','${date}',${start_slot},${slots})">
-    Save
-  </button>
-`;
-document.getElementById("finalText").value = combined;
-
+    document.getElementById("finalText").value = combined;
   });
 }
+
+/* ===============================
+   SAVE FINAL
+   =============================== */
 function saveFinalSchedule(id, date, start_slot, slots) {
   const finalText = document.getElementById("finalText").value;
 
@@ -2393,16 +2390,17 @@ function saveFinalSchedule(id, date, start_slot, slots) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      id,
+      id: id,
       plan_date: date,
-      start_slot,
+      start_slot: start_slot,
       slot_count: slots,
       final_text: finalText
     })
   }).then(() => location.reload());
 }
-
 </script>
+
+
 <!-- Modal (REQUIRED for Promote / Schedule) -->
 <div id="modal" style="
   position:fixed;
