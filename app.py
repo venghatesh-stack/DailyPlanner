@@ -358,7 +358,18 @@ def load_day(plan_date, tag=None):
                 meta = json.loads(r.get("plan") or "{}")
                 habits = set(meta.get("habits", []))
                 reflection = meta.get("reflection", "")
-                untimed_tasks = meta.get("untimed_tasks", [])
+                raw = meta.get("untimed_tasks", [])
+                untimed_tasks = []
+
+                for t in raw:
+                    if isinstance(t, str):
+                        untimed_tasks.append({
+                            "id": f"legacy_{hash(t)}",
+                            "text": t
+                        })
+                    else:
+                        untimed_tasks.append(t)
+
             except Exception:
                 pass
             continue
@@ -456,10 +467,14 @@ def save_day(plan_date, form):
             # -------------------------------------------------
             # CASE 2: No time and no quadrant → append to untimed tasks
             if not has_time and not quadrant_match:
-                auto_untimed.append(line)
+                auto_untimed.append({
+                    "id": f"u_{int(datetime.now().timestamp() * 1000)}",
+                    "text": line
+                })
+
                 logger.info(f"Smart planner → untimed task: {line}")
                 continue
-            existing_untimed = existing_meta.get("untimed_tasks", [])    
+            
             try:
                 parsed = parse_planner_input(line, plan_date)
                 task_date = parsed["date"]
@@ -582,22 +597,26 @@ def save_day(plan_date, form):
     untimed_raw = form.get("untimed_tasks", "").strip()
 
     new_untimed = [
-        line.strip()
-        for line in untimed_raw.splitlines()
-        if line.strip()
+    {
+        "id": f"u_{int(datetime.now().timestamp() * 1000)}_{i}",
+        "text": line.strip()
+    }
+    for i, line in enumerate(untimed_raw.splitlines())
+    if line.strip()
     ]
 
+
     existing_untimed = existing_meta.get("untimed_tasks", [])
+    merged = {}
+    for t in existing_untimed + auto_untimed + new_untimed:
+      merged[t["id"]] = t
 
     meta = {
-      "habits": form.getlist("habits"),
-      "reflection": form.get("reflection", "").strip(),
+        "habits": form.getlist("habits"),
+        "reflection": form.get("reflection", "").strip(),
+        "untimed_tasks": list(merged.values()),
+    }
 
-      # ✅ Always append, never overwrite
-      "untimed_tasks": list(dict.fromkeys(
-          existing_untimed + auto_untimed + new_untimed
-      )),
-   }
     meta_payload = {
       "plan_date": str(plan_date),
       "slot": META_SLOT,
@@ -1151,6 +1170,31 @@ def parse_time_token(token, plan_date):
         f"{plan_date} {token}",
         "%Y-%m-%d %I:%M%p",
     )
+def remove_untimed_task(plan_date, task_id):
+    row = get(
+        "daily_slots",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "slot": f"eq.{META_SLOT}",
+            "select": "plan",
+        },
+    )[0]
+
+    meta = json.loads(row.get("plan") or "{}")
+
+    meta["untimed_tasks"] = [
+        t for t in meta.get("untimed_tasks", [])
+        if t.get("id") != task_id
+    ]
+
+    update(
+        "daily_slots",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "slot": f"eq.{META_SLOT}",
+        },
+        json={"plan": json.dumps(meta)},
+    )
 
 def extract_date(raw_text, default_date):
     """
@@ -1689,6 +1733,65 @@ def summary():
         date=today,
     )
 
+@app.route("/untimed/promote", methods=["POST"])
+@login_required
+def promote_untimed():
+    data = request.get_json()
+    plan_date = date.fromisoformat(data["plan_date"])
+    task_id = data["id"]
+    text = data["text"]
+    quadrant = data["quadrant"]
+
+    # 1️⃣ Insert into Eisenhower
+    post(
+        "todo_matrix",
+        {
+            "plan_date": str(plan_date),
+            "quadrant": quadrant,
+            "task_text": text,
+            "is_done": False,
+            "is_deleted": False,
+            "position": 0,
+            "category": "General",
+            "subcategory": "General",
+        },
+    )
+
+    # 2️⃣ Remove from untimed
+    remove_untimed_task(plan_date, task_id)
+
+    return ("", 204)
+@app.route("/untimed/schedule", methods=["POST"])
+@login_required
+def schedule_untimed():
+    data = request.get_json()
+
+    plan_date = date.fromisoformat(data["plan_date"])
+    task_id = data["id"]
+    text = data["text"]
+    start_slot = int(data["start_slot"])
+    slot_count = int(data["slot_count"])
+
+    payload = []
+    for i in range(slot_count):
+        slot = start_slot + i
+        if 1 <= slot <= TOTAL_SLOTS:
+            payload.append({
+                "plan_date": str(plan_date),
+                "slot": slot,
+                "plan": text,
+                "status": DEFAULT_STATUS,
+            })
+
+    post(
+        "daily_slots?on_conflict=plan_date,slot",
+        payload,
+        prefer="resolution=merge-duplicates",
+    )
+
+    remove_untimed_task(plan_date, task_id)
+
+    return ("", 204)
 
 ### Travel mode Code Changes ###
 
@@ -1864,17 +1967,31 @@ Workout @6am to 7am $High %Personal
   style="width:100%; min-height:120px; margin-bottom:16px;"
 ></textarea>
 <h3>🗒 Tasks (No Time Yet)</h3>
+
 <textarea
   name="untimed_tasks"
-  placeholder="
-Tasks without a specific time.
-Examples:
-- Fix prod bug
-- Decide quarterly goals
-- Talk to finance team
-"
-  style="width:100%; min-height:120px; margin-bottom:16px;"
->{{ untimed_tasks | join('\n') }}</textarea>
+  placeholder="Tasks without a specific time"
+  style="width:100%; min-height:120px; margin-bottom:12px;"
+></textarea>
+
+<div>
+{% for t in untimed_tasks %}
+  <div style="padding:8px 0;border-bottom:1px solid #eee;">
+    <div>{{ t.text }}</div>
+    <div style="margin-top:6px;">
+      <button type="button"
+              onclick="promoteUntimed('{{ t.id }}','{{ t.text }}')">
+        📋 Promote
+      </button>
+      <button type="button"
+              onclick="scheduleUntimed('{{ t.id }}','{{ t.text }}')">
+        🕒 Schedule
+      </button>
+    </div>
+  </div>
+{% endfor %}
+</div>
+
 
 <div style="font-size:13px; color:#475569; margin-bottom:12px;">
   • These tasks are saved for the day<br>
@@ -1956,6 +2073,42 @@ function cycleStatus(el){
   }, 2500);
 </script>
 {% endif %}
+<script>
+function promoteUntimed(id, text) {
+  const q = prompt("Move to which quadrant? (Q1 / Q2 / Q3 / Q4)");
+  if (!q) return;
+
+  fetch("/untimed/promote", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: id,
+      text: text,
+      quadrant: q.toLowerCase(),
+      plan_date: "{{ plan_date }}"
+    })
+  }).then(() => location.reload());
+}
+
+function scheduleUntimed(id, text) {
+  const start = prompt("Start slot (1–48)");
+  const slots = prompt("Number of 30-min slots");
+
+  if (!start || !slots) return;
+
+  fetch("/untimed/schedule", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: id,
+      text: text,
+      start_slot: start,
+      slot_count: slots,
+      plan_date: "{{ plan_date }}"
+    })
+  }).then(() => location.reload());
+}
+</script>
 
 </body>
 </html>
