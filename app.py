@@ -441,6 +441,20 @@ def save_day(plan_date, form):
                     )
 
                     if not existing:
+                        max_pos = get(
+                        "todo_matrix",
+                        params={
+                            "plan_date": f"eq.{plan_date}",
+                            "quadrant": f"eq.{quadrant}",
+                            "is_deleted": "eq.false",
+                            "select": "position",
+                            "order": "position.desc",
+                            "limit": 1,
+                         },
+                        )
+
+                        next_pos = max_pos[0]["position"] + 1 if max_pos else 0
+
                         post(
                             "todo_matrix",
                             {
@@ -449,7 +463,7 @@ def save_day(plan_date, form):
                                 "task_text": parsed["title"],
                                 "is_done": False,
                                 "is_deleted": False,
-                                "position": 0,
+                                "position": next_pos,
                                 "category": parsed["category"],
                                 "subcategory": "General",
                             },
@@ -467,13 +481,12 @@ def save_day(plan_date, form):
             # -------------------------------------------------
             # CASE 2: No time and no quadrant → append to untimed tasks
             if not has_time and not quadrant_match:
-                auto_untimed.append({
-                    "id": f"u_{int(datetime.now().timestamp() * 1000)}",
+              auto_untimed.append({
+                    "id": f"u_{int(datetime.now().timestamp() * 1000)}_{len(auto_untimed)}",
                     "text": line
                 })
-
-                logger.info(f"Smart planner → untimed task: {line}")
-                continue
+              logger.info(f"Smart planner → untimed task: {line}")
+              continue
             
             try:
                 parsed = parse_planner_input(line, plan_date)
@@ -498,7 +511,21 @@ def save_day(plan_date, form):
                     )
 
                     if not existing:
-                        post(
+                      max_pos = get(
+                            "todo_matrix",
+                            params={
+                                "plan_date": f"eq.{task_date}",
+                                "quadrant": f"eq.{quadrant}",
+                                "is_deleted": "eq.false",
+                                "select": "position",
+                                "order": "position.desc",
+                                "limit": 1,
+                            },
+                        )
+
+                      next_pos = max_pos[0]["position"] + 1 if max_pos else 0
+
+                      post(
                             "todo_matrix",
                             {
                                 "plan_date": str(task_date),
@@ -508,7 +535,7 @@ def save_day(plan_date, form):
                                 "task_time": task_time,        # ✅ retain time
                                 "is_done": False,
                                 "is_deleted": False,
-                                "position": 0,
+                                "position": next_pos,
                                 "category": parsed["category"],
                                 "subcategory": "General",
                             },
@@ -1186,42 +1213,47 @@ def parse_time_token(token, plan_date):
         "%Y-%m-%d %I:%M%p",
     )
 def remove_untimed_task(plan_date, task_id):
-    row = get(
-        "daily_slots",
-        params={
-            "plan_date": f"eq.{plan_date}",
-            "slot": f"eq.{META_SLOT}",
-            "select": "plan",
-        },
-    )[0]
+  rows = get(
+    "daily_slots",
+    params={
+        "plan_date": f"eq.{plan_date}",
+        "slot": f"eq.{META_SLOT}",
+        "select": "plan",
+    },
+  )
 
-    meta = json.loads(row.get("plan") or "{}")
-
-    cleaned = []
-
-    for t in meta.get("untimed_tasks", []):
-        if isinstance(t, str):
-            # Legacy string → skip only if text matches
-            if f"legacy_{hash(t)}" != task_id:
-                cleaned.append({
-                    "id": f"legacy_{hash(t)}",
-                    "text": t
-                })
-        else:
-            if t.get("id") != task_id:
-                cleaned.append(t)
-
-    meta["untimed_tasks"] = cleaned
+  if not rows:
+    return
+  row = rows[0]
 
 
-    update(
-        "daily_slots",
-        params={
-            "plan_date": f"eq.{plan_date}",
-            "slot": f"eq.{META_SLOT}",
-        },
-        json={"plan": json.dumps(meta)},
-    )
+  meta = json.loads(row.get("plan") or "{}")
+
+  cleaned = []
+
+  for t in meta.get("untimed_tasks", []):
+      if isinstance(t, str):
+          # Legacy string → skip only if text matches
+          if f"legacy_{hash(t)}" != task_id:
+              cleaned.append({
+                  "id": f"legacy_{hash(t)}",
+                  "text": t
+              })
+      else:
+          if t.get("id") != task_id:
+              cleaned.append(t)
+
+  meta["untimed_tasks"] = cleaned
+
+
+  update(
+      "daily_slots",
+      params={
+          "plan_date": f"eq.{plan_date}",
+          "slot": f"eq.{META_SLOT}",
+      },
+      json={"plan": json.dumps(meta)},
+  )
 
 def extract_date(raw_text, default_date):
     """
@@ -1272,7 +1304,11 @@ def extract_date(raw_text, default_date):
         if month_token.isdigit():
             month = int(month_token)
         else:
-            month = datetime.strptime(month_token[:3], "%b").month
+          try:
+              month = datetime.strptime(month_token[:3], "%b").month
+          except ValueError:
+              return default_date
+
 
         return safe_date(default_date.year, month, day)
 
@@ -1787,25 +1823,34 @@ def promoteuntimed():
         "limit": 1,
     },
   )
-
-    next_pos = max_pos[0]["position"] + 1 if max_pos else 0
-
-    post(
-        "todo_matrix",
-        {
-            "plan_date": str(plan_date),
-            "quadrant": quadrant,
-            "task_text": text,
-            "is_done": False,
-            "is_deleted": False,
-            "position": next_pos,
-            "category": "General",
-            "subcategory": "General",
-        },
+    existing = get(
+    "todo_matrix",
+    params={
+        "plan_date": f"eq.{plan_date}",
+        "quadrant": f"eq.{quadrant}",
+        "task_text": f"eq.{text}",
+        "is_deleted": "eq.false",
+    },
     )
-
-    remove_untimed_task(plan_date, task_id)
-    return ("", 204)
+    if existing:
+        return ("Task already exists in the selected quadrant", 400)
+    else:
+        next_pos = max_pos[0]["position"] + 1 if max_pos else 0
+        post(
+            "todo_matrix",
+            {
+                "plan_date": str(plan_date),
+                "quadrant": quadrant,
+                "task_text": text,
+                "is_done": False,
+                "is_deleted": False,
+                "position": next_pos,
+                "category": "General",
+                "subcategory": "General",
+            },
+        )
+        remove_untimed_task(plan_date, task_id)
+        return ("", 204)
 
 @app.route("/untimed/schedule", methods=["POST"])
 @login_required
@@ -1813,7 +1858,7 @@ def schedule_untimed():
     data = request.get_json()
 
     plan_date = date.fromisoformat(data["plan_date"])
-    if plan_date < date.today():
+    if plan_date < datetime.now(IST).date():
       return ("Cannot schedule in the past", 400)
     task_id = data["id"]
     text = data["text"]
@@ -2130,15 +2175,14 @@ function promoteUntimed(id, text) {
     <h3>📋 Promote Task</h3>
     <div style="margin-bottom:12px;">${text}</div>
 
-    <button onclick="confirmPromote('${id}','${text}','Q1')">🔥 Do Now</button><br>
-    <button onclick="confirmPromote('${id}','${text}','Q2')">📅 Schedule</button><br>
-    <button onclick="confirmPromote('${id}','${text}','Q3')">🤝 Delegate</button><br>
-    <button onclick="confirmPromote('${id}','${text}','Q4')">🗑 Eliminate</button><br><br>
+    <button type="button" onclick="confirmPromote('${id}','${text}','Q1')">🔥 Do Now</button><br>
+    <button type="button" onclick="confirmPromote('${id}','${text}','Q2')">📅 Schedule</button><br>
+    <button type="button" onclick="confirmPromote('${id}','${text}','Q3')">🤝 Delegate</button><br>
+    <button type="button" onclick="confirmPromote('${id}','${text}','Q4')">🗑 Eliminate</button><br><br>
 
-    <button onclick="modal.style.display='none'">Cancel</button>
-  `;
-
-  modal.style.display = "flex";
+    <button type="button" onclick="modal.style.display='none'">Cancel</button>
+    `;
+    modal.style.display = "flex";
 }
 
 function confirmPromote(id, text, q) {
@@ -2176,10 +2220,10 @@ function scheduleUntimed(id, text) {
       <option value="4">2 hr</option>
     </select><br><br>
 
-    <button onclick="modal.style.display='none'">Cancel</button>
-    <button onclick="confirmSchedule('${id}','${text}')">Schedule</button>
-  `;
+    <button type="button" onclick="modal.style.display='none'">Cancel</button>
+    <button type="button" onclick="confirmSchedule('${id}','${text}')">Schedule</button>
 
+    `;
   modal.style.display = "flex";
 }
 
