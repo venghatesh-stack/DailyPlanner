@@ -1964,17 +1964,13 @@ PLANNER_TEMPLATE = """
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-
 body { font-family: system-ui; background:#f6f7f9; padding:12px; padding-bottom:220px; }
 .container { max-width:1100px; margin:auto; background:#fff; padding:16px; border-radius:14px; }
-
 .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
 .header a { font-weight:600; text-decoration:none; }
 .time { color:#2563eb; font-weight:700; }
-
 .month-controls { display:flex; gap:8px; margin-bottom:12px; }
 .day-strip { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
-
 .day-btn {
   width:36px; height:36px;
   border-radius:50%;
@@ -1983,29 +1979,12 @@ body { font-family: system-ui; background:#f6f7f9; padding:12px; padding-bottom:
   text-decoration:none; color:#000;
 }
 .day-btn.selected { background:#2563eb; color:#fff; }
-
 .slot { border-bottom:1px solid #eee; padding-bottom:12px; margin-bottom:12px; }
 .current { background:#eef2ff; border-left:4px solid #2563eb; padding-left:8px; }
-
 textarea { width:100%; min-height:90px; font-size:15px; }
-
-.status-pill {
-  display:inline-block;
-  padding:6px 12px;
-  border-radius:999px;
-  font-weight:600;
-  cursor:pointer;
-}
-.status-Nothing\\ Planned { background:#e5e7eb; }
-.status-Yet\\ to\\ Start { background:#fde68a; }
-.status-In\\ Progress { background:#bfdbfe; }
-.status-Closed { background:#bbf7d0; }
-.status-Deferred { background:#fecaca; }
-
 .floating-bar {
   position:fixed;
-  bottom:env(safe-area-inset-bottom,0);
-  left:0; right:0;
+  bottom:0; left:0; right:0;
   background:#fff;
   border-top:1px solid #ddd;
   padding:10px;
@@ -2017,7 +1996,6 @@ textarea { width:100%; min-height:90px; font-size:15px; }
 </head>
 
 <body>
-
 <div class="container">
 
 <div class="header">
@@ -2033,9 +2011,7 @@ textarea { width:100%; min-height:90px; font-size:15px; }
   <input type="hidden" name="day" value="{{ selected_day }}">
   <select name="month" onchange="this.form.submit()">
     {% for m in range(1,13) %}
-      <option value="{{m}}" {% if m==month %}selected{% endif %}>
-        {{ calendar.month_name[m] }}
-      </option>
+      <option value="{{m}}" {% if m==month %}selected{% endif %}>{{ calendar.month_name[m] }}</option>
     {% endfor %}
   </select>
   <select name="year" onchange="this.form.submit()">
@@ -2058,355 +2034,38 @@ textarea { width:100%; min-height:90px; font-size:15px; }
 <input type="hidden" name="year" value="{{ year }}">
 <input type="hidden" name="month" value="{{ month }}">
 <input type="hidden" name="day" value="{{ selected_day }}">
-<details style="
-  background:#f8fafc;
-  border-left:4px solid #2563eb;
-  padding:10px 14px;
-  margin-bottom:12px;
-  border-radius:8px;
-  font-size:14px;
-">
-  <summary style="
-    font-weight:600;
-    cursor:pointer;
-    list-style:none;
-    outline:none;
-  ">
-    🧠 How to write a smart task
-  </summary>
 
-  <div style="margin-top:10px;">
-    <code>
-      Task @time [to time] [tomorrow | next monday | on 15Feb] [Q1–Q4] [$Priority] [%Category] [#tags]
-    </code>
-    <div style="margin-top:8px;">
-      <strong>Examples:</strong>
-        <ul style="margin:6px 0 0 18px;">
-          <li><code>Visit renga temple @10am</code></li>
-          <li><code>Meeting @9am to 10am</code></li>
-          <li><code>Workout @6am tomorrow</code></li>
-          <li><code>Doctor visit @11am next friday</code></li>
-          <li><code>Pay electricity bill @8pm on 15Feb</code></li>
-          <li><code>Fix prod bug @10am Q1</code></li>
-          <li><code>Plan quarterly goals @7am Q2</code></li>
-          <li><code>Follow up vendor @3pm Q3</code></li>
-          <li><code>Scroll social media @11pm Q4</code></li>
-          <li><code>Submit tax docs @9pm $Critical</code></li>
-          <li><code>Yoga @6am $High %Health</code></li>
-          <li><code>Pack luggage @9pm %Travel</code></li>
-          <li><code>Workout @6am #health #fitness</code></li>
-          <li><code>Sprint planning @9am to 11am next monday Q2 $Critical %Office #agile</code></li>
-        </ul>
-    </div>
-
-   <div style="margin-top:8px; color:#475569;">
-      • <b>@</b> • @ Time is optional (tasks without time go to Untimed)(e.g. @9am or @9am to 10am)<br>
-      • <b>on</b> Date (optional): tomorrow | next monday | on 15Feb<br>
-      • <b>Q1–Q4</b> Eisenhower quadrant (optional)<br>
-      • <b>$</b> Priority: Critical | High | Medium | Low<br>
-      • <b>%</b> Category: Office | Personal | Family | Health | Travel | Finance | General<br>
-      • <b>#</b> Tags (optional, multiple allowed)<br>
-      • One task per line<br>
-      • Time slots auto-fill in 30-minute blocks
-    </div>
-
-  </div>
-</details>
-
-<h3>🧠 Smart Planner Input</h3>
-<textarea
-  name="smart_plan"
-  placeholder="
-One task per line.
-Example:
-Meeting with Chitra @9am to 10am $Critical %Office #review
-Workout @6am to 7am $High %Personal
-"
-  style="width:100%; min-height:120px; margin-bottom:16px;"
-></textarea>
 <h3>🗒 Tasks (No Time Yet)</h3>
 
-<textarea
-  name="untimed_tasks"
-  placeholder="Tasks without a specific time"
-  style="width:100%; min-height:120px; margin-bottom:12px;"
-></textarea>
-
-<div>
 {% for t in untimed_tasks %}
-  <div class="untimed-item"
-       data-id="{{ t.id }}"
-       data-text="{{ t.text | e }}"
-       style="padding:8px 0;border-bottom:1px solid #eee;">
+<div class="untimed-item"
+     data-id="{{ t.id }}"
+     data-text="{{ t.text | e }}"
+     style="padding:8px 0;border-bottom:1px solid #eee;">
 
-    <div class="untimed-text">{{ t.text }}</div>
+  <div>{{ t.text }}</div>
 
-    <div style="margin-top:6px;">
-    <button type="button"
-        data-id="{{ t.id }}"
-        onclick="promoteUntimed(this)">
-
-        📋 Promote
-      </button>
-      <button type="button"
-              onclick="scheduleUntimed('{{ t.id }}')">
-        🕒 Schedule
-      </button>
-    </div>
-  </div>
+  <button type="button" onclick="promoteUntimed(this)" data-id="{{ t.id }}">📋 Promote</button>
+  <button type="button" onclick="scheduleUntimed('{{ t.id }}')">🕒 Schedule</button>
+</div>
 {% endfor %}
 
-</div>
-
-<div style="font-size:13px; color:#475569; margin-bottom:12px;">
-  • These tasks are saved for the day<br>
-  • They do not block calendar slots<br>
-  • Rewrite them with time or Q1–Q4 when ready
-</div>
 <h3>🗓 Time-blocked Plans</h3>
 {% for slot in plans %}
 <div class="slot {% if now_slot==slot %}current{% endif %}">
   <strong>{{ slot_labels[slot] }}</strong>
-  {% if plans[slot].plan %}
-    <a href="{{ reminder_links[slot] }}" target="_blank">⏰</a>
-  {% endif %}
   <textarea name="plan_{{slot}}">{{ plans[slot].plan }}</textarea>
-
-  <div class="status-pill status-{{ plans[slot].status }}" onclick="cycleStatus(this)">
-    {{ plans[slot].status }}
-    <input type="hidden" name="status_{{slot}}" value="{{ plans[slot].status }}">
-  </div>
 </div>
 {% endfor %}
-
-<h3>🏃 Habits</h3>
-{% for h in habit_list %}
-<label>
-  <input type="checkbox" name="habits" value="{{h}}" {% if h in habits %}checked{% endif %}>
-  {{ habit_icons[h] }} {{h}}
-</label><br>
-{% endfor %}
-
-<h3>📝 Reflection</h3>
-<textarea name="reflection">{{ reflection }}</textarea>
-
 </form>
 </div>
 
 <div class="floating-bar">
   <button type="submit" form="planner-form">💾 Save</button>
-  <button type="button" onclick="window.location.reload()">❌ Cancel</button>
-</div>
-<script>
-function updateClock(){
-  const ist = new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
-  document.getElementById("clock").textContent = ist.toLocaleTimeString();
-}
-setInterval(updateClock,1000); updateClock();
-
-const STATUS_ORDER = {{ statuses|tojson }};
-function cycleStatus(el){
-  const input = el.querySelector("input");
-  let idx = STATUS_ORDER.indexOf(input.value);
-  idx = (idx + 1) % STATUS_ORDER.length;
-  input.value = STATUS_ORDER[idx];
-  el.childNodes[0].nodeValue = STATUS_ORDER[idx] + " ";
-}
-</script>
-{% if saved %}
-<div id="toast"
-     style="
-       position: fixed;
-       bottom: 90px;
-       left: 50%;
-       transform: translateX(-50%);
-       background: #16a34a;
-       color: white;
-       padding: 12px 20px;
-       border-radius: 999px;
-       font-weight: 600;
-       box-shadow: 0 10px 25px rgba(0,0,0,.15);
-       z-index: 9999;
-     ">
-  ✅ Saved successfully
+  <button type="button" onclick="location.reload()">❌ Cancel</button>
 </div>
 
-<script>
-  setTimeout(() => {
-    const toast = document.getElementById("toast");
-    if (toast) toast.remove();
-  }, 2500);
-</script>
-{% endif %}
-<script>
-/* ===============================
-   GLOBALS
-   =============================== */
-
-const PLAN_DATE = "{{ plan_date }}";
-
-
-/* ===============================
-   PROMOTE UNTYPED
-   =============================== */
-function promoteUntimed(btn) {
-  const modal = document.getElementById("modal");
-  const content = document.getElementById("modal-content");
-
-  if (!modal || !content) {
-    console.error("Modal missing in DOM");
-    return;
-  }
-
-  const id = btn.dataset.id;
-  const item = btn.closest(".untimed-item");
-  if (!item) return;
-
-  const text = item.dataset.text || "";
-
- content.innerHTML =
-  "<h3>📋 Promote Task</h3>" +
-  "<div id='task-preview' style='margin-bottom:12px;'></div>" +
-
-  "<button type='button' onclick=\"confirmPromote('" + id + "','Q1')\">🔥 Do Now</button><br>" +
-  "<button type='button' onclick=\"confirmPromote('" + id + "','Q2')\">📅 Schedule</button><br>" +
-  "<button type='button' onclick=\"confirmPromote('" + id + "','Q3')\">🤝 Delegate</button><br>" +
-  "<button type='button' onclick=\"confirmPromote('" + id + "','Q4')\">🗑 Eliminate</button><br><br>" +
-
-  "<button type='button' onclick=\"modal.style.display='none'\">Cancel</button>";
-
-
-  content.querySelector("#task-preview").textContent = text;
-  modal.style.display = "flex";
-}
-
-function confirmPromote(id, quadrant) {
-  fetch("/untimed/promote", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      id: id,
-      quadrant: quadrant,
-      plan_date: PLAN_DATE
-    })
-  }).then(() => location.reload());
-}
-
-/* ===============================
-   SCHEDULE UNTYPED
-   =============================== */
-function scheduleUntimed(id) {
-  const item = document.querySelector('.untimed-item[data-id="' + id + '"]');
-  if (!item) return;
-
-  const text = item.dataset.text || "";
-  const modal = document.getElementById("modal");
-  const content = document.getElementById("modal-content");
-
-  content.innerHTML =
-    '<h3>🕒 Schedule Task</h3>' +
-    '<div id="task-preview" style="margin-bottom:8px;"></div>' +
-
-    '<label>Date</label>' +
-    '<input type="date" id="d" value="' + PLAN_DATE + '"><br><br>' +
-
-    '<label>Start Time</label>' +
-    '<input type="time" id="t"><br><br>' +
-
-    '<label>Duration</label><br>' +
-    '<select id="dur">' +
-      '<option value="1">30 min</option>' +
-      '<option value="2">1 hr</option>' +
-      '<option value="3">1.5 hr</option>' +
-      '<option value="4">2 hr</option>' +
-    '</select><br><br>' +
-
-    '<button type="button" onclick="modal.style.display=\'none\'">Cancel</button>' +
-    '<button type="button" onclick="confirmSchedule(\'' + id + '\')">Continue</button>';
-
-  content.querySelector("#task-preview").textContent = text;
-  modal.style.display = "flex";
-}
-
-/* ===============================
-   CONFIRM SCHEDULE
-   =============================== */
-function confirmSchedule(id) {
-  const item = document.querySelector('.untimed-item[data-id="' + id + '"]');
-  if (!item) return;
-
-  const newText = item.dataset.text;
-  const date = document.getElementById("d").value;
-  const time = document.getElementById("t").value;
-  const slots = parseInt(document.getElementById("dur").value, 10);
-
-  if (!time) {
-    alert("Select start time");
-    return;
-  }
-
-  const parts = time.split(":");
-  const h = parseInt(parts[0], 10);
-  const m = parseInt(parts[1], 10);
-  const start_slot = Math.floor((h * 60 + m) / 30) + 1;
-
-  fetch("/untimed/slot-preview", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      plan_date: date,
-      start_slot: start_slot,
-      slot_count: slots
-    })
-  })
-  .then(r => r.json())
-  .then(preview => {
-
-    const combined = preview.map(function (p) {
-      if (p.existing) {
-        return p.existing + "\n---\n" + newText;
-      }
-      return newText;
-    }).join("\n\n");
-
-    const modal = document.getElementById("modal");
-    const content = document.getElementById("modal-content");
-
-    content.innerHTML =
-      '<h3>✏️ Confirm Planner Content</h3>' +
-      '<p>You can edit before saving:</p>' +
-      '<textarea id="finalText" style="width:100%;min-height:160px;"></textarea><br><br>' +
-      '<button type="button" onclick="modal.style.display=\'none\'">Cancel</button>' +
-      '<button type="button" onclick="saveFinalSchedule(\'' +
-        id + '\',\'' + date + '\',' + start_slot + ',' + slots +
-      ')">Save</button>';
-
-    document.getElementById("finalText").value = combined;
-  });
-}
-
-/* ===============================
-   SAVE FINAL
-   =============================== */
-function saveFinalSchedule(id, date, start_slot, slots) {
-  const finalText = document.getElementById("finalText").value;
-
-  fetch("/untimed/schedule", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      id: id,
-      plan_date: date,
-      start_slot: start_slot,
-      slot_count: slots,
-      final_text: finalText
-    })
-  }).then(() => location.reload());
-}
-</script>
-
-
-<!-- Modal (REQUIRED for Promote / Schedule) -->
+<!-- MODAL -->
 <div id="modal" style="
   position:fixed;
   inset:0;
@@ -2414,19 +2073,122 @@ function saveFinalSchedule(id, date, start_slot, slots) {
   display:none;
   align-items:center;
   justify-content:center;
-  z-index:9999;
-">
-  <div style="
-    background:#fff;
-    padding:18px;
-    width:320px;
-    border-radius:14px;
-  " id="modal-content"></div>
+  z-index:9999;">
+  <div id="modal-content" style="background:#fff;padding:18px;width:340px;border-radius:14px;"></div>
 </div>
+
+<script>
+const PLAN_DATE = "{{ plan_date }}";
+
+function updateClock(){
+  const ist = new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
+  document.getElementById("clock").textContent = ist.toLocaleTimeString();
+}
+setInterval(updateClock,1000); updateClock();
+
+/* PROMOTE */
+function promoteUntimed(btn){
+  const id = btn.dataset.id;
+  const item = btn.closest(".untimed-item");
+  const text = item.dataset.text;
+
+  const modal = document.getElementById("modal");
+  const content = document.getElementById("modal-content");
+
+  content.innerHTML =
+    "<h3>📋 Promote Task</h3>" +
+    "<div id='preview'></div><br>" +
+    "<button onclick=\\"confirmPromote('" + id + "','Q1')\\">🔥 Do</button><br>" +
+    "<button onclick=\\"confirmPromote('" + id + "','Q2')\\">📅 Schedule</button><br>" +
+    "<button onclick=\\"confirmPromote('" + id + "','Q3')\\">🤝 Delegate</button><br>" +
+    "<button onclick=\\"confirmPromote('" + id + "','Q4')\\">🗑 Eliminate</button><br><br>" +
+    "<button onclick=\\"modal.style.display='none'\\">Cancel</button>";
+
+  content.querySelector("#preview").textContent = text;
+  modal.style.display = "flex";
+}
+
+function confirmPromote(id, quadrant){
+  fetch("/untimed/promote",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ id, quadrant, plan_date: PLAN_DATE })
+  }).then(()=>location.reload());
+}
+
+/* SCHEDULE */
+function scheduleUntimed(id){
+  const item = document.querySelector(".untimed-item[data-id='"+id+"']");
+  const text = item.dataset.text;
+
+  const modal = document.getElementById("modal");
+  const content = document.getElementById("modal-content");
+
+  content.innerHTML =
+    "<h3>🕒 Schedule Task</h3>" +
+    "<div id='preview'></div><br>" +
+    "<label>Date</label><input type='date' id='d' value='"+PLAN_DATE+"'><br><br>" +
+    "<label>Start</label><input type='time' id='t'><br><br>" +
+    "<label>Duration</label>" +
+    "<select id='dur'><option value='1'>30m</option><option value='2'>1h</option></select><br><br>" +
+    "<button onclick=\\"modal.style.display='none'\\">Cancel</button> " +
+    "<button onclick=\\"confirmSchedule('" + id + "')\\">Continue</button>";
+
+  content.querySelector("#preview").textContent = text;
+  modal.style.display = "flex";
+}
+
+function confirmSchedule(id){
+  const item = document.querySelector(".untimed-item[data-id='"+id+"']");
+  const newText = item.dataset.text;
+  const date = document.getElementById("d").value;
+  const time = document.getElementById("t").value;
+  const slots = parseInt(document.getElementById("dur").value,10);
+
+  if(!time){ alert("Select time"); return; }
+
+  const [h,m] = time.split(":").map(Number);
+  const start_slot = Math.floor((h*60+m)/30)+1;
+
+  fetch("/untimed/slot-preview",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ plan_date:date,start_slot,slot_count:slots })
+  }).then(r=>r.json()).then(preview=>{
+    const combined = preview.map(p=>p.existing?p.existing+"\\n---\\n"+newText:newText).join("\\n\\n");
+
+    const modal = document.getElementById("modal");
+    const content = document.getElementById("modal-content");
+
+    content.innerHTML =
+      "<h3>✏️ Confirm</h3>" +
+      "<textarea id='finalText' style='width:100%;min-height:160px;'></textarea><br><br>" +
+      "<button onclick=\\"modal.style.display='none'\\">Cancel</button> " +
+      "<button onclick=\\"saveFinalSchedule('" + id + "','" + date + "',"+start_slot+","+slots+")\\">Save</button>";
+
+    document.getElementById("finalText").value = combined;
+  });
+}
+
+function saveFinalSchedule(id,date,start_slot,slots){
+  fetch("/untimed/schedule",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({
+      id,
+      plan_date:date,
+      start_slot,
+      slot_count:slots,
+      final_text:document.getElementById("finalText").value
+    })
+  }).then(()=>location.reload());
+}
+</script>
 
 </body>
 </html>
 """
+
 # NOTE: Use the exact PLANNER_TEMPLATE you already validated as correct.
 # (Intentionally not duplicated again to avoid accidental edits.)
 
