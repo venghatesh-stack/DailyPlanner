@@ -1564,6 +1564,7 @@ def planner():
         habit_icons=HABIT_ICONS,
         calendar=calendar,
         untimed_tasks=untimed_tasks,
+        plan_date=plan_date,
     )
 
 
