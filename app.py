@@ -1587,26 +1587,39 @@ textarea { width:100%; min-height:90px; font-size:15px; }
 
   <div style="margin-top:10px;">
     <code>
-      Task description @start time to end time $Priority %Category #tag
+      Task @time [to time] [tomorrow | next monday | on 15Feb] [Q1–Q4] [$Priority] [%Category] [#tags]
     </code>
-
     <div style="margin-top:8px;">
       <strong>Examples:</strong>
-      <ul style="margin:6px 0 0 18px;">
-        <li><code>Meeting with Chitra @9am to 10am $Critical %Office #review</code></li>
-        <li><code>Workout @6am to 7am $High %Personal #health</code></li>
-        <li><code>Pay electricity bill @8pm to 8:30pm $Medium %Personal #finance</code></li>
-      </ul>
+        <ul style="margin:6px 0 0 18px;">
+          <li><code>Visit renga temple @10am</code></li>
+          <li><code>Meeting @9am to 10am</code></li>
+          <li><code>Workout @6am tomorrow</code></li>
+          <li><code>Doctor visit @11am next friday</code></li>
+          <li><code>Pay electricity bill @8pm on 15Feb</code></li>
+          <li><code>Fix prod bug @10am Q1</code></li>
+          <li><code>Plan quarterly goals @7am Q2</code></li>
+          <li><code>Follow up vendor @3pm Q3</code></li>
+          <li><code>Scroll social media @11pm Q4</code></li>
+          <li><code>Submit tax docs @9pm $Critical</code></li>
+          <li><code>Yoga @6am $High %Health</code></li>
+          <li><code>Pack luggage @9pm %Travel</code></li>
+          <li><code>Workout @6am #health #fitness</code></li>
+          <li><code>Sprint planning @9am to 11am next monday Q2 $Critical %Office #agile</code></li>
+        </ul>
     </div>
 
-    <div style="margin-top:8px; color:#475569;">
-      • <b>@</b> time is required<br>
+   <div style="margin-top:8px; color:#475569;">
+      • <b>@</b> Time is required (e.g. @9am or @9am to 10am)<br>
+      • <b>on</b> Date (optional): tomorrow | next monday | on 15Feb<br>
+      • <b>Q1–Q4</b> Eisenhower quadrant (optional)<br>
       • <b>$</b> Priority: Critical | High | Medium | Low<br>
-      • <b>%</b> Category: Office | Personal<br>
+      • <b>%</b> Category: Office | Personal | Family | Health | Travel | Finance | General<br>
       • <b>#</b> Tags (optional, multiple allowed)<br>
       • One task per line<br>
-      • Slots auto-fill in 30-minute blocks
+      • Time slots auto-fill in 30-minute blocks
     </div>
+
   </div>
 </details>
 
