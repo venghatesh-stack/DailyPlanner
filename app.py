@@ -2264,14 +2264,17 @@ function promoteUntimed(btn) {
 
   const text = item.dataset.text || "";
 
-  content.innerHTML =
-    '<h3>📋 Promote Task</h3>' +
-    '<div id="task-preview" style="margin-bottom:12px;"></div>' +
-    '<button type="button" onclick="confirmPromote(\'' + id + '\',\'Q1\')">🔥 Do Now</button><br>' +
-    '<button type="button" onclick="confirmPromote(\'' + id + '\',\'Q2\')">📅 Schedule</button><br>' +
-    '<button type="button" onclick="confirmPromote(\'' + id + '\',\'Q3\')">🤝 Delegate</button><br>' +
-    '<button type="button" onclick="confirmPromote(\'' + id + '\',\'Q4\')">🗑 Eliminate</button><br><br>' +
-    '<button type="button" onclick="modal.style.display=\'none\'">Cancel</button>';
+ content.innerHTML =
+  "<h3>📋 Promote Task</h3>" +
+  "<div id='task-preview' style='margin-bottom:12px;'></div>" +
+
+  "<button type='button' onclick=\"confirmPromote('" + id + "','Q1')\">🔥 Do Now</button><br>" +
+  "<button type='button' onclick=\"confirmPromote('" + id + "','Q2')\">📅 Schedule</button><br>" +
+  "<button type='button' onclick=\"confirmPromote('" + id + "','Q3')\">🤝 Delegate</button><br>" +
+  "<button type='button' onclick=\"confirmPromote('" + id + "','Q4')\">🗑 Eliminate</button><br><br>" +
+
+  "<button type='button' onclick=\"modal.style.display='none'\">Cancel</button>";
+
 
   content.querySelector("#task-preview").textContent = text;
   modal.style.display = "flex";
