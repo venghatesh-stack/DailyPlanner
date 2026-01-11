@@ -1889,7 +1889,9 @@ def schedule_untimed():
     remove_untimed_task(plan_date, task_id)
 
     return ("", 204)
-
+@app.route("/favicon.ico")
+def favicon():
+    return "", 204
 ### Travel mode Code Changes ###
 
 # ==========================================================
