@@ -2286,7 +2286,7 @@ function confirmPromote(id, quadrant) {
     body: JSON.stringify({
       id,
       quadrant,
-      plan_date: "{{ plan_date |tojson }}"
+      plan_date: {{ plan_date |tojson }}
     })
   }).then(() => location.reload());
 }
@@ -2304,7 +2304,7 @@ function scheduleUntimed(id) {
     <div id="task-preview" style="margin-bottom:8px;"></div>
 
     <label>Date</label>
-    <input type="date" id="d" value="{{ plan_date | tojson }}"><br><br>
+    <input type="date" id="d" value={{ plan_date | tojson }}><br><br>
 
     <label>Start Time</label>
     <input type="time" id="t"><br><br>
