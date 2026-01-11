@@ -2280,14 +2280,14 @@ function scheduleUntimed(id) {
   const item = document.querySelector(`.untimed-item[data-id="${id}"]`);
   if (!item) return;
 
-  const text = item.dataset.text;
+  const text = item.dataset.text || "";
 
   const modal = document.getElementById("modal");
   const content = document.getElementById("modal-content");
 
   content.innerHTML = `
     <h3>🕒 Schedule Task</h3>
-    <div style="margin-bottom:8px;">${text}</div>
+    <div id="task-preview" style="margin-bottom:8px;"></div>
 
     <label>Date</label>
     <input type="date" id="d" value="{{ plan_date }}"><br><br>
@@ -2307,8 +2307,10 @@ function scheduleUntimed(id) {
     <button type="button" onclick="confirmSchedule('${id}')">Continue</button>
   `;
 
+  content.querySelector("#task-preview").textContent = text;
   modal.style.display = "flex";
 }
+
 function confirmSchedule(id) {
   const item = document.querySelector(`.untimed-item[data-id="${id}"]`);
   if (!item) return;
@@ -2355,7 +2357,8 @@ function confirmSchedule(id) {
       <p>You can edit before saving:</p>
 
       <textarea id="finalText"
-                style="width:100%;min-height:160px;">${combined}</textarea>
+                style="width:100%;min-height:160px;"></textarea>
+      document.getElementById("finalText").value = combined;
 
       <br><br>
       <button type="button" onclick="modal.style.display='none'">Cancel</button>
