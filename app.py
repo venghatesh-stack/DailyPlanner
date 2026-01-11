@@ -909,19 +909,42 @@ def parse_time_token(token, plan_date):
 
 
 def parse_planner_input(raw_text, plan_date):
-    time_match = re.search(
-    r"@([0-9:\.apm\s]+)\s+to\s+([0-9:\.apm\s]+)",
-    raw_text,
-    re.I,
+    # --------------------------------
+    # TIME PARSING
+    # --------------------------------
+    range_match = re.search(
+        r"@([0-9:\.apm\s]+)\s+to\s+([0-9:\.apm\s]+)",
+        raw_text,
+        re.I,
     )
 
+    single_match = re.search(
+        r"@([0-9:\.apm\s]+)",
+        raw_text,
+        re.I,
+    )
+
+    if range_match:
+        start_raw, end_raw = range_match.groups()
+        start_dt = parse_time_token(start_raw, plan_date)
+        end_dt = parse_time_token(end_raw, plan_date)
+
+    elif single_match:
+        start_raw = single_match.group(1)
+        start_dt = parse_time_token(start_raw, plan_date)
+        end_dt = start_dt + timedelta(minutes=30)  # ⭐ DEFAULT SLOT
+
+    else:
+        raise ValueError("Time missing")
+
+    if end_dt <= start_dt:
+        raise ValueError("End time must be after start time")
+
+    # --------------------------------
+    # METADATA
+    # --------------------------------
     priority_match = re.search(r"\$(critical|high|medium|low)", raw_text, re.I)
     category_match = re.search(r"%(office|personal)", raw_text, re.I)
-
-    if not time_match:
-        raise ValueError("Time range missing")
-
-    start_raw, end_raw = time_match.groups()[:2]
 
     priority = (
         priority_match.group(1).capitalize()
@@ -935,14 +958,9 @@ def parse_planner_input(raw_text, plan_date):
         else DEFAULT_CATEGORY
     )
 
-    title = re.sub(r"\s[@$%].*", "", raw_text).strip()
+    title = re.sub(r"\s[@$%#].*", "", raw_text).strip()
     tags = extract_tags(raw_text)
 
-    start_dt = parse_time_token(start_raw, plan_date)
-    end_dt = parse_time_token(end_raw, plan_date)
-    # ⛔ SAFETY CHECK
-    if end_dt <= start_dt:
-        raise ValueError("End time must be after start time")
     return {
         "title": title,
         "start": start_dt,
@@ -952,6 +970,7 @@ def parse_planner_input(raw_text, plan_date):
         "category": category,
         "tags": tags,
     }
+
 def generate_half_hour_slots(parsed):
     slots = []
     current = parsed["start"]
