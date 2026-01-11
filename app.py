@@ -812,9 +812,11 @@ def save_todo(plan_date, form):
 
     existing_ids = {str(r["id"]) for r in existing_rows}
     seen_ids = set()
-
+    deleted_ids = set()
     updates = []
     inserts = []
+    existing = {r["id"]: r.get("recurring_id") for r in existing_rows}
+    
 
     # -----------------------------------
     # Process quadrants
@@ -848,12 +850,10 @@ def save_todo(plan_date, form):
             # ### FIX 2: handle soft delete
             # ===============================
             if idx < len(deleted_flags) and deleted_flags[idx] == "1":
-                updates.append({
-                    "id": task_id,
-                    "is_deleted": True,
-                })
-                seen_ids.add(task_id)   # 👈 IMPORTANT
-                continue
+              deleted_ids.add(task_id)   # ### FIX 2B
+              seen_ids.add(task_id)
+              continue                   # stop processing completely
+
             text = text.strip()
             if not text:
                 continue
@@ -927,32 +927,28 @@ def save_todo(plan_date, form):
     # -----------------------------------
     # BULK SOFT DELETE removed rows
     # -----------------------------------
-    form_ids = {
-        task_id
-        for quadrant in ["do", "schedule", "delegate", "eliminate"]
-        for task_id in form.getlist(f"{quadrant}_id[]")
-    }
-
-    existing = {r["id"]: r.get("recurring_id") for r in existing_rows}
-
-    removed_ids = {
+    # -----------------------------------
+# FINAL SOFT DELETE (authoritative)
+# -----------------------------------
+    all_deleted = deleted_ids | {
         tid
         for tid, rid in existing.items()
-        if tid not in seen_ids and tid not in form_ids and rid is None  # 👈 IMPORTANT
+        if tid not in seen_ids and rid is None
     }
 
-    if removed_ids:
+    if all_deleted:
         update(
             "todo_matrix",
-            params={"id": f"in.({','.join(removed_ids)})"},
+            params={"id": f"in.({','.join(all_deleted)})"},
             json={"is_deleted": True},
         )
+
 
     logger.info(
         "Eisenhower save complete: %d updates, %d inserts, %d deletions",
         len(updates),
         len(inserts),
-        len(removed_ids),
+        len(all_deleted),
     )
 
 
@@ -2753,13 +2749,15 @@ select {
                           {% else %}
                             <button type="button"
                                     class="task-delete"
-                                    title="Removed after Save"
-                                    onclick="
-                                      const task = this.closest('.task');
-                                      task.classList.add('removed');
-                                      task.style.display = 'none';   // 👈 hide visually
-                                      task.querySelector('input[name$=_deleted\\[\\]]').value = '1';
-                                    ">
+                                    title="Removed after Save"  
+                                   onclick="
+                                          const task = this.closest('.task');
+                                          task.classList.add('removed');
+                                          task.querySelector('input[name$=_deleted\\[\\]]').value = '1';
+                                          const textarea = task.querySelector('textarea');
+                                          if (textarea) textarea.disabled = true;
+                                        "
+                              >
                               🗑
                             </button>
 
@@ -2835,6 +2833,8 @@ select {
                                         const task = this.closest('.task');
                                         task.classList.add('removed');
                                         task.querySelector('input[name$=_deleted\\[\\]]').value = '1';
+                                        const textarea = task.querySelector('textarea');
+                                        if (textarea) textarea.disabled = true;
                                       ">🗑</button>
                         {% endif %}
 
