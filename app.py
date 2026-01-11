@@ -174,6 +174,12 @@ PRIORITY_RANK = {
 
 DEFAULT_PRIORITY = "Medium"
 DEFAULT_CATEGORY = "Office"
+QUADRANT_MAP = {
+    "Q1": "do",
+    "Q2": "schedule",
+    "Q3": "delegate",
+    "Q4": "eliminate",
+}
 
 ### Category, Subcategory code ends here ###
 
@@ -291,6 +297,44 @@ def save_day(plan_date, form):
 
             try:
                 parsed = parse_planner_input(line, plan_date)
+                # --------------------------------------------
+                # AUTO-INSERT INTO EISENHOWER MATRIX (Q1–Q4)
+                # --------------------------------------------
+                
+                if parsed.get("quadrant"):
+                    quadrant = parsed["quadrant"]
+
+                    task_time = parsed["start"].strftime("%H:%M")
+                    task_date = parsed["date"]
+                    existing = get(
+                        "todo_matrix",
+                        params={
+                            "plan_date": f"eq.{task_date}",
+                            "quadrant": f"eq.{quadrant}",
+                            "task_text": f"eq.{parsed['title']}",
+                            "task_time": f"eq.{task_time}",  # 👈 prevent duplicates
+                            "is_deleted": "eq.false",
+                        },
+                    )
+
+                    if not existing:
+                        post(
+                            "todo_matrix",
+                            {
+                                "plan_date": str(task_date),
+                                "quadrant": quadrant,
+                                "task_text": parsed["title"],
+                                "task_date": str(task_date),   # ✅ retain date
+                                "task_time": task_time,        # ✅ retain time
+                                "is_done": False,
+                                "is_deleted": False,
+                                "position": 0,
+                                "category": parsed["category"],
+                                "subcategory": "General",
+                            },
+                        )
+              
+
                 slots = generate_half_hour_slots(parsed)
 
                 affected_slots = set()
@@ -306,7 +350,7 @@ def save_day(plan_date, form):
                     delete(
                         "daily_slots",
                         params={
-                            "plan_date": f"eq.{plan_date}",
+                            "plan_date": f"eq.{task_date}",
                             "slot": f"in.({','.join(str(s) for s in affected_slots if s != META_SLOT)})",
                         },
                     )
@@ -318,7 +362,7 @@ def save_day(plan_date, form):
                     if 1 <= target_slot <= TOTAL_SLOTS:
                         payload.append(
                             {
-                                "plan_date": str(plan_date),
+                                "plan_date": str(task_date),
                                 "slot": target_slot,
                                 "plan": s["task"],
                                 "status": DEFAULT_STATUS,
@@ -373,12 +417,24 @@ def save_day(plan_date, form):
     # FINAL WRITE (REQUIRED)
     # -------------------------------------------------
     ALLOWED_DAILY_COLUMNS = {
-        "plan_date",
-        "slot",
-        "plan",
-        "status",
-        "tags",
-    }
+    "plan_date",
+    "slot",
+    "plan",
+    "status",
+    "priority",
+    "category",
+    "tags",
+  }
+    WEEKDAY_MAP = {
+    "monday": 0,
+    "tuesday": 1,
+    "wednesday": 2,
+    "thursday": 3,
+    "friday": 4,
+    "saturday": 5,
+    "sunday": 6,
+}
+
 
     clean_payload = [
         {k: v for k, v in row.items() if k in ALLOWED_DAILY_COLUMNS}
@@ -399,15 +455,6 @@ def save_day(plan_date, form):
         prefer="resolution=merge-duplicates",
     )
 
-
-
-
-# ==========================================================
-# DATA ACCESS – EISENHOWER
-# ==========================================================
-# ==========================================================
-# DATA ACCESS – EISENHOWER
-# ==========================================================
 # ==========================================================
 # DATA ACCESS – EISENHOWER
 # ==========================================================
@@ -468,7 +515,15 @@ def load_todo(plan_date):
     # Sort within each quadrant
     # ----------------------------
     for q in data:
-        data[q].sort(key=lambda t: (t["task_date"] is None, t["task_date"] or ""))
+        data[q].sort(
+        key=lambda t: (
+                t["task_date"] is None,
+                t["task_date"] or "",
+                t["task_time"] is None,
+                t["task_time"] or "",
+            )
+        )
+
     ### Category, Sub Category Changes start here ###
 
     grouped = {}
@@ -910,7 +965,19 @@ def parse_time_token(token, plan_date):
 
 def parse_planner_input(raw_text, plan_date):
     # --------------------------------
-    # TIME PARSING
+    # QUADRANT PARSING
+    # --------------------------------
+    task_date = extract_date(raw_text, plan_date)
+
+    quadrant_match = re.search(r"\b(Q[1-4])\b", raw_text, re.I)
+    quadrant = (
+        QUADRANT_MAP[quadrant_match.group(1).upper()]
+        if quadrant_match
+        else None
+    )
+
+    # --------------------------------
+    # TIME PARSING (existing logic)
     # --------------------------------
     range_match = re.search(
         r"@([0-9:\.apm\s]+)\s+to\s+([0-9:\.apm\s]+)",
@@ -926,13 +993,13 @@ def parse_planner_input(raw_text, plan_date):
 
     if range_match:
         start_raw, end_raw = range_match.groups()
-        start_dt = parse_time_token(start_raw, plan_date)
-        end_dt = parse_time_token(end_raw, plan_date)
+        start_dt = parse_time_token(start_raw, task_date)
+        end_dt = parse_time_token(end_raw, task_date)
 
     elif single_match:
         start_raw = single_match.group(1)
-        start_dt = parse_time_token(start_raw, plan_date)
-        end_dt = start_dt + timedelta(minutes=30)  # ⭐ DEFAULT SLOT
+        start_dt = parse_time_token(start_raw, task_date)
+        end_dt = start_dt + timedelta(minutes=30)
 
     else:
         raise ValueError("Time missing")
@@ -944,7 +1011,12 @@ def parse_planner_input(raw_text, plan_date):
     # METADATA
     # --------------------------------
     priority_match = re.search(r"\$(critical|high|medium|low)", raw_text, re.I)
-    category_match = re.search(r"%(office|personal)", raw_text, re.I)
+    category_match = re.search(
+    r"%(" + "|".join(TASK_CATEGORIES.keys()) + r")",
+    raw_text,
+    re.I
+    )
+
 
     priority = (
         priority_match.group(1).capitalize()
@@ -958,18 +1030,21 @@ def parse_planner_input(raw_text, plan_date):
         else DEFAULT_CATEGORY
     )
 
-    title = re.sub(r"\s[@$%#].*", "", raw_text).strip()
+    title = re.sub(r"\s[@$%#Q].*", "", raw_text).strip()
     tags = extract_tags(raw_text)
 
     return {
         "title": title,
         "start": start_dt,
         "end": end_dt,
+        "date" : task_date,
         "priority": priority,
         "priority_rank": PRIORITY_RANK[priority],
         "category": category,
         "tags": tags,
+        "quadrant": quadrant,  # ⭐ NEW
     }
+
 
 def generate_half_hour_slots(parsed):
     slots = []
@@ -991,6 +1066,97 @@ def generate_half_hour_slots(parsed):
         current = slot_end
 
     return slots
+def extract_date(raw_text, default_date):
+    """
+    Resolves task date from natural language.
+
+    Supported patterns (priority order):
+
+    1. Explicit date (highest priority):
+       - on 15Feb
+       - on 15 Feb
+       - on 15/02
+       - on 15-02
+
+    2. Relative date keywords:
+       - tomorrow
+       - next monday
+       - next tuesday
+       - next wednesday
+       - next thursday
+       - next friday
+       - next saturday
+       - next sunday
+
+    3. Default behaviour:
+       - If no date is specified, defaults to the planner UI date.
+
+    Notes:
+    - Explicit dates always override relative keywords.
+    - Year defaults to the current planner year.
+    - Invalid dates are safely clamped to month end
+      (e.g., 31 Feb → 28/29 Feb).
+    """
+    text = raw_text.lower()
+
+    # --------------------------------
+    # 1️⃣ Explicit date: "on 15Feb", "on 15/02"
+    # --------------------------------
+    match = re.search(
+        r"\bon\s+(\d{1,2})[\s\-\/]?([a-z]{3}|\d{1,2})",
+        text,
+        re.I,
+    )
+
+    if match:
+        day = int(match.group(1))
+        month_token = match.group(2)
+
+        if month_token.isdigit():
+            month = int(month_token)
+        else:
+            month = datetime.strptime(month_token[:3], "%b").month
+
+        return safe_date(default_date.year, month, day)
+
+    # --------------------------------
+    # 2️⃣ Tomorrow
+    # --------------------------------
+    if re.search(r"\btomorrow\b", text):
+        return default_date + timedelta(days=1)
+
+    # --------------------------------
+    # 3️⃣ Next weekday (e.g. "next monday")
+    # --------------------------------
+    weekday_match = re.search(
+        r"\bnext\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b",
+        text,
+    )
+
+    if weekday_match:
+        WEEKDAY_MAP = {
+            "monday": 0,
+            "tuesday": 1,
+            "wednesday": 2,
+            "thursday": 3,
+            "friday": 4,
+            "saturday": 5,
+            "sunday": 6,
+        }
+
+        target = WEEKDAY_MAP[weekday_match.group(1)]
+        today = default_date.weekday()
+
+        delta = (target - today) % 7
+        delta = 7 if delta == 0 else delta  # force NEXT, not today
+
+        return default_date + timedelta(days=delta)
+
+    # --------------------------------
+    # 4️⃣ Default → planner UI date
+    # --------------------------------
+    return default_date
+
 
 ### Travel mode Code Changes ###
 
