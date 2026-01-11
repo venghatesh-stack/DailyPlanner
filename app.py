@@ -606,10 +606,22 @@ def save_day(plan_date, form):
     ]
 
 
-    existing_untimed = existing_meta.get("untimed_tasks", [])
+    raw_existing = existing_meta.get("untimed_tasks", [])
+    existing_untimed = []
+
+    for t in raw_existing:
+        if isinstance(t, str):
+            existing_untimed.append({
+                "id": f"legacy_{hash(t)}",
+                "text": t
+            })
+        else:
+            existing_untimed.append(t)
+
     merged = {}
     for t in existing_untimed + auto_untimed + new_untimed:
-      merged[t["id"]] = t
+        merged[t["id"]] = t
+
 
     meta = {
         "habits": form.getlist("habits"),
