@@ -786,7 +786,6 @@ def load_todo(plan_date):
 
 
 ### Category, Subcategory code ends here ###
-
 def save_todo(plan_date, form):
     logger.info("Saving Eisenhower matrix (batched)")
 
@@ -826,7 +825,7 @@ def save_todo(plan_date, form):
                 tid = k[len(f"{quadrant}_done_state["):-1]
                 done_state[tid] = v
 
-        # ---- DELETE STATE (AUTHORITATIVE) ----
+        # ---- DELETE STATE ----
         deleted_map = {}
         for k, v in form.to_dict(flat=False).items():
             if k.startswith(f"{quadrant}_deleted["):
@@ -840,7 +839,7 @@ def save_todo(plan_date, form):
 
             task_id = str(ids[idx])
 
-            # ✅ HARD DELETE DECISION
+            # ✅ AUTHORITATIVE DELETE
             if deleted_map.get(task_id) == "1":
                 deleted_ids.add(task_id)
                 continue
@@ -861,13 +860,19 @@ def save_todo(plan_date, form):
                 "subcategory": subcategories[idx] if idx < len(subcategories) else "General",
             }
 
+            # ✅ UPDATE vs INSERT (INSIDE LOOP)
             if task_id in existing_ids:
-                updates.append({
+                update_row = {
                     "id": task_id,
                     "plan_date": str(plan_date),
-                    "recurring_id": existing_recurring_map.get(task_id),
                     **payload,
-                })
+                }
+
+                rid = existing_recurring_map.get(task_id)
+                if rid:
+                    update_row["recurring_id"] = rid
+
+                updates.append(update_row)
             else:
                 inserts.append({
                     "plan_date": str(plan_date),
@@ -878,7 +883,11 @@ def save_todo(plan_date, form):
     # WRITE CHANGES
     # -----------------------------------
     if updates:
-        post("todo_matrix?on_conflict=id", updates, prefer="resolution=merge-duplicates")
+        post(
+            "todo_matrix?on_conflict=id",
+            updates,
+            prefer="resolution=merge-duplicates",
+        )
 
     if inserts:
         post("todo_matrix", inserts)
@@ -896,7 +905,6 @@ def save_todo(plan_date, form):
         len(inserts),
         len(deleted_ids),
     )
-
 
 
 def materialize_recurring_tasks(plan_date):
