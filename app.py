@@ -838,8 +838,12 @@ def save_todo(plan_date, form):
 
         for idx, text in enumerate(texts):
             if idx < len(deleted_flags) and deleted_flags[idx] == "1":
-              # Explicitly deleted by user → skip saving
+              updates.append({
+                  "id": task_id,
+                  "is_deleted": True,
+              })
               continue
+
 
             text = text.strip()
             if not text:
@@ -2745,6 +2749,7 @@ select {
                                               const task = this.closest('.task');
                                               task.classList.add('removed');
                                               task.querySelector('input[name$=_deleted\\[\\]]').value = '1';
+                                              task.remove(); /* ### changed: remove from UI immediately */
                                             ">🗑</button>
                           {% endif %}
 
