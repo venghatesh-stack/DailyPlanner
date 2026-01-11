@@ -2109,39 +2109,92 @@ function cycleStatus(el){
 {% endif %}
 <script>
 function promoteUntimed(id, text) {
-  const q = prompt("Move to which quadrant? (Q1 / Q2 / Q3 / Q4)");
-  if (!q) return;
+  const modal = document.getElementById("modal");
+  const content = document.getElementById("modal-content");
 
+  content.innerHTML = `
+    <h3>📋 Promote Task</h3>
+    <div style="margin-bottom:12px;">${text}</div>
+
+    <button onclick="confirmPromote('${id}','${text}','Q1')">🔥 Do Now</button><br>
+    <button onclick="confirmPromote('${id}','${text}','Q2')">📅 Schedule</button><br>
+    <button onclick="confirmPromote('${id}','${text}','Q3')">🤝 Delegate</button><br>
+    <button onclick="confirmPromote('${id}','${text}','Q4')">🗑 Eliminate</button><br><br>
+
+    <button onclick="modal.style.display='none'">Cancel</button>
+  `;
+
+  modal.style.display = "flex";
+}
+
+function confirmPromote(id, text, q) {
   fetch("/untimed/promote", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      id: id,
-      text: text,
-      quadrant: q.toLowerCase(),
+      id,
+      text,
+      quadrant: q,
       plan_date: "{{ plan_date }}"
     })
   }).then(() => location.reload());
 }
 
 function scheduleUntimed(id, text) {
-  const start = prompt("Start slot (1–48)");
-  const slots = prompt("Number of 30-min slots");
+  const modal = document.getElementById("modal");
+  const content = document.getElementById("modal-content");
 
-  if (!start || !slots) return;
+  content.innerHTML = `
+    <h3>🕒 Schedule Task</h3>
+    <div style="margin-bottom:8px;">${text}</div>
+
+    <label>Date</label>
+    <input type="date" id="d" value="{{ plan_date }}"><br><br>
+
+    <label>Start Time</label>
+    <input type="time" id="t"><br><br>
+
+    <label>Duration</label><br>
+    <select id="dur">
+      <option value="1">30 min</option>
+      <option value="2">1 hr</option>
+      <option value="3">1.5 hr</option>
+      <option value="4">2 hr</option>
+    </select><br><br>
+
+    <button onclick="modal.style.display='none'">Cancel</button>
+    <button onclick="confirmSchedule('${id}','${text}')">Schedule</button>
+  `;
+
+  modal.style.display = "flex";
+}
+
+function confirmSchedule(id, text) {
+  const date = document.getElementById("d").value;
+  const time = document.getElementById("t").value;
+  const slots = parseInt(document.getElementById("dur").value);
+
+  if (!time) {
+    alert("Select start time");
+    return;
+  }
+
+  const [h, m] = time.split(":").map(Number);
+  const start_slot = Math.floor((h * 60 + m) / 30) + 1;
 
   fetch("/untimed/schedule", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      id: id,
-      text: text,
-      start_slot: start,
-      slot_count: slots,
-      plan_date: "{{ plan_date }}"
+      id,
+      text,
+      plan_date: date,
+      start_slot,
+      slot_count: slots
     })
   }).then(() => location.reload());
 }
+
 </script>
 
 </body>
@@ -2987,6 +3040,22 @@ function deleteRecurring(taskId) {
   }, 2500);
 </script>
 {% endif %}
+<div id="modal" style="
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.35);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+">
+  <div style="
+    background:#fff;
+    padding:18px;
+    width:320px;
+    border-radius:14px;
+  " id="modal-content"></div>
+</div>
 
 </body>
 </html>
