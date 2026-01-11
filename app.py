@@ -2235,13 +2235,17 @@ function promoteUntimed(btn) {
   }
 
   const id = btn.dataset.id;
-  const text = btn.closest(".untimed-item")
-                  .querySelector(".untimed-text")
-                  .dataset.text;
 
+  // 🔒 Always read text from DOM, never inject into JS strings
+  const item = btn.closest(".untimed-item");
+  if (!item) return;
+
+  const text = item.dataset.text || "";
+
+  // Build structure WITHOUT user text
   content.innerHTML = `
     <h3>📋 Promote Task</h3>
-    <div style="margin-bottom:12px;">${text}</div>
+    <div id="task-preview" style="margin-bottom:12px;"></div>
 
     <button type="button" onclick="confirmPromote('${id}','Q1')">🔥 Do Now</button><br>
     <button type="button" onclick="confirmPromote('${id}','Q2')">📅 Schedule</button><br>
@@ -2250,8 +2254,16 @@ function promoteUntimed(btn) {
 
     <button type="button" onclick="modal.style.display='none'">Cancel</button>
   `;
+
+  // ✅ Inject text safely
+  const preview = content.querySelector("#task-preview");
+  if (preview) {
+    preview.textContent = text;
+  }
+
   modal.style.display = "flex";
 }
+
 
 function confirmPromote(id, quadrant) {
   fetch("/untimed/promote", {
