@@ -2131,10 +2131,30 @@ function confirmPromote(id, quadrant){
   }).then(()=>location.reload());
 }
 
+/* SCHEDULE */
+function scheduleUntimed(id){
+  const item = document.querySelector(".untimed-item[data-id='"+id+"']");
+  const text = item.dataset.text;
+
+  const modal = document.getElementById("modal");
+  const content = document.getElementById("modal-content");
+
+  content.innerHTML =
+    "<h3>🕒 Schedule Task</h3>" +
+    "<div id='preview'></div><br>" +
+    "<label>Date</label><input type='date' id='d' value='"+PLAN_DATE+"'><br><br>" +
+    "<label>Start</label><input type='time' id='t'><br><br>" +
+    "<label>Duration</label>" +
+    "<select id='dur'><option value='1'>30m</option><option value='2'>1h</option></select><br><br>" +
+    "<button onclick=\\"modal.style.display='none'\\">Cancel</button> " +
+    "<button onclick=\\"confirmSchedule('" + id + "')\\">Continue</button>";
+
+  content.querySelector("#preview").textContent = text;
+  modal.style.display = "flex";
+}
+
 function confirmSchedule(id){
   const item = document.querySelector(".untimed-item[data-id='"+id+"']");
-  if (!item) return;
-
   const newText = item.dataset.text;
   const date = document.getElementById("d").value;
   const time = document.getElementById("t").value;
@@ -2149,28 +2169,8 @@ function confirmSchedule(id){
     method:"POST",
     headers:{ "Content-Type":"application/json" },
     body:JSON.stringify({ plan_date:date,start_slot,slot_count:slots })
-  })
-  .then(r=>r.json())
-  .then(preview=>{
-
-    let combined = "";
-    let appended = false;
-
-    preview.forEach(p => {
-      if (p.existing) {
-        combined += p.existing;
-        if (!appended) {
-          combined += "\n---\n" + newText;
-          appended = true;
-        }
-      } else if (!appended) {
-        combined += newText;
-        appended = true;
-      }
-      combined += "\n\n";
-    });
-
-    combined = combined.trim();
+  }).then(r=>r.json()).then(preview=>{
+    const combined = preview.map(p=>p.existing?p.existing+"\\n---\\n"+newText:newText).join("\\n\\n");
 
     const modal = document.getElementById("modal");
     const content = document.getElementById("modal-content");
@@ -2178,16 +2178,12 @@ function confirmSchedule(id){
     content.innerHTML =
       "<h3>✏️ Confirm</h3>" +
       "<textarea id='finalText' style='width:100%;min-height:160px;'></textarea><br><br>" +
-      "<button onclick=\"modal.style.display='none'\">Cancel</button> " +
-      "<button onclick=\"saveFinalSchedule('" + id + "','" + date + "',"+start_slot+","+slots+")\">Save</button>";
+      "<button onclick=\\"modal.style.display='none'\\">Cancel</button> " +
+      "<button onclick=\\"saveFinalSchedule('" + id + "','" + date + "',"+start_slot+","+slots+")\\">Save</button>";
 
     document.getElementById("finalText").value = combined;
-
-    // ✅ THIS WAS MISSING
-    modal.style.display = "flex";
   });
 }
-
 
 function saveFinalSchedule(id,date,start_slot,slots){
   fetch("/untimed/schedule",{
