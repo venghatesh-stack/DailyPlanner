@@ -1808,7 +1808,20 @@ def promoteuntimed():
 
     plan_date = date.fromisoformat(data["plan_date"])
     task_id = data["id"]
-    text = data["text"]
+    # Resolve text from META instead of trusting client
+    rows = get(
+        "daily_slots",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "slot": f"eq.{META_SLOT}",
+            "select": "plan",
+        },
+    )
+
+    meta = json.loads(rows[0]["plan"]) if rows else {}
+    task = next(t for t in meta.get("untimed_tasks", []) if t["id"] == task_id)
+    text = task["text"]
+
 
     raw_q = data["quadrant"].upper()
     if raw_q not in QUADRANT_MAP:
@@ -1865,7 +1878,7 @@ def schedule_untimed():
     if plan_date < datetime.now(IST).date():
       return ("Cannot schedule in the past", 400)
     task_id = data["id"]
-    text = data["text"]
+    text = data.get("final_text") or data["text"]
     start_slot = int(data["start_slot"])
     slot_count = int(data["slot_count"])
 
@@ -1889,6 +1902,38 @@ def schedule_untimed():
     remove_untimed_task(plan_date, task_id)
 
     return ("", 204)
+@app.route("/untimed/slot-preview", methods=["POST"])
+@login_required
+def untimed_slot_preview():
+    data = request.get_json()
+
+    plan_date = date.fromisoformat(data["plan_date"])
+    start_slot = int(data["start_slot"])
+    slot_count = int(data["slot_count"])
+
+    preview = []
+
+    for i in range(slot_count):
+        slot = start_slot + i
+        if not (1 <= slot <= TOTAL_SLOTS):
+            continue
+
+        row = get(
+            "daily_slots",
+            params={
+                "plan_date": f"eq.{plan_date}",
+                "slot": f"eq.{slot}",
+                "select": "slot,plan",
+            },
+        )
+
+        preview.append({
+            "slot": slot,
+            "existing": row[0]["plan"] if row and row[0].get("plan") else ""
+        })
+
+    return preview, 200
+
 @app.route("/favicon.ico")
 def favicon():
     return "", 204
@@ -2075,22 +2120,29 @@ Workout @6am to 7am $High %Personal
 
 <div>
 {% for t in untimed_tasks %}
-  <div style="padding:8px 0;border-bottom:1px solid #eee;">
-    <div>{{ t.text }}</div>
+  <div class="untimed-item"
+       data-id="{{ t.id }}"
+       data-text="{{ t.text | e }}"
+       style="padding:8px 0;border-bottom:1px solid #eee;">
+
+    <div class="untimed-text">{{ t.text }}</div>
+
     <div style="margin-top:6px;">
-      <button type="button"
-              onclick="promoteUntimed('{{ t.id }}','{{ t.text }}')">
+    <button type="button"
+        data-id="{{ t.id }}"
+        onclick="promoteUntimed(this)">
+
         📋 Promote
       </button>
       <button type="button"
-              onclick="scheduleUntimed('{{ t.id }}','{{ t.text }}')">
+              onclick="scheduleUntimed('{{ t.id }}')">
         🕒 Schedule
       </button>
     </div>
   </div>
 {% endfor %}
-</div>
 
+</div>
 
 <div style="font-size:13px; color:#475569; margin-bottom:12px;">
   • These tasks are saved for the day<br>
@@ -2173,38 +2225,51 @@ function cycleStatus(el){
 </script>
 {% endif %}
 <script>
-function promoteUntimed(id, text) {
+function promoteUntimed(btn) {
   const modal = document.getElementById("modal");
   const content = document.getElementById("modal-content");
+
+  if (!modal || !content) {
+    console.error("Modal missing in DOM");
+    return;
+  }
+
+  const id = btn.dataset.id;
+  const text = btn.closest(".untimed-item")
+                  .querySelector(".untimed-text")
+                  .dataset.text;
 
   content.innerHTML = `
     <h3>📋 Promote Task</h3>
     <div style="margin-bottom:12px;">${text}</div>
 
-    <button type="button" onclick="confirmPromote('${id}','${text}','Q1')">🔥 Do Now</button><br>
-    <button type="button" onclick="confirmPromote('${id}','${text}','Q2')">📅 Schedule</button><br>
-    <button type="button" onclick="confirmPromote('${id}','${text}','Q3')">🤝 Delegate</button><br>
-    <button type="button" onclick="confirmPromote('${id}','${text}','Q4')">🗑 Eliminate</button><br><br>
+    <button type="button" onclick="confirmPromote('${id}','Q1')">🔥 Do Now</button><br>
+    <button type="button" onclick="confirmPromote('${id}','Q2')">📅 Schedule</button><br>
+    <button type="button" onclick="confirmPromote('${id}','Q3')">🤝 Delegate</button><br>
+    <button type="button" onclick="confirmPromote('${id}','Q4')">🗑 Eliminate</button><br><br>
 
     <button type="button" onclick="modal.style.display='none'">Cancel</button>
-    `;
-    modal.style.display = "flex";
+  `;
+  modal.style.display = "flex";
 }
 
-function confirmPromote(id, text, q) {
+function confirmPromote(id, quadrant) {
   fetch("/untimed/promote", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       id,
-      text,
-      quadrant: q,
+      quadrant,
       plan_date: "{{ plan_date }}"
     })
   }).then(() => location.reload());
 }
+function scheduleUntimed(id) {
+  const item = document.querySelector(`.untimed-item[data-id="${id}"]`);
+  if (!item) return;
 
-function scheduleUntimed(id, text) {
+  const text = item.dataset.text;
+
   const modal = document.getElementById("modal");
   const content = document.getElementById("modal-content");
 
@@ -2227,13 +2292,17 @@ function scheduleUntimed(id, text) {
     </select><br><br>
 
     <button type="button" onclick="modal.style.display='none'">Cancel</button>
-    <button type="button" onclick="confirmSchedule('${id}','${text}')">Schedule</button>
+    <button type="button" onclick="confirmSchedule('${id}')">Continue</button>
+  `;
 
-    `;
   modal.style.display = "flex";
 }
+function confirmSchedule(id) {
+  const item = document.querySelector(`.untimed-item[data-id="${id}"]`);
+  if (!item) return;
 
-function confirmSchedule(id, text) {
+  const newText = item.dataset.text;
+
   const date = document.getElementById("d").value;
   const time = document.getElementById("t").value;
   const slots = parseInt(document.getElementById("dur").value);
@@ -2246,15 +2315,57 @@ function confirmSchedule(id, text) {
   const [h, m] = time.split(":").map(Number);
   const start_slot = Math.floor((h * 60 + m) / 30) + 1;
 
+  // 🔹 Fetch existing planner content
+  fetch("/untimed/slot-preview", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      plan_date: date,
+      start_slot,
+      slot_count: slots
+    })
+  })
+  .then(r => r.json())
+  .then(preview => {
+
+    const combined = preview.map(p => {
+      if (p.existing) {
+        return `${p.existing}\n---\n${newText}`;
+      }
+      return newText;
+    }).join("\n\n");
+
+    const modal = document.getElementById("modal");
+    const content = document.getElementById("modal-content");
+
+    content.innerHTML = `
+      <h3>✏️ Confirm Planner Content</h3>
+      <p>You can edit before saving:</p>
+
+      <textarea id="finalText"
+                style="width:100%;min-height:160px;">${combined}</textarea>
+
+      <br><br>
+      <button type="button" onclick="modal.style.display='none'">Cancel</button>
+      <button type="button"
+              onclick="saveFinalSchedule('${id}','${date}',${start_slot},${slots})">
+        Save
+      </button>
+    `;
+  });
+}
+function saveFinalSchedule(id, date, start_slot, slots) {
+  const finalText = document.getElementById("finalText").value;
+
   fetch("/untimed/schedule", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       id,
-      text,
       plan_date: date,
       start_slot,
-      slot_count: slots
+      slot_count: slots,
+      final_text: finalText
     })
   }).then(() => location.reload());
 }
