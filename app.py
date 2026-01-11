@@ -1763,7 +1763,7 @@ def summary():
 
 @app.route("/untimed/promote", methods=["POST"])
 @login_required
-def promote_untimed():
+def promoteuntimed():
     data = request.get_json()
 
     plan_date = date.fromisoformat(data["plan_date"])
@@ -1775,6 +1775,20 @@ def promote_untimed():
         return ("Invalid quadrant", 400)
 
     quadrant = QUADRANT_MAP[raw_q]
+    # 🔹 Compute next position in the quadrant
+    max_pos = get(
+    "todo_matrix",
+    params={
+        "plan_date": f"eq.{plan_date}",
+        "quadrant": f"eq.{quadrant}",
+        "is_deleted": "eq.false",
+        "select": "position",
+        "order": "position.desc",
+        "limit": 1,
+    },
+  )
+
+    next_pos = max_pos[0]["position"] + 1 if max_pos else 0
 
     post(
         "todo_matrix",
@@ -1784,7 +1798,7 @@ def promote_untimed():
             "task_text": text,
             "is_done": False,
             "is_deleted": False,
-            "position": 0,
+            "position": next_pos,
             "category": "General",
             "subcategory": "General",
         },
@@ -1799,6 +1813,8 @@ def schedule_untimed():
     data = request.get_json()
 
     plan_date = date.fromisoformat(data["plan_date"])
+    if plan_date < date.today():
+      return ("Cannot schedule in the past", 400)
     task_id = data["id"]
     text = data["text"]
     start_slot = int(data["start_slot"])
