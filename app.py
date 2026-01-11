@@ -180,7 +180,15 @@ QUADRANT_MAP = {
     "Q3": "delegate",
     "Q4": "eliminate",
 }
-
+WEEKDAY_MAP = {
+    "monday": 0,
+    "tuesday": 1,
+    "wednesday": 2,
+    "thursday": 3,
+    "friday": 4,
+    "saturday": 5,
+    "sunday": 6,
+}
 ### Category, Subcategory code ends here ###
 
 
@@ -293,15 +301,14 @@ def save_day(plan_date, form):
             if not line:
                 continue
             if "@" not in line:
-                continue
-
+              logger.warning(f"Smart planner skipped (missing time): {line}")
+              continue
             try:
                 parsed = parse_planner_input(line, plan_date)
                 task_date = parsed["date"]
                 # --------------------------------------------
                 # AUTO-INSERT INTO EISENHOWER MATRIX (Q1–Q4)
                 # --------------------------------------------
-                
                 if parsed.get("quadrant"):
                     quadrant = parsed["quadrant"]
 
@@ -410,32 +417,18 @@ def save_day(plan_date, form):
       "status": DEFAULT_STATUS,
     }
 
-
     # -------------------------------------------------
-    # FINAL WRITE (REQUIRED)
-    # -------------------------------------------------
-   # -------------------------------------------------
     # FINAL WRITE (REQUIRED)
     # -------------------------------------------------
     ALLOWED_DAILY_COLUMNS = {
-    "plan_date",
-    "slot",
-    "plan",
-    "status",
-    "priority",
-    "category",
-    "tags",
-  }
-    WEEKDAY_MAP = {
-    "monday": 0,
-    "tuesday": 1,
-    "wednesday": 2,
-    "thursday": 3,
-    "friday": 4,
-    "saturday": 5,
-    "sunday": 6,
-}
-
+        "plan_date",
+        "slot",
+        "plan",
+        "status",
+        "priority",
+        "category",
+        "tags",
+    }
 
     clean_payload = [
         {k: v for k, v in row.items() if k in ALLOWED_DAILY_COLUMNS}
@@ -962,111 +955,6 @@ def parse_time_token(token, plan_date):
         f"%Y-%m-%d {fmt}",
     )
 
-
-
-def parse_planner_input(raw_text, plan_date):
-    # --------------------------------
-    # QUADRANT PARSING
-    # --------------------------------
-    task_date = extract_date(raw_text, plan_date)
-
-    quadrant_match = re.search(r"\b(Q[1-4])\b", raw_text, re.I)
-    quadrant = (
-        QUADRANT_MAP[quadrant_match.group(1).upper()]
-        if quadrant_match
-        else None
-    )
-
-    # --------------------------------
-    # TIME PARSING (existing logic)
-    # --------------------------------
-    range_match = re.search(
-        r"@([0-9:\.apm\s]+)\s+to\s+([0-9:\.apm\s]+)",
-        raw_text,
-        re.I,
-    )
-
-    single_match = re.search(
-        r"@([0-9:\.apm\s]+)",
-        raw_text,
-        re.I,
-    )
-
-    if range_match:
-        start_raw, end_raw = range_match.groups()
-        start_dt = parse_time_token(start_raw, task_date)
-        end_dt = parse_time_token(end_raw, task_date)
-
-    elif single_match:
-        start_raw = single_match.group(1)
-        start_dt = parse_time_token(start_raw, task_date)
-        end_dt = start_dt + timedelta(minutes=30)
-
-    else:
-        raise ValueError("Time missing")
-
-    if end_dt <= start_dt:
-        raise ValueError("End time must be after start time")
-
-    # --------------------------------
-    # METADATA
-    # --------------------------------
-    priority_match = re.search(r"\$(critical|high|medium|low)", raw_text, re.I)
-    category_match = re.search(
-    r"%(" + "|".join(TASK_CATEGORIES.keys()) + r")",
-    raw_text,
-    re.I
-    )
-
-
-    priority = (
-        priority_match.group(1).capitalize()
-        if priority_match
-        else DEFAULT_PRIORITY
-    )
-
-    category = (
-        category_match.group(1).capitalize()
-        if category_match
-        else DEFAULT_CATEGORY
-    )
-
-    title = re.sub(r"\s[@$%#Q].*", "", raw_text).strip()
-    tags = extract_tags(raw_text)
-
-    return {
-        "title": title,
-        "start": start_dt,
-        "end": end_dt,
-        "date" : task_date,
-        "priority": priority,
-        "priority_rank": PRIORITY_RANK[priority],
-        "category": category,
-        "tags": tags,
-        "quadrant": quadrant,  # ⭐ NEW
-    }
-
-
-def generate_half_hour_slots(parsed):
-    slots = []
-    current = parsed["start"]
-
-    while current < parsed["end"]:
-        slot_end = min(current + timedelta(minutes=30), parsed["end"])
-
-        slots.append({
-            "task": parsed["title"],
-            "time": f"{current.strftime('%H:%M')} - {slot_end.strftime('%H:%M')}",
-            "priority": parsed["priority"],
-            "priority_rank": parsed["priority_rank"],
-            "category": parsed["category"],
-            "tags": parsed["tags"],
-            "status": "open",
-        })
-
-        current = slot_end
-
-    return slots
 def extract_date(raw_text, default_date):
     """
     Resolves task date from natural language.
@@ -1135,15 +1023,6 @@ def extract_date(raw_text, default_date):
     )
 
     if weekday_match:
-        WEEKDAY_MAP = {
-            "monday": 0,
-            "tuesday": 1,
-            "wednesday": 2,
-            "thursday": 3,
-            "friday": 4,
-            "saturday": 5,
-            "sunday": 6,
-        }
 
         target = WEEKDAY_MAP[weekday_match.group(1)]
         today = default_date.weekday()
@@ -1157,6 +1036,111 @@ def extract_date(raw_text, default_date):
     # 4️⃣ Default → planner UI date
     # --------------------------------
     return default_date
+
+def parse_planner_input(raw_text, plan_date):
+    # --------------------------------
+    # QUADRANT PARSING
+    # --------------------------------
+    task_date = extract_date(raw_text, plan_date)
+
+    quadrant_match = re.search(r"\b(Q[1-4])\b", raw_text, re.I)
+    quadrant = (
+        QUADRANT_MAP[quadrant_match.group(1).upper()]
+        if quadrant_match
+        else None
+    )
+
+    # --------------------------------
+    # TIME PARSING (existing logic)
+    # --------------------------------
+    range_match = re.search(
+        r"@([0-9:\.apm\s]+)\s+to\s+([0-9:\.apm\s]+)",
+        raw_text,
+        re.I,
+    )
+
+    single_match = re.search(
+        r"@([0-9:\.apm\s]+)",
+        raw_text,
+        re.I,
+    )
+
+    if range_match:
+        start_raw, end_raw = range_match.groups()
+        start_dt = parse_time_token(start_raw, task_date)
+        end_dt = parse_time_token(end_raw, task_date)
+
+    elif single_match:
+        start_raw = single_match.group(1)
+        start_dt = parse_time_token(start_raw, task_date)
+        end_dt = start_dt + timedelta(minutes=30)
+
+    else:
+        raise ValueError("Time missing")
+
+    if end_dt <= start_dt:
+        raise ValueError("End time must be after start time")
+
+    # --------------------------------
+    # METADATA
+    # --------------------------------
+    priority_match = re.search(r"\$(critical|high|medium|low)", raw_text, re.I)
+    category_match = re.search(
+    r"%(" + "|".join(TASK_CATEGORIES.keys()) + r")",
+    raw_text,
+    re.I
+    )
+
+
+    priority = (
+        priority_match.group(1).capitalize()
+        if priority_match
+        else DEFAULT_PRIORITY
+    )
+
+    category = (
+        category_match.group(1).capitalize()
+        if category_match
+        else DEFAULT_CATEGORY
+    )
+
+    title = re.sub(r"\s(@|\$|%|#|Q[1-4]).*", "", raw_text).strip()
+    tags = extract_tags(raw_text)
+
+    return {
+        "title": title,
+        "start": start_dt,
+        "end": end_dt,
+        "date" : task_date,
+        "priority": priority,
+        "priority_rank": PRIORITY_RANK[priority],
+        "category": category,
+        "tags": tags,
+        "quadrant": quadrant,  # ⭐ NEW
+    }
+
+
+def generate_half_hour_slots(parsed):
+    slots = []
+    current = parsed["start"]
+
+    while current < parsed["end"]:
+        slot_end = min(current + timedelta(minutes=30), parsed["end"])
+
+        slots.append({
+            "task": parsed["title"],
+            "time": f"{current.strftime('%H:%M')} - {slot_end.strftime('%H:%M')}",
+            "priority": parsed["priority"],
+            "priority_rank": parsed["priority_rank"],
+            "category": parsed["category"],
+            "tags": parsed["tags"],
+            "status": "open",
+        })
+
+        current = slot_end
+
+    return slots
+
 
 
 ### Travel mode Code Changes ###
