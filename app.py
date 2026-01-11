@@ -240,6 +240,7 @@ def load_day(plan_date, tag=None):
     }
     habits = set()
     reflection = ""
+    untimed_tasks = []  
 
     rows = (
         get(
@@ -258,6 +259,7 @@ def load_day(plan_date, tag=None):
                 meta = json.loads(r.get("plan") or "{}")
                 habits = set(meta.get("habits", []))
                 reflection = meta.get("reflection", "")
+                untimed_tasks = meta.get("untimed_tasks", [])
             except Exception:
                 pass
             continue
@@ -281,7 +283,7 @@ def load_day(plan_date, tag=None):
             "status": r.get("status") or DEFAULT_STATUS,
         }
 
-    return plans, habits, reflection
+    return plans, habits, reflection,untimed_tasks
 
 
 
@@ -300,10 +302,61 @@ def save_day(plan_date, form):
             line = line.strip()
             if not line:
                 continue
-            # Accept "@9am" OR "from 9am to 10am"
-            if not re.search(r"(@\s*\d|\bfrom\s+\d)", line, re.I):
+            has_time = re.search(r"(@\s*\d|\bfrom\s+\d)", line, re.I)
+            quadrant_match = re.search(r"\b(Q[1-4])\b", line, re.I)
+
+            # -------------------------------------------------
+            # CASE 1: No time BUT Q1–Q4 → Eisenhower-only
+            # -------------------------------------------------
+            if not has_time and quadrant_match:
+                try:
+                    # Reuse parser by injecting a dummy time
+                    parsed = parse_planner_input(
+                        line + " @12am",
+                        plan_date
+                    )
+
+                    quadrant = parsed["quadrant"]
+
+                    existing = get(
+                        "todo_matrix",
+                        params={
+                            "plan_date": f"eq.{plan_date}",
+                            "quadrant": f"eq.{quadrant}",
+                            "task_text": f"eq.{parsed['title']}",
+                            "is_deleted": "eq.false",
+                        },
+                    )
+
+                    if not existing:
+                        post(
+                            "todo_matrix",
+                            {
+                                "plan_date": str(plan_date),
+                                "quadrant": quadrant,
+                                "task_text": parsed["title"],
+                                "is_done": False,
+                                "is_deleted": False,
+                                "position": 0,
+                                "category": parsed["category"],
+                                "subcategory": "General",
+                            },
+                        )
+
+                    logger.info(f"Eisenhower-only task added: {line}")
+                    continue
+
+                except Exception as e:
+                    logger.error(f"Eisenhower-only parse failed: {line} → {e}")
+                    continue
+
+            # -------------------------------------------------
+            # CASE 2: No time and no quadrant → skip
+            # -------------------------------------------------
+            if not has_time:
                 logger.warning(f"Smart planner skipped (missing time): {line}")
                 continue
+    
 
             try:
                 parsed = parse_planner_input(line, plan_date)
@@ -407,10 +460,18 @@ def save_day(plan_date, form):
             )
 
     # ---- SAVE META (habits + reflection) ----
+    untimed_raw = form.get("untimed_tasks", "").strip()
+
     meta = {
         "habits": form.getlist("habits"),
         "reflection": form.get("reflection", "").strip(),
+        "untimed_tasks": [
+            line.strip()
+            for line in untimed_raw.splitlines()
+            if line.strip()
+        ],
     }
+
 
     meta_payload = {
       "plan_date": str(plan_date),
@@ -1278,7 +1339,7 @@ def planner():
             url_for("planner", year=plan_date.year, month=plan_date.month, day=plan_date.day, saved=1)
         )
 
-    plans, habits, reflection = load_day(plan_date)
+    plans, habits, reflection,untimed_tasks = load_day(plan_date)
 
     days = [
         date(year, month, d) for d in range(1, calendar.monthrange(year, month)[1] + 1)
@@ -1307,6 +1368,7 @@ def planner():
         habit_list=HABIT_LIST,
         habit_icons=HABIT_ICONS,
         calendar=calendar,
+        untimed_tasks=untimed_tasks,
     )
 
 
@@ -1652,7 +1714,25 @@ Workout @6am to 7am $High %Personal
 "
   style="width:100%; min-height:120px; margin-bottom:16px;"
 ></textarea>
+<h3>🗒 Tasks (No Time Yet)</h3>
+<textarea
+  name="untimed_tasks"
+  placeholder="
+Tasks without a specific time.
+Examples:
+- Fix prod bug
+- Decide quarterly goals
+- Talk to finance team
+"
+  style="width:100%; min-height:120px; margin-bottom:16px;"
+>{{ untimed_tasks | join('\n') }}</textarea>
 
+<div style="font-size:13px; color:#475569; margin-bottom:12px;">
+  • These tasks are saved for the day<br>
+  • They do not block calendar slots<br>
+  • Rewrite them with time or Q1–Q4 when ready
+</div>
+<h3>🗓 Time-blocked Plans</h3>
 {% for slot in plans %}
 <div class="slot {% if now_slot==slot %}current{% endif %}">
   <strong>{{ slot_labels[slot] }}</strong>
