@@ -2,7 +2,6 @@
 from flask import Flask, request, redirect, url_for, render_template_string, session
 import os
 from datetime import date, datetime, timedelta
-
 import calendar
 import json
 from supabase_client import get, post, update
@@ -34,25 +33,15 @@ from config import (
     HABIT_ICONS,
     HABIT_LIST,
 )
-
-
 from config import META_SLOT
 from templates.login import login_required
-
-
 app = Flask(__name__)
 logger = setup_logger()
-
-
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "change-this-secret")
 APP_PASSWORD = os.environ.get("APP_PASSWORD", "changeme")
-
-
 # ==========================================================
 # Log in codestarts here
 # ==========================================================
-
-
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
