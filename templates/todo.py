@@ -552,7 +552,7 @@ select {
                                       if (del) del.value = '1';
 
                                       const textarea = task.querySelector('textarea');
-                                      if (textarea) textarea.readOnly = true;"
+                                      if (textarea) textarea.style.textDecoration = "line-through";
 
                               >
                               🗑
@@ -640,7 +640,7 @@ select {
                                       if (del) del.value = '1';
 
                                       const textarea = task.querySelector('textarea');
-                                      if (textarea) textarea.readOnly = true;
+                                      if (textarea) textarea.style.textDecoration = "line-through";
                                     "
                             >🗑</button>
                         {% endif %}
@@ -746,30 +746,31 @@ function addTask(q, category = "General", subcategory = "General") {
 let autoSaveTimer = null;
 
 function toggleDone(checkbox) {
-  const task = checkbox.closest(".task");
-  if (!task) return;
+    const task = checkbox.closest(".task");
+    if (!task) return;
 
-  // UI update (already correct)
-  if (checkbox.checked) {
-    task.classList.add("done");
-  } else {
-    task.classList.remove("done");
-  }
+    // UI update (already correct)
+    if (checkbox.checked) {
+        task.classList.add("done");
+    } else {
+        task.classList.remove("done");
+    }
 
-  // Debounced auto-save (prevents rapid submits)
-  if (autoSaveTimer) {
-    clearTimeout(autoSaveTimer);
-  }
+    // Debounced auto-save (prevents rapid submits)
+    if (autoSaveTimer) {
+        clearTimeout(autoSaveTimer);
+    }
 
-  autoSaveTimer = setTimeout(() => {
-  const form = document.getElementById("todo-form");
-  const textarea = task.querySelector("textarea");
-  if (textarea) autoGrow(textarea);
-  if (form) {
-    form.submit(); // IMPORTANT: use submit(), not requestSubmit()
-  }
-}, 500);
+    autoSaveTimer = setTimeout(() => {
+    if (task.classList.contains("removed")) return;
 
+    const form = document.getElementById("todo-form");
+    const textarea = task.querySelector("textarea");
+    if (textarea) autoGrow(textarea);
+    if (form) {
+        form.submit();
+    }
+    }, 500);
 }
 function autoGrow(textarea) {
   if (!textarea) return;

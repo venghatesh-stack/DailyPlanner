@@ -1,4 +1,5 @@
 import logging
+
 from supabase_client import get, post, update  
 from datetime import timedelta
 from config import TRAVEL_MODE_TASKS
@@ -108,7 +109,22 @@ def save_todo(plan_date, form):
 
     updates = []
     inserts = []
+    # ==================================================
+    # AUTHORITATIVE DELETE PASS (MUST BE FIRST)
+    # ==================================================
     deleted_ids = set()
+    for k, v in form.to_dict(flat=False).items():
+        if "_deleted[" in k and v[-1] == "1":
+            task_id = k.split("[", 1)[1].rstrip("]")
+            deleted_ids.add(task_id)
+
+    if deleted_ids:
+        update(
+        "todo_matrix",
+        params={"id": f"in.({','.join(deleted_ids)})"},
+        json={"is_deleted": True},
+      )
+
 
     # -----------------------------------
     # Process quadrants
@@ -128,12 +144,7 @@ def save_todo(plan_date, form):
                 tid = k[len(f"{quadrant}_done_state["):-1]
                 done_state[tid] = v
 
-        # ---- DELETE STATE ----
-        deleted_map = {}
-        for k, v in form.to_dict(flat=False).items():
-            if k.startswith(f"{quadrant}_deleted["):
-                tid = k[len(f"{quadrant}_deleted["):-1]
-                deleted_map[tid] = v[-1]
+       
 
         # ---- ITERATE TASKS ----
         for idx, text in enumerate(texts):
@@ -143,8 +154,7 @@ def save_todo(plan_date, form):
             task_id = str(ids[idx])
 
             # ✅ AUTHORITATIVE DELETE
-            if deleted_map.get(task_id) == "1":
-                deleted_ids.add(task_id)
+            if task_id in deleted_ids:
                 continue
 
             text = (text or "").strip()
@@ -204,12 +214,7 @@ def save_todo(plan_date, form):
 
       post("todo_matrix", inserts)
 
-    if deleted_ids:
-        update(
-            "todo_matrix",
-            params={"id": f"in.({','.join(deleted_ids)})"},
-            json={"is_deleted": True},
-        )
+
 
     logger.info(
         "Eisenhower save complete: %d updates, %d inserts, %d deletions",
