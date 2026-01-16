@@ -851,8 +851,13 @@ def save_todo(plan_date, form):
             payload = {
                 "quadrant": quadrant,
                 "task_text": text,
-                "task_date": dates[idx] if idx < len(dates) else None,
-                "task_time": times[idx] if idx < len(times) else None,
+                "task_date": (
+                  dates[idx] if idx < len(dates) and dates[idx]
+                  else str(plan_date)),
+                "task_time": (
+                  times[idx] if idx < len(times) and times[idx]
+                  else None
+                ),
                 "is_done": "1" in done_state.get(task_id, []),
                 "position": idx,
                 "is_deleted": False,
@@ -890,7 +895,11 @@ def save_todo(plan_date, form):
         )
 
     if inserts:
-        post("todo_matrix", inserts)
+      for r in inserts:
+        if not r.get("task_date"):
+            r["task_date"] = str(plan_date)
+
+    post("todo_matrix", inserts)
 
     if deleted_ids:
         update(
