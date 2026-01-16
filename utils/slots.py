@@ -8,3 +8,12 @@ def slot_label(slot):
 def current_slot():
     now = datetime.now(IST)
     return (now.hour * 60 + now.minute) // 30 + 1
+def slots_to_timerange(slots):
+    slots = sorted(slots)
+    start_min = (slots[0] - 1) * 30
+    end_min = slots[-1] * 30
+
+    start = datetime.min + timedelta(minutes=start_min)
+    end = datetime.min + timedelta(minutes=end_min)
+
+    return f"{start.strftime('%I:%M %p').lstrip('0')}–{end.strftime('%I:%M %p').lstrip('0')}"

@@ -4,12 +4,12 @@ import os
 from datetime import date, datetime, timedelta
 
 import calendar
-import urllib.parse
 import json
 from supabase_client import get, post, update
 from logger import setup_logger
 from utils.dates import safe_date 
-from utils.slots import slot_start_end, current_slot, slot_label, TOTAL_SLOTS
+from utils.slots import current_slot, slot_label, TOTAL_SLOTS
+from utils.calender_links import google_calendar_link
 from services.planner_service import load_day, save_day, get_daily_summary, get_weekly_summary
 from services.eisenhower_service import (
     load_todo,
@@ -34,61 +34,19 @@ from config import (
     HABIT_ICONS,
     HABIT_LIST,
 )
-from datetime import ZoneInfo
+
 
 from config import META_SLOT
 from templates.login import login_required
 
 
-# ==========================================================
-# APP SETUP
-# ==========================================================
-
 app = Flask(__name__)
 logger = setup_logger()
-# ==========================================================
-# Log in codestarts here
-# ==========================================================
+
 
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "change-this-secret")
 APP_PASSWORD = os.environ.get("APP_PASSWORD", "changeme")
 
-
-
-def google_calendar_link(plan_date, slot, task):
-    if not task:
-        return "#"
-    start_ist, end_ist = slot_start_end(plan_date, slot)
-    start_utc = start_ist.astimezone(ZoneInfo("UTC"))
-    end_utc = end_ist.astimezone(ZoneInfo("UTC"))
-    params = {
-        "action": "TEMPLATE",
-        "text": task,
-        "dates": f"{start_utc.strftime('%Y%m%dT%H%M%SZ')}/{end_utc.strftime('%Y%m%dT%H%M%SZ')}",
-        "details": "Created from Daily Planner",
-        "trp": "false",
-    }
-    return "https://calendar.google.com/calendar/render?" + urllib.parse.urlencode(
-        params
-    )
-    
-
-
-def slots_to_timerange(slots):
-    slots = sorted(slots)
-    start_min = (slots[0] - 1) * 30
-    end_min = slots[-1] * 30
-
-    start = datetime.min + timedelta(minutes=start_min)
-    end = datetime.min + timedelta(minutes=end_min)
-
-    return f"{start.strftime('%I:%M %p').lstrip('0')}–{end.strftime('%I:%M %p').lstrip('0')}"
-
-
-
-
-
-### Travel mode Code Changes ###
 
 # ==========================================================
 # Log in codestarts here
@@ -526,10 +484,7 @@ def untimed_slot_preview():
 @app.route("/favicon.ico")
 def favicon():
     return "", 204
-### Travel mode Code Changes ###
 
-# NOTE: Use the exact PLANNER_TEMPLATE you already validated as correct.
-# (Intentionally not duplicated again to avoid accidental edits.)
 
 # ==========================================================
 # ENTRY POINT
