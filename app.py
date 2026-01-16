@@ -899,7 +899,7 @@ def save_todo(plan_date, form):
         if not r.get("task_date"):
             r["task_date"] = str(plan_date)
 
-    post("todo_matrix", inserts)
+      post("todo_matrix", inserts)
 
     if deleted_ids:
         update(
