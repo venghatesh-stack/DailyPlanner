@@ -993,6 +993,7 @@ def materialize_recurring_tasks(plan_date):
         payload.append(
             {
                 "plan_date": str(plan_date),
+                "task_date": str(plan_date),
                 "quadrant": r["quadrant"],
                 "task_text": r["task_text"],
                 "category": r.get("category") or "General",
@@ -1068,7 +1069,7 @@ def copy_open_tasks_from_previous_day(plan_date):
                 "task_text": r["task_text"],
                 "is_done": False,
                 "is_deleted": False,  # 👈 REQUIRED
-                "task_date": r.get("task_date"),
+                "task_date": r.get("task_date") or str(plan_date),
                 "task_time": r.get("task_time"),
                 "position": next_pos,
                 "category": r.get("category") or "General",
