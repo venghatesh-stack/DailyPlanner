@@ -2,7 +2,7 @@
 # ==========================================================
 # TEMPLATE – EISENHOWER MATRIX
 # ==========================================================
-const pendingDeletes = new Map(); // taskId → timeoutId
+
 TODO_TEMPLATE = """
 <!DOCTYPE html>
 <html>
