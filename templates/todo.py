@@ -71,34 +71,29 @@ summary::-webkit-details-marker {
 .floating-bar .cancel {
   background: #e5e7eb;
 }
-/* ===== Google Tasks–style Eisenhower ===== */
 .task {
   transition:
-    opacity 0.6s ease,
-    transform 0.6s ease,
-    max-height 0.55s ease,
-    margin 0.55s ease,
-    padding 0.55s ease;
-  max-height: 1000px;
-  overflow: hidden;
+    opacity 0.8s ease,
+    transform 0.8s ease;
 }
 
-/* Phase 1: fade only */
 .task.deleting {
   opacity: 0;
-  transform: translateX(-16px);
-  background: #fef2f2;
-  border-color: #fca5a5;
+  transform: translateX(-24px);
 }
 
-/* Phase 2: collapse */
 .task.collapsing {
+  transition:
+    max-height 0.6s ease,
+    margin 0.6s ease,
+    padding 0.6s ease;
   max-height: 0;
   margin-top: 0;
   margin-bottom: 0;
   padding-top: 0;
   padding-bottom: 0;
 }
+
 
 .task + .task {
   border-top: none;
@@ -717,7 +712,7 @@ function requestDelete(btn, quadrant) {
   // Phase 2: collapse AFTER fade
   setTimeout(() => {
     task.classList.add("collapsing");
-  }, 650); // must match opacity duration
+  }, 900); // must match opacity duration
 
   // Final delete after undo window
   const timeoutId = setTimeout(() => {
@@ -816,7 +811,14 @@ function onTaskInput(textarea) {
 
   // 🚫 Do not autosave while delete animation is running
   if (task.classList.contains("deleting")) return;
+  const idInput = task.querySelector('input[name$="_id[]"]');
+  const taskId = idInput?.value || "";
 
+  // ⛔ NEW task → save immediately once
+  if (taskId.startsWith("new_")) {
+    document.getElementById("todo-form")?.submit();
+    return;
+  }
   // ⏳ Debounce autosave
   if (autoSaveTimer) {
     clearTimeout(autoSaveTimer);
