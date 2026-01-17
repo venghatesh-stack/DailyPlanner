@@ -723,7 +723,7 @@ function requestDelete(btn, quadrant) {
   const timeoutId = setTimeout(() => {
     del.value = "1";
     pendingDeletes.delete(taskId);
-    document.getElementById("todo-form")?.submit();
+    autosaveForm(0);
   }, 7000);
 
   pendingDeletes.set(taskId, timeoutId);
@@ -779,7 +779,7 @@ function addTask(q, category = "General", subcategory = "General") {
                 class="task-text"
                 rows="1"
                 placeholder="Add a task"
-                oninput="onTaskInput(this)"
+                oninput="autosaveForm(800)"
                 autofocus></textarea>
 
       <input type="checkbox"
@@ -804,6 +804,35 @@ function addTask(q, category = "General", subcategory = "General") {
   const textarea = row.querySelector("textarea");
   if (textarea) autoGrow(textarea);
 }
+let autosaveController = null;
+let autosaveTimer = null;
+
+function autosaveForm(delay = 600) {
+  if (autosaveTimer) clearTimeout(autosaveTimer);
+
+  autosaveTimer = setTimeout(() => {
+    // cancel previous request
+    if (autosaveController) {
+      autosaveController.abort();
+    }
+
+    autosaveController = new AbortController();
+
+    const form = document.getElementById("todo-form");
+    const data = new FormData(form);
+
+    fetch("/todo/autosave", {
+      method: "POST",
+      body: data,
+      signal: autosaveController.signal,
+    }).catch(err => {
+      if (err.name !== "AbortError") {
+        console.error("Autosave failed", err);
+      }
+    });
+  }, delay);
+}
+
 </script>
 <script>
 
@@ -828,15 +857,12 @@ function onTaskInput(textarea) {
   }, 1500);
 }
 
-
 function toggleDone(checkbox) {
   const task = checkbox.closest(".task");
   if (!task) return;
 
-  // 1️⃣ Update UI immediately
   task.classList.toggle("done", checkbox.checked);
 
-  // 2️⃣ Update hidden input (SOURCE OF TRUTH)
   const hidden = task.querySelector(
     'input[type="hidden"][name*="_done_state"]'
   );
@@ -844,12 +870,7 @@ function toggleDone(checkbox) {
     hidden.value = checkbox.checked ? "1" : "0";
   }
 
-  // 3️⃣ Debounced autosave
-  if (autoSaveTimer) clearTimeout(autoSaveTimer);
-
-  autoSaveTimer = setTimeout(() => {
-    document.getElementById("todo-form")?.submit();
-  }, 1200);
+  autosaveForm(200);
 }
 
 

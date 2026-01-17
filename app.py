@@ -467,6 +467,19 @@ def untimed_slot_preview():
         })
 
     return preview, 200
+@app.route("/todo/autosave", methods=["POST"])
+@login_required
+def todo_autosave():
+    plan_date = date(
+        int(request.form["year"]),
+        int(request.form["month"]),
+        int(request.form["day"]),
+    )
+
+    save_todo(plan_date, request.form)
+
+    # IMPORTANT: no HTML, no redirect
+    return "", 204
 
 @app.route("/favicon.ico")
 def favicon():

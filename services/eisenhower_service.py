@@ -155,7 +155,7 @@ def save_todo(plan_date, form):
                 done_state[tid] = v
 
        
-
+        seen_new_texts = set()
         # ---- ITERATE TASKS ----
         for idx, text in enumerate(texts):
             if idx >= len(ids):
@@ -191,10 +191,16 @@ def save_todo(plan_date, form):
             # NEW TASKS → ALWAYS INSERT
             # -------------------------------
             if task_id.startswith("new_"):
+                # Prevent duplicate autosave inserts
+                if text in seen_new_texts:
+                    continue
+                seen_new_texts.add(text)
+
                 inserts.append({
                     "plan_date": str(plan_date),
                     **payload,
                 })
+
 
             # -------------------------------
             # EXISTING TASKS → UPDATE
