@@ -12,6 +12,7 @@ from utils.slots import current_slot,slot_label
 from utils.calender_links import google_calendar_link
 from services.planner_service import load_day, save_day, get_daily_summary, get_weekly_summary
 from services.login_service import login_required
+
 from services.eisenhower_service import (
     load_todo,
     save_todo,
@@ -468,18 +469,44 @@ def untimed_slot_preview():
 
     return preview, 200
 @app.route("/todo/autosave", methods=["POST"])
-@login_required
 def todo_autosave():
-    plan_date = date(
-        int(request.form["year"]),
-        int(request.form["month"]),
-        int(request.form["day"]),
-    )
+    data = request.json
 
-    save_todo(plan_date, request.form)
+    plan_date = data["plan_date"]
+    task_id = data.get("id")          # may be None
+    quadrant = data["quadrant"]
 
-    # IMPORTANT: no HTML, no redirect
-    return "", 204
+    payload = {
+        "plan_date": plan_date,
+        "quadrant": quadrant,
+        "task_text": data["task_text"].strip(),
+        "task_date": data.get("task_date") or plan_date,
+        "task_time": data.get("task_time"),
+        "category": data.get("category", "General"),
+        "subcategory": data.get("subcategory", "General"),
+        "is_done": data.get("is_done", False),
+        "is_deleted": False,
+        "position": data.get("position", 0),
+    }
+
+    # -------------------------------
+    # UPDATE
+    # -------------------------------
+    if task_id and not str(task_id).startswith("new_"):
+        update(
+            "todo_matrix",
+            params={"id": f"eq.{task_id}"},
+            json=payload,
+        )
+        return jsonify({"id": task_id})
+
+    # -------------------------------
+    # INSERT (ONCE)
+    # -------------------------------
+    res = post("todo_matrix", payload)
+    new_id = res[0]["id"]
+
+    return jsonify({"id": new_id})
 
 @app.route("/favicon.ico")
 def favicon():

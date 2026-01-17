@@ -539,14 +539,14 @@ select {
 
 
 
-                          <textarea name="{{ q }}[]"
-                                    class="task-text"
-                                    rows="1"
-                                    placeholder="Add a task"
-                                    oninput="autoGrow(this)">{{ t.text }}</textarea>
+                         <textarea
+                            class="task-text"
+                            oninput="autoGrow(this); autosaveTask(this.closest('.task'))">
+                         </textarea>
+
                           <input type="checkbox"
                               {% if t.done %}checked{% endif %}
-                              onchange="toggleDone(this)">
+                              onchange="toggleDone(this); autosaveTask(this.closest('.task'), 200)">
 
 
                           {% if t.recurring %}
@@ -618,11 +618,11 @@ select {
                                   class="task-text"
                                   rows="1"
                                   placeholder="Add a task"
-                                  oninput="autoGrow(this)">{{ t.text }}</textarea>
+                                  oninput="autoGrow(this); autosaveTask(this.closest('.task'))">{{ t.text }}</textarea>
 
                         <input type="checkbox"
                             {% if t.done %}checked{% endif %}
-                            onchange="toggleDone(this)">
+                            onchange="toggleDone(this); autosaveTask(this.closest('.task'), 200)">
 
 
                         {% if t.recurring %}
@@ -804,34 +804,44 @@ function addTask(q, category = "General", subcategory = "General") {
   const textarea = row.querySelector("textarea");
   if (textarea) autoGrow(textarea);
 }
-let autosaveController = null;
-let autosaveTimer = null;
 
-function autosaveForm(delay = 600) {
-  if (autosaveTimer) clearTimeout(autosaveTimer);
+let autosaveTimers = new Map();
 
-  autosaveTimer = setTimeout(() => {
-    // cancel previous request
-    if (autosaveController) {
-      autosaveController.abort();
-    }
+function autosaveTask(taskEl, delay = 600) {
+  const idInput = taskEl.querySelector('input[name$="_id[]"]');
+  const textarea = taskEl.querySelector("textarea");
+  const checkbox = taskEl.querySelector('input[type="checkbox"]');
 
-    autosaveController = new AbortController();
+  if (!idInput || !textarea) return;
 
-    const form = document.getElementById("todo-form");
-    const data = new FormData(form);
+  const taskId = idInput.value;
+
+  clearTimeout(autosaveTimers.get(taskEl));
+  autosaveTimers.set(taskEl, setTimeout(() => {
 
     fetch("/todo/autosave", {
       method: "POST",
-      body: data,
-      signal: autosaveController.signal,
-    }).catch(err => {
-      if (err.name !== "AbortError") {
-        console.error("Autosave failed", err);
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: taskId,
+        plan_date: "{{ plan_date }}",
+        quadrant: taskEl.closest("[id]").id,
+        task_text: textarea.value,
+        is_done: checkbox?.checked || false,
+      })
+    })
+    .then(r => r.json())
+    .then(res => {
+      // 🔑 CRITICAL: replace temp ID
+      if (taskId.startsWith("new_")) {
+        idInput.value = res.id;
       }
-    });
-  }, delay);
+    })
+    .catch(console.error);
+
+  }, delay));
 }
+
 
 </script>
 <script>
