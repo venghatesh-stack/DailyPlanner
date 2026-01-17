@@ -468,61 +468,6 @@ def untimed_slot_preview():
         })
 
     return preview, 200
-@app.route("/todo/autosave", methods=["POST"])
-@login_required
-def todo_autosave():
-    data = request.json
-
-    plan_date = data["plan_date"]
-    task_id = data.get("id")          # may be None
-    quadrant = data["quadrant"]
-
-    payload = {
-        "plan_date": plan_date,
-        "quadrant": quadrant,
-        "task_text": data["task_text"].strip(),
-        "task_date": data.get("task_date") or plan_date,
-        "task_time": data.get("task_time"),
-        "category": data.get("category", "General"),
-        "subcategory": data.get("subcategory", "General"),
-        "is_done": data.get("is_done", False),
-        "is_deleted": False,
-        "position": data.get("position", 0),
-    }
-
-    # -------------------------------
-    # UPDATE
-    # -------------------------------
-    if task_id and not str(task_id).startswith("new_"):
-        update(
-            "todo_matrix",
-            params={"id": f"eq.{task_id}"},
-            json=payload,
-        )
-        return jsonify({"id": task_id})
-
-      # ------------------------
-    # INSERT ONLY IF NOT EXISTS
-    # ------------------------
-    existing = get(
-        "todo_matrix",
-        params={
-            "plan_date": f"eq.{plan_date}",
-            "quadrant": f"eq.{payload['quadrant']}",
-            "task_text": f"eq.{payload['task_text']}",
-            "is_deleted": "eq.false",
-        },
-    )
-
-    if existing:
-        return jsonify({"id": existing[0]["id"]})
-
-    res = post("todo_matrix", payload)
-    return jsonify({"id": res[0]["id"]})
-
-@app.route("/favicon.ico")
-def favicon():
-    return "", 204
 
 @app.post("/todo/autosave")
 @login_required
@@ -538,6 +483,12 @@ def todo_autosave():
     )
 
     return jsonify({"id": new_id})
+
+@app.route("/favicon.ico")
+def favicon():
+    return "", 204
+
+
 
 # ==========================================================
 # ENTRY POINT
