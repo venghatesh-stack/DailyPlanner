@@ -196,7 +196,7 @@ summary::-webkit-details-marker {
   border-color: #94a3b8;
 }
 
-.task.done textarea {
+.task.done .task-text {
   text-decoration: line-through;
 }
 
@@ -807,7 +807,6 @@ function addTask(q, category = "General", subcategory = "General") {
 </script>
 <script>
 
-let autoSaveTimer = null;
 function onTaskInput(textarea) {
   autoGrow(textarea);
 
