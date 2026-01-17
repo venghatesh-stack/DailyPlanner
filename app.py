@@ -7,8 +7,8 @@ import json
 from supabase_client import get, post, update
 from logger import setup_logger
 from utils.dates import safe_date 
-from config import slot_label, TOTAL_SLOTS
-from utils.slots import current_slot
+from config import TOTAL_SLOTS,QUADRANT_MAP,TASK_CATEGORIES,STATIC_TRAVEL_SUBGROUPS
+from utils.slots import current_slot,slot_label
 from utils.calender_links import google_calendar_link
 from services.planner_service import load_day, save_day, get_daily_summary, get_weekly_summary
 from services.eisenhower_service import (
@@ -16,9 +16,6 @@ from services.eisenhower_service import (
     save_todo,
     copy_open_tasks_from_previous_day,  
     enable_travel_mode,
-    QUADRANT_MAP,   
-    TASK_CATEGORIES,
-    STATIC_TRAVEL_SUBGROUPS,
 )
 from services.recurring_service import materialize_recurring_tasks
 from services.untimed_service import remove_untimed_task  
