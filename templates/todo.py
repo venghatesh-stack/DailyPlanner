@@ -540,24 +540,12 @@ select {
                                     onclick="deleteRecurring('{{ t.id }}')">🗑</button>
                           {% else %}
                             <button type="button"
-                                    class="task-delete"
-                                    title="Removed after Save"  
-                                    onclick="
-                                      const task = this.closest('.task');
-                                      
-                                      task.classList.add('removed');
-                                      task.style.transition = "background 0.15s ease";
-                                      task.offsetHeight; // 👈 force repaint
-
-                                      const del = task.querySelector('input[type=hidden][name^=\'{{ q }}_deleted\']');
-                                      if (del) del.value = '1';
-
-                                      const textarea = task.querySelector('textarea');
-                                      if (textarea) textarea.style.textDecoration = "line-through";
-
-                              >
-                              🗑
+                                      class="task-delete"
+                                      title="Remove after Save"
+                                      onclick="requestDelete(this, '{{ q }}')">
+                                🗑
                             </button>
+
 
                           {% endif %}
 
@@ -628,22 +616,12 @@ select {
                                   onclick="deleteRecurring('{{ t.id }}')">🗑</button>
                         {% else %}
                           <button type="button"
-                                  class="task-delete"
-                                  title="Removed after Save"
-                                  onclick="
-                                      const task = this.closest('.task');
-                                      
-                                      task.classList.add('removed');
-                                      task.style.transition = "background 0.15s ease";
-                                      task.offsetHeight; // 👈 force repaint
+                              class="task-delete"
+                              title="Remove after Save"
+                              onclick="requestDelete(this, '{{ q }}')">
+                            🗑
+                          </button>
 
-                                      const del = task.querySelector('input[type=hidden][name^=\'{{ q }}_deleted\']');
-                                      if (del) del.value = '1';
-
-                                      const textarea = task.querySelector('textarea');
-                                      if (textarea) textarea.style.textDecoration = "line-through";
-                                    "
-                            >🗑</button>
                         {% endif %}
 
                         {% if t.recurring %}
@@ -691,7 +669,71 @@ select {
 </div>
 
 
+
+
 <script>
+
+const pendingDeletes = new Map();
+
+function requestDelete(btn, quadrant) {
+  const task = btn.closest('.task');
+  if (!task) return;
+
+  const del = task.querySelector(
+    `input[type="hidden"][name^="${quadrant}_deleted"]`
+  );
+  if (!del) return;
+
+  const match = del.name.match(/\[(.+?)\]/);
+  if (!match) return;
+
+  const taskId = match[1];
+
+  // Hide task immediately
+  task.classList.add("removed");
+  task.style.display = "none";
+
+  // Mark as pending (NOT deleted yet)
+  del.value = "pending";
+
+  // Start undo timer (7s)
+  const timeoutId = setTimeout(() => {
+    del.value = "1";   // FINAL delete
+    pendingDeletes.delete(taskId);
+
+    const form = document.getElementById("todo-form");
+    if (form) form.submit();
+  }, 7000);
+
+  pendingDeletes.set(taskId, timeoutId);
+  showUndoToast(taskId, task, del);
+}
+
+function showUndoToast(taskId, task, delInput) {
+  const toast = document.getElementById("undo-toast");
+  const undoBtn = document.getElementById("undo-btn");
+
+  toast.style.display = "flex";
+
+  undoBtn.onclick = () => {
+    const timeoutId = pendingDeletes.get(taskId);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      pendingDeletes.delete(taskId);
+    }
+
+    delInput.value = "0";
+    task.style.display = "";
+    task.classList.remove("removed");
+    toast.style.display = "none";
+  };
+
+  setTimeout(() => {
+    toast.style.display = "none";
+  }, 7000);
+}
+
+
 function addTask(q, category = "General", subcategory = "General") {
   const container = document.getElementById(q);
   if (!container) return;
@@ -880,6 +922,35 @@ function deleteRecurring(taskId) {
     width:320px;
     border-radius:14px;
   " id="modal-content"></div>
+</div>
+
+<div id="undo-toast"
+     style="
+       position: fixed;
+       bottom: 140px;
+       left: 50%;
+       transform: translateX(-50%);
+       background: #111827;
+       color: white;
+       padding: 12px 18px;
+       border-radius: 999px;
+       font-weight: 600;
+       display: none;
+       gap: 12px;
+       align-items: center;
+       z-index: 9999;
+     ">
+  <span>Task deleted</span>
+  <button id="undo-btn"
+          style="
+            background: none;
+            border: none;
+            color: #93c5fd;
+            font-weight: 700;
+            cursor: pointer;
+          ">
+    Undo
+  </button>
 </div>
 
 </body>
