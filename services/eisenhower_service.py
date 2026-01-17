@@ -1,9 +1,10 @@
 import logging
 
 from supabase_client import get, post, update  
+import datetime
 from datetime import timedelta
 from config import TRAVEL_MODE_TASKS
-
+from flask import session
 logger = logging.getLogger(__name__)
 
 
@@ -93,7 +94,8 @@ def load_todo(plan_date):
 ### Category, Subcategory code ends here ###
 def save_todo(plan_date, form):
     logger.info("Saving Eisenhower matrix (batched)")
-
+    moved_count = 0
+    moved_dates = set()
     existing_rows = get(
         "todo_matrix",
         params={
@@ -171,13 +173,22 @@ def save_todo(plan_date, form):
             text = (text or "").strip()
             if not text:
                 continue
+            task_plan_date = (
+                datetime.strptime(dates[idx], "%Y-%m-%d").date()
+                if idx < len(dates) and dates[idx]
+                else plan_date
+            )
+            if task_plan_date != plan_date:
+                moved_count += 1
+                moved_dates.add(task_plan_date)
+
 
             payload = {
                 "quadrant": quadrant,
                 "task_text": text,
                 "task_date": (
                   dates[idx] if idx < len(dates) and dates[idx]
-                  else str(plan_date)),
+                  else str(task_plan_date )),
                 "task_time": (
                   times[idx] if idx < len(times) and times[idx]
                   else None
@@ -201,7 +212,7 @@ def save_todo(plan_date, form):
             elif task_id in existing_ids:
                 update_row = {
                     "id": task_id,
-                    "plan_date": str(plan_date),
+                    "plan_date": str(task_plan_date ),
                     **payload,
                 }
 
@@ -216,7 +227,7 @@ def save_todo(plan_date, form):
                  continue
 
                 inserts.append({
-                    "plan_date": str(plan_date),
+                    "plan_date": str(task_plan_date ),
                     **payload,
                 })
 
@@ -265,6 +276,14 @@ def save_todo(plan_date, form):
         post("todo_matrix", inserts)
 
 
+    if moved_count:
+        session["toast"] = {
+        "type": "info",
+        "message": (
+            f"📅 {moved_count} task(s) moved to "
+            + ", ".join(sorted(d.strftime('%d %b %Y') for d in moved_dates))
+        ),
+    }
 
     logger.info(
         "Eisenhower save complete: %d updates, %d inserts, %d deletions",
