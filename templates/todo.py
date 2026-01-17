@@ -808,25 +808,25 @@ function addTask(q, category = "General", subcategory = "General") {
 const autosaveTimers = new Map();
 
 function autosaveTask(taskEl, delay = 600) {
+  if (taskEl.dataset.saving === "1") return;
+
   const idInput = taskEl.querySelector('input[name$="_id[]"]');
   const textarea = taskEl.querySelector("textarea");
   const checkbox = taskEl.querySelector('input[type="checkbox"]');
 
   if (!idInput || !textarea) return;
-
-  // 🚫 do not autosave empty text
   if (!textarea.value.trim()) return;
 
-  const taskId = idInput.value;
-
   clearTimeout(autosaveTimers.get(taskEl));
+
   autosaveTimers.set(taskEl, setTimeout(() => {
+    taskEl.dataset.saving = "1";
 
     fetch("/todo/autosave", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        id: taskId,
+        id: idInput.value,
         plan_date: "{{ plan_date }}",
         quadrant: taskEl.closest("[id]").id,
         task_text: textarea.value,
@@ -835,12 +835,14 @@ function autosaveTask(taskEl, delay = 600) {
     })
     .then(r => r.json())
     .then(res => {
-      // 🔑 CRITICAL: replace temp ID ONCE
-      if (taskId.startsWith("new_") && res.id) {
-        idInput.value = res.id;
+      if (idInput.value.startsWith("new_") && res.id) {
+        idInput.value = res.id;   // 🔑 stop duplicates
       }
+      taskEl.dataset.saved = "1";
     })
-    .catch(console.error);
+    .finally(() => {
+      taskEl.dataset.saving = "0";
+    });
 
   }, delay));
 }

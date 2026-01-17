@@ -427,7 +427,7 @@ def autosave_task(plan_date, task_id, quadrant, text, is_done):
 
     # NEW TASK → INSERT ONCE
     if task_id.startswith("new_"):
-        row = post(
+        rows = post(
             "todo_matrix",
             [{
                 "plan_date": plan_date,
@@ -435,11 +435,14 @@ def autosave_task(plan_date, task_id, quadrant, text, is_done):
                 "task_text": text,
                 "is_done": is_done,
                 "is_deleted": False,
-                "position": 999,  # temp, reordered on full save
+                "position": 999,
             }],
-        )
+        ) or []
 
-        return row[0]["id"]
+        if not rows:
+            raise RuntimeError("Autosave insert failed")
+
+        return str(rows[0]["id"])
 
     # EXISTING TASK → UPDATE ONLY
     update(
