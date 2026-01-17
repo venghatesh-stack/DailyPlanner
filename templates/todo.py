@@ -827,30 +827,17 @@ if (taskId.startsWith("new_")) {
   }, 600); // ✅ let text settle
   return;
 }
-
-  // ⏳ Debounce autosave
-  if (autoSaveTimer) {
-    clearTimeout(autoSaveTimer);
-  }
-
-  autoSaveTimer = setTimeout(() => {
-    const form = document.getElementById("todo-form");
-    if (form) {
-      form.submit();
-    }
-  }, 800); // 👈 autosave delay
 }
 
 function toggleDone(checkbox) {
   const task = checkbox.closest(".task");
   if (!task) return;
 
-  // ✅ Immediate UI update (NO RAF)
-  if (checkbox.checked) {
-    task.classList.add("done");
-  } else {
-    task.classList.remove("done");
-  }
+  // ✅ FORCE UI UPDATE FIRST
+  task.classList.toggle("done", checkbox.checked);
+
+  // ✅ Force repaint (critical)
+  task.offsetHeight;
 
   // ⏳ Debounced autosave
   if (autoSaveTimer) clearTimeout(autoSaveTimer);
