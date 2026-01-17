@@ -484,7 +484,7 @@ def todo_autosave():
 
     if not task_text:
         return jsonify({"status": "ignored"}), 200
-
+    print("AUTOSAVE DATA:", data)
     # NEW TASK
     if task_id.startswith("new_"):
         row = {
