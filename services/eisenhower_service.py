@@ -211,10 +211,7 @@ def save_todo(plan_date, form):
             payload = {
                 "quadrant": quadrant,
                 "task_text": text,
-                "task_date": (
-                    dates[idx] if idx < len(dates) and dates[idx]
-                    else str(task_plan_date)
-                ),
+                "task_date": str(task_plan_date),
                 "task_time": (
                     times[idx] if idx < len(times) and times[idx]
                     else None
