@@ -74,11 +74,11 @@ summary::-webkit-details-marker {
 /* ===== Google Tasks–style Eisenhower ===== */
 .task {
   transition:
-    opacity 0.35s ease,
-    transform 0.35s ease,
-    max-height 0.45s ease,
-    margin 0.45s ease,
-    padding 0.45s ease;
+    opacity 0.6s ease,
+    transform 0.6s ease,
+    max-height 0.55s ease,
+    margin 0.55s ease,
+    padding 0.55s ease;
   max-height: 1000px;
   overflow: hidden;
 }
@@ -86,7 +86,7 @@ summary::-webkit-details-marker {
 /* Phase 1: fade only */
 .task.deleting {
   opacity: 0;
-  transform: translateX(-10px);
+  transform: translateX(-16px);
   background: #fef2f2;
   border-color: #fca5a5;
 }
@@ -716,7 +716,7 @@ function requestDelete(btn, quadrant) {
   // Phase 2: collapse AFTER fade
   setTimeout(() => {
     task.classList.add("collapsing");
-  }, 350); // must match opacity duration
+  }, 650); // must match opacity duration
 
   // Final delete after undo window
   const timeoutId = setTimeout(() => {
