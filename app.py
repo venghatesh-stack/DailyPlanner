@@ -474,46 +474,50 @@ def untimed_slot_preview():
 @app.route("/todo/autosave", methods=["POST"])
 @login_required
 def todo_autosave():
-    data = request.get_json(force=True)
+    try:
+        data = request.get_json(force=True)
 
-    task_id = data.get("id")
-    plan_date = data.get("plan_date")
-    quadrant = data.get("quadrant")
-    task_text = (data.get("task_text") or "").strip()
-    is_done = bool(data.get("is_done"))
+        task_id = data.get("id")
+        plan_date = data.get("plan_date")
+        quadrant = data.get("quadrant")
+        task_text = (data.get("task_text") or "").strip()
+        is_done = bool(data.get("is_done"))
 
-    if not task_text:
-        return jsonify({"status": "ignored"}), 200
-    print("AUTOSAVE DATA:", data)
-    # NEW TASK
-    if task_id.startswith("new_"):
-        row = {
-            "plan_date": plan_date,
-            "quadrant": quadrant,
-            "task_text": task_text,
-            "is_done": is_done,
-            "position": 0,
-            "is_deleted": False,
-            "category": "General",
-            "subcategory": "General",
-        }
+        if not task_text:
+            return jsonify({"status": "ignored"}), 200
+        print("AUTOSAVE DATA:", data)
+        # NEW TASK
+        if task_id.startswith("new_"):
+            row = {
+                "plan_date": plan_date,
+                "quadrant": quadrant,
+                "task_text": task_text,
+                "is_done": is_done,
+                "position": 0,
+                "is_deleted": False,
+                "category": "General",
+                "subcategory": "General",
+            }
 
-        res = post("todo_matrix", row)
-        new_id = res[0]["id"]
+            res = post("todo_matrix", row)
+            new_id = res[0]["id"]
 
-        return jsonify({"id": new_id})
+            return jsonify({"id": new_id})
 
-    # EXISTING TASK
-    update(
-        "todo_matrix",
-        params={"id": f"eq.{task_id}"},
-        json={
-            "task_text": task_text,
-            "is_done": is_done,
-        },
-    )
+        # EXISTING TASK
+        update(
+            "todo_matrix",
+            params={"id": f"eq.{task_id}"},
+            json={
+                "task_text": task_text,
+                "is_done": is_done,
+            },
+        )
 
-    return jsonify({"id": task_id})
+        return jsonify({"id": task_id})
+    except Exception as e:
+        print("AUTOSAVE ERROR:", repr(e))
+        raise
 
 @app.route("/favicon.ico")
 def favicon():
