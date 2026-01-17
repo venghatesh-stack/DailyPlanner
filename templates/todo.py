@@ -74,14 +74,30 @@ summary::-webkit-details-marker {
 /* ===== Google Tasks–style Eisenhower ===== */
 
 .task {
-  padding: 12px 14px;
-  border: 2px solid #cbd5e1;   /* 👈 THICK, visible border */
-  border-radius: 12px;
-  background: #ffffff;
-  margin-bottom: 12px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04); /* Improves Scannability */
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease,
+    max-height 0.45s ease,
+    margin 0.35s ease,
+    padding 0.35s ease;
+  max-height: 1000px;
+  overflow: hidden;
 }
+
+.task.deleting {
+  opacity: 0;
+  transform: translateX(-10px);
+  max-height: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  background: #fef2f2;
+  border-color: #fca5a5;
+  transition-delay: 0s, 0s, 0.1s, 0.1s, 0.1s;
+}
+
+
 
 .task + .task {
   border-top: none;
@@ -182,10 +198,7 @@ summary::-webkit-details-marker {
 .task.done textarea {
   text-decoration: line-through;
 }
-.task.removed {
- background: #fef2f2;
- border-color: #fca5a5;
-}
+
 /* Prevent mobile auto-zoom */
 input,
 textarea,
@@ -360,15 +373,6 @@ select {
   border: 1px solid #e5e7eb;
   background: #f9fafb;
   color: #374151;
-}
-.task.removing {
-  opacity: 0;
-  transform: translateX(-8px);
-  max-height: 0;
-  margin-bottom: 0;
-  padding-top: 0;
-  padding-bottom: 0;
-  transition: all 0.25s ease;
 }
 
 
@@ -685,7 +689,6 @@ select {
 <script>
 
 const pendingDeletes = new Map();
-
 function requestDelete(btn, quadrant) {
   const task = btn.closest('.task');
   if (!task) return;
@@ -700,38 +703,27 @@ function requestDelete(btn, quadrant) {
 
   const taskId = match[1];
 
-// Hide task Animated. 
-// mark logical state
-task.classList.add("removed");
-
-// force browser to register initial state
-task.getBoundingClientRect();
-
-// now animate
-task.classList.add("removing");
-
-// hide AFTER animation completes
-setTimeout(() => {
-  task.style.display = "none";
-}, 220);
-
-
-
-  // Mark as pending (NOT deleted yet)
+  // Mark pending delete (DO NOT remove yet)
   del.value = "pending";
 
-  // Start undo timer (7s)
-  const timeoutId = setTimeout(() => {
-    del.value = "1";   // FINAL delete
-    pendingDeletes.delete(taskId);
+  // Force layout
+  task.getBoundingClientRect();
 
-    const form = document.getElementById("todo-form");
-    if (form) form.submit();
+  // Animate
+  task.classList.add("deleting");
+
+  // Start undo timer
+  const timeoutId = setTimeout(() => {
+    del.value = "1"; // FINAL delete
+    pendingDeletes.delete(taskId);
+    document.getElementById("todo-form")?.submit();
   }, 7000);
 
   pendingDeletes.set(taskId, timeoutId);
   showUndoToast(taskId, task, del);
 }
+
+
 
 function showUndoToast(taskId, task, delInput) {
   const toast = document.getElementById("undo-toast");
@@ -747,9 +739,7 @@ function showUndoToast(taskId, task, delInput) {
     }
 
     delInput.value = "0";
-    task.style.display = "";
-    task.classList.remove("removed");
-    task.classList.remove("removing");
+    task.classList.remove("deleting");
     toast.style.display = "none";
   };
 
