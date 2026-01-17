@@ -17,3 +17,9 @@ def slots_to_timerange(slots):
     end = datetime.min + timedelta(minutes=end_min)
 
     return f"{start.strftime('%I:%M %p').lstrip('0')}–{end.strftime('%I:%M %p').lstrip('0')}"
+def slot_start_end(plan_date: date, slot: int):
+    start = datetime.combine(plan_date, datetime.min.time(), tzinfo=IST) + timedelta(
+        minutes=(slot - 1) * 30
+    )
+    end = start + timedelta(minutes=30)
+    return start, end
