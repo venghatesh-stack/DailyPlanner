@@ -23,3 +23,24 @@ def slot_start_end(plan_date: date, slot: int):
     )
     end = start + timedelta(minutes=30)
     return start, end
+
+def generate_half_hour_slots(parsed):
+    slots = []
+    current = parsed["start"]
+
+    while current < parsed["end"]:
+        slot_end = min(current + timedelta(minutes=30), parsed["end"])
+
+        slots.append({
+            "task": parsed["title"],
+            "time": f"{current.strftime('%H:%M')} - {slot_end.strftime('%H:%M')}",
+            "priority": parsed["priority"],
+            "priority_rank": parsed["priority_rank"],
+            "category": parsed["category"],
+            "tags": parsed["tags"],
+            "status": "open",
+        })
+
+        current = slot_end
+
+    return slots
