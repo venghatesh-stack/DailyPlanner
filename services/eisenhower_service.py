@@ -114,7 +114,7 @@ def save_todo(plan_date, form):
 
     logger.debug("Existing rows fetched: %s", existing_rows)
 
-    existing_ids = {str(r["id"]) for r in existing_rows}
+   
     existing_recurring_map = {
         str(r["id"]): r.get("recurring_id") for r in existing_rows
     }
