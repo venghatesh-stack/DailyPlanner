@@ -820,7 +820,7 @@ function onTaskInput(textarea) {
 
   autoSaveTimer = setTimeout(() => {
     document.getElementById("todo-form")?.submit();
-  }, 800); // slightly longer for typing
+  }, 1500); // slightly longer for typing
 }
 
 function toggleDone(checkbox) {
@@ -843,7 +843,7 @@ function toggleDone(checkbox) {
 
   autoSaveTimer = setTimeout(() => {
     document.getElementById("todo-form")?.submit();
-  }, 600);
+  }, 1200);
 }
 
 
