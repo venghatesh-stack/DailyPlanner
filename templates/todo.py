@@ -761,7 +761,7 @@ function addTask(q, category = "General", subcategory = "General") {
 
   const row = document.createElement("div");
   row.className = "task";
-
+  row.dataset.saved = "0";   // 👈 REQUIRED
   const id = "new_" + Date.now();
 
   row.innerHTML = `
@@ -813,15 +813,21 @@ function onTaskInput(textarea) {
   const task = textarea.closest(".task");
   if (!task) return;
 
-  // 🚫 Skip while delete animation is running
+  // ⛔ Prevent autosave during delete animation
   if (task.classList.contains("deleting")) return;
 
-  if (autoSaveTimer) clearTimeout(autoSaveTimer);
+  // ✅ NEW TASK: autosave ONLY ONCE
+  if (task.dataset.saved === "1") return;
 
+  // Mark as saved immediately to prevent duplicates
+  task.dataset.saved = "1";
+
+  clearTimeout(autoSaveTimer);
   autoSaveTimer = setTimeout(() => {
     document.getElementById("todo-form")?.submit();
-  }, 1500); // slightly longer for typing
+  }, 1500);
 }
+
 
 function toggleDone(checkbox) {
   const task = checkbox.closest(".task");

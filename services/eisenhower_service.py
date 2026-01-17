@@ -225,25 +225,42 @@ def save_todo(plan_date, form):
                 u for u in updates
                 if str(u.get("id")) not in deleted_ids
         ]
+   
     if updates:
-       
-       # -----------------------------------
-       # APPLY UPDATES (ROW-BY-ROW)
-       # -----------------------------------
-        for u in updates:
-            update(
-                "todo_matrix",
-                params={"id": f"eq.{u['id']}"},
-                json=u,
-            )
+        post(
+            "todo_matrix?on_conflict=id",
+            updates,
+            prefer="resolution=merge-duplicates",
+        )
 
 
+
+    # -----------------------------------
+    # DEDUPE INSERTS (autosave safety)
+    # -----------------------------------
+    seen = set()
+    deduped_inserts = []
+
+    for r in inserts:
+        key = (
+            r["plan_date"],
+            r["quadrant"],
+            r["task_text"].strip(),
+            r.get("category"),
+            r.get("subcategory"),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped_inserts.append(r)
+
+    inserts = deduped_inserts
     if inserts:
-      for r in inserts:
-        if not r.get("task_date"):
-            r["task_date"] = str(plan_date)
+        for r in inserts:
+            if not r.get("task_date"):
+                r["task_date"] = str(plan_date)
 
-      post("todo_matrix", inserts)
+        post("todo_matrix", inserts)
 
 
 
