@@ -119,12 +119,24 @@ def save_todo(plan_date, form):
             deleted_ids.add(task_id)
 
     if deleted_ids:
-        update(
-        "todo_matrix",
-        params={"id": f"in.({','.join(deleted_ids)})"},
-        json={"is_deleted": True},
-      )
+        # --------------------------------------------------
+        # NEVER update rows deleted in this request
+        # --------------------------------------------------
+        updates = [
+            u for u in updates
+            if str(u.get("id")) not in deleted_ids
+        ]
 
+        safe_deleted_ids = [
+        i for i in deleted_ids if not i.startswith("new_")
+        ]
+
+        if safe_deleted_ids:
+            update(
+                "todo_matrix",
+                params={"id": f"in.({','.join(safe_deleted_ids)})"},
+                json={"is_deleted": True},
+            )
 
     # -----------------------------------
     # Process quadrants
@@ -177,9 +189,19 @@ def save_todo(plan_date, form):
                 "category": categories[idx] if idx < len(categories) else "General",
                 "subcategory": subcategories[idx] if idx < len(subcategories) else "General",
             }
+            # -------------------------------
+            # NEW TASKS → ALWAYS INSERT
+            # -------------------------------
+            if task_id.startswith("new_"):
+                inserts.append({
+                    "plan_date": str(plan_date),
+                    **payload,
+                })
 
-            # ✅ UPDATE vs INSERT (INSIDE LOOP)
-            if task_id in existing_ids:
+            # -------------------------------
+            # EXISTING TASKS → UPDATE
+            # -------------------------------
+            elif task_id in existing_ids:
                 update_row = {
                     "id": task_id,
                     "plan_date": str(plan_date),
@@ -191,11 +213,6 @@ def save_todo(plan_date, form):
                     update_row["recurring_id"] = rid
 
                 updates.append(update_row)
-            else:
-                inserts.append({
-                    "plan_date": str(plan_date),
-                    **payload,
-                })
 
     # -----------------------------------
     # WRITE CHANGES
