@@ -104,12 +104,16 @@ def save_todo(plan_date, form):
             "select": "id,recurring_id",
         },
     ) or []
+    
 
     existing_ids = {str(r["id"]) for r in existing_rows}
     existing_recurring_map = {
         str(r["id"]): r.get("recurring_id") for r in existing_rows
     }
-
+    original_dates = {
+    str(r["id"]): datetime.fromisoformat(r["plan_date"]).date()
+    for r in existing_rows
+    }
     updates = []
     inserts = []
     # ==================================================
@@ -178,7 +182,8 @@ def save_todo(plan_date, form):
                 if idx < len(dates) and dates[idx]
                 else plan_date
             )
-            if task_plan_date != plan_date:
+            original_date = original_dates.get(task_id, plan_date)
+            if task_plan_date != original_date:
                 moved_count += 1
                 moved_dates.add(task_plan_date)
 
