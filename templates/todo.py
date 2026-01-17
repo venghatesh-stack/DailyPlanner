@@ -720,11 +720,11 @@ function requestDelete(btn, quadrant) {
   }, 1200); // must match opacity duration
 
   // Final delete after undo window
-  const timeoutId = setTimeout(() => {
-    del.value = "1";
-    pendingDeletes.delete(taskId);
-    autosaveForm(0);
-  }, 7000);
+//  const timeoutId = setTimeout(() => {
+//    del.value = "1";
+  //  pendingDeletes.delete(taskId);
+   // autosaveForm(0);
+//  }, 7000);
 
   pendingDeletes.set(taskId, timeoutId);
   showUndoToast(taskId, task, del);
@@ -779,7 +779,6 @@ function addTask(q, category = "General", subcategory = "General") {
                 class="task-text"
                 rows="1"
                 placeholder="Add a task"
-                oninput="autosaveForm(800)"
                 autofocus></textarea>
 
       <input type="checkbox"
@@ -846,26 +845,6 @@ function autosaveTask(taskEl, delay = 600) {
 </script>
 <script>
 
-function onTaskInput(textarea) {
-  autoGrow(textarea);
-
-  const task = textarea.closest(".task");
-  if (!task) return;
-
-  // ⛔ Prevent autosave during delete animation
-  if (task.classList.contains("deleting")) return;
-
-  // ✅ NEW TASK: autosave ONLY ONCE
-  if (task.dataset.saved === "1") return;
-
-  // Mark as saved immediately to prevent duplicates
-  task.dataset.saved = "1";
-
-  clearTimeout(autoSaveTimer);
-  autoSaveTimer = setTimeout(() => {
-    document.getElementById("todo-form")?.submit();
-  }, 1500);
-}
 
 function toggleDone(checkbox) {
   const task = checkbox.closest(".task");
@@ -880,7 +859,7 @@ function toggleDone(checkbox) {
     hidden.value = checkbox.checked ? "1" : "0";
   }
 
-  autosaveForm(200);
+  //autosaveForm(200);
 }
 
 

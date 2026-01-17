@@ -1,5 +1,5 @@
 ## Eisenhower Matrix + Daily Planner integrated. Calender control working
-from flask import Flask, request, redirect, url_for, render_template_string, session
+from flask import Flask, request, redirect, url_for, render_template_string, session,jsonify
 import os
 from datetime import date, datetime, timedelta
 import calendar
@@ -469,6 +469,7 @@ def untimed_slot_preview():
 
     return preview, 200
 @app.route("/todo/autosave", methods=["POST"])
+@login_required
 def todo_autosave():
     data = request.json
 
@@ -500,13 +501,24 @@ def todo_autosave():
         )
         return jsonify({"id": task_id})
 
-    # -------------------------------
-    # INSERT (ONCE)
-    # -------------------------------
-    res = post("todo_matrix", payload)
-    new_id = res[0]["id"]
+      # ------------------------
+    # INSERT ONLY IF NOT EXISTS
+    # ------------------------
+    existing = get(
+        "todo_matrix",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "quadrant": f"eq.{payload['quadrant']}",
+            "task_text": f"eq.{payload['task_text']}",
+            "is_deleted": "eq.false",
+        },
+    )
 
-    return jsonify({"id": new_id})
+    if existing:
+        return jsonify({"id": existing[0]["id"]})
+
+    res = post("todo_matrix", payload)
+    return jsonify({"id": res[0]["id"]})
 
 @app.route("/favicon.ico")
 def favicon():
