@@ -101,7 +101,7 @@ def save_todo(plan_date, form):
         params={
             "plan_date": f"eq.{plan_date}",
             "is_deleted": "eq.false",
-            "select": "id,recurring_id",
+            "select": "id,plan_date,recurring_id",
         },
     ) or []
     
