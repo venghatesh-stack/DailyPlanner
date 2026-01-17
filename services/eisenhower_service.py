@@ -155,7 +155,7 @@ def save_todo(plan_date, form):
                 done_state[tid] = v
 
        
-        seen_new_texts = set()
+        
         # ---- ITERATE TASKS ----
         for idx, text in enumerate(texts):
             if idx >= len(ids):
