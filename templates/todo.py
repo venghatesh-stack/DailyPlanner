@@ -534,20 +534,20 @@ select {
                           <input type="hidden" name="{{ q }}_category[]" value="{{ t.category }}">
                           <input type="hidden" name="{{ q }}_subcategory[]" value="{{ t.subcategory }}">
                           <input type="hidden"
-                                 name="{{ q }}_done_state[{{ t.id }}]"
-                                 value="0">
+                              name="{{ q }}_done_state[{{ t.id }}]"
+                              value="{{ 1 if t.done else 0 }}">
+
+
 
                           <textarea name="{{ q }}[]"
                                     class="task-text"
                                     rows="1"
                                     placeholder="Add a task"
                                     oninput="autoGrow(this)">{{ t.text }}</textarea>
-
                           <input type="checkbox"
-                                 name="{{ q }}_done_state[{{ t.id }}]"
-                                 value="1"
-                                 {% if t.done %}checked{% endif %}
-                                 onchange="toggleDone(this)">
+                              {% if t.done %}checked{% endif %}
+                              onchange="toggleDone(this)">
+
 
                           {% if t.recurring %}
                             <button type="button"
@@ -610,8 +610,9 @@ select {
                         <input type="hidden" name="{{ q }}_category[]" value="{{ t.category }}">
                         <input type="hidden" name="{{ q }}_subcategory[]" value="{{ t.subcategory }}">
                         <input type="hidden"
-                               name="{{ q }}_done_state[{{ t.id }}]"
-                               value="0">
+                                name="{{ q }}_done_state[{{ t.id }}]"
+                                value="{{ 1 if t.done else 0 }}">
+
 
                         <textarea name="{{ q }}[]"
                                   class="task-text"
@@ -620,10 +621,9 @@ select {
                                   oninput="autoGrow(this)">{{ t.text }}</textarea>
 
                         <input type="checkbox"
-                               name="{{ q }}_done_state[{{ t.id }}]"
-                               value="1"
-                               {% if t.done %}checked{% endif %}
-                               onchange="toggleDone(this)">
+                            {% if t.done %}checked{% endif %}
+                            onchange="toggleDone(this)">
+
 
                         {% if t.recurring %}
                           <button type="button"
@@ -771,6 +771,7 @@ function addTask(q, category = "General", subcategory = "General") {
     <input type="hidden" name="${q}_subcategory[]" value="${subcategory}">
     <input type="hidden" name="${q}_done_state[${id}]" value="0">
 
+
     <div class="task-main">
       <span class="task-index">*</span>
 
@@ -782,9 +783,8 @@ function addTask(q, category = "General", subcategory = "General") {
                 autofocus></textarea>
 
       <input type="checkbox"
-             name="${q}_done_state[${id}]"
-             value="1"
-             onchange="toggleDone(this)">
+       onchange="toggleDone(this)">
+
 
       <button type="button"
               class="task-delete"
@@ -814,32 +814,32 @@ function onTaskInput(textarea) {
   const task = textarea.closest(".task");
   if (!task) return;
 
-  // 🚫 Do not autosave while delete animation is running
+  // 🚫 Skip while delete animation is running
   if (task.classList.contains("deleting")) return;
-  const idInput = task.querySelector('input[name$="_id[]"]');
-  const taskId = idInput?.value || "";
 
-  // ⛔ NEW task → save immediately once
-if (taskId.startsWith("new_")) {
-  clearTimeout(autoSaveTimer);
+  if (autoSaveTimer) clearTimeout(autoSaveTimer);
+
   autoSaveTimer = setTimeout(() => {
     document.getElementById("todo-form")?.submit();
-  }, 600); // ✅ let text settle
-  return;
-}
+  }, 800); // slightly longer for typing
 }
 
 function toggleDone(checkbox) {
   const task = checkbox.closest(".task");
   if (!task) return;
 
-  // ✅ FORCE UI UPDATE FIRST
+  // 1️⃣ Update UI immediately
   task.classList.toggle("done", checkbox.checked);
 
-  // ✅ Force repaint (critical)
-  task.offsetHeight;
+  // 2️⃣ Update hidden input (SOURCE OF TRUTH)
+  const hidden = task.querySelector(
+    'input[type="hidden"][name*="_done_state"]'
+  );
+  if (hidden) {
+    hidden.value = checkbox.checked ? "1" : "0";
+  }
 
-  // ⏳ Debounced autosave
+  // 3️⃣ Debounced autosave
   if (autoSaveTimer) clearTimeout(autoSaveTimer);
 
   autoSaveTimer = setTimeout(() => {
