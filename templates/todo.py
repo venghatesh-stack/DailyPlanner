@@ -845,14 +845,12 @@ function toggleDone(checkbox) {
   const task = checkbox.closest(".task");
   if (!task) return;
 
-  // ✅ UI update FIRST
-  requestAnimationFrame(() => {
-    if (checkbox.checked) {
-      task.classList.add("done");
-    } else {
-      task.classList.remove("done");
-    }
-  });
+  // ✅ Immediate UI update (NO RAF)
+  if (checkbox.checked) {
+    task.classList.add("done");
+  } else {
+    task.classList.remove("done");
+  }
 
   // ⏳ Debounced autosave
   if (autoSaveTimer) clearTimeout(autoSaveTimer);
@@ -861,6 +859,7 @@ function toggleDone(checkbox) {
     document.getElementById("todo-form")?.submit();
   }, 600);
 }
+
 
 function autoGrow(textarea) {
   if (!textarea) return;
