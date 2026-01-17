@@ -691,6 +691,10 @@ select {
 
 const pendingDeletes = new Map();
 let autoSaveTimer = null;
+let deleteBatch = {
+  taskIds: new Set(),
+  timer: null
+};
 function requestDelete(btn, quadrant) {
   const task = btn.closest('.task');
   if (!task) return;
@@ -705,57 +709,84 @@ function requestDelete(btn, quadrant) {
 
   const taskId = match[1];
 
-  // Mark pending delete (NOT saved yet)
+  // 🔑 Mark pending delete (NOT saved yet)
   del.value = "pending";
 
-  // Force reflow for animation
-  task.getBoundingClientRect();
+  // Track in batch
+  deleteBatch.taskIds.add(taskId);
 
-  // Phase 1: fade
+  // Animate
+  task.getBoundingClientRect();
   task.classList.add("deleting");
 
-  // Phase 2: collapse
   setTimeout(() => {
     task.classList.add("collapsing");
   }, 1200);
 
-  // ✅ DECLARE timeoutId PROPERLY
-  const timeoutId = setTimeout(() => {
-    del.value = "1";               // 🔑 THIS enables backend delete
-    pendingDeletes.delete(taskId);
+  // 🔔 Show ONE toast
+  showBatchUndoToast();
 
-    // 🔑 Trigger save
-    document.getElementById("todo-form")?.submit();
-  }, 7000);
+  // 🔁 Reset timer if already running
+  if (deleteBatch.timer) {
+    clearTimeout(deleteBatch.timer);
+  }
 
-  pendingDeletes.set(taskId, timeoutId);
+  deleteBatch.timer = setTimeout(commitBatchDelete, 7000);
+}
+function commitBatchDelete() {
+  // Mark all as deleted
+  deleteBatch.taskIds.forEach(taskId => {
+    const input = document.querySelector(
+      `input[type="hidden"][name$="_deleted[${taskId}]"]`
+    );
+    if (input) input.value = "1";
+  });
 
-  showUndoToast(taskId, task, del);
+  deleteBatch.taskIds.clear();
+
+  document.getElementById("todo-form")?.submit();
 }
 
 
-function showUndoToast(taskId, task, delInput) {
+function showBatchUndoToast() {
   const toast = document.getElementById("undo-toast");
   const undoBtn = document.getElementById("undo-btn");
+
+  const count = deleteBatch.taskIds.size;
+  toast.querySelector("span").textContent =
+    count === 1 ? "Task deleted" : `${count} tasks deleted`;
 
   toast.style.display = "flex";
 
   undoBtn.onclick = () => {
-    const timeoutId = pendingDeletes.get(taskId);
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      pendingDeletes.delete(taskId);
+    if (deleteBatch.timer) {
+      clearTimeout(deleteBatch.timer);
+      deleteBatch.timer = null;
     }
 
-    delInput.value = "0";
-    task.classList.remove("deleting","collapsing");
+    // Restore all tasks
+    deleteBatch.taskIds.forEach(taskId => {
+      const delInput = document.querySelector(
+        `input[type="hidden"][name$="_deleted[${taskId}]"]`
+      );
+      const taskEl = delInput?.closest(".task");
+
+      if (delInput) delInput.value = "0";
+      if (taskEl) {
+        taskEl.classList.remove("deleting", "collapsing");
+      }
+    });
+
+    deleteBatch.taskIds.clear();
     toast.style.display = "none";
   };
 
+  // Auto-hide toast (visual only)
   setTimeout(() => {
     toast.style.display = "none";
   }, 7000);
 }
+
 
 
 function addTask(q, category = "General", subcategory = "General") {
