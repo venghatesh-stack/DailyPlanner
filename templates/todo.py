@@ -690,6 +690,7 @@ select {
 <script>
 
 const pendingDeletes = new Map();
+let autoSaveTimer = null;
 function requestDelete(btn, quadrant) {
   const task = btn.closest('.task');
   if (!task) return;
@@ -777,7 +778,7 @@ function addTask(q, category = "General", subcategory = "General") {
                 class="task-text"
                 rows="1"
                 placeholder="Add a task"
-                oninput="autoGrow(this)"
+                oninput="onTaskInput(this)"
                 autofocus></textarea>
 
       <input type="checkbox"
@@ -807,6 +808,27 @@ function addTask(q, category = "General", subcategory = "General") {
 <script>
 
 let autoSaveTimer = null;
+function onTaskInput(textarea) {
+  autoGrow(textarea);
+
+  const task = textarea.closest(".task");
+  if (!task) return;
+
+  // 🚫 Do not autosave while delete animation is running
+  if (task.classList.contains("deleting")) return;
+
+  // ⏳ Debounce autosave
+  if (autoSaveTimer) {
+    clearTimeout(autoSaveTimer);
+  }
+
+  autoSaveTimer = setTimeout(() => {
+    const form = document.getElementById("todo-form");
+    if (form) {
+      form.submit();
+    }
+  }, 800); // 👈 autosave delay
+}
 
 function toggleDone(checkbox) {
     const task = checkbox.closest(".task");
