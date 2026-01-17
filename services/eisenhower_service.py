@@ -234,10 +234,8 @@ def save_todo(plan_date, form):
                     **payload,
                 })
             else:
-                inserts.append({
-                    "plan_date": str(task_plan_date),
-                    **payload,
-                })
+                logger.debug("Skipping insert for task %s (autosave-created)", task_id)
+                continue
 
     updates = [
         u for u in updates
