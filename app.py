@@ -471,34 +471,22 @@ def untimed_slot_preview():
     return preview, 200
 
 
-
-
 @app.route("/todo/autosave", methods=["POST"])
 @login_required
 def todo_autosave():
     data = request.get_json(force=True)
-
     logger.info("AUTOSAVE DATA: %s", data)
 
-    task_id = data["id"]
-    plan_date = data["plan_date"]
-    quadrant = data["quadrant"]
-    text = data["task_text"]
-    is_done = data.get("is_done", False)
-
-    new_id = autosave_task(
-        plan_date=plan_date,
-        task_id=task_id,
-        quadrant=quadrant,
-        text=text,
-        is_done=is_done,
+    result = autosave_task(
+        plan_date=data["plan_date"],
+        task_id=data["id"],
+        quadrant=data["quadrant"],
+        text=data["task_text"],
+        is_done=data.get("is_done", False),
     )
 
-    return jsonify({
-        "ok": True,
-        "id": new_id
-    })
-
+    # 🔑 ALWAYS JSON
+    return jsonify(result)
 
 @app.route("/favicon.ico")
 def favicon():

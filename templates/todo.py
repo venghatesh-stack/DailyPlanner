@@ -837,6 +837,7 @@ function autosaveTask(taskEl, delay = 600) {
     .then(res => {
       if (idInput.value.startsWith("new_") && res.id) {
         idInput.value = res.id;   // 🔑 stop duplicates
+        taskEl.dataset.saved = "1"; 
       }
       taskEl.dataset.saved = "1";
     })

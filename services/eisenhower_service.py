@@ -422,43 +422,39 @@ def enable_travel_mode(plan_date):
     return len(payload)
 
 def autosave_task(plan_date, task_id, quadrant, text, is_done):
-    try:
-        text = (text or "").strip()
-        if not text:
-            return task_id
+    text = (text or "").strip()
+    if not text:
+        return {"id": task_id}
 
-        # NEW TASK → INSERT ONCE
-        if task_id.startswith("new_"):
-            rows = post(
-                "todo_matrix?select=id",
-                [{
-                    "plan_date": plan_date,
-                    "quadrant": quadrant,
-                    "task_text": text,
-                    "is_done": is_done,
-                    "is_deleted": False,
-                    "position": 999,
-                }],
-                prefer="return=representation"
-                ) or []
-
-            if not rows or "id" not in rows[0]:
-                logger.error("Autosave insert failed for task: %s", task_id)
-                return task_id   # fallback, prevents UI break
-
-            return str(rows[0]["id"])
-
-        # EXISTING TASK → UPDATE ONLY
-        update(
-            "todo_matrix",
-            params={"id": f"eq.{task_id}"},
-            json={
+    # NEW TASK → INSERT ONCE
+    if task_id.startswith("new_"):
+        rows = post(
+            "todo_matrix?select=id",
+            [{
+                "plan_date": plan_date,
+                "quadrant": quadrant,
                 "task_text": text,
                 "is_done": is_done,
-            },
-        )
+                "is_deleted": False,
+                "position": 999,
+            }],
+            prefer="return=representation"
+        ) or []
 
-        return task_id
-    except Exception:
-        logger.exception("Autosave failed")
-        return jsonify({"ok": False, "id": task_id}), 200
+        if not rows or "id" not in rows[0]:
+            logger.error("Autosave insert failed for task: %s", task_id)
+            return {"id": task_id}
+
+        return {"id": str(rows[0]["id"])}
+
+    # EXISTING TASK → UPDATE
+    update(
+        "todo_matrix",
+        params={"id": f"eq.{task_id}"},
+        json={
+            "task_text": text,
+            "is_done": is_done,
+        },
+    )
+
+    return {"id": task_id}
