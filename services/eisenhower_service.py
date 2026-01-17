@@ -96,6 +96,10 @@ def save_todo(plan_date, form):
     logger.info("Saving Eisenhower matrix (batched)")
     moved_count = 0
     moved_dates = set()
+    task_ids = [
+      v for k, v in form.items()
+      if k.endswith("_id[]") and not v.startswith("new_")
+    ]
     existing_rows = get(
         "todo_matrix",
         params={
@@ -183,7 +187,7 @@ def save_todo(plan_date, form):
                 else plan_date
             )
             original_date = original_dates.get(task_id, plan_date)
-            if task_plan_date != original_date:
+            if original_date and task_plan_date != original_date:
                 moved_count += 1
                 moved_dates.add(task_plan_date)
 
@@ -282,6 +286,9 @@ def save_todo(plan_date, form):
 
 
     if moved_count:
+        parts = []
+        for d, count in sorted(moved_by_date.items()):
+            parts.append(f"{count} task{'s' if count > 1 else ''} → {d.strftime('%d %b')}")
         session["toast"] = {
         "type": "info",
         "message": (
