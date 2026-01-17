@@ -1,8 +1,8 @@
 import logging
 
 from supabase_client import get, post, update  
-import datetime
-from datetime import timedelta
+
+from datetime import timedelta ,datetime
 from config import TRAVEL_MODE_TASKS
 from flask import session
 logger = logging.getLogger(__name__)
