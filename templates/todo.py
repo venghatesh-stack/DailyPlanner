@@ -815,10 +815,14 @@ function onTaskInput(textarea) {
   const taskId = idInput?.value || "";
 
   // ⛔ NEW task → save immediately once
-  if (taskId.startsWith("new_")) {
+if (taskId.startsWith("new_")) {
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => {
     document.getElementById("todo-form")?.submit();
-    return;
-  }
+  }, 600); // ✅ let text settle
+  return;
+}
+
   // ⏳ Debounce autosave
   if (autoSaveTimer) {
     clearTimeout(autoSaveTimer);
@@ -849,7 +853,6 @@ function toggleDone(checkbox) {
     }
 
     autoSaveTimer = setTimeout(() => {
-    if (task.classList.contains("removed")) return;
 
     const form = document.getElementById("todo-form");
     const textarea = task.querySelector("textarea");
