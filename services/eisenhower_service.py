@@ -3,6 +3,7 @@ import logging
 from supabase_client import get, post, update  
 from datetime import timedelta
 from config import TRAVEL_MODE_TASKS
+from flask import jsonify
 logger = logging.getLogger(__name__)
 
 
@@ -421,37 +422,43 @@ def enable_travel_mode(plan_date):
     return len(payload)
 
 def autosave_task(plan_date, task_id, quadrant, text, is_done):
-    text = (text or "").strip()
-    if not text:
-        return task_id
+    try:
+        text = (text or "").strip()
+        if not text:
+            return task_id
 
-    # NEW TASK → INSERT ONCE
-    if task_id.startswith("new_"):
-        rows = post(
+        # NEW TASK → INSERT ONCE
+        if task_id.startswith("new_"):
+            rows = post(
+                "todo_matrix?select=id",
+                [{
+                    "plan_date": plan_date,
+                    "quadrant": quadrant,
+                    "task_text": text,
+                    "is_done": is_done,
+                    "is_deleted": False,
+                    "position": 999,
+                }],
+                prefer="return=representation"
+                ) or []
+
+            if not rows or "id" not in rows[0]:
+                logger.error("Autosave insert failed for task: %s", task_id)
+                return task_id   # fallback, prevents UI break
+
+            return str(rows[0]["id"])
+
+        # EXISTING TASK → UPDATE ONLY
+        update(
             "todo_matrix",
-            [{
-                "plan_date": plan_date,
-                "quadrant": quadrant,
+            params={"id": f"eq.{task_id}"},
+            json={
                 "task_text": text,
                 "is_done": is_done,
-                "is_deleted": False,
-                "position": 999,
-            }],
-        ) or []
+            },
+        )
 
-        if not rows:
-            raise RuntimeError("Autosave insert failed")
-
-        return str(rows[0]["id"])
-
-    # EXISTING TASK → UPDATE ONLY
-    update(
-        "todo_matrix",
-        params={"id": f"eq.{task_id}"},
-        json={
-            "task_text": text,
-            "is_done": is_done,
-        },
-    )
-
-    return task_id
+        return task_id
+    except Exception:
+        logger.exception("Autosave failed")
+        return jsonify({"ok": False, "id": task_id}), 200
