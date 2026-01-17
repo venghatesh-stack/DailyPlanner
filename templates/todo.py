@@ -705,28 +705,31 @@ function requestDelete(btn, quadrant) {
 
   const taskId = match[1];
 
-  // Mark pending delete
+  // Mark pending delete (NOT saved yet)
   del.value = "pending";
 
-  // Force layout
+  // Force reflow for animation
   task.getBoundingClientRect();
 
   // Phase 1: fade
   task.classList.add("deleting");
 
-  // Phase 2: collapse AFTER fade
+  // Phase 2: collapse
   setTimeout(() => {
     task.classList.add("collapsing");
-  }, 1200); // must match opacity duration
+  }, 1200);
 
-  // Final delete after undo window
-//  const timeoutId = setTimeout(() => {
-//    del.value = "1";
-  //  pendingDeletes.delete(taskId);
-   // autosaveForm(0);
-//  }, 7000);
+  // ✅ DECLARE timeoutId PROPERLY
+  const timeoutId = setTimeout(() => {
+    del.value = "1";               // 🔑 THIS enables backend delete
+    pendingDeletes.delete(taskId);
+
+    // 🔑 Trigger save
+    document.getElementById("todo-form")?.submit();
+  }, 7000);
 
   pendingDeletes.set(taskId, timeoutId);
+
   showUndoToast(taskId, task, del);
 }
 
@@ -828,7 +831,6 @@ function autosaveTask(taskEl, delay = 800) {
   clearTimeout(autosaveTimers.get(taskEl));
 
   autosaveTimers.set(taskEl, setTimeout(() => {
-
     fetch("/todo/autosave", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
