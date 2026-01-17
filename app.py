@@ -19,12 +19,12 @@ from services.eisenhower_service import (
 )
 from services.recurring_service import materialize_recurring_tasks
 from services.untimed_service import remove_untimed_task  
+from templates.planner import PLANNER_TEMPLATE
+from templates.todo import TODO_TEMPLATE
+from templates.summary import SUMMARY_TEMPLATE
+from templates.login import LOGIN_TEMPLATE
 from config import (
     IST,
-    PLANNER_TEMPLATE,   
-    TODO_TEMPLATE,
-    SUMMARY_TEMPLATE,
-    LOGIN_TEMPLATE,
     STATUSES,
     DEFAULT_STATUS, 
     MOTIVATIONAL_QUOTES,
