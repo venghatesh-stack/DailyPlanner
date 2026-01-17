@@ -827,7 +827,6 @@ function autosaveTask(taskEl, delay = 800) {
 
   const taskId = idInput.value;
 
-  // 🔁 Debounce per-task
   clearTimeout(autosaveTimers.get(taskEl));
 
   autosaveTimers.set(taskEl, setTimeout(() => {
@@ -845,29 +844,23 @@ function autosaveTask(taskEl, delay = 800) {
     .then(r => r.json())
     .then(res => {
 
-      // 🆕 NEW task → replace temp ID
       if (taskId.startsWith("new_") && res.id) {
         idInput.value = res.id;
-
-        // ⭐ Remove * indicator
-        const indexEl = taskEl.querySelector(".task-index");
-        if (indexEl) {
-          indexEl.textContent = "";
-          indexEl.classList.add("saved");
-        }
-
         taskEl.dataset.saved = "1";
       }
+
+      renumberTasks(taskEl.parentElement);
+      showToast("Saved");
 
     })
     .catch(err => {
       console.error("Autosave failed", err);
+      showToast("Save failed", 3000);
     });
 
   }, delay));
-  renumberTasks(taskEl.parentElement);
-
 }
+
 
 </script>
 <script>
@@ -932,31 +925,7 @@ function deleteRecurring(taskId) {
 
 
 </script>
-{% if request.args.get('saved') %}
-<div id="toast"
-     style="
-       position: fixed;
-       bottom: 90px;
-       left: 50%;
-       transform: translateX(-50%);
-       background: #2563eb;
-       color: white;
-       padding: 12px 20px;
-       border-radius: 999px;
-       font-weight: 600;
-       box-shadow: 0 10px 25px rgba(0,0,0,.15);
-       z-index: 9999;
-     ">
-  ✅ Saved successfully
-</div>
 
-<script>
-  setTimeout(() => {
-    const toast = document.getElementById("toast");
-    if (toast) toast.remove();
-  }, 2500);
-</script>
-{% endif %}
 {% if request.args.get('copied') %}
 <div id="copied-toast"
      style="
@@ -974,6 +943,22 @@ function deleteRecurring(taskId) {
      ">
   📥 Open tasks copied
 </div>
+<script>
+function showToast(message, duration = 2000) {
+  const toast = document.getElementById("toast");
+  const text = document.getElementById("toast-text");
+  if (!toast || !text) return;
+
+  text.textContent = message;
+  toast.style.display = "block";
+
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => {
+    toast.style.display = "none";
+  }, duration);
+}
+
+</script>
 
 <script>
   setTimeout(() => {
@@ -1026,6 +1011,23 @@ function deleteRecurring(taskId) {
           ">
     Undo
   </button>
+</div>
+<div id="toast"
+     style="
+       position: fixed;
+       bottom: 90px;
+       left: 50%;
+       transform: translateX(-50%);
+       background: #111827;
+       color: white;
+       padding: 12px 18px;
+       border-radius: 999px;
+       font-weight: 600;
+       display: none;
+       z-index: 9999;
+       box-shadow: 0 10px 25px rgba(0,0,0,.2);
+     ">
+  <span id="toast-text"></span>
 </div>
 
 </body>
