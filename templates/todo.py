@@ -360,6 +360,16 @@ select {
   background: #f9fafb;
   color: #374151;
 }
+.task.removing {
+  opacity: 0;
+  transform: translateX(-8px);
+  max-height: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  transition: all 0.25s ease;
+}
+
 
 
 </style>
@@ -689,9 +699,13 @@ function requestDelete(btn, quadrant) {
 
   const taskId = match[1];
 
-  // Hide task immediately
-  task.classList.add("removed");
+// Hide task Animated. 
+task.classList.add("removed", "removing");
+
+setTimeout(() => {
   task.style.display = "none";
+}, 200); // match CSS duration
+
 
   // Mark as pending (NOT deleted yet)
   del.value = "pending";
@@ -725,6 +739,7 @@ function showUndoToast(taskId, task, delInput) {
     delInput.value = "0";
     task.style.display = "";
     task.classList.remove("removed");
+    task.classList.remove("removing");
     toast.style.display = "none";
   };
 
