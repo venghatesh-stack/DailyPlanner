@@ -211,6 +211,9 @@ def save_todo(plan_date, form):
                 updates.append(update_row)
             else:
                 # SAFETY FALLBACK — treat as new
+                if task_id.startswith("new_"):
+                 continue
+
                 inserts.append({
                     "plan_date": str(plan_date),
                     **payload,
