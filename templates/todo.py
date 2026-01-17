@@ -1060,6 +1060,14 @@ function showToast(message, duration = 2000) {
      ">
   <span id="toast-text"></span>
 </div>
+{% if toast %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    showToast({{ toast.message | tojson }}, 2500);
+  });
+</script>
+{% endif %}
+
 
 </body>
 </html>
