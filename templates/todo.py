@@ -865,7 +865,7 @@ function autosaveTask(taskEl, delay = 800) {
     });
 
   }, delay));
-  renumberTasks(taskE1.parentElement);
+  renumberTasks(taskEl.parentElement);
 
 }
 
