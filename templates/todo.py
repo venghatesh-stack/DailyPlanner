@@ -80,6 +80,7 @@ summary::-webkit-details-marker {
   background: #ffffff;
   margin-bottom: 12px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.04); /* Improves Scannability */
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .task + .task {
@@ -700,11 +701,20 @@ function requestDelete(btn, quadrant) {
   const taskId = match[1];
 
 // Hide task Animated. 
-task.classList.add("removed", "removing");
+// mark logical state
+task.classList.add("removed");
 
+// force browser to register initial state
+task.getBoundingClientRect();
+
+// now animate
+task.classList.add("removing");
+
+// hide AFTER animation completes
 setTimeout(() => {
   task.style.display = "none";
-}, 200); // match CSS duration
+}, 220);
+
 
 
   // Mark as pending (NOT deleted yet)
