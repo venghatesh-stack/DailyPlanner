@@ -191,15 +191,7 @@ def save_todo(plan_date, form):
             # NEW TASKS → ALWAYS INSERT
             # -------------------------------
             if task_id.startswith("new_"):
-                # Prevent duplicate autosave inserts
-                if text in seen_new_texts:
-                    continue
-                seen_new_texts.add(text)
-
-                inserts.append({
-                    "plan_date": str(plan_date),
-                    **payload,
-                })
+                continue #autosave already handled it. 
 
 
             # -------------------------------
@@ -425,3 +417,35 @@ def enable_travel_mode(plan_date):
 
     return len(payload)
 
+def autosave_task(plan_date, task_id, quadrant, text, is_done):
+    text = (text or "").strip()
+    if not text:
+        return task_id
+
+    # NEW TASK → INSERT ONCE
+    if task_id.startswith("new_"):
+        row = post(
+            "todo_matrix",
+            [{
+                "plan_date": plan_date,
+                "quadrant": quadrant,
+                "task_text": text,
+                "is_done": is_done,
+                "is_deleted": False,
+                "position": 999,  # temp, reordered on full save
+            }],
+        )
+
+        return row[0]["id"]
+
+    # EXISTING TASK → UPDATE ONLY
+    update(
+        "todo_matrix",
+        params={"id": f"eq.{task_id}"},
+        json={
+            "task_text": text,
+            "is_done": is_done,
+        },
+    )
+
+    return task_id

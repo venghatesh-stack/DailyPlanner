@@ -12,7 +12,7 @@ from utils.slots import current_slot,slot_label
 from utils.calender_links import google_calendar_link
 from services.planner_service import load_day, save_day, get_daily_summary, get_weekly_summary
 from services.login_service import login_required
-
+from services.eisenhower_service import autosave_task
 from services.eisenhower_service import (
     load_todo,
     save_todo,
@@ -524,6 +524,20 @@ def todo_autosave():
 def favicon():
     return "", 204
 
+@app.post("/todo/autosave")
+@login_required
+def todo_autosave():
+    data = request.get_json(force=True)
+
+    new_id = autosave_task(
+        plan_date=data["plan_date"],
+        task_id=data["id"],
+        quadrant=data["quadrant"],
+        text=data.get("task_text", ""),
+        is_done=data.get("is_done", False),
+    )
+
+    return jsonify({"id": new_id})
 
 # ==========================================================
 # ENTRY POINT

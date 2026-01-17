@@ -777,12 +777,13 @@ function addTask(q, category = "General", subcategory = "General") {
 
       <textarea name="${q}[]"
                 class="task-text"
+                oninput="autoGrow(this); autosaveTask(this.closest('.task'))"
                 rows="1"
                 placeholder="Add a task"
                 autofocus></textarea>
 
       <input type="checkbox"
-       onchange="toggleDone(this)">
+       onchange="toggleDone(this); autosaveTask(this.closest('.task'), 300)">
 
 
       <button type="button"
@@ -804,7 +805,7 @@ function addTask(q, category = "General", subcategory = "General") {
   if (textarea) autoGrow(textarea);
 }
 
-let autosaveTimers = new Map();
+const autosaveTimers = new Map();
 
 function autosaveTask(taskEl, delay = 600) {
   const idInput = taskEl.querySelector('input[name$="_id[]"]');
@@ -812,6 +813,9 @@ function autosaveTask(taskEl, delay = 600) {
   const checkbox = taskEl.querySelector('input[type="checkbox"]');
 
   if (!idInput || !textarea) return;
+
+  // 🚫 do not autosave empty text
+  if (!textarea.value.trim()) return;
 
   const taskId = idInput.value;
 
@@ -831,8 +835,8 @@ function autosaveTask(taskEl, delay = 600) {
     })
     .then(r => r.json())
     .then(res => {
-      // 🔑 CRITICAL: replace temp ID
-      if (taskId.startsWith("new_")) {
+      // 🔑 CRITICAL: replace temp ID ONCE
+      if (taskId.startsWith("new_") && res.id) {
         idInput.value = res.id;
       }
     })
@@ -840,6 +844,7 @@ function autosaveTask(taskEl, delay = 600) {
 
   }, delay));
 }
+
 
 
 </script>
