@@ -974,22 +974,7 @@ function deleteRecurring(taskId) {
      ">
   📥 Open tasks copied
 </div>
-<script>
-function showToast(message, duration = 2000) {
-  const toast = document.getElementById("toast");
-  const text = document.getElementById("toast-text");
-  if (!toast || !text) return;
 
-  text.textContent = message;
-  toast.style.display = "block";
-
-  clearTimeout(toast._timer);
-  toast._timer = setTimeout(() => {
-    toast.style.display = "none";
-  }, duration);
-}
-
-</script>
 
 <script>
   setTimeout(() => {
@@ -1060,6 +1045,22 @@ function showToast(message, duration = 2000) {
      ">
   <span id="toast-text"></span>
 </div>
+<script>
+function showToast(message, duration = 2000) {
+  const toast = document.getElementById("toast");
+  const text = document.getElementById("toast-text");
+  if (!toast || !text) return;
+
+  text.textContent = message;
+  toast.style.display = "block";
+
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => {
+    toast.style.display = "none";
+  }, duration);
+}
+
+</script>
 {% if toast %}
 <script>
  showToast({{ toast.message | tojson }}, 2500);    
