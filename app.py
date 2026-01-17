@@ -7,7 +7,7 @@ import json
 from supabase_client import get, post, update
 from logger import setup_logger
 from utils.dates import safe_date 
-from utils.slots import current_slot, slot_label, TOTAL_SLOTS
+from config import current_slot, slot_label, TOTAL_SLOTS
 from utils.calender_links import google_calendar_link
 from services.planner_service import load_day, save_day, get_daily_summary, get_weekly_summary
 from services.eisenhower_service import (
