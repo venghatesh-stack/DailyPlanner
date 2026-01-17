@@ -805,50 +805,67 @@ function addTask(q, category = "General", subcategory = "General") {
   if (textarea) autoGrow(textarea);
 }
 
-const autosaveTimers = new Map();
+function renumberTasks(container) {
+  container.querySelectorAll(".task").forEach((task, i) => {
+    const idx = task.querySelector(".task-index");
+    if (idx) idx.textContent = (i + 1) + ".";
+  });
+}
 
-function autosaveTask(taskEl, delay = 600) {
-  if (taskEl.dataset.saving === "1") return;
 
-  const idInput = taskEl.querySelector('input[name$="_id[]"]');
+const autosaveTimers = new WeakMap();
+
+function autosaveTask(taskEl, delay = 800) {
+  const idInput  = taskEl.querySelector('input[name$="_id[]"]');
   const textarea = taskEl.querySelector("textarea");
   const checkbox = taskEl.querySelector('input[type="checkbox"]');
 
   if (!idInput || !textarea) return;
-  if (!textarea.value.trim()) return;
 
+  const taskId = idInput.value;
+
+  // 🔁 Debounce per-task
   clearTimeout(autosaveTimers.get(taskEl));
 
   autosaveTimers.set(taskEl, setTimeout(() => {
-    taskEl.dataset.saving = "1";
 
     fetch("/todo/autosave", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        id: idInput.value,
+        id: taskId,
         plan_date: "{{ plan_date }}",
         quadrant: taskEl.closest("[id]").id,
-        task_text: textarea.value,
+        task_text: textarea.value.trim(),
         is_done: checkbox?.checked || false,
       })
     })
     .then(r => r.json())
     .then(res => {
-      if (idInput.value.startsWith("new_") && res.id) {
-        idInput.value = res.id;   // 🔑 stop duplicates
-        taskEl.dataset.saved = "1"; 
+
+      // 🆕 NEW task → replace temp ID
+      if (taskId.startsWith("new_") && res.id) {
+        idInput.value = res.id;
+
+        // ⭐ Remove * indicator
+        const indexEl = taskEl.querySelector(".task-index");
+        if (indexEl) {
+          indexEl.textContent = "";
+          indexEl.classList.add("saved");
+        }
+
+        taskEl.dataset.saved = "1";
       }
-      taskEl.dataset.saved = "1";
+
     })
-    .finally(() => {
-      taskEl.dataset.saving = "0";
+    .catch(err => {
+      console.error("Autosave failed", err);
     });
 
   }, delay));
+  renumberTasks(taskE1.parentElement);
+
 }
-
-
 
 </script>
 <script>
