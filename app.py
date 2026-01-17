@@ -32,7 +32,6 @@ from config import (
     HABIT_LIST,
 )
 from config import META_SLOT
-from templates.login import login_required
 app = Flask(__name__)
 logger = setup_logger()
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "change-this-secret")
