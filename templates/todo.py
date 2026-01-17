@@ -73,13 +73,18 @@ summary::-webkit-details-marker {
 }
 .task {
   transition:
-    opacity 0.8s ease,
-    transform 0.8s ease;
+    opacity 1.1s ease,
+    transform 1.1s ease;
+}
+.task {
+  will-change: opacity, transform, max-height;
 }
 
 .task.deleting {
   opacity: 0;
   transform: translateX(-24px);
+  background: #fef2f2;
+  border-color: #fca5a5;
 }
 
 .task.collapsing {
@@ -712,7 +717,7 @@ function requestDelete(btn, quadrant) {
   // Phase 2: collapse AFTER fade
   setTimeout(() => {
     task.classList.add("collapsing");
-  }, 900); // must match opacity duration
+  }, 1200); // must match opacity duration
 
   // Final delete after undo window
   const timeoutId = setTimeout(() => {
@@ -837,31 +842,26 @@ if (taskId.startsWith("new_")) {
 }
 
 function toggleDone(checkbox) {
-    const task = checkbox.closest(".task");
-    if (!task) return;
+  const task = checkbox.closest(".task");
+  if (!task) return;
 
-    // UI update (already correct)
+  // ✅ UI update FIRST
+  requestAnimationFrame(() => {
     if (checkbox.checked) {
-        task.classList.add("done");
+      task.classList.add("done");
     } else {
-        task.classList.remove("done");
+      task.classList.remove("done");
     }
+  });
 
-    // Debounced auto-save (prevents rapid submits)
-    if (autoSaveTimer) {
-        clearTimeout(autoSaveTimer);
-    }
+  // ⏳ Debounced autosave
+  if (autoSaveTimer) clearTimeout(autoSaveTimer);
 
-    autoSaveTimer = setTimeout(() => {
-
-    const form = document.getElementById("todo-form");
-    const textarea = task.querySelector("textarea");
-    if (textarea) autoGrow(textarea);
-    if (form) {
-        form.submit();
-    }
-    }, 500);
+  autoSaveTimer = setTimeout(() => {
+    document.getElementById("todo-form")?.submit();
+  }, 600);
 }
+
 function autoGrow(textarea) {
   if (!textarea) return;
 
