@@ -147,10 +147,11 @@ def todo():
 
     if request.method == "POST":
         save_todo(plan_date, request.form)
-        session["toast"] = {
-        "type": "success",
-        "message": "💾 Eisenhower Matrix saved"
-        }
+        if "toast" not in session:
+            session["toast"] = {
+            "type": "success",
+            "message": "💾 Eisenhower Matrix saved"
+            }
         return redirect(url_for("todo", year=plan_date.year, month=plan_date.month, day=plan_date.day, saved=1))
 
     materialize_recurring_tasks(plan_date)
