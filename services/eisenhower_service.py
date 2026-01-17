@@ -122,16 +122,14 @@ def save_todo(plan_date, form):
         # --------------------------------------------------
         # NEVER update rows deleted in this request
         # --------------------------------------------------
-        updates = [
-            u for u in updates
-            if str(u.get("id")) not in deleted_ids
-        ]
+    
 
         safe_deleted_ids = [
         i for i in deleted_ids if not i.startswith("new_")
         ]
 
         if safe_deleted_ids:
+        
             update(
                 "todo_matrix",
                 params={"id": f"in.({','.join(safe_deleted_ids)})"},
@@ -213,11 +211,22 @@ def save_todo(plan_date, form):
                     update_row["recurring_id"] = rid
 
                 updates.append(update_row)
+            else:
+                # SAFETY FALLBACK — treat as new
+                inserts.append({
+                    "plan_date": str(plan_date),
+                    **payload,
+                })
 
     # -----------------------------------
     # WRITE CHANGES
     # -----------------------------------
+    updates = [
+                u for u in updates
+                if str(u.get("id")) not in deleted_ids
+        ]
     if updates:
+       
         post(
             "todo_matrix?on_conflict=id",
             updates,
