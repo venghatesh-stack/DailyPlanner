@@ -499,8 +499,17 @@ def todo_autosave():
                 "subcategory": "General",
             }
 
-            res = post("todo_matrix", row)
+            res = post(
+                "todo_matrix",
+                row,
+                prefer="return=representation"
+            )
+
+            if not res or not isinstance(res, list):
+                raise RuntimeError(f"Autosave insert failed: {res}")
+
             new_id = res[0]["id"]
+
 
             return jsonify({"id": new_id})
 
