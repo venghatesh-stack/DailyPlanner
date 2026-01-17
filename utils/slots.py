@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta,date
 from config import IST
 def slot_label(slot):
     start = datetime.min + timedelta(minutes=(slot - 1) * 30)
