@@ -144,19 +144,21 @@ def todo():
     month = int(request.args.get("month", today.month))
     day = int(request.args.get("day", today.day))
     plan_date = safe_date(year, month, day)
-
+    logger.debug("Todo route: %s %s", request.method, plan_date)
     if request.method == "POST":
         save_todo(plan_date, request.form)
+        logger.debug("Session toast after save: %s", session.get("toast"))
         if "toast" not in session:
             session["toast"] = {
             "type": "success",
             "message": "💾 Eisenhower Matrix saved"
             }
+            logger.debug("Fallback save toast set")
         return redirect(url_for("todo", year=plan_date.year, month=plan_date.month, day=plan_date.day, saved=1))
 
     materialize_recurring_tasks(plan_date)
     todo = load_todo(plan_date)
-
+    logger.debug("Rendering todo page, toast=%s", session.get("toast"))
     days = [
         date(year, month, d) for d in range(1, calendar.monthrange(year, month)[1] + 1)
     ]

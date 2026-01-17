@@ -92,31 +92,42 @@ def load_todo(plan_date):
     return grouped
 
 
-### Category, Subcategory code ends here ###
 def save_todo(plan_date, form):
     logger.info("Saving Eisenhower matrix (batched)")
-   
+    logger.debug("Plan date: %s", plan_date)
+
+    task_ids = [
+        v for k, v in form.items()
+        if k.endswith("_id[]") and not v.startswith("new_")
+    ]
+    logger.debug("Task IDs from form: %s", task_ids)
+
     moved_by_date = defaultdict(int)
+
     existing_rows = get(
         "todo_matrix",
         params={
-            "plan_date": f"eq.{plan_date}",
-            "is_deleted": "eq.false",
+            "id": f"in.({','.join(task_ids)})",
             "select": "id,plan_date,recurring_id",
         },
     ) or []
-    
+
+    logger.debug("Existing rows fetched: %s", existing_rows)
 
     existing_ids = {str(r["id"]) for r in existing_rows}
     existing_recurring_map = {
         str(r["id"]): r.get("recurring_id") for r in existing_rows
     }
+
     original_dates = {
-    str(r["id"]): datetime.fromisoformat(r["plan_date"]).date()
-    for r in existing_rows
+        str(r["id"]): datetime.fromisoformat(r["plan_date"]).date()
+        for r in existing_rows
     }
+    logger.debug("Original dates snapshot: %s", original_dates)
+
     updates = []
     inserts = []
+
     # ==================================================
     # AUTHORITATIVE DELETE PASS (MUST BE FIRST)
     # ==================================================
@@ -126,18 +137,16 @@ def save_todo(plan_date, form):
             task_id = k.split("[", 1)[1].rstrip("]")
             deleted_ids.add(task_id)
 
-    if deleted_ids:
-        # --------------------------------------------------
-        # NEVER update rows deleted in this request
-        # --------------------------------------------------
-    
+    logger.debug("Deleted task IDs: %s", deleted_ids)
 
+    if deleted_ids:
         safe_deleted_ids = [
-        i for i in deleted_ids if not i.startswith("new_")
+            i for i in deleted_ids if not i.startswith("new_")
         ]
 
+        logger.debug("Safe deleted IDs (DB): %s", safe_deleted_ids)
+
         if safe_deleted_ids:
-        
             update(
                 "todo_matrix",
                 params={"id": f"in.({','.join(safe_deleted_ids)})"},
@@ -155,49 +164,60 @@ def save_todo(plan_date, form):
         categories = form.getlist(f"{quadrant}_category[]")
         subcategories = form.getlist(f"{quadrant}_subcategory[]")
 
-        # ---- DONE STATE ----
+        logger.debug(
+            "Quadrant %s: %d tasks", quadrant, len(ids)
+        )
+
         done_state = {}
         for k, v in form.to_dict(flat=False).items():
             if k.startswith(f"{quadrant}_done_state["):
                 tid = k[len(f"{quadrant}_done_state["):-1]
                 done_state[tid] = v
 
-       
-        
-        # ---- ITERATE TASKS ----
         for idx, text in enumerate(texts):
             if idx >= len(ids):
                 continue
 
             task_id = str(ids[idx])
 
-            # ✅ AUTHORITATIVE DELETE
             if task_id in deleted_ids:
+                logger.debug("Skipping deleted task %s", task_id)
                 continue
 
             text = (text or "").strip()
             if not text:
                 continue
+
             task_plan_date = (
                 datetime.strptime(dates[idx], "%Y-%m-%d").date()
                 if idx < len(dates) and dates[idx]
                 else plan_date
             )
+
             original_date = original_dates.get(task_id, plan_date)
+
+            logger.debug(
+                "Task %s | original=%s | new=%s",
+                task_id, original_date, task_plan_date
+            )
+
             if original_date and task_plan_date != original_date:
                 moved_by_date[task_plan_date] += 1
-
-
+                logger.debug(
+                    "Detected move: %s → %s",
+                    original_date, task_plan_date
+                )
 
             payload = {
                 "quadrant": quadrant,
                 "task_text": text,
                 "task_date": (
-                  dates[idx] if idx < len(dates) and dates[idx]
-                  else str(task_plan_date )),
+                    dates[idx] if idx < len(dates) and dates[idx]
+                    else str(task_plan_date)
+                ),
                 "task_time": (
-                  times[idx] if idx < len(times) and times[idx]
-                  else None
+                    times[idx] if idx < len(times) and times[idx]
+                    else None
                 ),
                 "is_done": "1" in done_state.get(task_id, []),
                 "position": idx,
@@ -205,46 +225,31 @@ def save_todo(plan_date, form):
                 "category": categories[idx] if idx < len(categories) else "General",
                 "subcategory": subcategories[idx] if idx < len(subcategories) else "General",
             }
-            # -------------------------------
-            # NEW TASKS → ALWAYS INSERT
-            # -------------------------------
+
             if task_id.startswith("new_"):
-                continue #autosave already handled it. 
+                logger.debug("Skipping new task %s (autosave handled)", task_id)
+                continue
 
-
-            # -------------------------------
-            # EXISTING TASKS → UPDATE
-            # -------------------------------
             elif task_id in existing_ids:
-                update_row = {
+                updates.append({
                     "id": task_id,
-                    "plan_date": str(task_plan_date ),
+                    "plan_date": str(task_plan_date),
                     **payload,
-                }
-
-                rid = existing_recurring_map.get(task_id)
-                if rid:
-                    update_row["recurring_id"] = rid
-
-                updates.append(update_row)
+                })
             else:
-                # SAFETY FALLBACK — treat as new
-                if task_id.startswith("new_"):
-                 continue
-
                 inserts.append({
-                    "plan_date": str(task_plan_date ),
+                    "plan_date": str(task_plan_date),
                     **payload,
                 })
 
-    # -----------------------------------
-    # WRITE CHANGES
-    # -----------------------------------
     updates = [
-                u for u in updates
-                if str(u.get("id")) not in deleted_ids
-        ]
-   
+        u for u in updates
+        if str(u.get("id")) not in deleted_ids
+    ]
+
+    logger.debug("Final updates count: %d", len(updates))
+    logger.debug("Final inserts count: %d", len(inserts))
+
     if updates:
         post(
             "todo_matrix?on_conflict=id",
@@ -252,10 +257,8 @@ def save_todo(plan_date, form):
             prefer="resolution=merge-duplicates",
         )
 
-
-
     # -----------------------------------
-    # DEDUPE INSERTS (autosave safety)
+    # DEDUPE INSERTS
     # -----------------------------------
     seen = set()
     deduped_inserts = []
@@ -274,13 +277,14 @@ def save_todo(plan_date, form):
         deduped_inserts.append(r)
 
     inserts = deduped_inserts
+
     if inserts:
         for r in inserts:
             if not r.get("task_date"):
                 r["task_date"] = str(plan_date)
-
         post("todo_matrix", inserts)
 
+    logger.debug("Moved-by-date summary: %s", dict(moved_by_date))
 
     if moved_by_date:
         parts = []
@@ -292,7 +296,7 @@ def save_todo(plan_date, form):
             "type": "info",
             "message": "📅 " + " | ".join(parts),
         }
-
+        logger.debug("Toast set: %s", session["toast"])
 
     logger.info(
         "Eisenhower save complete: %d updates, %d inserts, %d deletions",
