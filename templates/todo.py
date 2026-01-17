@@ -72,32 +72,33 @@ summary::-webkit-details-marker {
   background: #e5e7eb;
 }
 /* ===== Google Tasks–style Eisenhower ===== */
-
 .task {
   transition:
     opacity 0.35s ease,
     transform 0.35s ease,
     max-height 0.45s ease,
-    margin 0.35s ease,
-    padding 0.35s ease;
+    margin 0.45s ease,
+    padding 0.45s ease;
   max-height: 1000px;
   overflow: hidden;
 }
 
+/* Phase 1: fade only */
 .task.deleting {
   opacity: 0;
   transform: translateX(-10px);
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+/* Phase 2: collapse */
+.task.collapsing {
   max-height: 0;
   margin-top: 0;
   margin-bottom: 0;
   padding-top: 0;
   padding-bottom: 0;
-  background: #fef2f2;
-  border-color: #fca5a5;
-  transition-delay: 0s, 0s, 0.1s, 0.1s, 0.1s;
 }
-
-
 
 .task + .task {
   border-top: none;
@@ -703,18 +704,23 @@ function requestDelete(btn, quadrant) {
 
   const taskId = match[1];
 
-  // Mark pending delete (DO NOT remove yet)
+  // Mark pending delete
   del.value = "pending";
 
   // Force layout
   task.getBoundingClientRect();
 
-  // Animate
+  // Phase 1: fade
   task.classList.add("deleting");
 
-  // Start undo timer
+  // Phase 2: collapse AFTER fade
+  setTimeout(() => {
+    task.classList.add("collapsing");
+  }, 350); // must match opacity duration
+
+  // Final delete after undo window
   const timeoutId = setTimeout(() => {
-    del.value = "1"; // FINAL delete
+    del.value = "1";
     pendingDeletes.delete(taskId);
     document.getElementById("todo-form")?.submit();
   }, 7000);
@@ -722,7 +728,6 @@ function requestDelete(btn, quadrant) {
   pendingDeletes.set(taskId, timeoutId);
   showUndoToast(taskId, task, del);
 }
-
 
 
 function showUndoToast(taskId, task, delInput) {
@@ -739,7 +744,7 @@ function showUndoToast(taskId, task, delInput) {
     }
 
     delInput.value = "0";
-    task.classList.remove("deleting");
+    task.classList.remove("deleting","collapsing");
     toast.style.display = "none";
   };
 
