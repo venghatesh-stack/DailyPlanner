@@ -11,6 +11,7 @@ from config import TOTAL_SLOTS,QUADRANT_MAP,TASK_CATEGORIES,STATIC_TRAVEL_SUBGRO
 from utils.slots import current_slot,slot_label
 from utils.calender_links import google_calendar_link
 from services.planner_service import load_day, save_day, get_daily_summary, get_weekly_summary
+from services.login_service import login_required
 from services.eisenhower_service import (
     load_todo,
     save_todo,
