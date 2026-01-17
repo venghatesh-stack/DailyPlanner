@@ -224,18 +224,22 @@ def save_todo(plan_date, form):
             }
 
             if task_id.startswith("new_"):
-                logger.debug("Skipping new task %s (autosave handled)", task_id)
+                # autosave-created, never insert here
                 continue
 
-            elif task_id in existing_ids:
-                updates.append({
-                    "id": task_id,
-                    "plan_date": str(task_plan_date),
-                    **payload,
-                })
-            else:
-                logger.debug("Skipping insert for task %s (autosave-created)", task_id)
-                continue
+            # 🔑 ALWAYS update real IDs
+            update_row = {
+                "id": task_id,
+                "plan_date": str(task_plan_date),
+                **payload,
+            }
+
+            rid = existing_recurring_map.get(task_id)
+            if rid:
+                update_row["recurring_id"] = rid
+
+            updates.append(update_row)
+
 
     updates = [
         u for u in updates
