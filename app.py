@@ -167,6 +167,8 @@ def todo():
         quote=quote,
         TASK_CATEGORIES=TASK_CATEGORIES,
         STATIC_TRAVEL_SUBGROUPS=STATIC_TRAVEL_SUBGROUPS,
+        toast = session.pop("toast", None),
+
     )
 
 
