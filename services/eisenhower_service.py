@@ -3,7 +3,7 @@ import logging
 from supabase_client import get, post, update  
 from datetime import timedelta
 from config import TRAVEL_MODE_TASKS
-from flask import jsonify
+
 logger = logging.getLogger(__name__)
 
 
