@@ -227,11 +227,16 @@ def save_todo(plan_date, form):
         ]
     if updates:
        
-        post(
-            "todo_matrix?on_conflict=id",
-            updates,
-            prefer="resolution=merge-duplicates",
-        )
+       # -----------------------------------
+       # APPLY UPDATES (ROW-BY-ROW)
+       # -----------------------------------
+        for u in updates:
+            update(
+                "todo_matrix",
+                params={"id": f"eq.{u['id']}"},
+                json=u,
+            )
+
 
     if inserts:
       for r in inserts:
