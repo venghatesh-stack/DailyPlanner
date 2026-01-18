@@ -464,7 +464,35 @@ def get_weekly_summary(start_date, end_date):
         ):
             time_range = slots_to_timerange(data["slots"])
             summary[day].append(f"{task}@{time_range}")
+    # ----------------------------
+    # Attach habits + reflection
+    # ----------------------------
+    meta_row = get(
+            "daily_slots",
+            params={
+                "plan_date": f"eq.{plan_date}",
+                "slot": f"eq.{META_SLOT}",
+                "select": "plan",
+            },
+        )
 
-    return dict(summary)
+    habits = []
+    reflection = ""
+
+    if meta_row:
+        try:
+            meta = json.loads(meta_row[0]["plan"] or "{}")
+            habits = meta.get("habits", [])
+            reflection = meta.get("reflection", "")
+        except Exception:
+            pass
+
+    return {
+            "tasks": summary,
+            "habits": habits,
+            "reflection": reflection,
+        }
+
+
 
 

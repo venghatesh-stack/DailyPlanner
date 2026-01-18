@@ -138,9 +138,14 @@ textarea { width:100%; min-height:90px; font-size:15px; }
   <div>
     <a href="/todo">📋 Eisenhower</a>
     &nbsp;&nbsp;
+    <a href="/summary">📊 Summary</a>
+    &nbsp;&nbsp;
+    <a href="/summary?view=weekly">🗓 Weekly</a>
+    &nbsp;&nbsp;
     <span class="time">🕒 <span id="clock"></span> IST</span>
   </div>
 </div>
+
 
 <form method="get" class="month-controls">
   <input type="hidden" name="day" value="{{ selected_day }}">
