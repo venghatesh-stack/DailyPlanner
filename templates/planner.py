@@ -83,7 +83,7 @@ textarea { width:100%; min-height:90px; font-size:15px; }
 }
 .checkin-btn {
   position: fixed;
-  bottom: 90px;            /* above Save bar */
+  bottom: 140px;            /* above Save bar */
   right: 16px;
   padding: 12px 16px;
   border-radius: 999px;
@@ -168,25 +168,55 @@ textarea { width:100%; min-height:90px; font-size:15px; }
   gap:16px;
   margin-top:6px;
 }
+.mobile-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-nav {
+  display: flex;
+  justify-content: space-around;
+  font-size: 18px;
+}
+
+.header-nav a {
+  text-decoration: none;
+}
+
+@media (max-width: 600px) {
+  .checkin-btn {
+    bottom: 160px;
+  }
+}
 
 </style>
 </head>
 
 <body>
 <div class="container">
-<div class="header">
+<div class="header mobile-header">
+
+  <!-- Row 1: Date + Time -->
   <div class="header-top">
-    <div class="header-date">{{ today.strftime('%d %b %Y') }}</div>
+    <div class="date">{{ today }}</div>
     <div class="time">🕒 <span id="clock"></span> IST</div>
   </div>
 
+  <!-- Row 2: Navigation icons -->
   <div class="header-nav">
-    <a href="/">🗓 Planner</a>
-    <a href="/todo">📋 Eisenhower</a>
-    <a href="/summary">📊 Daily</a>
-    <a href="/summary?view=weekly">🗓 Weekly</a>
+    <a href="/" title="Planner">🗓</a>
+    <a href="/todo" title="Eisenhower">📋</a>
+    <a href="/summary" title="Daily Summary">📊</a>
+    <a href="/summary?view=weekly" title="Weekly Summary">🗓️</a>
   </div>
+
 </div>
 
 </div>
@@ -227,7 +257,7 @@ textarea { width:100%; min-height:90px; font-size:15px; }
   name="smart_plan"
   placeholder="One task per line.
 Example:
-Meeting with Chitra @9am to 10am $Critical %Office #review
+Meeting with Renganathar @9am to 10am $Critical %Office #review
 Workout @6am to 7am $High %Personal"
   style="width:100%; min-height:120px; margin-bottom:16px;"
 ></textarea>

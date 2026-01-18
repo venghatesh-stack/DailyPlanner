@@ -336,15 +336,25 @@ def save_day(plan_date, form):
             existing_untimed.append(t)
 
     merged = {}
-    for t in existing_untimed + auto_untimed + new_untimed:
+
+    # Always preserve existing untimed tasks
+    for t in existing_untimed:
         merged[t["id"]] = t
 
+    # Add newly detected untimed tasks (smart planner)
+    for t in auto_untimed:
+        merged[t["id"]] = t
+
+    # Add manually entered untimed tasks (if any)
+    for t in new_untimed:
+        merged[t["id"]] = t
 
     meta = {
-        "habits": form.getlist("habits"),
+        "habits": form.getlist("habits") or existing_meta.get("habits", []),
         "reflection": form.get("reflection", "").strip(),
         "untimed_tasks": list(merged.values()),
     }
+
 
     meta_payload = {
       "plan_date": str(plan_date),
