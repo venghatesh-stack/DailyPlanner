@@ -125,6 +125,33 @@ textarea { width:100%; min-height:90px; font-size:15px; }
   background: transparent;
   font-size: 18px;
 }
+.action-stack {
+  position: fixed;
+  right: 16px;
+  bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 1000;
+}
+
+.action-btn {
+  padding: 12px 16px;
+  border-radius: 999px;
+  border: none;
+  font-size: 14px;
+  box-shadow: 0 6px 16px rgba(0,0,0,.2);
+}
+
+.save-btn {
+  background: #16a34a; /* green */
+  color: #fff;
+}
+
+.cancel-btn {
+  background: #ef4444; /* red */
+  color: #fff;
+}
 
 
 </style>
@@ -275,10 +302,30 @@ Workout @6am to 7am $High %Personal"
 </form>
 </div>
 
-<div class="floating-bar">
-  <button type="submit" form="planner-form">💾 Save</button>
-  <button type="button" onclick="location.reload()">❌ Cancel</button>
+<div class="action-stack">
+  <button
+    type="button"
+    class="checkin-btn"
+    onclick="toggleCheckin()">
+    🧭 Check-in
+  </button>
+
+  <button
+    type="submit"
+    form="planner-form"
+    class="action-btn save-btn"
+    onclick="closeCheckinIfOpen()">
+    💾 Save
+  </button>
+
+  <button
+    type="button"
+    class="action-btn cancel-btn"
+    onclick="location.reload()">
+    ❌ Cancel
+  </button>
 </div>
+
 <button
   type="button"
   class="checkin-btn"
@@ -408,6 +455,12 @@ function saveFinalSchedule(id,date,start_slot,slots){
 function toggleCheckin(){
   const drawer = document.getElementById("checkin-drawer");
   drawer.classList.toggle("hidden");
+}
+function closeCheckinIfOpen(){
+  const drawer = document.getElementById("checkin-drawer");
+  if (drawer && !drawer.classList.contains("hidden")) {
+    drawer.classList.add("hidden");
+  }
 }
 
 </script>
