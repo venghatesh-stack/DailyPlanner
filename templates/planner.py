@@ -37,6 +37,52 @@ textarea { width:100%; min-height:90px; font-size:15px; }
   gap:10px;
 }
 .floating-bar button { flex:1; padding:14px; font-size:16px; }
+.habits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.habits-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.habit-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 12px;
+  font-size: 14px;
+}
+
+.habit-count {
+  float: right;
+  font-size: 12px;
+  opacity: 0.6;
+}
+.reflection-card textarea {
+  width: 100%;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 14px;
+  resize: vertical;
+}
+.soft-hint {
+  font-size: 12px;
+  opacity: 0.6;
+  margin-top: 6px;
+}
+.card {
+  background:#fff;
+  border-radius:12px;
+  padding:12px;
+  margin-top:16px;
+}
+
+
 </style>
 </head>
 
@@ -112,6 +158,58 @@ Workout @6am to 7am $High %Personal"
   <textarea name="plan_{{slot}}">{{ plans[slot].plan }}</textarea>
 </div>
 {% endfor %}
+<!-- =========================
+     DAILY HABITS
+========================= -->
+<div class="card habits-card">
+  <div class="card-header">
+    <strong>Daily Habits</strong>
+    <span class="habit-count">
+      {{ habits|length }} / {{ habit_list|length }}
+    </span>
+  </div>
+
+  <div class="habits">
+    {% for habit in habit_list %}
+      <label class="habit-item">
+        <input
+          type="checkbox"
+          name="habits"
+          value="{{ habit }}"
+          {% if habit in habits %}checked{% endif %}
+        >
+        <span class="habit-icon">
+          {{ habit_icons.get(habit, "•") }}
+        </span>
+        {{ habit }}
+      </label>
+    {% endfor %}
+  </div>
+
+  {% if habits|length == 0 %}
+    <div class="soft-hint">⏳ No habits checked yet</div>
+  {% endif %}
+</div>
+
+<!-- =========================
+     DAILY REFLECTION
+========================= -->
+<div class="card reflection-card">
+  <div class="card-header">
+    <strong>Daily Reflection</strong>
+  </div>
+
+  <textarea
+    name="reflection"
+    rows="4"
+    placeholder="What went well? What didn’t? Anything to note for tomorrow…"
+  >{{ reflection }}</textarea>
+
+  {% if not reflection %}
+    <div class="soft-hint">✍️ A few lines are enough</div>
+  {% endif %}
+</div>
+
 </form>
 </div>
 
@@ -131,6 +229,7 @@ Workout @6am to 7am $High %Personal"
   z-index:9999;">
   <div id="modal-content" style="background:#fff;padding:18px;width:340px;border-radius:14px;"></div>
 </div>
+
 
 <script>
 const PLAN_DATE = "{{ plan_date }}";
