@@ -4,28 +4,57 @@ SUMMARY_TEMPLATE = """
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body { font-family: system-ui; background:#f6f7f9; padding:16px; }
-.container { max-width:900px; margin:auto; background:#fff; padding:16px; border-radius:12px; }
+body {
+  font-family: system-ui;
+  background:#f6f7f9;
+  padding:16px;
+}
+.container {
+  max-width:900px;
+  margin:auto;
+  background:#fff;
+  padding:16px;
+  border-radius:12px;
+}
 h2 { margin-top:0; }
 .section { margin-bottom:20px; }
-.badge { font-size:12px; opacity:.6; }
-.task { margin:6px 0; }
-.day { margin-top:16px; font-weight:600; }
-.empty { opacity:.6; font-style:italic; }
+.day {
+  margin-top:16px;
+  font-weight:700;
+}
+.task {
+  margin:6px 0;
+}
+.badge {
+  font-size:12px;
+  opacity:.6;
+}
+.empty {
+  opacity:.6;
+  font-style:italic;
+}
+a {
+  font-weight:600;
+  text-decoration:none;
+}
 </style>
 </head>
-<body>
 
+<body>
 <div class="container">
 
 {% if view == "daily" %}
-  <h2>📅 Daily Summary – {{ date }}</h2>
 
+  <h2>📊 Daily Summary – {{ date }}</h2>
+
+  <!-- TASKS -->
   <div class="section">
     <h3>✅ Tasks</h3>
+
     {% if data.tasks %}
       {% for tag, priorities in data.tasks.items() %}
         <div class="badge">#{{ tag }}</div>
+
         {% for priority, items in priorities.items() %}
           <strong>{{ priority }}</strong>
           {% for item in items %}
@@ -38,6 +67,7 @@ h2 { margin-top:0; }
     {% endif %}
   </div>
 
+  <!-- HABITS -->
   <div class="section">
     <h3>🔁 Habits</h3>
     {% if data.habits %}
@@ -47,6 +77,7 @@ h2 { margin-top:0; }
     {% endif %}
   </div>
 
+  <!-- REFLECTION -->
   <div class="section">
     <h3>✍️ Reflection</h3>
     {% if data.reflection %}
@@ -56,8 +87,13 @@ h2 { margin-top:0; }
     {% endif %}
   </div>
 
-{% else %}
+{% elif view == "weekly" %}
+
   <h2>🗓 Weekly Summary ({{ start }} → {{ end }})</h2>
+
+  {% if not data %}
+    <div class="empty">No tasks this week</div>
+  {% endif %}
 
   {% for day, tasks in data.items() %}
     <div class="section">
@@ -70,9 +106,11 @@ h2 { margin-top:0; }
 
 {% endif %}
 
+<br>
 <a href="/">← Back to Planner</a>
 
 </div>
 </body>
 </html>
 """
+
