@@ -430,70 +430,33 @@ def get_daily_summary(plan_date):
 # NOTE:
 # Weekly summary is intentionally compact (day → tasks with time).
 # Tag and priority aggregation is handled only in daily summary to avoid noise.
-
 def get_weekly_summary(start_date, end_date):
     rows = get(
         "daily_slots",
         params={
             "plan_date": f"gte.{start_date}&lte.{end_date}",
             "slot": f"neq.{META_SLOT}",
-            "select": "plan_date,slot,plan,priority,tags",
+            "select": "plan_date,slot,plan",
         },
     ) or []
 
-    grouped = defaultdict(lambda: defaultdict(lambda: {"slots": [], "priority": "Medium"}))
+    grouped = defaultdict(lambda: defaultdict(list))
 
     for r in rows:
         if not r.get("plan"):
             continue
 
         day = r["plan_date"]
-        key = (r["plan"], tuple(sorted(r.get("tags") or ["untagged"])))
-
-        grouped[day][key]["slots"].append(r["slot"])
-        grouped[day][key]["priority"] = r.get("priority") or "Medium"
+        grouped[day][r["plan"]].append(r["slot"])
 
     summary = defaultdict(list)
 
-    # ✅ FIXED indentation + sorted by time
     for day in sorted(grouped.keys()):
-        tasks = grouped[day]
-        for (task, _), data in sorted(
-            tasks.items(),
-            key=lambda x: min(x[1]["slots"])
+        for task, slots in sorted(
+            grouped[day].items(),
+            key=lambda x: min(x[1])
         ):
-            time_range = slots_to_timerange(data["slots"])
+            time_range = slots_to_timerange(slots)
             summary[day].append(f"{task}@{time_range}")
-    # ----------------------------
-    # Attach habits + reflection
-    # ----------------------------
-    plan_date=f"gte.{start_date}&lte.{end_date}"
-    meta_row = get(
-            "daily_slots",
-            params={
-                "plan_date": f"eq.{plan_date}",
-                "slot": f"eq.{META_SLOT}",
-                "select": "plan",
-            },
-        )
 
-    habits = []
-    reflection = ""
-
-    if meta_row:
-        try:
-            meta = json.loads(meta_row[0]["plan"] or "{}")
-            habits = meta.get("habits", [])
-            reflection = meta.get("reflection", "")
-        except Exception:
-            pass
-
-    return {
-            "tasks": summary,
-            "habits": habits,
-            "reflection": reflection,
-        }
-
-
-
-
+    return summary

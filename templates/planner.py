@@ -152,6 +152,22 @@ textarea { width:100%; min-height:90px; font-size:15px; }
   background: #ef4444; /* red */
   color: #fff;
 }
+.header-date {
+  color: #2563eb;
+  font-weight: 700;
+  font-size: 18px;
+}
+.header-top {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.header-nav {
+  display:flex;
+  gap:16px;
+  margin-top:6px;
+}
 
 
 </style>
@@ -159,22 +175,19 @@ textarea { width:100%; min-height:90px; font-size:15px; }
 
 <body>
 <div class="container">
-
-<div class="header" style="flex-direction:column; align-items:flex-start; gap:6px;">
-  
-  <!-- Row 1: Date + Time -->
-  <div style="display:flex; justify-content:space-between; width:100%;">
-    <div><strong>{{ today }}</strong></div>
+<div class="header">
+  <div class="header-top">
+    <div class="header-date">{{ today.strftime('%d %b %Y') }}</div>
     <div class="time">🕒 <span id="clock"></span> IST</div>
   </div>
 
-  <!-- Row 2: Navigation -->
-  <div style="display:flex; gap:14px; font-weight:600;">
+  <div class="header-nav">
     <a href="/">🗓 Planner</a>
     <a href="/todo">📋 Eisenhower</a>
     <a href="/summary">📊 Daily</a>
     <a href="/summary?view=weekly">🗓 Weekly</a>
   </div>
+</div>
 
 </div>
 
