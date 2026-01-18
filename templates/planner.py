@@ -201,150 +201,133 @@ textarea { width:100%; min-height:90px; font-size:15px; }
 
 <body>
 <div class="container">
-<div class="header mobile-header">
+  <div class="header mobile-header">
 
-  <!-- Row 1: Date + Time -->
-  <div class="header-top">
-    <div class="date">{{ today }}</div>
-    <div class="time">🕒 <span id="clock"></span> IST</div>
+    <!-- Row 1: Date + Time -->
+    <div class="header-top">
+      <div class="date">{{ today }}</div>
+      <div class="time">🕒 <span id="clock"></span> IST</div>
+    </div>
+
+    <!-- Row 2: Navigation icons -->
+    <div class="header-nav">
+      <a href="/" title="Planner">🏠</a>
+      <a href="/todo" title="Eisenhower">📋</a>
+      <a href="/summary" title="Daily Summary">📊</a>
+      <a href="/summary?view=weekly" title="Weekly Summary">🗓️</a>
+    </div>
   </div>
+    <form method="get" class="month-controls">
+      <input type="hidden" name="day" value="{{ selected_day }}">
+      <select name="month" onchange="this.form.submit()">
+        {% for m in range(1,13) %}
+          <option value="{{m}}" {% if m==month %}selected{% endif %}>{{ calendar.month_name[m] }}</option>
+        {% endfor %}
+      </select>
+      <select name="year" onchange="this.form.submit()">
+        {% for y in range(year-5, year+6) %}
+          <option value="{{y}}" {% if y==year %}selected{% endif %}>{{y}}</option>
+        {% endfor %}
+      </select>
+    </form>
 
-  <!-- Row 2: Navigation icons -->
-  <div class="header-nav">
-    <a href="/" title="Planner">🗓</a>
-    <a href="/todo" title="Eisenhower">📋</a>
-    <a href="/summary" title="Daily Summary">📊</a>
-    <a href="/summary?view=weekly" title="Weekly Summary">🗓️</a>
-  </div>
-
-</div>
-
-</div>
-
-
-
-<form method="get" class="month-controls">
-  <input type="hidden" name="day" value="{{ selected_day }}">
-  <select name="month" onchange="this.form.submit()">
-    {% for m in range(1,13) %}
-      <option value="{{m}}" {% if m==month %}selected{% endif %}>{{ calendar.month_name[m] }}</option>
+    <div class="day-strip">
+    {% for d in days %}
+    <a href="/?year={{year}}&month={{month}}&day={{d.day}}"
+      class="day-btn {% if d.day==selected_day %}selected{% endif %}">
+      {{d.day}}
+    </a>
     {% endfor %}
-  </select>
-  <select name="year" onchange="this.form.submit()">
-    {% for y in range(year-5, year+6) %}
-      <option value="{{y}}" {% if y==year %}selected{% endif %}>{{y}}</option>
-    {% endfor %}
-  </select>
-</form>
-
-<div class="day-strip">
-{% for d in days %}
-<a href="/?year={{year}}&month={{month}}&day={{d.day}}"
-   class="day-btn {% if d.day==selected_day %}selected{% endif %}">
-  {{d.day}}
-</a>
-{% endfor %}
-</div>
-
-<form method="post" id="planner-form">
-<input type="hidden" name="year" value="{{ year }}">
-<input type="hidden" name="month" value="{{ month }}">
-<input type="hidden" name="day" value="{{ selected_day }}">
-
-
-<h3>🧠 Smart Planner Input</h3>
-<textarea
-  name="smart_plan"
-  placeholder="One task per line.
-Example:
-Meeting with Renganathar @9am to 10am $Critical %Office #review
-Workout @6am to 7am $High %Personal"
-  style="width:100%; min-height:120px; margin-bottom:16px;"
-></textarea>
-
-<h3>🗒 Tasks (No Time Yet)</h3>
-
-{% for t in untimed_tasks %}
-<div class="untimed-item"
-     data-id="{{ t.id }}"
-     data-text="{{ t.text | e }}"
-     style="padding:8px 0;border-bottom:1px solid #eee;">
-
-  <div>{{ t.text }}</div>
-
-  <button type="button" onclick="promoteUntimed(this)" data-id="{{ t.id }}">📋 Promote</button>
-  <button type="button" onclick="scheduleUntimed('{{ t.id }}')">🕒 Schedule</button>
-</div>
-{% endfor %}
-
-{% for slot in plans %}
-<div class="slot {% if now_slot==slot %}current{% endif %}">
-  <strong>{{ slot_labels[slot] }}</strong>
-  <textarea name="plan_{{slot}}">{{ plans[slot].plan }}</textarea>
-</div>
-{% endfor %}
-<!-- =========================
-     DAILY CHECK-IN DRAWER
-========================= -->
-<div id="checkin-drawer" class="checkin-drawer hidden">
-  <div class="drawer-header">
-    <strong>🧭 Daily Check-in</strong>
-    <button type="button" onclick="toggleCheckin()">✖</button>
-  </div>
-
-  <!-- HABITS -->
-  <div class="card habits-card">
-    <div class="card-header">
-      <strong>Daily Habits</strong>
-      <span class="habit-count">
-        {{ habits|length }} / {{ habit_list|length }}
-      </span>
     </div>
 
-    <div class="habits">
-      {% for habit in habit_list %}
-        <label class="habit-item">
-          <input
-            type="checkbox"
-            name="habits"
-            value="{{ habit }}"
-            {% if habit in habits %}checked{% endif %}
-          >
-          <span class="habit-icon">
-            {{ habit_icons.get(habit, "•") }}
-          </span>
-          {{ habit }}
-        </label>
-      {% endfor %}
-    </div>
+    <form method="post" id="planner-form">
+    <input type="hidden" name="year" value="{{ year }}">
+    <input type="hidden" name="month" value="{{ month }}">
+    <input type="hidden" name="day" value="{{ selected_day }}">
 
-    {% if habits|length == 0 %}
-      <div class="soft-hint">⏳ No habits checked yet</div>
-    {% endif %}
-  </div>
 
-  <!-- REFLECTION -->
-  <div class="card reflection-card">
-    <div class="card-header">
-      <strong>Daily Reflection</strong>
-    </div>
-
+    <h3>🧠 Smart Planner Input</h3>
     <textarea
-      name="reflection"
-      rows="4"
-      placeholder="What went well? What didn’t? Anything to note for tomorrow…"
-    >{{ reflection }}</textarea>
+      name="smart_plan"
+      placeholder="One task per line.
+    Example:
+    Meeting with Renganathar @9am to 10am $Critical %Office #review
+    Workout @6am to 7am $High %Personal"
+      style="width:100%; min-height:120px; margin-bottom:16px;"
+    ></textarea>
 
-    {% if not reflection %}
-      <div class="soft-hint">✍️ A few lines are enough</div>
-    {% endif %}
-  </div>
-</div>
+    <h3>🗒 Tasks (No Time Yet)</h3>
+
+    {% for t in untimed_tasks %}
+    <div class="untimed-item"
+        data-id="{{ t.id }}"
+        data-text="{{ t.text | e }}"
+        style="padding:8px 0;border-bottom:1px solid #eee;">
+
+      <div>{{ t.text }}</div>
+
+      <button type="button" onclick="promoteUntimed(this)" data-id="{{ t.id }}">📋 Promote</button>
+      <button type="button" onclick="scheduleUntimed('{{ t.id }}')">🕒 Schedule</button>
+    </div>
+    {% endfor %}
+
+    {% for slot in plans %}
+    <div class="slot {% if now_slot==slot %}current{% endif %}">
+      <strong>{{ slot_labels[slot] }}</strong>
+      <textarea name="plan_{{slot}}">{{ plans[slot].plan }}</textarea>
+    </div>
+    {% endfor %}
 
 
+    <!-- HABITS -->
+    <div class="card habits-card">
+      <div class="card-header">
+        <strong>Daily Habits</strong>
+        <span class="habit-count">
+          {{ habits|length }} / {{ habit_list|length }}
+        </span>
+      </div>
+
+      <div class="habits">
+        {% for habit in habit_list %}
+          <label class="habit-item">
+            <input
+              type="checkbox"
+              name="habits"
+              value="{{ habit }}"
+              {% if habit in habits %}checked{% endif %}
+            >
+            <span class="habit-icon">
+              {{ habit_icons.get(habit, "•") }}
+            </span>
+            {{ habit }}
+          </label>
+        {% endfor %}
+      </div>
+
+      {% if habits|length == 0 %}
+        <div class="soft-hint">⏳ No habits checked yet</div>
+      {% endif %}
+    </div>
+
+    <!-- REFLECTION -->
+    <div class="card reflection-card">
+      <div class="card-header">
+        <strong>Daily Reflection</strong>
+      </div>
+
+      <textarea
+        name="reflection"
+        rows="4"
+        placeholder="What went well? What didn’t? Anything to note for tomorrow…"
+      >{{ reflection }}</textarea>
+
+      {% if not reflection %}
+        <div class="soft-hint">✍️ A few lines are enough</div>
+      {% endif %}
+    </div>
 </form>
 </div>
-
 <div class="action-stack">
   <button
     type="button"
@@ -369,12 +352,6 @@ Workout @6am to 7am $High %Personal"
   </button>
 </div>
 
-<button
-  type="button"
-  class="checkin-btn"
-  onclick="toggleCheckin()">
-  🧭 Check-in
-</button>
 
 <!-- MODAL -->
 <div id="modal" style="
