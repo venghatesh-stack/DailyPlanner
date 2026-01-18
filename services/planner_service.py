@@ -467,6 +467,7 @@ def get_weekly_summary(start_date, end_date):
     # ----------------------------
     # Attach habits + reflection
     # ----------------------------
+    plan_date=f"gte.{start_date}&lte.{end_date}"
     meta_row = get(
             "daily_slots",
             params={
