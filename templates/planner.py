@@ -81,6 +81,50 @@ textarea { width:100%; min-height:90px; font-size:15px; }
   padding:12px;
   margin-top:16px;
 }
+.checkin-btn {
+  position: fixed;
+  bottom: 90px;            /* above Save bar */
+  right: 16px;
+  padding: 12px 16px;
+  border-radius: 999px;
+  border: none;
+  background: #2563eb;
+  color: #fff;
+  font-size: 14px;
+  box-shadow: 0 6px 16px rgba(0,0,0,.2);
+  z-index: 1000;
+}
+
+.checkin-drawer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 75vh;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -10px 30px rgba(0,0,0,.25);
+  padding: 16px;
+  overflow-y: auto;
+  z-index: 1001;
+}
+
+.checkin-drawer.hidden {
+  display: none;
+}
+
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.drawer-header button {
+  border: none;
+  background: transparent;
+  font-size: 18px;
+}
 
 
 </style>
@@ -159,56 +203,63 @@ Workout @6am to 7am $High %Personal"
 </div>
 {% endfor %}
 <!-- =========================
-     DAILY HABITS
+     DAILY CHECK-IN DRAWER
 ========================= -->
-<div class="card habits-card">
-  <div class="card-header">
-    <strong>Daily Habits</strong>
-    <span class="habit-count">
-      {{ habits|length }} / {{ habit_list|length }}
-    </span>
+<div id="checkin-drawer" class="checkin-drawer hidden">
+  <div class="drawer-header">
+    <strong>🧭 Daily Check-in</strong>
+    <button type="button" onclick="toggleCheckin()">✖</button>
   </div>
 
-  <div class="habits">
-    {% for habit in habit_list %}
-      <label class="habit-item">
-        <input
-          type="checkbox"
-          name="habits"
-          value="{{ habit }}"
-          {% if habit in habits %}checked{% endif %}
-        >
-        <span class="habit-icon">
-          {{ habit_icons.get(habit, "•") }}
-        </span>
-        {{ habit }}
-      </label>
-    {% endfor %}
+  <!-- HABITS -->
+  <div class="card habits-card">
+    <div class="card-header">
+      <strong>Daily Habits</strong>
+      <span class="habit-count">
+        {{ habits|length }} / {{ habit_list|length }}
+      </span>
+    </div>
+
+    <div class="habits">
+      {% for habit in habit_list %}
+        <label class="habit-item">
+          <input
+            type="checkbox"
+            name="habits"
+            value="{{ habit }}"
+            {% if habit in habits %}checked{% endif %}
+          >
+          <span class="habit-icon">
+            {{ habit_icons.get(habit, "•") }}
+          </span>
+          {{ habit }}
+        </label>
+      {% endfor %}
+    </div>
+
+    {% if habits|length == 0 %}
+      <div class="soft-hint">⏳ No habits checked yet</div>
+    {% endif %}
   </div>
 
-  {% if habits|length == 0 %}
-    <div class="soft-hint">⏳ No habits checked yet</div>
-  {% endif %}
+  <!-- REFLECTION -->
+  <div class="card reflection-card">
+    <div class="card-header">
+      <strong>Daily Reflection</strong>
+    </div>
+
+    <textarea
+      name="reflection"
+      rows="4"
+      placeholder="What went well? What didn’t? Anything to note for tomorrow…"
+    >{{ reflection }}</textarea>
+
+    {% if not reflection %}
+      <div class="soft-hint">✍️ A few lines are enough</div>
+    {% endif %}
+  </div>
 </div>
 
-<!-- =========================
-     DAILY REFLECTION
-========================= -->
-<div class="card reflection-card">
-  <div class="card-header">
-    <strong>Daily Reflection</strong>
-  </div>
-
-  <textarea
-    name="reflection"
-    rows="4"
-    placeholder="What went well? What didn’t? Anything to note for tomorrow…"
-  >{{ reflection }}</textarea>
-
-  {% if not reflection %}
-    <div class="soft-hint">✍️ A few lines are enough</div>
-  {% endif %}
-</div>
 
 </form>
 </div>
@@ -217,6 +268,12 @@ Workout @6am to 7am $High %Personal"
   <button type="submit" form="planner-form">💾 Save</button>
   <button type="button" onclick="location.reload()">❌ Cancel</button>
 </div>
+<button
+  type="button"
+  class="checkin-btn"
+  onclick="toggleCheckin()">
+  🧭 Check-in
+</button>
 
 <!-- MODAL -->
 <div id="modal" style="
@@ -337,6 +394,11 @@ function saveFinalSchedule(id,date,start_slot,slots){
     })
   }).then(()=>location.reload());
 }
+function toggleCheckin(){
+  const drawer = document.getElementById("checkin-drawer");
+  drawer.classList.toggle("hidden");
+}
+
 </script>
 
 </body>
