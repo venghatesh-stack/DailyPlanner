@@ -133,18 +133,24 @@ textarea { width:100%; min-height:90px; font-size:15px; }
 <body>
 <div class="container">
 
-<div class="header">
-  <div>{{ today }}</div>
-  <div>
-    <a href="/todo">📋 Eisenhower</a>
-    &nbsp;&nbsp;
-    <a href="/summary">📊 Summary</a>
-    &nbsp;&nbsp;
-    <a href="/summary?view=weekly">🗓 Weekly</a>
-    &nbsp;&nbsp;
-    <span class="time">🕒 <span id="clock"></span> IST</span>
+<div class="header" style="flex-direction:column; align-items:flex-start; gap:6px;">
+  
+  <!-- Row 1: Date + Time -->
+  <div style="display:flex; justify-content:space-between; width:100%;">
+    <div><strong>{{ today }}</strong></div>
+    <div class="time">🕒 <span id="clock"></span> IST</div>
   </div>
+
+  <!-- Row 2: Navigation -->
+  <div style="display:flex; gap:14px; font-weight:600;">
+    <a href="/">🗓 Planner</a>
+    <a href="/todo">📋 Eisenhower</a>
+    <a href="/summary">📊 Daily</a>
+    <a href="/summary?view=weekly">🗓 Weekly</a>
+  </div>
+
 </div>
+
 
 
 <form method="get" class="month-controls">
