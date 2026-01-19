@@ -564,23 +564,26 @@ document.addEventListener("keydown", function (e) {
 </script>
 <script>
 let touchStartY = null;
+let isAtTop = false;
 
 const summaryModal = document.getElementById("summary-modal");
+const summaryContent = document.getElementById("summary-content");
 
 summaryModal.addEventListener("touchstart", function (e) {
-  if (e.touches.length === 1) {
-    touchStartY = e.touches[0].clientY;
-  }
+  if (e.touches.length !== 1) return;
+
+  touchStartY = e.touches[0].clientY;
+  isAtTop = summaryContent.scrollTop === 0;
 });
 
 summaryModal.addEventListener("touchmove", function (e) {
-  if (!touchStartY) return;
+  if (!touchStartY || !isAtTop) return;
 
-  const touchCurrentY = e.touches[0].clientY;
-  const deltaY = touchCurrentY - touchStartY;
+  const currentY = e.touches[0].clientY;
+  const deltaY = currentY - touchStartY;
 
-  // Swipe down threshold (60px)
-  if (deltaY > 60) {
+  // close only if pulled down from top
+  if (deltaY > 80) {
     closeSummary();
     touchStartY = null;
   }
@@ -590,6 +593,7 @@ summaryModal.addEventListener("touchend", function () {
   touchStartY = null;
 });
 </script>
+
 <script>
 function syncHabit(cb) {
   const main = document.querySelector(
