@@ -443,12 +443,14 @@ def get_daily_summary(plan_date):
 def get_weekly_summary(start_date, end_date):
     rows = get(
         "daily_slots",
-        params={
-            "plan_date": f"gte.{start_date}&lte.{end_date}",
-            "slot": f"neq.{META_SLOT}",
-            "select": "plan_date,slot,plan",
-        },
+        params=[
+            ("plan_date", f"gte.{start_date}"),
+            ("plan_date", f"lte.{end_date}"),
+            ("slot", "neq.0"),
+            ("select", "plan_date,slot,plan"),
+        ],
     ) or []
+
 
     grouped = defaultdict(lambda: defaultdict(list))
 
