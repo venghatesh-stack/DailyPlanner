@@ -418,7 +418,7 @@ def get_daily_summary(plan_date):
     ) or {}
 
     return {
-        "tasks": parse_tasks(slots),   # reuse existing parser
+        "tasks": [s.get("plan", "").strip() for s in slots if s.get("plan")],
         "habits": habits_row.get("habits", []),
         "reflection": reflection_row.get("reflection", "")
     }
