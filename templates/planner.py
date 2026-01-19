@@ -189,6 +189,9 @@ textarea { width:100%; min-height:90px; font-size:15px; }
 .header-nav a {
   text-decoration: none;
 }
+.action-stack {
+  z-index: 2000;
+}
 
 @media (max-width: 600px) {
   .checkin-btn {
@@ -584,6 +587,19 @@ summaryModal.addEventListener("touchend", function () {
   touchStartY = null;
 });
 </script>
+<script>
+function syncHabit(cb) {
+  const main = document.querySelector(
+    'input[name="habits"][value="'+cb.dataset.habit+'"]'
+  );
+  if (main) main.checked = cb.checked;
+}
+
+function syncReflection(el) {
+  const main = document.querySelector('textarea[name="reflection"]');
+  if (main) main.value = el.value;
+}
+</script>
 
 <div id="checkin-drawer" class="checkin-drawer hidden">
   <div class="drawer-header">
@@ -599,38 +615,28 @@ summaryModal.addEventListener("touchend", function () {
   <p class="soft-hint">
     Make quick updates. Tap Save to persist.
   </p>
-
-  <!-- HABITS (editable, shared with main form) -->
   <div class="section">
-    <strong>Habits</strong>
-
-    <div class="habits">
-      {% for habit in habit_list %}
-        <label class="habit-item">
-          <input
-            type="checkbox"
-            name="habits"
-            value="{{ habit }}"
-            form="planner-form"
-            {% if habit in habits %}checked{% endif %}
-          >
-          {{ habit }}
-        </label>
-      {% endfor %}
-    </div>
+  <strong>Habits</strong>
+  <div class="habits">
+    {% for habit in habit_list %}
+      <label class="habit-item">
+        <input type="checkbox"
+               onchange="syncHabit(this)"
+               {% if habit in habits %}checked{% endif %}
+               data-habit="{{ habit }}">
+        {{ habit }}
+      </label>
+    {% endfor %}
   </div>
-  <!-- REFLECTION (editable, shared with main form) -->
-  <div class="section" style="margin-top:12px">
-    <strong>Reflection</strong>
+</div>
 
-    <textarea
-      name="reflection"
-      rows="4"
-      form="planner-form"
-      placeholder="How did today go?"
-      style="width:100%;margin-top:6px"
-    >{{ reflection }}</textarea>
-  </div>
+<div class="section">
+  <strong>Reflection</strong>
+  <textarea
+    oninput="syncReflection(this)"
+    rows="4">{{ reflection }}</textarea>
+</div>
+
 </div>
 
 
