@@ -211,11 +211,21 @@ textarea { width:100%; min-height:90px; font-size:15px; }
 
     <!-- Row 2: Navigation icons -->
     <div class="header-nav">
-      <a href="/" title="Planner">🏠</a>
-      <a href="/todo" title="Eisenhower">📋</a>
-      <button type="button" onclick="openSummary()" title="Daily Summary">📊</button>
-      <a href="/summary?view=weekly" title="Weekly Summary">🗓️</a>
-    </div>
+        <a href="/" title="Planner">🏠</a>
+
+        <a href="/todo" title="Eisenhower Matrix">
+          🎯
+        </a>
+
+        <button type="button" onclick="openSummary()" title="Daily Summary">
+          📝
+        </button>
+
+        <a href="/summary?view=weekly" title="Weekly Summary">
+          📆
+        </a>
+      </div>
+
   </div>
     <form method="get" class="month-controls">
       <input type="hidden" name="day" value="{{ selected_day }}">
