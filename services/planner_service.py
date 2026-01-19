@@ -412,7 +412,8 @@ def get_daily_summary(plan_date):
         params={
             "plan_date": f"eq.{plan_date}",
             "select": "slot,plan",
-            "slot": "neq.0",   # safety: ignore slot 0
+             "order": "slot.asc",
+           
         },
     ) or []
 
