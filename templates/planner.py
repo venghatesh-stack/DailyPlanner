@@ -538,7 +538,7 @@ function closeCheckinIfOpen(){
   }
 }
 function openSummary(){
-  fetch("/summary")
+  fetch(`/summary"date=$(PLAN_DATE)`)
     .then(r => r.text())
     .then(html => {
       document.getElementById("summary-content").innerHTML = html;

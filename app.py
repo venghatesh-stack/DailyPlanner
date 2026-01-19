@@ -324,12 +324,13 @@ def summary():
         )
 
     # Default: daily
-    data = get_daily_summary(today)
+    plan_date = safe_date(request.args.get("date"))
+
     return render_template_string(
         SUMMARY_TEMPLATE,
         view="daily",
         data=data,
-        date=today,
+        date=plan_date,
     )
 
 @app.route("/untimed/promote", methods=["POST"])
