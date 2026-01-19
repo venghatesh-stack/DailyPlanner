@@ -51,13 +51,17 @@ a {
   <div class="section">
     <h3>✅ Tasks</h3>
 
-    {% if data.tasks %}
+        {% if data.tasks %}
       {% for task in data.tasks %}
-        <div class="task">• {{ task }}</div>
+        <div class="task">
+          <strong>{{ task.label }}</strong><br>
+          {{ task.text | replace('\n', '<br>') | safe }}
+        </div>
       {% endfor %}
     {% else %}
       <div class="empty">No scheduled tasks</div>
     {% endif %}
+
   </div>
 
 
@@ -101,6 +105,14 @@ a {
 {% endif %}
 
 <br>
+{% if view == "daily" %}
+  <br>
+  <button onclick="window.parent.closeSummary && window.parent.closeSummary()"
+          style="padding:8px 12px;border-radius:8px;border:1px solid #ddd">
+    ✖ Close
+  </button>
+{% endif %}
+
 <a href="/">← Back to Planner</a>
 
 </div>
