@@ -543,26 +543,6 @@ function closeSummary(){
     {% endif %}
   </div>
 
-  <div class="section" style="margin-top:12px">
-    <strong>Reflection</strong>
-    {% if reflection %}
-      <div style="margin-top:6px">{{ reflection }}</div>
-    {% else %}
-      <div class="soft-hint">No reflection written</div>
-    {% endif %}
-  </div>
-</div>
-
-
-<div class="section" style="margin-top:12px">
-  <strong>Reflection</strong>
-  {% if reflection %}
-    <div style="margin-top:6px">{{ reflection }}</div>
-  {% else %}
-    <div class="soft-hint">No reflection written</div>
-  {% endif %}
-</div>
-
 </body>
 </html>
 """
