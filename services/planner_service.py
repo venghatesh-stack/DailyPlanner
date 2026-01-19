@@ -394,7 +394,6 @@ def save_day(plan_date, form):
         meta_payload,
         prefer="resolution=merge-duplicates",
     )
-
 def get_daily_summary(plan_date):
     slots = get(
         "daily_slots",
@@ -405,23 +404,22 @@ def get_daily_summary(plan_date):
         }
     ) or []
 
-    habits_row = get(
+    habits_rows = get(
         "daily_habits",
         params={"plan_date": f"eq.{plan_date}"},
-        single=True
-    ) or {}
+    ) or []
 
-    reflection_row = get(
+    reflection_rows = get(
         "daily_reflection",
         params={"plan_date": f"eq.{plan_date}"},
-        single=True
-    ) or {}
+    ) or []
 
     return {
         "tasks": [s.get("plan", "").strip() for s in slots if s.get("plan")],
-        "habits": habits_row.get("habits", []),
-        "reflection": reflection_row.get("reflection", "")
+        "habits": habits_rows[0].get("habits", []) if habits_rows else [],
+        "reflection": reflection_rows[0].get("reflection", "") if reflection_rows else ""
     }
+
 
 # NOTE:
 # Weekly summary is intentionally compact (day → tasks with time).
