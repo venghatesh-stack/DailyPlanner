@@ -12,6 +12,7 @@ from collections import defaultdict
 from supabase_client import get, post, delete
 from parsing.planner_parser import parse_planner_input
 
+
 logger = logging.getLogger(__name__)
     
 # ==========================================================
@@ -394,12 +395,24 @@ def save_day(plan_date, form):
         meta_payload,
         prefer="resolution=merge-duplicates",
     )
+    
+def build_slot_labels():
+    labels = {}
+    start = datetime.strptime("06:00", "%H:%M")
+    for i in range(1, 49):
+        end = start + timedelta(minutes=30)
+        labels[i] = f"{start.strftime('%H:%M')} – {end.strftime('%H:%M')}"
+        start = end
+    return labels
+
+SLOT_LABELS = build_slot_labels()
 def get_daily_summary(plan_date):
     rows = get(
         "daily_slots",
         params={
             "plan_date": f"eq.{plan_date}",
             "select": "slot,plan",
+            "slot": "neq.0",   # safety: ignore slot 0
         },
     ) or []
 
@@ -408,16 +421,23 @@ def get_daily_summary(plan_date):
     reflection = ""
 
     for r in rows:
-        if r["slot"] == META_SLOT:
+        slot = r.get("slot")
+        plan = (r.get("plan") or "").strip()
+
+        if slot == META_SLOT:
             try:
-                meta = json.loads(r.get("plan") or "{}")
+                meta = json.loads(plan or "{}")
                 habits = meta.get("habits", [])
                 reflection = meta.get("reflection", "")
             except Exception:
                 pass
         else:
-            if r.get("plan"):
-                tasks.append(r["plan"])
+            if plan:
+                tasks.append({
+                    "slot": slot,
+                    "label": SLOT_LABELS.get(slot),
+                    "text": plan,
+                })
 
     return {
         "tasks": tasks,
@@ -461,3 +481,5 @@ def get_weekly_summary(start_date, end_date):
             summary[day].append(f"{task}@{time_range}")
 
     return summary
+
+

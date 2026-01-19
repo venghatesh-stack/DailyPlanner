@@ -396,10 +396,21 @@ textarea { width:100%; min-height:90px; font-size:15px; }
   justify-content:center;
   z-index:9999;">
   <div style="background:#fff;padding:18px;width:90%;max-width:420px;border-radius:14px;">
-    <h3>📊 Daily Summary</h3>
-    <div id="summary-content">Loading…</div>
-    <br>
-    <button onclick="closeSummary()">Close</button>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3 style="margin:0">📊 Daily Summary</h3>
+      <button onclick="closeSummary()" style="
+        border:none;
+        background:none;
+        font-size:18px;
+        cursor:pointer">
+        ✖
+      </button>
+    </div>
+
+<div id="summary-content" style="margin-top:12px">
+  Loading…
+</div>
+
   </div>
 </div>
 
