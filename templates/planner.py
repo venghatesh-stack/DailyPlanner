@@ -592,49 +592,45 @@ summaryModal.addEventListener("touchend", function () {
   </div>
 
   <p style="opacity:.6;font-size:14px">
-    Use Save to persist habits & reflection
+      Use Save to persist habits & reflection
+    </p>
+  </div>
+
+  <p class="soft-hint">
+    Make quick updates. Tap Save to persist.
   </p>
 
-  <div class="drawer-header">
-  <strong>🧭 Daily Check-in</strong>
-  <button type="button" onclick="toggleCheckin()">✖</button>
-</div>
+  <!-- HABITS (editable, shared with main form) -->
+  <div class="section">
+    <strong>Habits</strong>
 
-<p class="soft-hint">
-  Make quick updates. Tap Save to persist.
-</p>
-
-<!-- HABITS (editable, shared with main form) -->
-<div class="section">
-  <strong>Habits</strong>
-
-  <div class="habits">
-    {% for habit in habit_list %}
-      <label class="habit-item">
-        <input
-          type="checkbox"
-          name="habits"
-          value="{{ habit }}"
-          form="planner-form"
-          {% if habit in habits %}checked{% endif %}
-        >
-        {{ habit }}
-      </label>
-    {% endfor %}
+    <div class="habits">
+      {% for habit in habit_list %}
+        <label class="habit-item">
+          <input
+            type="checkbox"
+            name="habits"
+            value="{{ habit }}"
+            form="planner-form"
+            {% if habit in habits %}checked{% endif %}
+          >
+          {{ habit }}
+        </label>
+      {% endfor %}
+    </div>
   </div>
-</div>
+  <!-- REFLECTION (editable, shared with main form) -->
+  <div class="section" style="margin-top:12px">
+    <strong>Reflection</strong>
 
-<!-- REFLECTION (editable, shared with main form) -->
-<div class="section" style="margin-top:12px">
-  <strong>Reflection</strong>
-
-  <textarea
-    name="reflection"
-    rows="4"
-    form="planner-form"
-    placeholder="How did today go?"
-    style="width:100%;margin-top:6px"
-  >{{ reflection }}</textarea>
+    <textarea
+      name="reflection"
+      rows="4"
+      form="planner-form"
+      placeholder="How did today go?"
+      style="width:100%;margin-top:6px"
+    >{{ reflection }}</textarea>
+  </div>
 </div>
 
 
