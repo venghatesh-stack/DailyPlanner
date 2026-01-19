@@ -213,7 +213,7 @@ textarea { width:100%; min-height:90px; font-size:15px; }
     <div class="header-nav">
       <a href="/" title="Planner">🏠</a>
       <a href="/todo" title="Eisenhower">📋</a>
-      <a href="/summary" title="Daily Summary" onclick="openSummary()">📊</a>
+      <button type="button" onclick="openSummary()" title="Daily Summary">📊</button>
       <a href="/summary?view=weekly" title="Weekly Summary">🗓️</a>
     </div>
   </div>
@@ -270,31 +270,26 @@ textarea { width:100%; min-height:90px; font-size:15px; }
       <button type="button" onclick="scheduleUntimed('{{ t.id }}')">🕒 Schedule</button>
     </div>
     {% endfor %}
-
     {% for slot in plans %}
-    <div class="slot {% if now_slot==slot %}current{% endif %}">
-      <strong>{{ slot_labels[slot] }}</strong>
       <div class="slot {% if now_slot==slot %}current{% endif %}">
-      <div style="display:flex; align-items:center; justify-content:space-between;">
-        <strong>{{ slot_labels[slot] }}</strong>
 
-        {% if plans[slot].plan %}
-          <a
-            href="/calendar/add?
-              date={{ plan_date }}&
-              slot={{ slot }}"
-            title="Add to Google Calendar"
-            style="text-decoration:none;font-size:16px"
-          >📅</a>
-        {% endif %}
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <strong>{{ slot_labels[slot] }}</strong>
+
+          {% if plans[slot].plan | trim %}
+            <a
+              href="/calendar/add?date={{ plan_date }}&slot={{ slot }}"
+              title="Add to Google Calendar"
+              style="text-decoration:none;font-size:16px"
+            >📅</a>
+          {% endif %}
+        </div>
+
+        <textarea name="plan_{{slot}}">{{ plans[slot].plan }}</textarea>
+
       </div>
+      {% endfor %}
 
-      <textarea name="plan_{{slot}}">{{ plans[slot].plan }}</textarea>
-    </div>
-
-      <textarea name="plan_{{slot}}">{{ plans[slot].plan }}</textarea>
-    </div>
-    {% endfor %}
 
 
     <!-- HABITS -->
