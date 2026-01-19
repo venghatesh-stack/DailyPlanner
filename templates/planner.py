@@ -274,6 +274,24 @@ textarea { width:100%; min-height:90px; font-size:15px; }
     {% for slot in plans %}
     <div class="slot {% if now_slot==slot %}current{% endif %}">
       <strong>{{ slot_labels[slot] }}</strong>
+      <div class="slot {% if now_slot==slot %}current{% endif %}">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <strong>{{ slot_labels[slot] }}</strong>
+
+        {% if plans[slot].plan %}
+          <a
+            href="/calendar/add?
+              date={{ plan_date }}&
+              slot={{ slot }}"
+            title="Add to Google Calendar"
+            style="text-decoration:none;font-size:16px"
+          >📅</a>
+        {% endif %}
+      </div>
+
+      <textarea name="plan_{{slot}}">{{ plans[slot].plan }}</textarea>
+    </div>
+
       <textarea name="plan_{{slot}}">{{ plans[slot].plan }}</textarea>
     </div>
     {% endfor %}
