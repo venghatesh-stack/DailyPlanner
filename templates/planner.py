@@ -545,6 +545,46 @@ function closeSummary(){
 }
 
 </script>
+<script>
+/* ESC to close Daily Summary */
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape") {
+    const modal = document.getElementById("summary-modal");
+    if (modal && modal.style.display === "flex") {
+      closeSummary();
+    }
+  }
+});
+</script>
+<script>
+let touchStartY = null;
+
+const summaryModal = document.getElementById("summary-modal");
+
+summaryModal.addEventListener("touchstart", function (e) {
+  if (e.touches.length === 1) {
+    touchStartY = e.touches[0].clientY;
+  }
+});
+
+summaryModal.addEventListener("touchmove", function (e) {
+  if (!touchStartY) return;
+
+  const touchCurrentY = e.touches[0].clientY;
+  const deltaY = touchCurrentY - touchStartY;
+
+  // Swipe down threshold (60px)
+  if (deltaY > 60) {
+    closeSummary();
+    touchStartY = null;
+  }
+});
+
+summaryModal.addEventListener("touchend", function () {
+  touchStartY = null;
+});
+</script>
+
 <div id="checkin-drawer" class="checkin-drawer hidden">
   <div class="drawer-header">
     <strong>🧭 Daily Check-in</strong>
@@ -555,14 +595,48 @@ function closeSummary(){
     Use Save to persist habits & reflection
   </p>
 
-  <div class="section">
-    <strong>Habits</strong>
-    {% if habits %}
-      <div style="margin-top:6px">{{ habits | join(", ") }}</div>
-    {% else %}
-      <div class="soft-hint">No habits checked</div>
-    {% endif %}
+  <div class="drawer-header">
+  <strong>🧭 Daily Check-in</strong>
+  <button type="button" onclick="toggleCheckin()">✖</button>
+</div>
+
+<p class="soft-hint">
+  Make quick updates. Tap Save to persist.
+</p>
+
+<!-- HABITS (editable, shared with main form) -->
+<div class="section">
+  <strong>Habits</strong>
+
+  <div class="habits">
+    {% for habit in habit_list %}
+      <label class="habit-item">
+        <input
+          type="checkbox"
+          name="habits"
+          value="{{ habit }}"
+          form="planner-form"
+          {% if habit in habits %}checked{% endif %}
+        >
+        {{ habit }}
+      </label>
+    {% endfor %}
   </div>
+</div>
+
+<!-- REFLECTION (editable, shared with main form) -->
+<div class="section" style="margin-top:12px">
+  <strong>Reflection</strong>
+
+  <textarea
+    name="reflection"
+    rows="4"
+    form="planner-form"
+    placeholder="How did today go?"
+    style="width:100%;margin-top:6px"
+  >{{ reflection }}</textarea>
+</div>
+
 
 </body>
 </html>
