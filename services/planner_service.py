@@ -6,9 +6,8 @@ from config import (
     TOTAL_SLOTS,
     DEFAULT_STATUS,
 )
-from utils.slots import generate_half_hour_slots , slots_to_timerange
+from utils.slots import generate_half_hour_slots
 import logging
-from collections import defaultdict
 from supabase_client import get, post, delete
 from parsing.planner_parser import parse_planner_input
 
@@ -453,34 +452,26 @@ def get_daily_summary(plan_date):
 def get_weekly_summary(start_date, end_date):
     rows = get(
         "daily_slots",
-        params=[
-            ("plan_date", f"gte.{start_date}"),
-            ("plan_date", f"lte.{end_date}"),
-            ("slot", "neq.0"),
-            ("select", "plan_date,slot,plan"),
-        ],
+        params={
+            "plan_date": f"gte.{start_date}",
+            "plan_date": f"lte.{end_date}",
+            "select": "plan_date,slot,plan",
+            "order": "plan_date.asc,slot.asc",
+        },
     ) or []
 
+    weekly = {}
 
-    grouped = defaultdict(lambda: defaultdict(list))
+    for row in rows:
+        plan_date = row["plan_date"]
+        plan = (row.get("plan") or "").strip()
 
-    for r in rows:
-        if not r.get("plan"):
+        if not plan:
             continue
 
-        day = r["plan_date"]
-        grouped[day][r["plan"]].append(r["slot"])
+        weekly.setdefault(plan_date, []).append(plan)
 
-    summary = defaultdict(list)
+    return weekly
 
-    for day in sorted(grouped.keys()):
-        for task, slots in sorted(
-            grouped[day].items(),
-            key=lambda x: min(x[1])
-        ):
-            time_range = slots_to_timerange(slots)
-            summary[day].append(f"{task}@{time_range}")
-
-    return summary
 
 
