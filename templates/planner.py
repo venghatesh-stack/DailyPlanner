@@ -213,7 +213,7 @@ textarea { width:100%; min-height:90px; font-size:15px; }
     <div class="header-nav">
       <a href="/" title="Planner">🏠</a>
       <a href="/todo" title="Eisenhower">📋</a>
-      <a href="/summary" title="Daily Summary">📊</a>
+      <a href="/summary" title="Daily Summary" onclick="openSummary()">📊</a>
       <a href="/summary?view=weekly" title="Weekly Summary">🗓️</a>
     </div>
   </div>
@@ -364,6 +364,21 @@ textarea { width:100%; min-height:90px; font-size:15px; }
   z-index:9999;">
   <div id="modal-content" style="background:#fff;padding:18px;width:340px;border-radius:14px;"></div>
 </div>
+<div id="summary-modal" style="
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.35);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;">
+  <div style="background:#fff;padding:18px;width:90%;max-width:420px;border-radius:14px;">
+    <h3>📊 Daily Summary</h3>
+    <div id="summary-content">Loading…</div>
+    <br>
+    <button onclick="closeSummary()">Close</button>
+  </div>
+</div>
 
 
 <script>
@@ -482,8 +497,30 @@ function closeCheckinIfOpen(){
     drawer.classList.add("hidden");
   }
 }
+function openSummary(){
+  fetch("/summary")
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById("summary-content").innerHTML = html;
+      document.getElementById("summary-modal").style.display = "flex";
+    });
+}
+
+function closeSummary(){
+  document.getElementById("summary-modal").style.display = "none";
+}
 
 </script>
+<div id="checkin-drawer" class="checkin-drawer hidden">
+  <div class="drawer-header">
+    <strong>🧭 Daily Check-in</strong>
+    <button type="button" onclick="toggleCheckin()">✖</button>
+  </div>
+
+  <p style="opacity:.6;font-size:14px">
+    Use Save to persist habits & reflection
+  </p>
+</div>
 
 </body>
 </html>
