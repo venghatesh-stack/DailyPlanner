@@ -52,20 +52,14 @@ a {
     <h3>✅ Tasks</h3>
 
     {% if data.tasks %}
-      {% for tag, priorities in data.tasks.items() %}
-        <div class="badge">#{{ tag }}</div>
-
-        {% for priority, items in priorities.items() %}
-          <strong>{{ priority }}</strong>
-          {% for item in items %}
-            <div class="task">• {{ item }}</div>
-          {% endfor %}
-        {% endfor %}
+      {% for task in data.tasks %}
+        <div class="task">• {{ task }}</div>
       {% endfor %}
     {% else %}
       <div class="empty">No scheduled tasks</div>
     {% endif %}
   </div>
+
 
   <!-- HABITS -->
   <div class="section">

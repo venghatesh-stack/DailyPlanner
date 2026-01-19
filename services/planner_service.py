@@ -395,29 +395,34 @@ def save_day(plan_date, form):
         prefer="resolution=merge-duplicates",
     )
 def get_daily_summary(plan_date):
-    slots = get(
+    rows = get(
         "daily_slots",
         params={
             "plan_date": f"eq.{plan_date}",
-            "slot": "neq.0",
-            "select": "plan"
-        }
+            "select": "slot,plan",
+        },
     ) or []
 
-    habits_rows = get(
-        "daily_habits",
-        params={"plan_date": f"eq.{plan_date}"},
-    ) or []
+    tasks = []
+    habits = []
+    reflection = ""
 
-    reflection_rows = get(
-        "daily_reflection",
-        params={"plan_date": f"eq.{plan_date}"},
-    ) or []
+    for r in rows:
+        if r["slot"] == META_SLOT:
+            try:
+                meta = json.loads(r.get("plan") or "{}")
+                habits = meta.get("habits", [])
+                reflection = meta.get("reflection", "")
+            except Exception:
+                pass
+        else:
+            if r.get("plan"):
+                tasks.append(r["plan"])
 
     return {
-        "tasks": [s.get("plan", "").strip() for s in slots if s.get("plan")],
-        "habits": habits_rows[0].get("habits", []) if habits_rows else [],
-        "reflection": reflection_rows[0].get("reflection", "") if reflection_rows else ""
+        "tasks": tasks,
+        "habits": habits,
+        "reflection": reflection,
     }
 
 
