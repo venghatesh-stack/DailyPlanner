@@ -521,6 +521,23 @@ function closeSummary(){
     Use Save to persist habits & reflection
   </p>
 </div>
+<div class="section">
+  <strong>Habits</strong>
+  {% if habits %}
+    <div style="margin-top:6px">{{ habits | join(", ") }}</div>
+  {% else %}
+    <div class="soft-hint">No habits checked</div>
+  {% endif %}
+</div>
+
+<div class="section" style="margin-top:12px">
+  <strong>Reflection</strong>
+  {% if reflection %}
+    <div style="margin-top:6px">{{ reflection }}</div>
+  {% else %}
+    <div class="soft-hint">No reflection written</div>
+  {% endif %}
+</div>
 
 </body>
 </html>

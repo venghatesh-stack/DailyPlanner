@@ -396,47 +396,33 @@ def save_day(plan_date, form):
     )
 
 def get_daily_summary(plan_date):
-    rows = get(
+    slots = get(
         "daily_slots",
         params={
             "plan_date": f"eq.{plan_date}",
-            "slot": f"neq.{META_SLOT}",
-            "select": "slot,plan,priority,tags",
-        },
+            "slot": "neq.0",
+            "select": "plan"
+        }
     ) or []
 
-    # Phase 1: group slots by task + tags
-    grouped = defaultdict(lambda: {
-        "slots": [],
-        "priority": "Medium",
-        "tags": []
-    })
+    habits_row = get(
+        "daily_habits",
+        params={"plan_date": f"eq.{plan_date}"},
+        single=True
+    ) or {}
 
-    for r in rows:
-        if not r.get("plan"):
-            continue
+    reflection_row = get(
+        "daily_reflection",
+        params={"plan_date": f"eq.{plan_date}"},
+        single=True
+    ) or {}
 
-        tags = r.get("tags") or ["untagged"]
-        key = (r["plan"], tuple(sorted(tags)))
+    return {
+        "tasks": parse_tasks(slots),   # reuse existing parser
+        "habits": habits_row.get("habits", []),
+        "reflection": reflection_row.get("reflection", "")
+    }
 
-        grouped[key]["slots"].append(r["slot"])
-        grouped[key]["priority"] = r.get("priority") or "Medium"
-        grouped[key]["tags"] = tags
-
-    # Phase 2: build summary (sorted by start time)
-    summary = defaultdict(lambda: defaultdict(list))
-
-    for (task, _), data in sorted(
-        grouped.items(),
-        key=lambda x: min(x[1]["slots"])
-    ):
-        time_range = slots_to_timerange(data["slots"])
-        label = f"{task}@{time_range}"
-
-        for tag in data["tags"]:
-            summary[tag][data["priority"]].append(label)
-
-    return summary
 # NOTE:
 # Weekly summary is intentionally compact (day → tasks with time).
 # Tag and priority aggregation is handled only in daily summary to avoid noise.
