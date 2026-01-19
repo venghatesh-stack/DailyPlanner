@@ -410,11 +410,14 @@ textarea { width:100%; min-height:90px; font-size:15px; }
       </button>
     </div>
 
-<div id="summary-content" style="margin-top:12px">
-  Loading…
-</div>
+<div id="summary-content" style="
+  margin-top:12px;
+  max-height:65vh;
+  overflow-y:auto;
+">
+</div> <!-- CLOSE summary-content -->
 
-  </div>
+</div>
 </div>
 
 
@@ -601,43 +604,41 @@ function syncReflection(el) {
 }
 </script>
 
+
 <div id="checkin-drawer" class="checkin-drawer hidden">
   <div class="drawer-header">
     <strong>🧭 Daily Check-in</strong>
     <button type="button" onclick="toggleCheckin()">✖</button>
   </div>
 
-  <p style="opacity:.6;font-size:14px">
-      Use Save to persist habits & reflection
-    </p>
-  </div>
-
   <p class="soft-hint">
     Make quick updates. Tap Save to persist.
   </p>
+
   <div class="section">
-  <strong>Habits</strong>
-  <div class="habits">
-    {% for habit in habit_list %}
-      <label class="habit-item">
-        <input type="checkbox"
-               onchange="syncHabit(this)"
-               {% if habit in habits %}checked{% endif %}
-               data-habit="{{ habit }}">
-        {{ habit }}
-      </label>
-    {% endfor %}
+    <strong>Habits</strong>
+    <div class="habits">
+      {% for habit in habit_list %}
+        <label class="habit-item">
+          <input type="checkbox"
+                 data-habit="{{ habit }}"
+                 {% if habit in habits %}checked{% endif %}
+                 onchange="syncHabit(this)">
+          {{ habit }}
+        </label>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="section">
+    <strong>Reflection</strong>
+    <textarea
+      rows="4"
+      oninput="syncReflection(this)"
+    >{{ reflection }}</textarea>
   </div>
 </div>
 
-<div class="section">
-  <strong>Reflection</strong>
-  <textarea
-    oninput="syncReflection(this)"
-    rows="4">{{ reflection }}</textarea>
-</div>
-
-</div>
 
 
 </body>
