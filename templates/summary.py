@@ -37,6 +37,15 @@ a {
   font-weight:600;
   text-decoration:none;
 }
+.summary-close {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  padding-top: 12px;
+  margin-top: 16px;
+  border-top: 1px solid #eee;
+}
+
 </style>
 </head>
 
@@ -52,11 +61,16 @@ a {
     <h3>✅ Tasks</h3>
 
         {% if data.tasks %}
-      {% for task in data.tasks %}
-        <div class="task">
-          <strong>{{ task.label }}</strong><br>
-          {{ task.text | replace('\n', '<br>') | safe }}
-        </div>
+            {% for task in data.tasks %}
+              <div class="task">
+                <div style="font-weight:600;color:#2563eb;">
+                  {{ task.label }}
+                </div>
+                <div style="margin-left:8px">
+                  {{ task.text | replace('\n', '<br>') | safe }}
+                </div>
+              </div>
+
       {% endfor %}
     {% else %}
       <div class="empty">No scheduled tasks</div>
@@ -84,6 +98,14 @@ a {
       <div class="empty">No reflection written</div>
     {% endif %}
   </div>
+    {% if view == "daily" %}
+      <div class="summary-close">
+        <button onclick="window.parent.closeSummary && window.parent.closeSummary()"
+                style="padding:10px 14px;border-radius:10px;border:1px solid #ddd;width:100%">
+          ✖ Close Summary
+        </button>
+      </div>
+    {% endif %}
 
 {% elif view == "weekly" %}
 
