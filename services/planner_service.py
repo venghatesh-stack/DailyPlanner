@@ -1,6 +1,6 @@
 import json
 import re
-from datetime import datetime,timedelta
+from datetime import datetime
 from config import (
     META_SLOT,
     TOTAL_SLOTS,
@@ -395,16 +395,24 @@ def save_day(plan_date, form):
         prefer="resolution=merge-duplicates",
     )
     
-def build_slot_labels():
-    labels = {}
-    start = datetime.strptime("06:00", "%H:%M")
-    for i in range(1, 49):
-        end = start + timedelta(minutes=30)
-        labels[i] = f"{start.strftime('%H:%M')} – {end.strftime('%H:%M')}"
-        start = end
-    return labels
+SLOT_START_MINUTES = 6 * 60  # 06:00 AM
 
-SLOT_LABELS = build_slot_labels()
+def slot_label(slot: int) -> str:
+    total_minutes = SLOT_START_MINUTES + (slot - 1) * 30
+
+    start_h, start_m = divmod(total_minutes, 60)
+    end_minutes = total_minutes + 30
+    end_h, end_m = divmod(end_minutes, 60)
+
+    def fmt(h, m):
+        h = h % 24
+        return f"{h:02d}:{m:02d}"
+
+    return f"{fmt(start_h, start_m)} – {fmt(end_h, end_m)}"
+
+
+SLOT_LABELS = {i: slot_label(i) for i in range(1, TOTAL_SLOTS + 1)}
+
 def get_daily_summary(plan_date):
     rows = get(
         "daily_slots",
