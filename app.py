@@ -37,7 +37,17 @@ from config import (
     HABIT_LIST,
 )
 from config import META_SLOT
+import traceback
+
+
+
 app = Flask(__name__)
+@app.errorhandler(Exception)
+def catch_all_errors(e):
+    print("🔥 GLOBAL EXCEPTION CAUGHT 🔥")
+    traceback.print_exc()   # <-- ALWAYS prints
+    logger.exception("UNHANDLED EXCEPTION")
+    return "Internal Server Error", 500
 logger = setup_logger()
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "change-this-secret")
 APP_PASSWORD = os.environ.get("APP_PASSWORD", "changeme")
