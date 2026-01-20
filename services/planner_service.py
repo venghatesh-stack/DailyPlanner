@@ -1,6 +1,6 @@
 import json
 import re
-from datetime import datetime,timedelta
+from datetime import datetime
 from config import (
     META_SLOT,
     TOTAL_SLOTS,
@@ -476,28 +476,21 @@ def get_weekly_summary(start_date, end_date):
 def is_health_day(habits):
     return len(HEALTH_HABITS.intersection(habits)) >= MIN_HEALTH_HABITS
 def compute_health_streak(user_id, plan_date):
-    streak = 0
-    day = plan_date
-
-    while True:
-        row = get(
+    try:
+        rows = get(
             "daily_habits",
             params={
                 "user_id": f"eq.{user_id}",
-                "plan_date": f"eq.{day.isoformat()}",
-                "select": "habits"
-            }
+                "plan_date": f"eq.{plan_date}",
+                "select": "habits",
+            },
         )
+    except Exception as e:
+        logger.warning(f"Health streak query failed: {e}")
+        return 0
 
-        if not row:
-            break
+    if not rows:
+        return 0
 
-        habits = set(row[0]["habits"] or [])
-
-        if not is_health_day(habits):
-            break
-
-        streak += 1
-        day -= timedelta(days=1)
-
-    return streak
+    habits = rows[0].get("habits") or {}
+    return sum(1 for v in habits.values() if v)
