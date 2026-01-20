@@ -473,6 +473,27 @@ def get_weekly_summary(start_date, end_date):
         })
 
     return weekly
+
+def ensure_daily_habits_row(user_id, plan_date):
+    existing = get(
+        "daily_habits",
+        params={
+            "user_id": f"eq.{user_id}",
+            "plan_date": f"eq.{plan_date}",
+            "select": "id",
+        },
+    )
+
+    if not existing:
+        post(
+            "daily_habits",
+            json={
+                "user_id": user_id,
+                "plan_date": plan_date,
+                "habits": {},
+            },
+        )
+
 def is_health_day(habits):
     return len(HEALTH_HABITS.intersection(habits)) >= MIN_HEALTH_HABITS
 def compute_health_streak(user_id, plan_date):

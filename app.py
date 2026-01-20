@@ -10,7 +10,7 @@ from utils.dates import safe_date
 from config import TOTAL_SLOTS,QUADRANT_MAP,TASK_CATEGORIES,STATIC_TRAVEL_SUBGROUPS
 from utils.slots import current_slot,slot_label
 from utils.calender_links import google_calendar_link
-from services.planner_service import load_day, save_day, get_daily_summary, get_weekly_summary,compute_health_streak,is_health_day
+from services.planner_service import load_day, save_day, get_daily_summary, get_weekly_summary,compute_health_streak,is_health_day,ensure_daily_habits_row
 from services.login_service import login_required
 from services.eisenhower_service import autosave_task
 from config import MIN_HEALTH_HABITS
@@ -120,6 +120,7 @@ def planner():
         slot: google_calendar_link(plan_date, slot, plans[slot]["plan"])
         for slot in range(1, TOTAL_SLOTS + 1)
     }
+    ensure_daily_habits_row(user_id, plan_date)
     health_streak = compute_health_streak(user_id, plan_date)
 
     streak_active_today = is_health_day(set(habits))
