@@ -475,24 +475,18 @@ def get_weekly_summary(start_date, end_date):
     return weekly
 
 def ensure_daily_habits_row(user_id, plan_date):
-    existing = get(
-        "daily_habits",
-        params={
-            "user_id": f"eq.{user_id}",
-            "plan_date": f"eq.{plan_date}",
-            "select": "id",
-        },
-    )
-
-    if not existing:
-      post(
-        "daily_habits",
+    try:
+        post(
+            "daily_habits",
             {
                 "user_id": user_id,
-                "plan_date": plan_date,
+                "plan_date": plan_date.isoformat(),
                 "habits": {},
             },
+            params={"on_conflict": "user_id,plan_date"},
         )
+    except Exception as e:
+        logger.warning(f"ensure_daily_habits_row failed: {e}")
 
 
 def is_health_day(habits):
