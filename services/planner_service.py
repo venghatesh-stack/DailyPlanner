@@ -485,14 +485,15 @@ def ensure_daily_habits_row(user_id, plan_date):
     )
 
     if not existing:
-        post(
-            "daily_habits",
-            json={
+      post(
+        "daily_habits",
+            {
                 "user_id": user_id,
                 "plan_date": plan_date,
                 "habits": {},
             },
         )
+
 
 def is_health_day(habits):
     return len(HEALTH_HABITS.intersection(habits)) >= MIN_HEALTH_HABITS
