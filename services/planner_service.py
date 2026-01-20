@@ -483,7 +483,7 @@ def ensure_daily_habits_row(user_id, plan_date):
                 "plan_date": plan_date.isoformat(),
                 "habits": {},
             },
-            params={"on_conflict": "user_id,plan_date"},
+            
         )
     except Exception as e:
         logger.warning(f"ensure_daily_habits_row failed: {e}")
