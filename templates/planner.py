@@ -198,6 +198,28 @@ textarea { width:100%; min-height:90px; font-size:15px; }
     bottom: 160px;
   }
 }
+.streak-card {
+  background: linear-gradient(135deg, #ecfeff, #f0fdf4);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 16px;
+  border: 1px solid #e5e7eb;
+}
+
+.streak-count {
+  font-size: 28px;
+  font-weight: 800;
+  color: #16a34a;
+}
+
+.streak-sub {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.streak-broken {
+  color: #ef4444;
+}
 
 </style>
 </head>
@@ -303,6 +325,26 @@ textarea { width:100%; min-height:90px; font-size:15px; }
       </div>
       {% endfor %}
 
+    <!-- HEALTH STREAK -->
+    <div class="streak-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <strong>🔥 Health Streak</strong>
+
+        {% if health_streak > 0 %}
+          <span class="streak-count">{{ health_streak }} days</span>
+        {% else %}
+          <span class="streak-count streak-broken">0</span>
+        {% endif %}
+      </div>
+
+      <div class="streak-sub">
+        {% if streak_active_today %}
+          ✅ Streak active today
+        {% else %}
+          ⚠️ Complete {{ min_health_habits }} health habits to continue
+        {% endif %}
+      </div>
+    </div>
 
 
     <!-- HABITS -->

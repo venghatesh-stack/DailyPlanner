@@ -1,10 +1,12 @@
 import json
 import re
-from datetime import datetime
+from datetime import datetime,timedelta
 from config import (
     META_SLOT,
     TOTAL_SLOTS,
     DEFAULT_STATUS,
+    HEALTH_HABITS,
+    MIN_HEALTH_HABITS,
 )
 from utils.slots import generate_half_hour_slots
 import logging
@@ -471,3 +473,31 @@ def get_weekly_summary(start_date, end_date):
         })
 
     return weekly
+def is_health_day(habits):
+    return len(HEALTH_HABITS.intersection(habits)) >= MIN_HEALTH_HABITS
+def compute_health_streak(user_id, plan_date):
+    streak = 0
+    day = plan_date
+
+    while True:
+        row = get(
+            "daily_habits",
+            params={
+                "user_id": f"eq.{user_id}",
+                "plan_date": f"eq.{day.isoformat()}",
+                "select": "habits"
+            }
+        )
+
+        if not row:
+            break
+
+        habits = set(row[0]["habits"] or [])
+
+        if not is_health_day(habits):
+            break
+
+        streak += 1
+        day -= timedelta(days=1)
+
+    return streak

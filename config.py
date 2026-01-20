@@ -3,6 +3,8 @@ IST = ZoneInfo("Asia/Kolkata")
 TOTAL_SLOTS = 48
 META_SLOT = 0
 DEFAULT_STATUS = "Nothing Planned"
+MIN_HEALTH_HABITS = 2
+HEALTH_HABITS = {"Workout", "Walking", "Meditation", "Yoga", "Water"}
 
 STATUSES = ["Nothing Planned", "Yet to Start", "In Progress", "Closed", "Deferred"]
 
