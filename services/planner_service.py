@@ -456,15 +456,18 @@ def get_weekly_summary(start_date, end_date):
     weekly = {}
 
     for row in rows:
-        plan_date = row["plan_date"]
+        slot = row.get("slot")
         plan = (row.get("plan") or "").strip()
+        plan_date = row.get("plan_date")
 
-        if not plan:
+        # ✅ Skip META + empty
+        if slot == META_SLOT or not plan:
             continue
 
-        weekly.setdefault(plan_date, []).append(plan)
+        weekly.setdefault(plan_date, []).append({
+            "slot": slot,
+            "label": SLOT_LABELS.get(slot),
+            "text": plan,
+        })
 
     return weekly
-
-
-
