@@ -10,7 +10,7 @@ from utils.slots import generate_half_hour_slots
 import logging
 from supabase_client import get, post, delete
 from parsing.planner_parser import parse_planner_input
-
+from utils.slots import slot_label
 
 logger = logging.getLogger(__name__)
     
@@ -395,20 +395,7 @@ def save_day(plan_date, form):
         prefer="resolution=merge-duplicates",
     )
     
-SLOT_START_MINUTES = 6 * 60  # 06:00 AM
 
-def slot_label(slot: int) -> str:
-    total_minutes = SLOT_START_MINUTES + (slot - 1) * 30
-
-    start_h, start_m = divmod(total_minutes, 60)
-    end_minutes = total_minutes + 30
-    end_h, end_m = divmod(end_minutes, 60)
-
-    def fmt(h, m):
-        h = h % 24
-        return f"{h:02d}:{m:02d}"
-
-    return f"{fmt(start_h, start_m)} – {fmt(end_h, end_m)}"
 
 
 SLOT_LABELS = {i: slot_label(i) for i in range(1, TOTAL_SLOTS + 1)}
@@ -419,8 +406,7 @@ def get_daily_summary(plan_date):
         params={
             "plan_date": f"eq.{plan_date}",
             "select": "slot,plan",
-             "order": "slot.asc",
-           
+            "order": "slot.asc",
         },
     ) or []
 
@@ -439,13 +425,12 @@ def get_daily_summary(plan_date):
                 reflection = meta.get("reflection", "")
             except Exception:
                 pass
-        else:
-            if plan:
-                tasks.append({
-                    "slot": slot,
-                    "label": SLOT_LABELS.get(slot),
-                    "text": plan,
-                })
+        elif plan:
+            tasks.append({
+                "slot": slot,
+                "label": SLOT_LABELS[slot],
+                "text": plan,
+            })
 
     return {
         "tasks": tasks,
