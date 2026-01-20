@@ -422,7 +422,7 @@ textarea { width:100%; min-height:90px; font-size:15px; }
 
 
 <script>
-const PLAN_DATE = "{{ plan_date }}";
+const PLAN_DATE = "{{ plan_date.isoformat() }}";
 
 function updateClock(){
   const ist = new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
@@ -537,18 +537,20 @@ function closeCheckinIfOpen(){
     drawer.classList.add("hidden");
   }
 }
-@app.route("/summary")
-@login_required
-def summary():
-    date_str = request.args.get("date")
-    plan_date = date.fromisoformat(date_str)
-    data = get_daily_summary(plan_date)
-    return render_template_string(
-        SUMMARY_TEMPLATE,
-        view="daily",
-        data=data,
-        date=plan_date,
-    )
+function openSummary() {
+  fetch(`/summary?date=${PLAN_DATE}`)
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById("summary-content").innerHTML = html;
+      document.getElementById("summary-modal").style.display = "flex";
+    })
+    .catch(err => {
+      document.getElementById("summary-content").innerHTML =
+        "<p style='color:red'>Failed to load summary</p>";
+      document.getElementById("summary-modal").style.display = "flex";
+      console.error(err);
+    });
+}
 
 
 function closeSummary(){

@@ -306,6 +306,10 @@ def travel_mode():
     logger.info(f"Travel Mode enabled: {added} tasks added")
 
     return redirect(url_for("todo", year=plan_date.year, month=plan_date.month, day=plan_date.day, travel=1))
+
+
+
+
 @app.route("/summary")
 @login_required
 def summary():
