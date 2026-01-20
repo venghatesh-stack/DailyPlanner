@@ -1,9 +1,18 @@
 from datetime import datetime, timedelta,date
 from config import IST
-def slot_label(slot):
-    start = datetime.min + timedelta(minutes=(slot - 1) * 30)
-    end = start + timedelta(minutes=30)
-    return f"{start:%I:%M %p} – {end:%I:%M %p}"
+def slot_label(slot: int) -> str:
+    total_minutes = (slot - 1) * 30
+    start_h, start_m = divmod(total_minutes, 60)
+    end_minutes = total_minutes + 30
+    end_h, end_m = divmod(end_minutes, 60)
+
+    def fmt(h, m):
+        h = h % 24
+        suffix = "AM" if h < 12 else "PM"
+        h12 = h % 12 or 12
+        return f"{h12:02d}:{m:02d} {suffix}"
+
+    return f"{fmt(start_h, start_m)} – {fmt(end_h, end_m)}"
 
 def current_slot():
     now = datetime.now(IST)
