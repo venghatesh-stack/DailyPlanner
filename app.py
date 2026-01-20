@@ -309,23 +309,26 @@ def travel_mode():
 @app.route("/summary")
 @login_required
 def summary():
-    today = datetime.now(IST).date()
     view = request.args.get("view", "daily")
 
+    date_str = request.args.get("date")
+    if date_str:
+        plan_date = date.fromisoformat(date_str)
+    else:
+        plan_date = datetime.now(IST).date()
+
     if view == "weekly":
-        start = today - timedelta(days=6)
-        data = get_weekly_summary(start, today)
+        start = plan_date - timedelta(days=6)
+        data = get_weekly_summary(start, plan_date)
         return render_template_string(
             SUMMARY_TEMPLATE,
             view="weekly",
             data=data,
             start=start,
-            end=today,
+            end=plan_date,
         )
 
-    # Default: daily
-    plan_date = safe_date(request.args.get("date"))
-
+    data = get_daily_summary(plan_date)
     return render_template_string(
         SUMMARY_TEMPLATE,
         view="daily",
