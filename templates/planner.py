@@ -341,14 +341,16 @@ textarea { width:100%; min-height:90px; font-size:15px; }
       </select>
     </form>
 
-    <div class="day-strip">
-    {% for d in days %}
+   <div class="date-strip">
+  {% for d in days %}
     <a href="/?year={{year}}&month={{month}}&day={{d.day}}"
-      class="day-btn {% if d.day==selected_day %}selected{% endif %}">
-      {{d.day}}
+       class="date-pill {% if d.day==selected_day %}active{% endif %}">
+      <div class="dow">{{ d.strftime('%a') }}</div>
+      <div class="dom">{{ d.day }}</div>
     </a>
-    {% endfor %}
-    </div>
+  {% endfor %}
+ </div>
+
 
     <form method="post" id="planner-form">
     <input type="hidden" name="year" value="{{ year }}">
