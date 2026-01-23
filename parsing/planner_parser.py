@@ -109,6 +109,7 @@ def parse_planner_input(raw_text, plan_date):
     # --------------------------------
     # QUADRANT PARSING
     # --------------------------------
+    raw_text =normalize_date_time_order(raw_text)
     raw_text = normalize_ordinal_dates(raw_text)
     task_date = extract_date(raw_text, plan_date)
 
@@ -227,3 +228,18 @@ def normalize_ordinal_dates(text: str) -> str:
     """
     return ORDINAL_RE.sub(r'\1', text)
 
+
+
+ON_DATE_FROM_TIME_RE = re.compile(
+    r"(on\s+[^,]+?)\s+(from\s+\d{1,2}(:\d{2})?\s*(am|pm)\s+to\s+\d{1,2}(:\d{2})?\s*(am|pm))",
+    re.I,
+)
+
+def normalize_date_time_order(text: str) -> str:
+    """
+    Converts:
+      'meet Renga on Feb 28 from 7 am to 8 am'
+    into:
+      'meet Renga from 7 am to 8 am on Feb 28'
+    """
+    return ON_DATE_FROM_TIME_RE.sub(r"\2 \1", text)
