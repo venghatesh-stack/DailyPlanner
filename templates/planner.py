@@ -19,7 +19,14 @@ body { font-family: system-ui; background:#f6f7f9; padding:12px; padding-bottom:
 .header a { font-weight:600; text-decoration:none; }
 .time { color:#2563eb; font-weight:700; }
 .month-controls { display:flex; gap:8px; margin-bottom:12px; }
-.day-strip { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+.day-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+}
+
 .day-btn {
   width:36px; height:36px;
   border-radius:50%;
@@ -326,6 +333,10 @@ textarea { width:100%; min-height:90px; font-size:15px; }
 .date-pill.active {
   background: #2563eb;
   color: #fff;
+}
+html {
+  scroll-behavior: smooth;
+  overflow-anchor: none;
 }
 
 </style>
@@ -843,17 +854,20 @@ function saveEvent(startSlot, endSlot) {
 }
 </script>
 <script>
-window.addEventListener("load", () => {
+document.addEventListener("DOMContentLoaded", () => {
   const selected = document.getElementById("selected-day");
-  if (selected) {
+  if (!selected) return;
+
+  requestAnimationFrame(() => {
     selected.scrollIntoView({
-      behavior: "smooth",   // or "smooth" if you like
+      behavior: "smooth",
       inline: "center",
       block: "nearest"
     });
-  }
+  });
 });
 </script>
+
 
 
 <div id="checkin-drawer" class="checkin-drawer hidden">
