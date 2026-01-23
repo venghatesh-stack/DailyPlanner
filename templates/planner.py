@@ -290,6 +290,7 @@ textarea { width:100%; min-height:90px; font-size:15px; }
     Workout @6am to 7am $High %Personal"
       style="width:100%; min-height:120px; margin-bottom:16px;"
     ></textarea>
+   
 
     <h3>🗒 Tasks (No Time Yet)</h3>
 
@@ -298,32 +299,70 @@ textarea { width:100%; min-height:90px; font-size:15px; }
         data-id="{{ t.id }}"
         data-text="{{ t.text | e }}"
         style="padding:8px 0;border-bottom:1px solid #eee;">
-
       <div>{{ t.text }}</div>
-
       <button type="button" onclick="promoteUntimed(this)" data-id="{{ t.id }}">📋 Promote</button>
       <button type="button" onclick="scheduleUntimed('{{ t.id }}')">🕒 Schedule</button>
     </div>
     {% endfor %}
-    {% for slot in plans %}
-      <div class="slot {% if now_slot==slot %}current{% endif %}">
 
-        <div style="display:flex; align-items:center; justify-content:space-between;">
-          <strong>{{ slot_labels[slot] }}</strong>
+    <!-- ========================= -->
+    <!-- PHASE B: DAY SCHEDULE -->
+    <!-- ========================= -->
 
-          {% if plans[slot].plan | trim %}
-            <a
-              href="/calendar/add?date={{ plan_date }}&slot={{ slot }}"
-              title="Add to Google Calendar"
-              style="text-decoration:none;font-size:16px"
-            >📅</a>
-          {% endif %}
-        </div>
+    <h3>📅 Day Schedule</h3>
 
-        <textarea name="plan_{{slot}}">{{ plans[slot].plan }}</textarea>
+    <div style="position:relative; margin-top:12px;">
+
+      <!-- Time grid -->
+      <div class="day-grid">
+        {% for slot in plans %}
+          <div class="time-row" style="height:30px;border-bottom:1px solid #eee;">
+            {{ slot_labels[slot] }}
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Event blocks overlay -->
+      <div class="events-layer"
+          style="
+            position:absolute;
+            top:0;
+            left:110px;
+            right:0;
+          ">
+
+        {% for block in blocks %}
+          <div class="event-block"
+              style="
+                position:absolute;
+                top: {{ (block.start_slot - 1) * 30 }}px;
+                height: {{ (block.end_slot - block.start_slot + 1) * 30 }}px;
+                background:#dbeafe;
+                border-left:4px solid #2563eb;
+                border-radius:8px;
+                padding:8px;
+                font-size:14px;
+              "
+              data-start-slot="{{ block.start_slot }}"
+              data-end-slot="{{ block.end_slot }}"
+              data-recurring-id="{{ block.recurring_id or '' }}">
+            {% if block.recurring_id %}🔁 {% endif %}
+            {{ block.text }}
+          </div>
+        {% endfor %}
 
       </div>
+    </div>
+
+    <!-- Legacy hidden slot inputs (DO NOT REMOVE YET) -->
+    <div style="display:none">
+      {% for slot in plans %}
+        <textarea name="plan_{{slot}}">{{ plans[slot].plan }}</textarea>
       {% endfor %}
+    </div>
+
+    
+  
 
     <!-- HEALTH STREAK -->
     <div class="streak-card">

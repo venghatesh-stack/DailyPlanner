@@ -112,6 +112,8 @@ def planner():
     materialize_recurring_slots(plan_date, user_id)
 
     plans, habits, reflection,untimed_tasks = load_day(plan_date)
+    blocks = group_slots_into_blocks(plans)
+
 
     days = [
         date(year, month, d) for d in range(1, calendar.monthrange(year, month)[1] + 1)

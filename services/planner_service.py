@@ -588,3 +588,30 @@ def parse_recurrence_block(text, default_date):
         recurrence["type"] = "monthly"
 
     return recurrence
+def group_slots_into_blocks(plans):
+    blocks = []
+    current = None
+
+    for slot in sorted(plans.keys()):
+        plan = (plans[slot].get("plan") or "").strip()
+        if not plan:
+            current = None
+            continue
+
+        if (
+            current
+            and current["text"] == plan
+            and slot == current["end_slot"] + 1
+        ):
+            current["end_slot"] = slot
+        else:
+            current = {
+                "text": plan,
+                "start_slot": slot,
+                "end_slot": slot,
+                "status": plans[slot].get("status"),
+                "recurring_id": plans[slot].get("recurring_id"),
+            }
+            blocks.append(current)
+
+    return blocks
