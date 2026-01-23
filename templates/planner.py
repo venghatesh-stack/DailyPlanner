@@ -373,15 +373,19 @@ textarea { width:100%; min-height:90px; font-size:15px; }
       </select>
     </form>
 
-   <div class="date-strip">
-  {% for d in days %}
-    <a href="/?year={{year}}&month={{month}}&day={{d.day}}"
-       class="date-pill {% if d.day==selected_day %}active{% endif %}">
-      <div class="dow">{{ d.strftime('%a') }}</div>
-      <div class="dom">{{ d.day }}</div>
-    </a>
-  {% endfor %}
- </div>
+    <div class="date-strip" id="dateStrip">
+      {% for d in days %}
+        <a
+          href="/?year={{year}}&month={{month}}&day={{d.day}}"
+          class="date-pill {% if d.day==selected_day %}active{% endif %}"
+          {% if d.day==selected_day %}id="selected-day"{% endif %}
+        >
+          <div class="dow">{{ d.strftime('%a') }}</div>
+          <div class="dom">{{ d.day }}</div>
+        </a>
+      {% endfor %}
+    </div>
+
 
 
     <form method="post" id="planner-form">
@@ -836,6 +840,18 @@ function saveEvent(startSlot, endSlot) {
     })
   }).then(() => location.reload());
 }
+</script>
+<script>
+window.addEventListener("load", () => {
+  const selected = document.getElementById("selected-day");
+  if (selected) {
+    selected.scrollIntoView({
+      behavior: "instant",   // or "smooth" if you like
+      inline: "center",
+      block: "nearest"
+    });
+  }
+});
 </script>
 
 
