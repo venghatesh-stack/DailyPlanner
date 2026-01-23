@@ -109,6 +109,7 @@ def parse_planner_input(raw_text, plan_date):
     # --------------------------------
     # QUADRANT PARSING
     # --------------------------------
+    raw_text = normalize_ordinal_dates(raw_text)
     task_date = extract_date(raw_text, plan_date)
 
     quadrant_match = re.search(r"\b(Q[1-4])\b", raw_text, re.I)
@@ -215,4 +216,14 @@ def generate_half_hour_slots(parsed):
 
     return slots
 
+
+
+ORDINAL_RE = re.compile(r'(\d+)(st|nd|rd|th)', re.I)
+
+def normalize_ordinal_dates(text: str) -> str:
+    """
+    Converts 'Jan31st' -> 'Jan 31'
+    Converts '31st Jan' -> '31 Jan'
+    """
+    return ORDINAL_RE.sub(r'\1', text)
 
