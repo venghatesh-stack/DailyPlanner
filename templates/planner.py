@@ -9,6 +9,10 @@ PLANNER_TEMPLATE = """
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
+:root {
+  --slot-height: 30px; /* desktop default */
+}
+
 body { font-family: system-ui; background:#f6f7f9; padding:12px; padding-bottom:220px; }
 .container { max-width:1100px; margin:auto; background:#fff; padding:16px; border-radius:14px; }
 .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
@@ -41,6 +45,17 @@ textarea { width:100%; min-height:90px; font-size:15px; }
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+@media (max-width: 600px) {
+  :root {
+    --slot-height: 42px; /* try 40–48px */
+  }
+
+  .event-block {
+    font-size: 15px;
+    line-height: 1.35;
+    padding: 10px;
+  }
 }
 
 .habits-card {
@@ -223,7 +238,7 @@ textarea { width:100%; min-height:90px; font-size:15px; }
 
 .day-schedule {
   position: relative;
-  height: calc(30px * {{ plans|length }});
+  height: calc(var(--slot-height) * {{ plans|length }});
 }
 
 
@@ -232,7 +247,7 @@ textarea { width:100%; min-height:90px; font-size:15px; }
 }
 
 .time-row {
-  height: 30px;
+  height: var(--slot-height);
   display: flex;
   align-items: center;
   box-sizing: border-box;
@@ -387,8 +402,9 @@ textarea { width:100%; min-height:90px; font-size:15px; }
       <div class="event-block"
           onclick="editEvent({{ block.start_slot }}, {{ block.end_slot }})"
           style="
-            top: {{ (block.start_slot - 1) * 30 }}px;
-            height: {{ (block.end_slot - block.start_slot + 1) * 30 }}px;
+            top: calc({{ block.start_slot - 1 }} * var(--slot-height));
+            height: calc({{ block.end_slot - block.start_slot + 1 }} * var(--slot-height));
+
           ">
          {% if block.recurring_id %}🔁 {% endif %}
          {{ block.text }}
