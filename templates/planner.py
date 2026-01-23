@@ -295,6 +295,38 @@ textarea { width:100%; min-height:90px; font-size:15px; }
   cursor: pointer;
 }
 
+.date-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.date-pill {
+  min-width: 52px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  text-align: center;
+  text-decoration: none;
+  color: #000;
+  background: #f3f4f6;
+  flex-shrink: 0;
+}
+
+.date-pill .dow {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.date-pill .dom {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.date-pill.active {
+  background: #2563eb;
+  color: #fff;
+}
 
 </style>
 </head>
