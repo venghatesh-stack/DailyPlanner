@@ -388,6 +388,7 @@ textarea { width:100%; min-height:90px; font-size:15px; }
            style="
              top: {{ (block.start_slot - 1) * 30 }}px;
              height: {{ (block.end_slot - block.start_slot + 1) * 30 }}px;
+             onclick= "editEvent('{{ block.start_slot }}','{{ block.end_slot }}')
            ">
         {% if block.recurring_id %}🔁 {% endif %}
         {{ block.text }}
@@ -738,6 +739,43 @@ function syncHabit(cb) {
 function syncReflection(el) {
   const main = document.querySelector('textarea[name="reflection"]');
   if (main) main.value = el.value;
+}
+</script>
+<script>
+function editEvent(startSlot, endSlot) {
+  const modal = document.getElementById("modal");
+  const content = document.getElementById("modal-content");
+
+  // Collect text from the first slot (authoritative)
+  fetch(`/slot/get?date=${PLAN_DATE}&slot=${startSlot}`)
+    .then(r => r.json())
+    .then(data => {
+      content.innerHTML = `
+        <h3>✏️ Edit Event</h3>
+        <textarea id="editText" style="width:100%;min-height:140px;">
+${data.text}
+        </textarea><br><br>
+
+        <button onclick="modal.style.display='none'">Cancel</button>
+        <button onclick="saveEvent(${startSlot},${endSlot})">Save</button>
+      `;
+      modal.style.display = "flex";
+    });
+}
+
+function saveEvent(startSlot, endSlot) {
+  const text = document.getElementById("editText").value;
+
+  fetch("/slot/update", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      plan_date: PLAN_DATE,
+      start_slot: startSlot,
+      end_slot: endSlot,
+      text
+    })
+  }).then(() => location.reload());
 }
 </script>
 

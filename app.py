@@ -536,6 +536,41 @@ def todo_autosave():
 def favicon():
     return "", 204
 
+@app.route("/slot/get")
+@login_required
+def get_slot():
+    plan_date = request.args["date"]
+    slot = int(request.args["slot"])
+
+    row = get(
+        "daily_slots",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "slot": f"eq.{slot}",
+            "select": "plan",
+        },
+    )
+    return jsonify({"text": row[0]["plan"] if row else ""})
+@app.route("/slot/update", methods=["POST"])
+@login_required
+def update_slot():
+    data = request.get_json()
+    plan_date = data["plan_date"]
+    start = int(data["start_slot"])
+    end = int(data["end_slot"])
+    text = data["text"]
+
+    for slot in range(start, end + 1):
+        update(
+            "daily_slots",
+            params={
+                "plan_date": f"eq.{plan_date}",
+                "slot": f"eq.{slot}",
+            },
+            json={"plan": text},
+        )
+
+    return ("", 204)
 
 
 # ==========================================================
