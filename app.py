@@ -115,6 +115,8 @@ def planner():
         day = int(request.args.get("day", today.day))
 
     plan_date = safe_date(year, month, day)
+    formatted_date = plan_date.strftime("%d %B %Y").lstrip("0")
+
 
     if request.method == "POST":
         logger.info(f"Saving planner for date={plan_date}")
@@ -165,7 +167,8 @@ def planner():
         health_streak=health_streak,
         streak_active_today=streak_active_today,
         min_health_habits=MIN_HEALTH_HABITS,
-        blocks=blocks
+        blocks=blocks,
+        today_display=formatted_date,
     )
 
 
