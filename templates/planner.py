@@ -385,14 +385,14 @@ textarea { width:100%; min-height:90px; font-size:15px; }
   <div class="events-layer">
     {% for block in blocks %}
       <div class="event-block"
-           style="
-             top: {{ (block.start_slot - 1) * 30 }}px;
-             height: {{ (block.end_slot - block.start_slot + 1) * 30 }}px;
-             onclick= "editEvent('{{ block.start_slot }}','{{ block.end_slot }}')
-           ">
-        {% if block.recurring_id %}🔁 {% endif %}
-        {{ block.text }}
-      </div>
+          onclick="editEvent({{ block.start_slot }}, {{ block.end_slot }})"
+          style="
+            top: {{ (block.start_slot - 1) * 30 }}px;
+            height: {{ (block.end_slot - block.start_slot + 1) * 30 }}px;
+          ">
+         {% if block.recurring_id %}🔁 {% endif %}
+         {{ block.text }}
+        </div>
     {% endfor %}
   </div>
 
