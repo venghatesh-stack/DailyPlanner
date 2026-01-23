@@ -110,9 +110,10 @@ def planner():
             url_for("planner", year=plan_date.year, month=plan_date.month, day=plan_date.day, saved=1)
         )
     materialize_recurring_slots(plan_date, user_id)
-    blocks = group_slots_into_blocks(plans)
+    ensure_daily_habits_row(user_id, plan_date)
+  
     plans, habits, reflection,untimed_tasks = load_day(plan_date)
-   
+    blocks = group_slots_into_blocks(plans)
 
 
     days = [
@@ -123,7 +124,7 @@ def planner():
         slot: google_calendar_link(plan_date, slot, plans[slot]["plan"])
         for slot in range(1, TOTAL_SLOTS + 1)
     }
-    ensure_daily_habits_row(user_id, plan_date)
+   
     health_streak = compute_health_streak(user_id, plan_date)
 
     streak_active_today = is_health_day(set(habits))
