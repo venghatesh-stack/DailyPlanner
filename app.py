@@ -14,7 +14,7 @@ from services.planner_service import load_day, save_day, get_daily_summary, get_
 from services.login_service import login_required
 from services.eisenhower_service import autosave_task
 from config import MIN_HEALTH_HABITS
-
+from services.recurring_service import materialize_recurring_slots,materialize_recurring_tasks
 
 from services.eisenhower_service import (
     load_todo,
@@ -22,7 +22,7 @@ from services.eisenhower_service import (
     copy_open_tasks_from_previous_day,  
     enable_travel_mode,
 )
-from services.recurring_service import materialize_recurring_tasks
+
 from services.untimed_service import remove_untimed_task  
 from templates.planner import PLANNER_TEMPLATE
 from templates.todo import TODO_TEMPLATE
@@ -109,6 +109,7 @@ def planner():
         return redirect(
             url_for("planner", year=plan_date.year, month=plan_date.month, day=plan_date.day, saved=1)
         )
+    materialize_recurring_slots(plan_date, user_id)
 
     plans, habits, reflection,untimed_tasks = load_day(plan_date)
 
@@ -157,6 +158,7 @@ def planner():
 @app.route("/todo", methods=["GET", "POST"])
 @login_required
 def todo():
+    user_id="VenghateshS"
     if request.method == "HEAD":
         return "", 200
     today = datetime.now(IST).date()
@@ -177,7 +179,7 @@ def todo():
             logger.debug("Fallback save toast set")
         return redirect(url_for("todo", year=plan_date.year, month=plan_date.month, day=plan_date.day, saved=1))
 
-    materialize_recurring_tasks(plan_date)
+    materialize_recurring_tasks(plan_date,user_id)
     todo = load_todo(plan_date)
     logger.debug("Rendering todo page, toast=%s", session.get("toast"))
     days = [

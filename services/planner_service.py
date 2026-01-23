@@ -1,6 +1,7 @@
 import json
 import re
-from datetime import datetime
+from datetime import datetime,date
+from config import MONTHLY_RE,STARTING_RE,EVERY_DAY_RE,EVERY_WEEKDAY_RE,INTERVAL_RE,WEEKDAYS
 from config import (
     META_SLOT,
     TOTAL_SLOTS,
@@ -89,11 +90,13 @@ def load_day(plan_date, tag=None):
 
 
 def save_day(plan_date, form):
+    user_id="VenghateshS"
     payload = []
     auto_untimed = []
 
     # Track slots already filled by smart parsing
     smart_block = form.get("smart_plan", "").strip()
+    recurrence = parse_recurrence_block(smart_block, plan_date)
 
     # -------------------------------------------------
     # SMART MULTI-LINE INPUT (GLOBAL)
@@ -232,7 +235,7 @@ def save_day(plan_date, form):
               
 
                 slots = generate_half_hour_slots(parsed)
-
+               
                 affected_slots = set()
 
                 for s in slots:
@@ -240,6 +243,43 @@ def save_day(plan_date, form):
                     target_slot = (start_h * 60 + start_m) // 30 + 1
                     if 1 <= target_slot <= TOTAL_SLOTS:
                         affected_slots.add(target_slot)
+                # -------------------------------
+                # Slot metadata for recurrence
+                # -------------------------------
+                if affected_slots:
+                    first_slot = min(affected_slots)
+                    slot_count = len(affected_slots)
+                else:
+                    first_slot = None
+                    slot_count = 0
+                if recurrence["type"] and affected_slots:
+                    existing = get(
+                        "recurring_slots",
+                        params={
+                            "user_id": f"eq.{user_id}",
+                            "title": f"eq.{parsed['title']}",
+                            "start_slot": f"eq.{first_slot}",
+                            "slot_count": f"eq.{slot_count}",
+                            "start_date": f"eq.{recurrence['start_date']}",
+                            "is_active": "eq.true",
+                        },
+                    )
+
+                    if not existing:
+                        post(
+                            "recurring_slots",
+                            {
+                                "user_id": user_id,
+                                "title": parsed["title"],
+                                "start_slot": first_slot,
+                                "slot_count": slot_count,
+                                "recurrence_type": recurrence["type"],
+                                "interval_value": recurrence["interval"],
+                                "days_of_week": recurrence["days_of_week"],
+                                "start_date": str(recurrence["start_date"]),
+                                "is_active": True,
+                            },
+                        )
 
                 # Clear existing tasks in affected slots
                 if affected_slots:
@@ -510,3 +550,41 @@ def compute_health_streak(user_id, plan_date):
 
     habits = rows[0].get("habits") or {}
     return sum(1 for v in habits.values() if v)
+
+
+
+
+
+def parse_recurrence_block(text, default_date):
+    text = text.lower()
+
+    recurrence = {
+        "type": None,
+        "interval": None,
+        "days_of_week": None,
+        "start_date": default_date,
+    }
+
+    if m := re.search(STARTING_RE, text, re.I):
+        try:
+            recurrence["start_date"] = date.fromisoformat(m.group(1),
+            default=datetime.combine(default_date, datetime.min.time())
+            ).date()
+        except Exception:
+            recurrence["start_date"] = default_date # fallback to default_date
+
+    if re.search(EVERY_DAY_RE, text, re.I):
+        recurrence["type"] = "daily"
+
+    elif m := re.search(EVERY_WEEKDAY_RE, text, re.I):
+        recurrence["type"] = "weekly"
+        recurrence["days_of_week"] = [WEEKDAYS[m.group(1)]]
+
+    elif m := re.search(INTERVAL_RE, text, re.I):
+        recurrence["type"] = "interval"
+        recurrence["interval"] = int(m.group(1))
+
+    elif re.search(MONTHLY_RE, text, re.I):
+        recurrence["type"] = "monthly"
+
+    return recurrence

@@ -1,8 +1,34 @@
 import calendar
 from datetime import date   
 from supabase_client import get, post
+from config import TOTAL_SLOTS,DEFAULT_STATUS
+def matches_recurrence(rule, target_date):
+    start = date.fromisoformat(rule["start_date"])
 
-def materialize_recurring_tasks(plan_date):
+    if target_date < start:
+        return False
+
+    if rule.get("end_date") and target_date > date.fromisoformat(rule["end_date"]):
+        return False
+
+    rtype = rule["recurrence_type"]
+
+    if rtype == "daily":
+        return True
+
+    if rtype == "weekly":
+        return target_date.weekday() in (rule["days_of_week"] or [])
+
+    if rtype == "interval":
+        delta = (target_date - start).days
+        return delta % rule["interval_value"] == 0
+
+    if rtype == "monthly":
+        return target_date.day == start.day
+
+    return False
+
+def materialize_recurring_tasks(plan_date,user_):
     """
     Create daily todo_matrix rows for recurring tasks
     (idempotent – safe to run multiple times)
@@ -93,3 +119,36 @@ def materialize_recurring_tasks(plan_date):
 
     if payload:
         post("todo_matrix", payload)
+def materialize_recurring_slots(plan_date, user_id):
+    rules = get(
+        "recurring_slots",
+        params={
+            "user_id": f"eq.{user_id}",
+            "is_active": "eq.true",
+            "start_date": f"lte.{plan_date}",
+            "or": f"(end_date.is.null,end_date.gte.{plan_date})",
+        },
+    ) or []
+
+    payload = []
+
+    for rule in rules:
+        if not matches_recurrence(rule, plan_date):
+            continue
+
+        for i in range(rule["slot_count"]):
+            slot = rule["start_slot"] + i
+            if 1 <= slot <= TOTAL_SLOTS:
+                payload.append({
+                    "plan_date": str(plan_date),
+                    "slot": slot,
+                    "plan": rule["title"],
+                    "status": DEFAULT_STATUS,
+                })
+
+    if payload:
+        post(
+            "daily_slots?on_conflict=plan_date,slot",
+            payload,
+            prefer="resolution=ignore-duplicates",
+        )

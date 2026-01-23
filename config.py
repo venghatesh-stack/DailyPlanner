@@ -161,3 +161,8 @@ WEEKDAYS = {
     "saturday": 5,
     "sunday": 6,
 }
+STARTING_RE = r"starting\s+([\w\- ]+)"
+EVERY_DAY_RE = r"\bevery\s+day\b"
+EVERY_WEEKDAY_RE = r"\bevery\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b"
+INTERVAL_RE = r"\bonce\s+in\s+(\d+)\s+days?\b"
+MONTHLY_RE = r"\b(once\s+in\s+a\s+month|every\s+month)\b"
