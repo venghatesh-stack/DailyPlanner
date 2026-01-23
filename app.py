@@ -91,6 +91,19 @@ def planner():
     if request.method == "HEAD":
         return "", 200
     today = datetime.now(IST).date()
+    # ----------------------------------------------------------
+# Auto-redirect root load to today (only if no date provided)
+# ----------------------------------------------------------
+    if request.method == "GET" and not request.args.get("day"):
+        today = datetime.now(IST).date()
+        return redirect(
+            url_for(
+                "planner",
+                year=today.year,
+                month=today.month,
+                day=today.day,
+            )
+        )
 
     if request.method == "POST":
         year = int(request.form["year"])

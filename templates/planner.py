@@ -435,6 +435,7 @@ textarea { width:100%; min-height:90px; font-size:15px; }
   <div class="day-grid">
     {% for slot in plans %}
       <div class="time-row">
+      {% if now_slot and slot == now_slot %}id="now-slot"{% endif %}>
         <div class="time-column">
           {{ slot_labels[slot] }}
         </div>
@@ -846,7 +847,7 @@ window.addEventListener("load", () => {
   const selected = document.getElementById("selected-day");
   if (selected) {
     selected.scrollIntoView({
-      behavior: "instant",   // or "smooth" if you like
+      behavior: "smooth",   // or "smooth" if you like
       inline: "center",
       block: "nearest"
     });
