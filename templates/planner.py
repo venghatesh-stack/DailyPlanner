@@ -337,7 +337,7 @@ textarea { width:100%; min-height:90px; font-size:15px; }
 
     <!-- Row 1: Date + Time -->
     <div class="header-top">
-      <div class="date">{{ today }}</div>
+      <div class="date">{{ today_display }}</div>
       <div class="time">🕒 <span id="clock"></span> IST</div>
     </div>
 
