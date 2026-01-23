@@ -221,6 +221,57 @@ textarea { width:100%; min-height:90px; font-size:15px; }
   color: #ef4444;
 }
 
+.day-schedule {
+  position: relative;
+  height: calc(30px * {{ plans|length }});
+}
+
+
+.day-grid {
+  position: relative;
+}
+
+.time-row {
+  height: 30px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.time-column {
+  width: 140px;
+  flex-shrink: 0;
+  font-size: 14px;
+  color: #000;
+}
+
+.grid-line {
+  flex: 1;
+  height: 100%;
+  border-bottom: 1px solid #eee;
+}
+
+.events-layer {
+  position: absolute;
+  top: 0;
+  left: 140px; /* MUST match time-column width */
+  right: 0;
+}
+
+.event-block {
+  position: absolute;
+  background: #dbeafe;
+  border-left: 4px solid #2563eb;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  word-wrap:break-word;
+}
+
+
 </style>
 </head>
 
@@ -309,50 +360,44 @@ textarea { width:100%; min-height:90px; font-size:15px; }
     <!-- PHASE B: DAY SCHEDULE -->
     <!-- ========================= -->
 
-    <h3>📅 Day Schedule</h3>
+    <!-- ========================= -->
+<!-- DAY SCHEDULE -->
+<!-- ========================= -->
 
-    <div style="position:relative; margin-top:12px;">
+<h3>📅 Day Schedule</h3>
 
-      <!-- Time grid -->
-      <div class="day-grid">
-        {% for slot in plans %}
-          <div class="time-row" style="height:30px;border-bottom:1px solid #eee;">
-            {{ slot_labels[slot] }}
-          </div>
-        {% endfor %}
+<div class="day-schedule" style="height: {{ plans|length * 30 }}px;">
+
+
+  <!-- Time grid -->
+  <div class="day-grid">
+    {% for slot in plans %}
+      <div class="time-row">
+        <div class="time-column">
+          {{ slot_labels[slot] }}
+        </div>
+        <div class="grid-line"></div>
       </div>
+    {% endfor %}
+  </div>
 
-      <!-- Event blocks overlay -->
-      <div class="events-layer"
-          style="
-            position:absolute;
-            top:0;
-            left:110px;
-            right:0;
-          ">
-
-        {% for block in blocks %}
-          <div class="event-block"
-              style="
-                position:absolute;
-                top: {{ (block.start_slot - 1) * 30 }}px;
-                height: {{ (block.end_slot - block.start_slot + 1) * 30 }}px;
-                background:#dbeafe;
-                border-left:4px solid #2563eb;
-                border-radius:8px;
-                padding:8px;
-                font-size:14px;
-              "
-              data-start-slot="{{ block.start_slot }}"
-              data-end-slot="{{ block.end_slot }}"
-              data-recurring-id="{{ block.recurring_id or '' }}">
-            {% if block.recurring_id %}🔁 {% endif %}
-            {{ block.text }}
-          </div>
-        {% endfor %}
-
+  <!-- Event blocks overlay -->
+  <div class="events-layer">
+    {% for block in blocks %}
+      <div class="event-block"
+           style="
+             top: {{ (block.start_slot - 1) * 30 }}px;
+             height: {{ (block.end_slot - block.start_slot + 1) * 30 }}px;
+           ">
+        {% if block.recurring_id %}🔁 {% endif %}
+        {{ block.text }}
       </div>
-    </div>
+    {% endfor %}
+  </div>
+
+</div>
+
+
 
     <!-- Legacy hidden slot inputs (DO NOT REMOVE YET) -->
     <div style="display:none">
