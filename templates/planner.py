@@ -12,8 +12,12 @@ PLANNER_TEMPLATE = """
 :root {
   --slot-height: 30px; /* desktop default */
 }
+html, body {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
 
-body { font-family: system-ui; background:#f6f7f9; padding:12px; padding-bottom:220px; }
 .container { max-width:1100px; margin:auto; background:#fff; padding:16px; border-radius:14px; }
 .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
 .header a { font-weight:600; text-decoration:none; }
@@ -251,7 +255,7 @@ textarea { width:100%; min-height:90px; font-size:15px; }
 
 .day-schedule {
   position: relative;
-  height: calc(var(--slot-height) * {{ plans|length }});
+  min-height: calc(var(--slot-height) * {{ plans|length }});
 }
 
 
@@ -337,6 +341,21 @@ textarea { width:100%; min-height:90px; font-size:15px; }
 html {
   scroll-behavior: smooth;
   overflow-anchor: none;
+}
+/* Space for fixed bottom actions */
+:root {
+  --action-bar-height: 190px;
+}
+
+body {
+  padding-bottom: calc(
+    var(--action-bar-height) + env(safe-area-inset-bottom)
+  );
+}
+/* Prevent scroll chaining on mobile */
+.checkin-drawer,
+#summary-content {
+  overscroll-behavior: contain;
 }
 
 </style>
