@@ -1,7 +1,6 @@
 import json
 from supabase_client import get, post
-from config import DEFAULT_STATUS
-META_SLOT = "__meta__"
+from config import DEFAULT_STATUS,META_SLOT
 
 def remove_untimed_task(plan_date, task_id):
     rows = get(
