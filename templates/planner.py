@@ -58,6 +58,12 @@ textarea { width:100%; min-height:90px; font-size:15px; }
   }
 }
 
+
+.event-block {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
 .habits-card {
   background: #fff;
   border-radius: 12px;
@@ -271,6 +277,7 @@ textarea { width:100%; min-height:90px; font-size:15px; }
   top: 0;
   left: 140px; /* MUST match time-column width */
   right: 0;
+  pointer-events: none;
 }
 
 .event-block {
@@ -284,6 +291,8 @@ textarea { width:100%; min-height:90px; font-size:15px; }
   overflow:hidden;
   text-overflow:ellipsis;
   word-wrap:break-word;
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 
@@ -381,7 +390,7 @@ textarea { width:100%; min-height:90px; font-size:15px; }
 
 <h3>📅 Day Schedule</h3>
 
-<div class="day-schedule" style="height: {{ plans|length * 30 }}px;">
+<div class="day-schedule">
 
 
   <!-- Time grid -->
