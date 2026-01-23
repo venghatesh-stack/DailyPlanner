@@ -10,7 +10,7 @@ from utils.dates import safe_date
 from config import TOTAL_SLOTS,QUADRANT_MAP,TASK_CATEGORIES,STATIC_TRAVEL_SUBGROUPS
 from utils.slots import current_slot,slot_label
 from utils.calender_links import google_calendar_link
-from services.planner_service import load_day, save_day, get_daily_summary, get_weekly_summary,compute_health_streak,is_health_day,ensure_daily_habits_row
+from services.planner_service import load_day, save_day, get_daily_summary, get_weekly_summary,compute_health_streak,is_health_day,ensure_daily_habits_row,group_slots_into_blocks
 from services.login_service import login_required
 from services.eisenhower_service import autosave_task
 from config import MIN_HEALTH_HABITS
@@ -110,9 +110,9 @@ def planner():
             url_for("planner", year=plan_date.year, month=plan_date.month, day=plan_date.day, saved=1)
         )
     materialize_recurring_slots(plan_date, user_id)
-
-    plans, habits, reflection,untimed_tasks = load_day(plan_date)
     blocks = group_slots_into_blocks(plans)
+    plans, habits, reflection,untimed_tasks = load_day(plan_date)
+   
 
 
     days = [
@@ -151,6 +151,7 @@ def planner():
         health_streak=health_streak,
         streak_active_today=streak_active_today,
         min_health_habits=MIN_HEALTH_HABITS,
+        blocks=blocks
     )
 
 
