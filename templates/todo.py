@@ -375,6 +375,14 @@ select {
   background: #f9fafb;
   color: #374151;
 }
+.project-select {
+  font-size: 12px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #374151;
+}
 
 
 
@@ -639,6 +647,22 @@ select {
                           </button>
 
                         {% endif %}
+                        <select
+                          class="project-select"
+                          onchange="autosaveProject(this)"
+                          data-id="{{ task.id }}"
+                        >
+                          <option value="">— No Project —</option>
+
+                          {% for p in projects %}
+                            <option
+                              value="{{ p.id }}"
+                              {% if task.project_id == p.id %}selected{% endif %}
+                            >
+                              {{ p.name }}
+                            </option>
+                          {% endfor %}
+                        </select>
 
                         {% if t.recurring %}
                           <span title="Repeats {{ t.recurrence }}" style="font-size:13px;color:#6366f1;">
@@ -1067,6 +1091,18 @@ function showToast(message, duration = 2000) {
 </script>
 {% endif %}
 
+<script>
+function autosaveProject(select) {
+  fetch("/todo/autosave", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: select.dataset.id,
+      project_id: select.value || null
+    })
+  });
+}
+</script>
 
 </body>
 </html>
