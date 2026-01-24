@@ -504,7 +504,6 @@ def enable_travel_mode(plan_date):
         post("todo_matrix", payload)
 
     return len(payload)
-
 def autosave_task(plan_date, task_id, quadrant, text=None, is_done=False, project_id=None):
     text = (text or "").strip()
 
@@ -556,28 +555,38 @@ def autosave_task(plan_date, task_id, quadrant, text=None, is_done=False, projec
         )
 
     # -------------------------
-    # 🔗 PROJECT SYNC (future-safe)
+    # 🔗 PROJECT SYNC (NON-RECURRING ONLY)
     # -------------------------
     if is_done:
         rows = get(
             "todo_matrix",
             params={
                 "id": f"eq.{task_id}",
-                "select": "source_task_id, recurring_instance_id",
+                "select": "source_task_id",
             },
         )
 
-        if (
-            rows
-            and rows[0].get("source_task_id")
-            and not rows[0].get("recurring_instance_id")
-        ):
-            update(
+        if rows and rows[0].get("source_task_id"):
+            source_id = rows[0]["source_task_id"]
+
+            project_rows = get(
                 "project_tasks",
-                params={"id": f"eq.{rows[0]['source_task_id']}"},
-                json={"status": "done"},
+                params={
+                    "id": f"eq.{source_id}",
+                    "select": "recurrence_type,status",
+                },
             )
 
+            if project_rows:
+                project = project_rows[0]
+
+                # ✅ Auto-close ONLY non-recurring project tasks
+                if project.get("recurrence_type") in (None, "none"):
+                    update(
+                        "project_tasks",
+                        params={"id": f"eq.{source_id}"},
+                        json={"status": "Done"},
+                    )
 
     return {"id": task_id}
 

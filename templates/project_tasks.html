@@ -139,11 +139,11 @@
   border-radius: 6px;
   font-weight: 600;
 }
-.task[data-status="closed"] {
+.task[data-status="done"] {
   opacity: 0.6;
 }
 
-.task[data-status="closed"] .task-text {
+.task[data-status="done"] .task-text {
   text-decoration: line-through;
 }
 
@@ -250,7 +250,7 @@ button[disabled] {
             <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>In Progress</option>
             <option value="on_hold" {% if task.status == 'on_hold' %}selected{% endif %}>On Hold</option>
             <option value="dropped" {% if task.status == 'dropped' %}selected{% endif %}>Dropped</option>
-            <option value="closed" {% if task.status == 'closed' %}selected{% endif %}>Closed</option>
+            <option value="done" {% if task.status == 'done' %}selected{% endif %}>Done</option>
           </select>
 
 
@@ -365,7 +365,7 @@ button[disabled] {
  function toggleClosed() {
   const hide = document.getElementById("hideClosed").checked;
 
-  document.querySelectorAll('.task[data-status="closed"]').forEach(el => {
+  document.querySelectorAll('.task[data-status="done"]').forEach(el => {
     el.style.display = hide ? "none" : "flex";
   });
 }
