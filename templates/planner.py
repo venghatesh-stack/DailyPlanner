@@ -370,7 +370,10 @@ body {
       <div class="date">{{ today_display }}</div>
       <div class="time">🕒 <span id="clock"></span> IST</div>
     </div>
-
+    <a href="/projects"
+       style="font-size:14px; font-weight:600; color:#2563eb; text-decoration:none;">
+       📁 Projects
+    </a>
     <!-- Row 2: Navigation icons -->
     <div class="header-nav">
         <a href="/" title="Planner">🏠</a>

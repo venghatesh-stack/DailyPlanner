@@ -646,6 +646,24 @@ def toggle_subtask():
     )
     
     return ("", 204)
+@app.route("/projects")
+@login_required
+def projects():
+    user_id = session["user_id"]
+
+    projects = get(
+        "projects",
+        params={
+            "user_id": f"eq.{user_id}",
+            "is_archived": "eq.false",
+            "order": "created_at.asc",
+        },
+    )
+
+    return render_template(
+        "projects.html",
+        projects=projects,
+    )
 
 @app.route("/todo/set-project", methods=["POST"])
 @login_required
