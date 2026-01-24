@@ -448,12 +448,37 @@ function unsendFromEisenhower(taskId) {
   })
   .then(r => r.json())
   .then(res => {
-    if (res.status === "ok") {
-      // 🔄 simplest UX: reload
-      location.reload();
-    } else {
+    if (res.status !== "ok") {
       alert(res.error || "Failed to remove task");
+      return;
     }
+
+    // 🔄 UI reset (NO reload)
+
+    const taskEl = document.getElementById(`task-${taskId}`);
+    if (!taskEl) return;
+
+    // 1️⃣ Enable Send button
+    const sendBtn = document.getElementById(`send-${taskId}`);
+    if (sendBtn) {
+      sendBtn.disabled = false;
+      sendBtn.innerText = "Send →";
+    }
+
+    // 2️⃣ Enable quadrant + date
+    const q = document.getElementById(`q-${taskId}`);
+    const d = document.getElementById(`d-${taskId}`);
+    if (q) q.disabled = false;
+    if (d) d.disabled = false;
+
+    // 3️⃣ Remove badge
+    const badge = taskEl.querySelector(".badge");
+    if (badge) badge.remove();
+
+    // 4️⃣ Remove "Remove from Eisenhower" button
+    const unsendBtn = taskEl.querySelector(".unsend-btn");
+    if (unsendBtn) unsendBtn.remove();
+
   });
 }
 </script>
