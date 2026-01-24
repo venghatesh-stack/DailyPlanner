@@ -1,10 +1,11 @@
-import os
-import requests
 
+import requests
+import logging
 SUPABASE_URL = "https://gidpxopleslvmrrycood.supabase.co"
 SUPABASE_KEY = "sb_publishable_jv6-xI--WU4Tsm2Sq8wRYg_9Vf85OOi"
 print("SUPABASE_URL =", SUPABASE_URL)
 print("SUPABASE_KEY present =", bool(SUPABASE_KEY))
+
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise RuntimeError("Supabase env vars not set")
 
@@ -13,14 +14,33 @@ HEADERS = {
     "Authorization": f"Bearer {SUPABASE_KEY}",
     "Content-Type": "application/json",
 }
+logger = logging.getLogger("daily_plan")
+
+
 
 def get(path, params=None):
+    url = f"{SUPABASE_URL}/rest/v1/{path}"
+
+    # 🔍 Log intent
+    logger.debug("SUPABASE GET → %s | params=%s", url, params)
+
     r = requests.get(
-        f"{SUPABASE_URL}/rest/v1/{path}",
+        url,
         headers=HEADERS,
         params=params,
     )
-    r.raise_for_status()
+
+    # 🔑 Log final URL (THIS IS WHAT SUPABASE SEES)
+    logger.debug("SUPABASE FINAL URL → %s", r.url)
+
+    if not r.ok:
+        # 🔥 Log full error context
+        logger.error("SUPABASE ERROR %s", r.status_code)
+        logger.error("SUPABASE URL → %s", r.url)
+        logger.error("SUPABASE RESPONSE → %s", r.text)
+
+        r.raise_for_status()
+
     return r.json()
 
 def post(path, data, prefer=None):
