@@ -546,18 +546,30 @@ def untimed_slot_preview():
 def todo_autosave():
     data = request.get_json(force=True)
     logger.info("AUTOSAVE DATA: %s", data)
-    
+
+    task_id = data["id"]
+
+    # 🔹 Project-only update (NO plan_date needed)
+    if "project_id" in data and "plan_date" not in data:
+        update(
+            "todo_matrix",
+            params={"id": f"eq.{task_id}"},
+            json={"project_id": data["project_id"]},
+        )
+        return jsonify({"id": task_id})
+
+    # 🔹 Normal task autosave
     result = autosave_task(
         plan_date=data["plan_date"],
-        task_id=data["id"],
+        task_id=task_id,
         quadrant=data["quadrant"],
-        text=data["task_text"],
+        text=data.get("task_text"),
         is_done=data.get("is_done", False),
-        project_id=data.get("project_id"),  # 👈 NEW (optional)
+        project_id=data.get("project_id"),
     )
 
-    # 🔑 ALWAYS JSON
     return jsonify(result)
+
 
 @app.route("/favicon.ico")
 def favicon():
@@ -624,6 +636,24 @@ def toggle_subtask():
         json={"is_done": data["done"]},
     )
     return ("", 204)
+@app.route("/todo/set-project", methods=["POST"])
+@login_required
+def todo_set_project():
+    data = request.get_json(force=True)
+
+    task_id = data.get("id")
+    project_id = data.get("project_id")
+
+    if not task_id:
+        return jsonify({"error": "Missing task id"}), 400
+
+    update(
+        "todo_matrix",
+        params={"id": f"eq.{task_id}"},
+        json={"project_id": project_id},
+    )
+
+    return jsonify({"status": "ok"})
 
 
 # ==========================================================
