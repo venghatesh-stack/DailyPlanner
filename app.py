@@ -232,6 +232,49 @@ def todo():
 
     )
 
+@app.route("/todo/toggle-done", methods=["POST"])
+@login_required
+def toggle_todo_done():
+    data = request.get_json()
+
+    task_id = data.get("id")
+    is_done = bool(data.get("is_done"))
+
+    if not task_id:
+        return jsonify({"error": "Missing task id"}), 400
+    
+    # --------------------------------------------------
+    # STEP 1: Update Eisenhower task (always)
+    # --------------------------------------------------
+    update(
+        "todo_matrix",
+        params={"id": f"eq.{task_id}"},
+        json={"is_done": is_done},
+    )
+     # --------------------------------------------------
+    # STEP 2 (OPTIONAL): Sync back to project task
+    # --------------------------------------------------
+    if is_done:
+        rows = get(
+            "todo_matrix",
+            params={
+                "id": f"eq.{task_id}",
+                "select": "source_task_id, recurring_instance_id",
+            },
+        )
+
+        if rows:
+            source_id = rows[0].get("source_task_id")
+            recurring_instance_id = rows[0].get("recurring_instance_id")
+
+            if source_id and not recurring_instance_id:
+                update(
+                    "project_tasks",
+                    params={"id": f"eq.{source_id}"},
+                    json={"status": "done"},
+                )
+
+    return jsonify({"status": "ok"})
 
 @app.route("/todo/copy-prev", methods=["POST"])
 @login_required

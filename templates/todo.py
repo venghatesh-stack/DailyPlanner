@@ -189,22 +189,31 @@ summary::-webkit-details-marker { display:none; }
 </div>
 
 <script>
-function toggleDone(taskId, done) {
+function toggleDone(checkbox) {
+  const task = checkbox.closest(".task");
+  if (!task) return;
+
+  task.classList.toggle("done", checkbox.checked);
+
+  const idInput = task.querySelector('input[name$="_id[]"]');
+  if (!idInput) return;
+
+  const taskId = idInput.value;
+
+  // 🔹 Persist done state immediately
   fetch("/todo/toggle-done", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       id: taskId,
-      is_done: done,
-      plan_date: "{{ plan_date }}"
+      is_done: checkbox.checked
     })
-  })
-  .then(() => {
-    const el = document.querySelector('[data-id="'+taskId+'"]');
-    if (el) el.classList.toggle("done", done);
-  })
-  .catch(() => alert("Save failed"));
+  }).catch(err => {
+    console.error("Toggle done failed", err);
+    showToast("Save failed", 3000);
+  });
 }
+
 </script>
 
 </body>
