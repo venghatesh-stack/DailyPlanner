@@ -569,18 +569,7 @@ def todo_autosave():
     )
 
     return jsonify(result)
-@app.route("/subtask/toggle", methods=["POST"])
-@login_required
-def toggle_subtask():
-    data = request.get_json(force=True)
 
-    update(
-        "subtasks",
-        params={"id": f"eq.{data['id']}"},
-        json={"is_done": data["is_done"]},
-    )
-
-    return {"ok": True}
 
 
 @app.route("/favicon.ico")
