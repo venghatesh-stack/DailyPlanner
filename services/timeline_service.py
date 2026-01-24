@@ -1,14 +1,8 @@
 # services/timeline_service.py
 
-from datetime import date
 from supabase_client import get
-
-from datetime import date
-
 # services/timeline_service.py
-from datetime import date
-from supabase_client import get
-
+from  datetime import date 
 def load_timeline_tasks(user_id):
     today = date.today()
 
