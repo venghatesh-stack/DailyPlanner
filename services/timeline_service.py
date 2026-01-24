@@ -5,6 +5,10 @@ from supabase_client import get
 
 from datetime import date
 
+# services/timeline_service.py
+from datetime import date
+from supabase_client import get
+
 def load_timeline_tasks(user_id):
     today = date.today()
 
@@ -12,21 +16,22 @@ def load_timeline_tasks(user_id):
         "project_tasks",
         params={
             "user_id": f"eq.{user_id}",
-            "status": "neq.done",
+            # ⬇️ fetch ALL, filter in Python (Supabase-safe)
             "select": "id,task_text,status,due_date,project_id,created_at",
-            # ❌ NO order on nullable columns
             "order": "created_at.asc",
         },
     ) or []
 
     today_tasks = []
-    future_tasks = []
+    future_tasks = {}
 
     for r in rows:
-        due = r.get("due_date")
+        # ❌ ignore done tasks in Python
+        if r.get("status") == "done":
+            continue
 
+        due = r.get("due_date")
         if not due:
-            # no date → ignore for timeline
             continue
 
         due_date = date.fromisoformat(due)
@@ -34,10 +39,12 @@ def load_timeline_tasks(user_id):
         if due_date == today:
             today_tasks.append(r)
         elif due_date > today:
-            future_tasks.append(r)
+            future_tasks.setdefault(due, []).append(r)
 
-    # ✅ Explicit sorting in Python
+    # Python-side sorting (safe)
     today_tasks.sort(key=lambda x: x["created_at"])
-    future_tasks.sort(key=lambda x: x["due_date"])
+    for d in future_tasks:
+        future_tasks[d].sort(key=lambda x: x["created_at"])
 
     return today_tasks, future_tasks
+
