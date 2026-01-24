@@ -109,15 +109,16 @@ def load_todo(plan_date):
         subtask_rows = get(
             "project_subtasks",
             params={
-                "task_id": f"in.({quoted_ids})",
-                "select": "id,task_id,title,is_done",
+                "parent_task_id": f"in.({quoted_ids})",
+                "select": "id,parent_task_id,title,is_done",
             },
         ) or []
 
 
+
         subtask_map = defaultdict(list)
         for s in subtask_rows:
-            subtask_map[str(s["task_id"])].append(s)
+            subtask_map[str(s["parent_task_id"])].append(s)
 
         for q in grouped.values():
             for cat in q.values():
