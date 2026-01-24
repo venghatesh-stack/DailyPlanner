@@ -285,7 +285,7 @@ button[disabled] {
             <option value="eliminate">🗑️ Eliminate</option>
           </select>
 
-          <input type="date" id="d-{{ task.id }}" value="{{ today }}" />
+          <input type="date" id="d-{{ task.id }}" value="{{ today }}"  {% if task.sent_to_eisenhower %}disabled{% endif %} />
 
          <select class="status-select"
           onchange="updateStatus('{{ task.id }}', this.value)">
@@ -297,11 +297,24 @@ button[disabled] {
         </select>
 
 
-          <button class="send-btn"
-                  id="send-{{ task.id }}"
-                  onclick="sendTask('{{ task.id }}')">
-            Send →
-          </button>
+         <button type="button" class="send-btn"
+            id="send-{{ task.id }}"
+            onclick="sendTask('{{ task.id }}')"
+            {% if task.sent_to_eisenhower %}disabled{% endif %}>
+            {% if task.sent_to_eisenhower %}
+              🧠 Sent
+            {% else %}
+              Send →
+            {% endif %}
+         </button>
+
+          {% if task.sent_to_eisenhower %}
+            <button type="button" class="unsend-btn"
+              onclick="unsendFromEisenhower('{{ task.id }}')">
+               ❌ Remove from Eisenhower
+           </button>
+          {% endif %}
+
         </div>
 
       </div>
@@ -318,6 +331,7 @@ button[disabled] {
     const quadrantSelect = document.getElementById(`q-${taskId}`);
     const dateInput = document.getElementById(`d-${taskId}`);
     const btn = document.getElementById(`send-${taskId}`);
+    if (btn.disabled) return; // 🔒 guard
 
     const quadrant = quadrantSelect.value;
     const date = dateInput.value;
@@ -347,11 +361,14 @@ button[disabled] {
         quadrantSelect.disabled = true;
         dateInput.disabled = true;
 
-        // add badge if not present
-        const badge = document.createElement("span");
-        badge.className = "badge";
-        badge.textContent = "🧠 In Eisenhower";
-        document.getElementById(`text-${taskId}`).appendChild(badge);
+        const textEl = document.getElementById(`text-${taskId}`);
+        if (!textEl.querySelector(".badge")) {
+          const badge = document.createElement("span");
+          badge.className = "badge";
+          badge.textContent = "🧠 In Eisenhower";
+          textEl.appendChild(badge);
+        }
+
 
       } else if (res.status === "already-sent") {
         alert("Task already sent for this date.");
@@ -416,6 +433,29 @@ function toggleClosed() {
 }
 
   toggleClosed();
+</script>
+<script>
+function unsendFromEisenhower(taskId) {
+  if (!confirm("Remove this task from Eisenhower?")) return;
+
+  fetch("/projects/tasks/unsend", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      task_id: taskId,
+      scope: "today_future"
+    })
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.status === "ok") {
+      // 🔄 simplest UX: reload
+      location.reload();
+    } else {
+      alert(res.error || "Failed to remove task");
+    }
+  });
+}
 </script>
 
 </body>

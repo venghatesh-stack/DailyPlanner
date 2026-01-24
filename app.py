@@ -848,6 +848,38 @@ def update_project_task_status():
     )
 
     return jsonify({"status": "ok"})
+@app.route("/projects/tasks/unsend", methods=["POST"])
+@login_required
+def unsend_task_from_eisenhower():
+    data = request.get_json() or {}
+
+    task_id = data.get("task_id")
+    scope = data.get("scope", "today_future")  # optional
+
+    if not task_id:
+        return jsonify({"error": "Missing task_id"}), 400
+
+    today = date.today().isoformat()
+
+    # ---------------------------------------------
+    # Remove Eisenhower entries linked to this task
+    # ---------------------------------------------
+    params = {
+        "source_task_id": f"eq.{task_id}",
+        "is_deleted": "eq.false",
+    }
+
+    # Optional safety: only today & future
+    if scope == "today_future":
+        params["plan_date"] = f"gte.{today}"
+
+    update(
+        "todo_matrix",
+        params=params,
+        json={"is_deleted": True},
+    )
+
+    return jsonify({"status": "ok"})
 
 
 # ==========================================================
