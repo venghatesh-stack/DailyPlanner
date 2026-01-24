@@ -139,8 +139,33 @@
   border-radius: 6px;
   font-weight: 600;
 }
+.task[data-status="closed"] {
+  opacity: 0.6;
+}
 
-  </style>
+.task[data-status="closed"] .task-text {
+  text-decoration: line-through;
+}
+
+.task[data-status="dropped"] {
+  opacity: 0.4;
+}
+
+.status-select {
+  font-size: 12px;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+select[disabled],
+input[disabled],
+button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+</style>
+
+
 </head>
 
 <body>
@@ -177,12 +202,16 @@
         <button type="submit">Add</button>
       </form>
     </div>
+    <label style="font-size:13px;">
+      <input type="checkbox" id="hideClosed" checked onchange="toggleClosed()" />
+      Hide closed
+    </label>
 
-    <!-- Task List -->
+
    <!-- Task List -->
     {% if tasks %}
       {% for task in tasks %}
-        <div class="task">
+        <div class="task" data-status="{{ task.status }}">
 
           <!-- Task text + badge -->
           <div class="task-text" id="text-{{ task.id }}">
@@ -198,10 +227,11 @@
             id="q-{{ task.id }}"
             {% if task.sent_to_eisenhower %}disabled{% endif %}
           >
-            <option value="do_now">Do now</option>
-            <option value="schedule">Schedule</option>
-            <option value="delegate">Delegate</option>
-            <option value="eliminate">Eliminate</option>
+            <option value="do_now">⚡ Do now</option>
+            <option value="schedule">🗓️ Schedule</option>
+            <option value="delegate">👥 Delegate</option>
+            <option value="eliminate">🗑️ Eliminate</option>
+
           </select>
 
           <!-- Date -->
@@ -211,7 +241,7 @@
             value="{{ today }}"
             {% if task.sent_to_eisenhower %}disabled{% endif %}
           />
-          <select
+         <select
             class="status-select"
             onchange="updateStatus('{{ task.id }}', this.value)"
           >
@@ -221,6 +251,7 @@
             <option value="dropped" {% if task.status == 'dropped' %}selected{% endif %}>Dropped</option>
             <option value="closed" {% if task.status == 'closed' %}selected{% endif %}>Closed</option>
           </select>
+
 
           <!-- Send button -->
           <button
@@ -271,7 +302,8 @@
     .then(res => {
       if (res.status === "ok") {
         // ✅ Mark visually as sent
-        btn.textContent = "🧠 Sent";
+        btn.innerHTML = `🧠 Sent · <a href="/todo?year=${date.slice(0,4)}&month=${date.slice(5,7)}&day=${date.slice(8,10)}">View</a>`;
+
         btn.disabled = true;
 
         quadrantSelect.disabled = true;
@@ -312,15 +344,28 @@
 </script>
 <script>
   function updateStatus(taskId, status) {
+    const taskEl = document.querySelector(`[data-status][id="task-${taskId}"]`)
+      || document.querySelector(`#send-${taskId}`)?.closest(".task");
+
+    if (taskEl) taskEl.dataset.status = status;
+
     fetch("/projects/tasks/status", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        task_id: taskId,
-        status: status
-      })
+      body: JSON.stringify({ task_id: taskId, status })
     });
   }
+</script>
+
+<script>
+  function toggleClosed() {
+    const hide = document.getElementById("hideClosed").checked;
+    document.querySelectorAll('.task[data-status="closed"]').forEach(el => {
+      el.style.display = hide ? "none" : "flex";
+    });
+  }
+
+  toggleClosed();
 </script>
 
 </body>
