@@ -135,12 +135,27 @@
             {{ task.task_text }}
           </div>
 
-          <button
-            class="send-btn"
-            onclick="sendToEisenhower('{{ task.id }}')"
-          >
-            Send →
-          </button>
+         <div class="task">
+            <div class="task-text">{{ task.task_text }}</div>
+
+            <select id="q-{{ task.id }}">
+              <option value="do">Do</option>
+              <option value="decide">Decide</option>
+              <option value="delegate">Delegate</option>
+              <option value="delete">Delete</option>
+            </select>
+
+            <input
+              type="date"
+              id="d-{{ task.id }}"
+              value="{{ today }}"
+            />
+
+            <button onclick="sendTask('{{ task.id }}')">
+              Send
+            </button>
+          </div>
+
         </div>
       {% endfor %}
     {% else %}
@@ -152,39 +167,36 @@
   </div>
 
   <script>
-    function sendToEisenhower(taskId) {
-      const quadrant = prompt(
-        "Send to Eisenhower:\n\nDo / Decide / Delegate / Delete",
-        "Do"
-      );
-      if (!quadrant) return;
+  function sendTask(taskId) {
+    const quadrant = document.getElementById(`q-${taskId}`).value;
+    const date = document.getElementById(`d-${taskId}`).value;
 
-      const date = prompt(
-        "Date (YYYY-MM-DD)",
-        new Date().toISOString().slice(0,10)
-      );
-      if (!date) return;
-
-      fetch("/projects/tasks/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          task_id: taskId,
-          quadrant: quadrant,
-          plan_date: date
-        })
-      })
-      .then(r => r.json())
-      .then(res => {
-        if (res.status === "ok") {
-          location.reload();
-        } else if (res.status === "already-sent") {
-          alert("Task already sent for this date.");
-        } else {
-          alert("Could not send task.");
-        }
-      });
+    if (!date) {
+      alert("Please choose a date");
+      return;
     }
-  </script>
+
+    fetch("/projects/tasks/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        task_id: taskId,
+        quadrant: quadrant,
+        plan_date: date
+      })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === "ok") {
+        location.reload();
+      } else if (res.status === "already-sent") {
+        alert("Task already sent for this date.");
+      } else {
+        alert(res.error || "Could not send task.");
+      }
+    });
+  }
+</script>
+
 </body>
 </html>

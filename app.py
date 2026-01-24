@@ -36,6 +36,7 @@ from config import (
     HABIT_LIST,
 )
 from config import META_SLOT
+from utils.slots import current_slot,slot_label
 import traceback
 
 
@@ -686,7 +687,7 @@ def todo_set_project():
 @login_required
 def project_tasks(project_id):
     user_id = session["user_id"]
-
+    today = date.today().isoformat()
     rows = get(
         "projects",
         params={"id": f"eq.{project_id}", "user_id": f"eq.{user_id}"},
@@ -709,6 +710,7 @@ def project_tasks(project_id):
         "project_tasks.html",
         project=project,
         tasks=tasks,
+        today=today
     )
 
 @app.route("/projects/<project_id>/tasks/add", methods=["POST"])

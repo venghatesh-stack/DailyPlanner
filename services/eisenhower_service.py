@@ -563,15 +563,21 @@ def autosave_task(plan_date, task_id, quadrant, text=None, is_done=False, projec
             "todo_matrix",
             params={
                 "id": f"eq.{task_id}",
-                "select": "source_task_id",
+                "select": "source_task_id, recurring_instance_id",
             },
         )
-        if rows and rows[0].get("source_task_id"):
+
+        if (
+            rows
+            and rows[0].get("source_task_id")
+            and not rows[0].get("recurring_instance_id")
+        ):
             update(
                 "project_tasks",
                 params={"id": f"eq.{rows[0]['source_task_id']}"},
                 json={"status": "done"},
             )
+
 
     return {"id": task_id}
 
