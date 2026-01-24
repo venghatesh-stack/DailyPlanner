@@ -285,7 +285,11 @@ button[disabled] {
             <option value="eliminate">🗑️ Eliminate</option>
           </select>
 
-          <input type="date" id="d-{{ task.id }}" value="{{ today }}"  {% if task.sent_to_eisenhower %}disabled{% endif %} />
+          <input type="date"
+              id="d-{{ task.id }}"
+              value="{{ task.due_date or today }}"
+              {% if task.sent_to_eisenhower %}disabled{% endif %}
+              onchange="updateDueDate('{{ task.id }}', this.value)" />
 
          <select class="status-select"
           onchange="updateStatus('{{ task.id }}', this.value)">
@@ -479,6 +483,20 @@ function unsendFromEisenhower(taskId) {
     const unsendBtn = taskEl.querySelector(".unsend-btn");
     if (unsendBtn) unsendBtn.remove();
 
+  });
+}
+</script>
+<script>
+function updateDueDate(taskId, date) {
+  fetch("/projects/tasks/update-date", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      task_id: taskId,
+      due_date: date
+    })
+  }).catch(err => {
+    console.error("Failed to update due date", err);
   });
 }
 </script>

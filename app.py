@@ -896,6 +896,23 @@ def task_timeline():
         today=date.today()
     )
 
+@app.route("/projects/tasks/update-date", methods=["POST"])
+@login_required
+def update_project_task_date():
+    data = request.get_json() or {}
+    task_id = data.get("task_id")
+    due_date = data.get("due_date")
+
+    if not task_id:
+        return jsonify({"error": "Missing task id"}), 400
+
+    update(
+        "project_tasks",
+        params={"id": f"eq.{task_id}"},
+        json={"due_date": due_date},
+    )
+
+    return jsonify({"status": "ok"})
 
 # ==========================================================
 # ENTRY POINT
