@@ -800,7 +800,19 @@ def send_task_to_eisenhower():
     update(
         "project_tasks",
         params={"id": f"eq.{task_id}"},
-        json={"status": "scheduled"},
+        json={"sent_to_eisenhower": True},
+    )
+
+    return jsonify({"status": "ok"})
+@app.route("/projects/tasks/status", methods=["POST"])
+@login_required
+def update_project_task_status():
+    data = request.get_json(force=True)
+
+    update(
+        "project_tasks",
+        params={"id": f"eq.{data['task_id']}"},
+        json={"status": data["status"]},
     )
 
     return jsonify({"status": "ok"})

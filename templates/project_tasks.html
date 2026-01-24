@@ -211,6 +211,16 @@
             value="{{ today }}"
             {% if task.sent_to_eisenhower %}disabled{% endif %}
           />
+          <select
+            class="status-select"
+            onchange="updateStatus('{{ task.id }}', this.value)"
+          >
+            <option value="open" {% if task.status == 'open' %}selected{% endif %}>Open</option>
+            <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+            <option value="on_hold" {% if task.status == 'on_hold' %}selected{% endif %}>On Hold</option>
+            <option value="dropped" {% if task.status == 'dropped' %}selected{% endif %}>Dropped</option>
+            <option value="closed" {% if task.status == 'closed' %}selected{% endif %}>Closed</option>
+          </select>
 
           <!-- Send button -->
           <button
@@ -299,6 +309,18 @@
 
   updateDateTime();
   setInterval(updateDateTime, 60000); // update every minute
+</script>
+<script>
+  function updateStatus(taskId, status) {
+    fetch("/projects/tasks/status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        task_id: taskId,
+        status: status
+      })
+    });
+  }
 </script>
 
 </body>
