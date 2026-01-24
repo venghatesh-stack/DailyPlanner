@@ -739,7 +739,7 @@ def send_task_to_eisenhower():
     if raw not in QUADRANT_ALIASES:
         return jsonify({"error": "Invalid quadrant"}), 400
 
-    quadrant = QUADRANT_MAP[QUADRANT_ALIASES[raw]]
+    quadrant = QUADRANT_ALIASES[raw]
 
     plan_date = date.fromisoformat(data["plan_date"])
 
