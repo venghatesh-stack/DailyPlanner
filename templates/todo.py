@@ -189,12 +189,29 @@ summary::-webkit-details-marker { display:none; }
 </div>
 
 <script>
-function toggleDone(taskId, checkbox) {
-  const task = checkbox.closest(".task");
-  if (!task) return;
+function toggleDone(checkbox) {
+  // 🔒 Safety check
+  if (!(checkbox instanceof HTMLElement)) {
+    console.error("toggleDone called with invalid argument:", checkbox);
+    return;
+  }
 
+  const task = checkbox.closest(".task");
+  if (!task) {
+    console.error("Task container not found");
+    return;
+  }
+
+  const taskId = task.dataset.id;
+  if (!taskId) {
+    console.error("Missing task id on task element");
+    return;
+  }
+
+  // UI update
   task.classList.toggle("done", checkbox.checked);
 
+  // Persist
   fetch("/todo/toggle-done", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -206,6 +223,7 @@ function toggleDone(taskId, checkbox) {
     console.error("Toggle done failed", err);
   });
 }
+
 
 
 </script>
