@@ -701,7 +701,6 @@ def project_tasks(project_id):
         "project_tasks",
         params={
             "project_id": f"eq.{project_id}",
-            "status": "eq.backlog",
             "order": "created_at.asc",
         },
     )
