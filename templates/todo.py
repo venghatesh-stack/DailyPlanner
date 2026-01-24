@@ -1169,6 +1169,16 @@ function autosaveProject(select) {
   });
 }
 </script>
+function toggleSubtask(id, checked) {
+  fetch("/subtask/toggle", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: id,
+      is_done: checked
+    })
+  });
+}
 
 
 </body>

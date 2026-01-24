@@ -637,17 +637,19 @@ def add_subtask():
     )
     return ("", 204)
 
-
 @app.route("/subtask/toggle", methods=["POST"])
 @login_required
 def toggle_subtask():
-    data = request.get_json()
+    data = request.get_json(force=True)
+
     update(
         "project_subtasks",
         params={"id": f"eq.{data['id']}"},
-        json={"is_done": data["done"]},
+        json={"is_done": bool(data.get("is_done"))},
     )
+
     return ("", 204)
+
 @app.route("/todo/set-project", methods=["POST"])
 @login_required
 def todo_set_project():
