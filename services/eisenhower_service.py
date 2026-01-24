@@ -105,11 +105,10 @@ def load_todo(plan_date):
     if task_ids:
         # 🔑 Supabase requires quoted UUIDs for in.(...)
         quoted_ids = ",".join(f'"{tid}"' for tid in map(str, task_ids))
-
         subtask_rows = get(
             "project_subtasks",
             params={
-                "task_id": f"in.({quoted_ids})",
+                "task_id": f"in.({','.join(map(str, task_ids))})",
                 "select": "id,task_id,title,is_done",
             },
         ) or []
