@@ -572,7 +572,22 @@ select {
 
 
                           {% endif %}
+                            <select
+                          class="project-select"
+                          onchange="autosaveProject(this)"
+                          data-id="{{ t.id }}"
+                        >
+                          <option value="">— No Project —</option>
 
+                          {% for p in projects %}
+                            <option
+                              value="{{ p.id }}"
+                              {% if t.project_id == p.id %}selected{% endif %}
+                            >
+                              {{ p.name }}
+                            </option>
+                          {% endfor %}
+                        </select>
                           {% if t.recurring %}
                             <span title="Repeats {{ t.recurrence }}" style="font-size:13px;color:#6366f1;">
                               🔁 {{ t.recurrence or "Recurring" }}
@@ -657,7 +672,7 @@ select {
                           {% for p in projects %}
                             <option
                               value="{{ p.id }}"
-                              {% if task.project_id == p.id %}selected{% endif %}
+                              {% if t.project_id == p.id %}selected{% endif %}
                             >
                               {{ p.name }}
                             </option>
