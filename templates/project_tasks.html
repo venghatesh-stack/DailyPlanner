@@ -130,6 +130,15 @@
   font-weight: 600;
   color: #374151;
 }
+.badge {
+  margin-left: 8px;
+  font-size: 12px;
+  background: #eef2ff;
+  color: #3730a3;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: 600;
+}
 
   </style>
 </head>
@@ -170,33 +179,52 @@
     </div>
 
     <!-- Task List -->
+   <!-- Task List -->
     {% if tasks %}
       {% for task in tasks %}
         <div class="task">
-          <div class="task-text">
+
+          <!-- Task text + badge -->
+          <div class="task-text" id="text-{{ task.id }}">
             {{ task.task_text }}
+
+            {% if task.sent_to_eisenhower %}
+              <span class="badge">🧠 In Eisenhower</span>
+            {% endif %}
           </div>
 
-         <div class="task">
-            <div class="task-text">{{ task.task_text }}</div>
+          <!-- Quadrant -->
+          <select
+            id="q-{{ task.id }}"
+            {% if task.sent_to_eisenhower %}disabled{% endif %}
+          >
+            <option value="do_now">Do now</option>
+            <option value="schedule">Schedule</option>
+            <option value="delegate">Delegate</option>
+            <option value="eliminate">Eliminate</option>
+          </select>
 
-            <select id="q-{{ task.id }}">
-              <option value="do_now">Do Now</option>
-              <option value="schedule">Schedule</option>
-              <option value="delegate">Delegate</option>
-              <option value="eliminate">Eliminate</option>
-            </select>
+          <!-- Date -->
+          <input
+            type="date"
+            id="d-{{ task.id }}"
+            value="{{ today }}"
+            {% if task.sent_to_eisenhower %}disabled{% endif %}
+          />
 
-            <input
-              type="date"
-              id="d-{{ task.id }}"
-              value="{{ today }}"
-            />
-
-            <button onclick="sendTask('{{ task.id }}')">
-              Send
-            </button>
-          </div>
+          <!-- Send button -->
+          <button
+            id="send-{{ task.id }}"
+            class="send-btn"
+            {% if task.sent_to_eisenhower %}disabled{% endif %}
+            onclick="sendTask('{{ task.id }}')"
+          >
+            {% if task.sent_to_eisenhower %}
+              Sent
+            {% else %}
+              Send →
+            {% endif %}
+          </button>
 
         </div>
       {% endfor %}
@@ -205,13 +233,15 @@
         No tasks in this project yet
       </div>
     {% endif %}
-
-  </div>
-
+</div>
   <script>
   function sendTask(taskId) {
-    const quadrant = document.getElementById(`q-${taskId}`).value;
-    const date = document.getElementById(`d-${taskId}`).value;
+    const quadrantSelect = document.getElementById(`q-${taskId}`);
+    const dateInput = document.getElementById(`d-${taskId}`);
+    const btn = document.getElementById(`send-${taskId}`);
+
+    const quadrant = quadrantSelect.value;
+    const date = dateInput.value;
 
     if (!date) {
       alert("Please choose a date");
@@ -230,7 +260,19 @@
     .then(r => r.json())
     .then(res => {
       if (res.status === "ok") {
-        location.reload();
+        // ✅ Mark visually as sent
+        btn.textContent = "🧠 Sent";
+        btn.disabled = true;
+
+        quadrantSelect.disabled = true;
+        dateInput.disabled = true;
+
+        // add badge if not present
+        const badge = document.createElement("span");
+        badge.className = "badge";
+        badge.textContent = "🧠 In Eisenhower";
+        document.getElementById(`text-${taskId}`).appendChild(badge);
+
       } else if (res.status === "already-sent") {
         alert("Task already sent for this date.");
       } else {
@@ -238,6 +280,7 @@
       }
     });
   }
+
 </script>
 <script>
   function updateDateTime() {
