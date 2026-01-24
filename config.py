@@ -166,3 +166,9 @@ EVERY_DAY_RE = r"\bevery\s+day\b"
 EVERY_WEEKDAY_RE = r"\bevery\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b"
 INTERVAL_RE = r"\bonce\s+in\s+(\d+)\s+days?\b"
 MONTHLY_RE = r"\b(once\s+in\s+a\s+month|every\s+month)\b"
+QUADRANT_ALIASES = {
+    "do_now": "DO",
+    "schedule": "DECIDE",
+    "delegate": "DELEGATE",
+    "eliminate": "DELETE",
+    }

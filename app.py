@@ -12,7 +12,7 @@ from utils.calender_links import google_calendar_link
 from services.planner_service import load_day, save_day, get_daily_summary, get_weekly_summary,compute_health_streak,is_health_day,ensure_daily_habits_row,group_slots_into_blocks
 from services.login_service import login_required
 from services.eisenhower_service import autosave_task
-from config import MIN_HEALTH_HABITS
+from config import MIN_HEALTH_HABITS,QUADRANT_ALIASES
 from services.recurring_service import materialize_recurring_slots,materialize_recurring_tasks
 
 from services.eisenhower_service import (
@@ -735,13 +735,6 @@ def send_task_to_eisenhower():
 
     task_id = data["task_id"]
     raw = data["quadrant"].strip().lower()
-
-    QUADRANT_ALIASES = {
-    "do": "Q1",
-    "decide": "Q2",
-    "delegate": "Q3",
-    "delete": "Q4",
-    }
 
     if raw not in QUADRANT_ALIASES:
         return jsonify({"error": "Invalid quadrant"}), 400
