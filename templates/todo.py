@@ -650,7 +650,7 @@ select {
                         <select
                           class="project-select"
                           onchange="autosaveProject(this)"
-                          data-id="{{ task.id }}"
+                          data-id="{{ t.id }}"
                         >
                           <option value="">— No Project —</option>
 
