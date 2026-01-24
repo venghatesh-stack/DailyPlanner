@@ -8,7 +8,6 @@ from supabase_client import get, post, update
 from logger import setup_logger
 from utils.dates import safe_date 
 from config import TOTAL_SLOTS,QUADRANT_MAP,TASK_CATEGORIES,STATIC_TRAVEL_SUBGROUPS
-from utils.slots import current_slot,slot_label
 from utils.calender_links import google_calendar_link
 from services.planner_service import load_day, save_day, get_daily_summary, get_weekly_summary,compute_health_streak,is_health_day,ensure_daily_habits_row,group_slots_into_blocks
 from services.login_service import login_required
@@ -736,10 +735,10 @@ def send_task_to_eisenhower():
     raw = data["quadrant"].strip().lower()
 
     QUADRANT_ALIASES = {
-    "do": "DO",
-    "decide": "DECIDE",
-    "delegate": "DELEGATE",
-    "delete": "DELETE",
+    "do": "Q1",
+    "decide": "Q2",
+    "delegate": "Q3",
+    "delete": "Q4",
     }
 
     if raw not in QUADRANT_ALIASES:
