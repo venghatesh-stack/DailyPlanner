@@ -512,7 +512,6 @@ def autosave_task(plan_date, task_id, quadrant, text=None, is_done=False, projec
     # NEW TASK → INSERT
     # -------------------------
     if task_id.startswith("new_"):
-        # Do NOT insert empty tasks
         if not text:
             return {"id": task_id}
 
@@ -525,7 +524,7 @@ def autosave_task(plan_date, task_id, quadrant, text=None, is_done=False, projec
                 "is_done": is_done,
                 "is_deleted": False,
                 "position": 999,
-                "project_id": project_id,   # 👈 ADDED
+                "project_id": project_id,
             }],
             prefer="return=representation"
         ) or []
@@ -547,7 +546,7 @@ def autosave_task(plan_date, task_id, quadrant, text=None, is_done=False, projec
     update_payload["is_done"] = is_done
 
     if project_id is not None:
-        update_payload["project_id"] = project_id   # 👈 ADDED
+        update_payload["project_id"] = project_id
 
     if update_payload:
         update(
@@ -556,4 +555,23 @@ def autosave_task(plan_date, task_id, quadrant, text=None, is_done=False, projec
             json=update_payload,
         )
 
+    # -------------------------
+    # 🔗 PROJECT SYNC (future-safe)
+    # -------------------------
+    if is_done:
+        rows = get(
+            "todo_matrix",
+            params={
+                "id": f"eq.{task_id}",
+                "select": "source_task_id",
+            },
+        )
+        if rows and rows[0].get("source_task_id"):
+            update(
+                "project_tasks",
+                params={"id": f"eq.{rows[0]['source_task_id']}"},
+                json={"status": "done"},
+            )
+
     return {"id": task_id}
+

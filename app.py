@@ -1,5 +1,5 @@
 ## Eisenhower Matrix + Daily Planner integrated. Calender control working
-from flask import Flask, request, redirect, url_for, render_template_string, session,jsonify
+from flask import Flask, request, redirect, url_for, render_template_string, session,jsonify,render_template
 import os
 from datetime import date, datetime, timedelta
 import calendar
@@ -644,7 +644,7 @@ def toggle_subtask():
         params={"id": f"eq.{data['id']}"},
         json={"is_done": bool(data.get("is_done"))},
     )
-
+    
     return ("", 204)
 
 @app.route("/todo/set-project", methods=["POST"])
@@ -662,6 +662,120 @@ def todo_set_project():
         "todo_matrix",
         params={"id": f"eq.{task_id}"},
         json={"project_id": project_id},
+    )
+
+    return jsonify({"status": "ok"})
+@app.route("/projects/<project_id>/tasks")
+@login_required
+def project_tasks(project_id):
+    user_id = session["user_id"]
+
+    rows = get(
+        "projects",
+        params={"id": f"eq.{project_id}", "user_id": f"eq.{user_id}"},
+    )
+    if not rows:
+        return "Project not found", 404
+
+    project = rows[0]
+
+    tasks = get(
+        "project_tasks",
+        params={
+            "project_id": f"eq.{project_id}",
+            "status": "eq.backlog",
+            "order": "created_at.asc",
+        },
+    )
+
+    return render_template(
+        "project_tasks.html",
+        project=project,
+        tasks=tasks,
+    )
+
+@app.route("/projects/<project_id>/tasks/add", methods=["POST"])
+@login_required
+def add_project_task(project_id):
+    text = request.form["task_text"]
+
+    post(
+        "project_tasks",
+        {
+            "project_id": project_id,
+            "task_text": text,
+            "status": "backlog",
+        },
+    )
+
+    return redirect(url_for("project_tasks", project_id=project_id))
+@app.route("/projects/tasks/send", methods=["POST"])
+@login_required
+def send_task_to_eisenhower():
+    data = request.get_json()
+
+    task_id = data["task_id"]
+    quadrant = QUADRANT_MAP[data["quadrant"].upper()]
+    plan_date = date.fromisoformat(data["plan_date"])
+
+    task_rows = get("project_tasks", params={"id": f"eq.{task_id}"})
+    if not task_rows:
+        return jsonify({"error": "Task not found"}), 404
+
+    task = task_rows[0]
+
+    project_rows = get(
+        "projects",
+        params={
+            "id": f"eq.{task['project_id']}",
+            "user_id": f"eq.{session['user_id']}",
+        },
+    )
+    if not project_rows:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    existing = get(
+        "todo_matrix",
+        params={
+            "source_task_id": f"eq.{task_id}",
+            "plan_date": f"eq.{plan_date}",
+            "is_deleted": "eq.false",
+        },
+    )
+    if existing:
+        return jsonify({"status": "already-sent"}), 200
+
+    max_pos = get(
+        "todo_matrix",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "quadrant": f"eq.{quadrant}",
+            "is_deleted": "eq.false",
+            "select": "position",
+            "order": "position.desc",
+            "limit": 1,
+        },
+    )
+
+    position = max_pos[0]["position"] + 1 if max_pos else 0
+
+    post(
+        "todo_matrix",
+        {
+            "plan_date": str(plan_date),
+            "quadrant": quadrant,
+            "task_text": task["task_text"],
+            "position": position,
+            "is_done": False,
+            "is_deleted": False,
+            "source_task_id": task_id,
+        },
+    )
+
+    update(
+        "project_tasks",
+        params={"id": f"eq.{task_id}"},
+        json={"status": "scheduled"},
     )
 
     return jsonify({"status": "ok"})
