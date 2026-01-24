@@ -23,10 +23,12 @@ from services.eisenhower_service import (
 )
 
 from services.untimed_service import remove_untimed_task  
+from services.timeline_service import load_timeline_tasks
 from templates.planner import PLANNER_TEMPLATE
 from templates.todo import TODO_TEMPLATE
 from templates.summary import SUMMARY_TEMPLATE
 from templates.login import LOGIN_TEMPLATE
+
 from config import (
     IST,
     STATUSES,
@@ -888,7 +890,7 @@ def task_timeline():
     today_tasks, future_tasks = load_timeline_tasks(user_id)
 
     return render_template_string(
-        TASK_TIMELINE_TEMPLATE,
+        "task_timeline.html",
         today_tasks=today_tasks,
         future_tasks=future_tasks,
         today=date.today()
