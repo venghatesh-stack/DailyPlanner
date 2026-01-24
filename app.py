@@ -880,6 +880,19 @@ def unsend_task_from_eisenhower():
     )
 
     return jsonify({"status": "ok"})
+@app.route("/tasks/timeline")
+@login_required
+def task_timeline():
+    user_id = session["user_id"]
+
+    today_tasks, future_tasks = load_timeline_tasks(user_id)
+
+    return render_template_string(
+        TASK_TIMELINE_TEMPLATE,
+        today_tasks=today_tasks,
+        future_tasks=future_tasks,
+        today=date.today()
+    )
 
 
 # ==========================================================

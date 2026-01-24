@@ -390,6 +390,7 @@ body {
           📆
         </a>
       </div>
+      <a href="/tasks/timeline">🗓 Project Timeline</a>
 
   </div>
     <form method="get" class="month-controls">
