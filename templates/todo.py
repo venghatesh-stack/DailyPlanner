@@ -165,7 +165,7 @@ summary::-webkit-details-marker { display:none; }
 
             <input type="checkbox"
                    {% if t.done %}checked{% endif %}
-                   onchange="toggleDone('{{ t.id }}', this)">
+                   onchange="toggleDone(this)">
 
             <div class="task-text">
               {{ t.text }}
