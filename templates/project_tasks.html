@@ -102,6 +102,35 @@
       font-size: 14px;
       margin-top: 24px;
     }
+    .top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  padding: 10px 14px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.06);
+  margin-bottom: 16px;
+}
+
+.nav-left a,
+.nav-left span {
+  font-size: 20px;
+  margin-right: 12px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.nav-left span {
+  opacity: 0.6; /* current page */
+}
+
+.nav-right {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
   </style>
 </head>
 
@@ -209,6 +238,24 @@
       }
     });
   }
+</script>
+<script>
+  function updateDateTime() {
+    const now = new Date();
+    const options = {
+      weekday: "short",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    };
+    document.getElementById("current-datetime").textContent =
+      now.toLocaleString(undefined, options);
+  }
+
+  updateDateTime();
+  setInterval(updateDateTime, 60000); // update every minute
 </script>
 
 </body>
