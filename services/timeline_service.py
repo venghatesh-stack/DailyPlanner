@@ -16,6 +16,7 @@ def load_timeline_tasks(user_id):
         },
     ) or []
 
+
     today_tasks = []
     future_tasks = {}
 
