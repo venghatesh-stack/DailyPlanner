@@ -211,7 +211,8 @@ button[disabled] {
    <!-- Task List -->
     {% if tasks %}
       {% for task in tasks %}
-        <div class="task" data-status="{{ task.status }}">
+        <div class="task" id="task-{{ task.id }}" data-status="{{ task.status }}">
+
 
           <!-- Task text + badge -->
           <div class="task-text" id="text-{{ task.id }}">
@@ -344,10 +345,13 @@ button[disabled] {
 </script>
 <script>
   function updateStatus(taskId, status) {
-    const taskEl = document.querySelector(`[data-status][id="task-${taskId}"]`)
-      || document.querySelector(`#send-${taskId}`)?.closest(".task");
+    const taskEl = document.getElementById(`task-${taskId}`);
 
-    if (taskEl) taskEl.dataset.status = status;
+
+    if (taskEl) {
+      taskEl.dataset.status = status;
+      taskEl.style.display = "flex"; // 👈 ensures reappearance
+   }
 
     fetch("/projects/tasks/status", {
       method: "POST",
@@ -358,12 +362,14 @@ button[disabled] {
 </script>
 
 <script>
-  function toggleClosed() {
-    const hide = document.getElementById("hideClosed").checked;
-    document.querySelectorAll('.task[data-status="closed"]').forEach(el => {
-      el.style.display = hide ? "none" : "flex";
-    });
-  }
+ function toggleClosed() {
+  const hide = document.getElementById("hideClosed").checked;
+
+  document.querySelectorAll('.task[data-status="closed"]').forEach(el => {
+    el.style.display = hide ? "none" : "flex";
+  });
+}
+
 
   toggleClosed();
 </script>
