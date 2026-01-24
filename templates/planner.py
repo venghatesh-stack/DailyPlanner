@@ -887,6 +887,18 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 
+<script>
+function toggleSubtask(id, isDone) {
+  fetch("/subtask/toggle", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: id,
+      is_done: isDone
+    })
+  });
+}
+</script>
 
 
 <div id="checkin-drawer" class="checkin-drawer hidden">

@@ -737,6 +737,13 @@ select {
                           </button>
                         </div>
                       {% endif %}  
+                      {% if t.project_id and project_progress.get(t.project_id) %}
+                          {% set p = project_progress[t.project_id] %}
+                          <span style="font-size:12px;color:#475569;">
+                            {{ (p.done * 100 // (p.total or 1)) }}% complete
+                          </span>
+                      {% endif %}
+
                       <div class="task-meta">
                         <input type="date" name="{{ q }}_date[]" value="{{ t.task_date or '' }}">
                         <input type="time" name="{{ q }}_time[]" value="{{ t.task_time or '' }}">
@@ -1156,7 +1163,8 @@ function autosaveProject(select) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       id: select.dataset.id,
-      project_id: select.value || null
+      project_id: select.value || null,
+      plan_date: "{{ plan_date }}",
     })
   });
 }

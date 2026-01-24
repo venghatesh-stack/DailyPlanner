@@ -200,7 +200,7 @@ def todo():
         return redirect(url_for("todo", year=plan_date.year, month=plan_date.month, day=plan_date.day, saved=1))
 
     materialize_recurring_tasks(plan_date,user_id)
-    todo = load_todo(plan_date)
+    todo,project_progress = load_todo(plan_date)
     logger.debug("Rendering todo page, toast=%s", session.get("toast"))
     days = [
         date(year, month, d) for d in range(1, calendar.monthrange(year, month)[1] + 1)
@@ -569,6 +569,18 @@ def todo_autosave():
     )
 
     return jsonify(result)
+@app.route("/subtask/toggle", methods=["POST"])
+@login_required
+def toggle_subtask():
+    data = request.get_json(force=True)
+
+    update(
+        "subtasks",
+        params={"id": f"eq.{data['id']}"},
+        json={"is_done": data["is_done"]},
+    )
+
+    return {"ok": True}
 
 
 @app.route("/favicon.ico")

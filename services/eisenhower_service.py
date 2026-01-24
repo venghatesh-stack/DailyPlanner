@@ -91,8 +91,53 @@ def load_todo(plan_date):
             cat = t["category"]
             sub = t["subcategory"]
             grouped[q].setdefault(cat, {}).setdefault(sub, []).append(t)
+    # ----------------------------
+    # Load subtasks for all tasks
+    # ----------------------------
+    task_ids = [
+        t["id"]
+        for q in grouped.values()
+        for cat in q.values()
+        for subs in cat.values()
+        for t in subs
+    ]
 
-    return grouped
+    if task_ids:
+        subtask_rows = get(
+            "subtasks",
+            params={
+                "task_id": f"in.({','.join(map(str, task_ids))})",
+                "select": "id,task_id,title,is_done",
+            },
+        ) or []
+
+        subtask_map = defaultdict(list)
+        for s in subtask_rows:
+            subtask_map[str(s["task_id"])].append(s)
+
+        for q in grouped.values():
+            for cat in q.values():
+                for subs in cat.values():
+                    for t in subs:
+                        t["subtasks"] = subtask_map.get(str(t["id"]), [])
+    # ----------------------------
+    # Project progress
+    # ----------------------------
+    project_progress = defaultdict(lambda: {"done": 0, "total": 0})
+
+    for q in grouped.values():
+        for cat in q.values():
+            for subs in cat.values():
+                for t in subs:
+                    pid = t.get("project_id")
+                    if not pid:
+                        continue
+                    for s in t.get("subtasks", []):
+                        project_progress[pid]["total"] += 1
+                        if s["is_done"]:
+                            project_progress[pid]["done"] += 1
+
+    return grouped,project_progress
 
 
 def save_todo(plan_date, form):
