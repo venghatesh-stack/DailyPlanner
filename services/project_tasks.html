@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ project.name }} – Tasks</title>
+
+  <style>
+    body {
+      font-family: system-ui;
+      background: #f6f7f9;
+      margin: 0;
+      padding: 16px;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: auto;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .back {
+      text-decoration: none;
+      font-size: 14px;
+      color: #2563eb;
+      font-weight: 600;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .add-box {
+      background: #fff;
+      padding: 12px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.06);
+      margin-bottom: 16px;
+    }
+
+    .add-box form {
+      display: flex;
+      gap: 8px;
+    }
+
+    .add-box input {
+      flex: 1;
+      padding: 10px;
+      font-size: 15px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+
+    .add-box button {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 600;
+      background: #2563eb;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .task {
+      background: #fff;
+      padding: 12px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .task-text {
+      font-size: 15px;
+      line-height: 1.4;
+    }
+
+    .send-btn {
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid #2563eb;
+      background: #fff;
+      color: #2563eb;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .empty {
+      text-align: center;
+      color: #6b7280;
+      font-size: 14px;
+      margin-top: 24px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <!-- Header -->
+    <div class="header">
+      <a href="/projects" class="back">← Projects</a>
+      <h2>{{ project.name }}</h2>
+    </div>
+
+    <!-- Add Task -->
+    <div class="add-box">
+      <form method="post" action="/projects/{{ project.id }}/tasks/add">
+        <input
+          name="task_text"
+          placeholder="Add a clear, actionable task…"
+          autocomplete="off"
+          required
+        />
+        <button type="submit">Add</button>
+      </form>
+    </div>
+
+    <!-- Task List -->
+    {% if tasks %}
+      {% for task in tasks %}
+        <div class="task">
+          <div class="task-text">
+            {{ task.task_text }}
+          </div>
+
+          <button
+            class="send-btn"
+            onclick="sendToEisenhower('{{ task.id }}')"
+          >
+            Send →
+          </button>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty">
+        No tasks in this project yet
+      </div>
+    {% endif %}
+
+  </div>
+
+  <script>
+    function sendToEisenhower(taskId) {
+      const quadrant = prompt(
+        "Send to Eisenhower:\n\nDo / Decide / Delegate / Delete",
+        "Do"
+      );
+      if (!quadrant) return;
+
+      const date = prompt(
+        "Date (YYYY-MM-DD)",
+        new Date().toISOString().slice(0,10)
+      );
+      if (!date) return;
+
+      fetch("/projects/tasks/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          task_id: taskId,
+          quadrant: quadrant,
+          plan_date: date
+        })
+      })
+      .then(r => r.json())
+      .then(res => {
+        if (res.status === "ok") {
+          location.reload();
+        } else if (res.status === "already-sent") {
+          alert("Task already sent for this date.");
+        } else {
+          alert("Could not send task.");
+        }
+      });
+    }
+  </script>
+</body>
+</html>
