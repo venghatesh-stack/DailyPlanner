@@ -344,32 +344,39 @@ button[disabled] {
   setInterval(updateDateTime, 60000); // update every minute
 </script>
 <script>
-  function updateStatus(taskId, status) {
-    const taskEl = document.getElementById(`task-${taskId}`);
+function updateStatus(taskId, status) {
+  const taskEl = document.getElementById(`task-${taskId}`);
 
-
-    if (taskEl) {
-      taskEl.dataset.status = status;
-      taskEl.style.display = "flex"; // 👈 ensures reappearance
-   }
-
-    fetch("/projects/tasks/status", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ task_id: taskId, status })
-    });
+  if (taskEl) {
+    taskEl.dataset.status = status;
   }
+
+  fetch("/projects/tasks/status", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ task_id: taskId, status })
+  });
+
+  // ✅ re-apply visibility rules
+  toggleClosed();
+}
 </script>
 
+
 <script>
- function toggleClosed() {
+function toggleClosed() {
   const hide = document.getElementById("hideClosed").checked;
 
-  document.querySelectorAll('.task[data-status="done"]').forEach(el => {
-    el.style.display = hide ? "none" : "flex";
+  document.querySelectorAll(".task").forEach(task => {
+    const status = task.dataset.status;
+
+    if (hide && status === "done") {
+      task.style.display = "none";
+    } else {
+      task.style.display = "flex";
+    }
   });
 }
-
 
   toggleClosed();
 </script>
