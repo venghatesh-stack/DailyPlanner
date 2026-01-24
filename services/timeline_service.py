@@ -10,7 +10,7 @@ def load_timeline_tasks(user_id):
     "project_tasks",
     params={
         "user_id": f"eq.{user_id}",
-        "is_deleted": "eq.false",
+        "status": "neq.done",
         "select": "id,task_text,status,due_date,project_id,created_at",
         "order": "due_date.asc,created_at.asc",
     },
