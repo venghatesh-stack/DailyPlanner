@@ -206,6 +206,15 @@ def todo():
         date(year, month, d) for d in range(1, calendar.monthrange(year, month)[1] + 1)
     ]
     quote = MOTIVATIONAL_QUOTES[plan_date.day % len(MOTIVATIONAL_QUOTES)]
+    projects = get(
+    "projects",
+    params={
+        "user_id": f"eq.{user_id}",
+        "is_archived": "eq.false",
+        "order": "created_at.asc",
+    },
+)
+
     return render_template_string(
         TODO_TEMPLATE,
         todo=todo,
@@ -218,6 +227,7 @@ def todo():
         TASK_CATEGORIES=TASK_CATEGORIES,
         STATIC_TRAVEL_SUBGROUPS=STATIC_TRAVEL_SUBGROUPS,
         toast = session.pop("toast", None),
+        projects=projects,
 
     )
 
