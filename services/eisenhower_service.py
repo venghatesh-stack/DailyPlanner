@@ -104,7 +104,7 @@ def load_todo(plan_date):
 
     if task_ids:
         subtask_rows = get(
-            "subtasks",
+            "project_subtasks",
             params={
                 "task_id": f"in.({','.join(map(str, task_ids))})",
                 "select": "id,task_id,title,is_done",
