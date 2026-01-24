@@ -505,10 +505,8 @@ def enable_travel_mode(plan_date):
 
     return len(payload)
 def autosave_task(plan_date, task_id, quadrant, text=None, is_done=False, project_id=None):
-    text = (text or "").strip()
-
     # -------------------------
-    # NEW TASK → INSERT
+    # NEW TASK → INSERT (Eisenhower direct entry)
     # -------------------------
     if task_id.startswith("new_"):
         if not text:
@@ -519,7 +517,7 @@ def autosave_task(plan_date, task_id, quadrant, text=None, is_done=False, projec
             [{
                 "plan_date": plan_date,
                 "quadrant": quadrant,
-                "task_text": text,
+                "task_text": text.strip(),
                 "is_done": is_done,
                 "is_deleted": False,
                 "position": 999,
@@ -528,34 +526,23 @@ def autosave_task(plan_date, task_id, quadrant, text=None, is_done=False, projec
             prefer="return=representation"
         ) or []
 
-        if not rows or "id" not in rows[0]:
+        if not rows:
             logger.error("Autosave insert failed for task: %s", task_id)
             return {"id": task_id}
 
         return {"id": str(rows[0]["id"])}
 
     # -------------------------
-    # EXISTING TASK → UPDATE
+    # EXISTING TASK → DONE / UNDONE ONLY
     # -------------------------
-    update_payload = {}
+    update(
+        "todo_matrix",
+        params={"id": f"eq.{task_id}"},
+        json={"is_done": is_done},
+    )
 
-    if text is not None:
-        update_payload["task_text"] = text
-
-    update_payload["is_done"] = is_done
-
-    if project_id is not None:
-        update_payload["project_id"] = project_id
-
-    if update_payload:
-        update(
-            "todo_matrix",
-            params={"id": f"eq.{task_id}"},
-            json=update_payload,
-        )
-
-   # -------------------------
-    # 🔗 PROJECT SYNC (NON-RECURRING ONLY)
+    # -------------------------
+    # 🔗 PROJECT SYNC (SAFE & ONE-WAY)
     # -------------------------
     if is_done:
         rows = get(
@@ -572,27 +559,12 @@ def autosave_task(plan_date, task_id, quadrant, text=None, is_done=False, projec
         source_id = rows[0].get("source_task_id")
         recurring_instance_id = rows[0].get("recurring_instance_id")
 
-        # ✅ Only sync for non-recurring Eisenhower instances
+        # ✅ Only non-recurring instances close the project task
         if source_id and not recurring_instance_id:
-            project_rows = get(
+            update(
                 "project_tasks",
-                params={
-                    "id": f"eq.{source_id}",
-                    "select": "id, recurrence_type, status",
-                },
+                params={"id": f"eq.{source_id}"},
+                json={"status": "done"},
             )
 
-            if project_rows:
-                project = project_rows[0]
-
-                # ✅ Auto-mark done ONLY for non-recurring project tasks
-                if project.get("recurrence_type") in (None, "none"):
-                    update(
-                        "project_tasks",
-                        params={"id": f"eq.{source_id}"},
-                        json={"status": "done"},  # lowercase
-                    )
-
-
     return {"id": task_id}
-
