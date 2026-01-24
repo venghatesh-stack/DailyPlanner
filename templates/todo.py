@@ -384,6 +384,32 @@ select {
   color: #374151;
 }
 
+.subtasks {
+  margin-left: 34px;
+  margin-top: 6px;
+  padding-left: 10px;
+  border-left: 2px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.subtask-row {
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.add-subtask {
+  margin-top: 4px;
+  font-size: 13px;
+  background: none;
+  border: none;
+  color: #2563eb;
+  cursor: pointer;
+  padding: 2px 0;
+}
 
 
 </style>
@@ -626,7 +652,7 @@ select {
                       <input type="hidden"
                       name="{{ q }}_deleted[{{ t.id }}]"
                       value="0">
-
+                    
                       <div class="task-main">
                         <span class="task-index">{{ loop.index }}.</span>
 
@@ -678,7 +704,7 @@ select {
                             </option>
                           {% endfor %}
                         </select>
-
+                     
                         {% if t.recurring %}
                           <span title="Repeats {{ t.recurrence }}" style="font-size:13px;color:#6366f1;">
                             🔁 {{ t.recurrence or "Recurring" }}
@@ -693,7 +719,24 @@ select {
                           </select>
                         {% endif %}
                       </div>
+                       {% if t.project_id %}
+                        <div class="subtasks">
+                          {% for s in t.subtasks %}
+                            <label class="subtask-row">
+                              <input type="checkbox"
+                                    {% if s.is_done %}checked{% endif %}
+                                    onchange="toggleSubtask('{{ s.id }}', this.checked)">
+                              {{ s.title }}
+                            </label>
+                          {% endfor %}
 
+                          <button type="button"
+                                  class="add-subtask"
+                                  onclick="addSubtask('{{ t.id }}')">
+                            ＋ Subtask
+                          </button>
+                        </div>
+                      {% endif %}  
                       <div class="task-meta">
                         <input type="date" name="{{ q }}_date[]" value="{{ t.task_date or '' }}">
                         <input type="time" name="{{ q }}_time[]" value="{{ t.task_time or '' }}">

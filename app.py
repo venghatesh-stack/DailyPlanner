@@ -546,13 +546,14 @@ def untimed_slot_preview():
 def todo_autosave():
     data = request.get_json(force=True)
     logger.info("AUTOSAVE DATA: %s", data)
-
+    
     result = autosave_task(
         plan_date=data["plan_date"],
         task_id=data["id"],
         quadrant=data["quadrant"],
         text=data["task_text"],
         is_done=data.get("is_done", False),
+        project_id=data.get("project_id"),  # 👈 NEW (optional)
     )
 
     # 🔑 ALWAYS JSON
@@ -596,6 +597,32 @@ def update_slot():
             json={"plan": text},
         )
 
+    return ("", 204)
+@app.route("/subtask/add", methods=["POST"])
+@login_required
+def add_subtask():
+    data = request.get_json()
+
+    post(
+        "project_subtasks",
+        {
+            "project_id": data["project_id"],
+            "parent_task_id": data["task_id"],
+            "title": data["title"],
+        },
+    )
+    return ("", 204)
+
+
+@app.route("/subtask/toggle", methods=["POST"])
+@login_required
+def toggle_subtask():
+    data = request.get_json()
+    update(
+        "project_subtasks",
+        params={"id": f"eq.{data['id']}"},
+        json={"is_done": data["done"]},
+    )
     return ("", 204)
 
 

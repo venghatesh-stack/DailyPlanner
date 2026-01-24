@@ -452,13 +452,17 @@ def enable_travel_mode(plan_date):
 
     return len(payload)
 
-def autosave_task(plan_date, task_id, quadrant, text, is_done):
+def autosave_task(plan_date, task_id, quadrant, text=None, is_done=False, project_id=None):
     text = (text or "").strip()
-    if not text:
-        return {"id": task_id}
 
-    # NEW TASK → INSERT ONCE
+    # -------------------------
+    # NEW TASK → INSERT
+    # -------------------------
     if task_id.startswith("new_"):
+        # Do NOT insert empty tasks
+        if not text:
+            return {"id": task_id}
+
         rows = post(
             "todo_matrix?select=id",
             [{
@@ -468,6 +472,7 @@ def autosave_task(plan_date, task_id, quadrant, text, is_done):
                 "is_done": is_done,
                 "is_deleted": False,
                 "position": 999,
+                "project_id": project_id,   # 👈 ADDED
             }],
             prefer="return=representation"
         ) or []
@@ -478,14 +483,24 @@ def autosave_task(plan_date, task_id, quadrant, text, is_done):
 
         return {"id": str(rows[0]["id"])}
 
+    # -------------------------
     # EXISTING TASK → UPDATE
-    update(
-        "todo_matrix",
-        params={"id": f"eq.{task_id}"},
-        json={
-            "task_text": text,
-            "is_done": is_done,
-        },
-    )
+    # -------------------------
+    update_payload = {}
+
+    if text is not None:
+        update_payload["task_text"] = text
+
+    update_payload["is_done"] = is_done
+
+    if project_id is not None:
+        update_payload["project_id"] = project_id   # 👈 ADDED
+
+    if update_payload:
+        update(
+            "todo_matrix",
+            params={"id": f"eq.{task_id}"},
+            json=update_payload,
+        )
 
     return {"id": task_id}
