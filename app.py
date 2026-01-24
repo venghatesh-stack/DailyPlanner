@@ -568,6 +568,14 @@ def todo_autosave():
         is_done=data.get("is_done", False),
         project_id=data.get("project_id"),
     )
+    # 🔒 GUARANTEE project save
+    if "project_id" in data:
+        update(
+        "todo_matrix",
+        params={"id": f"eq.{task_id}"},
+        json={"project_id": data["project_id"]},
+    )
+    logger.info("AUTOSAVE project_id=%s plan_date=%s", data.get("project_id"), data.get("plan_date"))
 
     return jsonify(result)
 
