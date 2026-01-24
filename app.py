@@ -228,6 +228,7 @@ def todo():
         STATIC_TRAVEL_SUBGROUPS=STATIC_TRAVEL_SUBGROUPS,
         toast = session.pop("toast", None),
         projects=projects,
+        project_progress=project_progress,
 
     )
 
