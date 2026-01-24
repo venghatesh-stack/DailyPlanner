@@ -68,16 +68,17 @@
     }
 
     .task {
-      background: #fff;
-      padding: 12px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.05);
-      margin-bottom: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-    }
+  background: #fff;
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
+  margin-bottom: 10px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 
     .task-text {
       font-size: 15px;
@@ -163,6 +164,59 @@ button[disabled] {
   cursor: not-allowed;
 }
 
+
+.task-main {
+  font-size: 15px;
+}
+
+.task-actions {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+@media (max-width: 640px) {
+
+  .container {
+    padding: 0 8px;
+  }
+
+  .task-actions {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .task-actions select,
+  .task-actions input,
+  .task-actions button {
+    font-size: 13px;
+    width: 100%;
+  }
+
+  .send-btn {
+    grid-column: span 2;
+  }
+}
+.send-btn {
+  background: #2563eb;
+  color: white;
+  border: none;
+}
+
+.task[data-status="done"] .send-btn {
+  display: none;
+}
+.task[data-status="done"] .task-actions select,
+.task[data-status="done"] .task-actions input {
+  display: none;
+}
+@media (max-width: 640px) {
+  .task-actions {
+    row-gap: 10px;
+  }
+}
+
+
 </style>
 
 
@@ -211,64 +265,47 @@ button[disabled] {
    <!-- Task List -->
     {% if tasks %}
       {% for task in tasks %}
-        <div class="task" id="task-{{ task.id }}" data-status="{{ task.status }}">
+       <div class="task" id="task-{{ task.id }}" data-status="{{ task.status }}">
 
-
-          <!-- Task text + badge -->
+        <div class="task-main">
           <div class="task-text" id="text-{{ task.id }}">
             {{ task.task_text }}
-
             {% if task.sent_to_eisenhower %}
               <span class="badge">🧠 In Eisenhower</span>
             {% endif %}
           </div>
+        </div>
 
-          <!-- Quadrant -->
-          <select
-            id="q-{{ task.id }}"
-            {% if task.sent_to_eisenhower %}disabled{% endif %}
-          >
+        <div class="task-actions">
+          <select id="q-{{ task.id }}"
+            {% if task.sent_to_eisenhower %}disabled{% endif %}>
             <option value="do_now">⚡ Do now</option>
             <option value="schedule">🗓️ Schedule</option>
             <option value="delegate">👥 Delegate</option>
             <option value="eliminate">🗑️ Eliminate</option>
-
           </select>
 
-          <!-- Date -->
-          <input
-            type="date"
-            id="d-{{ task.id }}"
-            value="{{ today }}"
-            {% if task.sent_to_eisenhower %}disabled{% endif %}
-          />
-         <select
-            class="status-select"
-            onchange="updateStatus('{{ task.id }}', this.value)"
-          >
-            <option value="open" {% if task.status == 'open' %}selected{% endif %}>open</option>
-            <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>inprogress</option>
-            <option value="on_hold" {% if task.status == 'on_hold' %}selected{% endif %}>onhold</option>
-            <option value="dropped" {% if task.status == 'dropped' %}selected{% endif %}>dropped</option>
-            <option value="done" {% if task.status == 'done' %}selected{% endif %}>done</option>
-          </select>
+          <input type="date" id="d-{{ task.id }}" value="{{ today }}" />
+
+         <select class="status-select"
+          onchange="updateStatus('{{ task.id }}', this.value)">
+          <option value="open" {% if task.status == 'open' %}selected{% endif %}>Open</option>
+          <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+          <option value="on_hold" {% if task.status == 'on_hold' %}selected{% endif %}>On Hold</option>
+          <option value="dropped" {% if task.status == 'dropped' %}selected{% endif %}>Dropped</option>
+          <option value="done" {% if task.status == 'done' %}selected{% endif %}>Done</option>
+        </select>
 
 
-          <!-- Send button -->
-          <button
-            id="send-{{ task.id }}"
-            class="send-btn"
-            {% if task.sent_to_eisenhower %}disabled{% endif %}
-            onclick="sendTask('{{ task.id }}')"
-          >
-            {% if task.sent_to_eisenhower %}
-              Sent
-            {% else %}
-              Send →
-            {% endif %}
+          <button class="send-btn"
+                  id="send-{{ task.id }}"
+                  onclick="sendTask('{{ task.id }}')">
+            Send →
           </button>
-
         </div>
+
+      </div>
+
       {% endfor %}
     {% else %}
       <div class="empty">
