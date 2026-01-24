@@ -25,7 +25,7 @@ def load_todo(plan_date):
                 "select": (
                     "id,quadrant,task_text,is_done,position,"
                     "task_date,task_time,recurring_id,"
-                    "category,subcategory"
+                    "category,subcategory,project_id"
                 ),
             },
         )
@@ -52,17 +52,20 @@ def load_todo(plan_date):
 
     for r in rows:
         data[r["quadrant"]].append(
-            {
-                "id": r["id"],
-                "text": r["task_text"],
-                "done": bool(r.get("is_done")),
-                "task_date": r.get("task_date"),
-                "task_time": r.get("task_time"),
-                "recurring": bool(r.get("recurring_id")),
-                "recurrence": recurring_map.get(r.get("recurring_id")),
-                "category": r.get("category") or "General",
-                "subcategory": r.get("subcategory") or "General",
-            }
+        {
+            "id": r["id"],
+            "text": r["task_text"],
+            "done": bool(r.get("is_done")),
+            "task_date": r.get("task_date"),
+            "task_time": r.get("task_time"),
+            "recurring": bool(r.get("recurring_id")),
+            "recurrence": recurring_map.get(r.get("recurring_id")),
+            "category": r.get("category") or "General",
+            "subcategory": r.get("subcategory") or "General",
+            "project_id": r.get("project_id"),   # 👈 ADD THIS
+            "subtasks": [],                       # 👈 TEMP (important)
+        }
+
         )
 
     # ----------------------------
@@ -314,7 +317,7 @@ def copy_open_tasks_from_previous_day(plan_date):
             params={
                 "plan_date": f"eq.{prev_date}",
                 "is_deleted": "eq.false",
-                "select": "quadrant,task_text,is_done,task_date,task_time,category,subcategory",
+                "select": "quadrant,task_text,is_done,task_date,task_time,category,subcategory,project_id",
             },
         )
         or []
