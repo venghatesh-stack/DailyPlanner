@@ -165,7 +165,7 @@ summary::-webkit-details-marker { display:none; }
 
             <input type="checkbox"
                    {% if t.done %}checked{% endif %}
-                   onchange="toggleDone('{{ t.id }}', this.checked)">
+                   onchange="toggleDone('{{ t.id }}', this)">
 
             <div class="task-text">
               {{ t.text }}
@@ -189,18 +189,12 @@ summary::-webkit-details-marker { display:none; }
 </div>
 
 <script>
-function toggleDone(checkbox) {
+function toggleDone(taskId, checkbox) {
   const task = checkbox.closest(".task");
   if (!task) return;
 
   task.classList.toggle("done", checkbox.checked);
 
-  const idInput = task.querySelector('input[name$="_id[]"]');
-  if (!idInput) return;
-
-  const taskId = idInput.value;
-
-  // 🔹 Persist done state immediately
   fetch("/todo/toggle-done", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -210,9 +204,9 @@ function toggleDone(checkbox) {
     })
   }).catch(err => {
     console.error("Toggle done failed", err);
-    showToast("Save failed", 3000);
   });
 }
+
 
 </script>
 
