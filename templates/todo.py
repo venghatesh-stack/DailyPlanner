@@ -1168,7 +1168,6 @@ function autosaveProject(select) {
     })
   });
 }
-</script>
 function toggleSubtask(id, checked) {
   fetch("/subtask/toggle", {
     method: "POST",
@@ -1179,6 +1178,8 @@ function toggleSubtask(id, checked) {
     })
   });
 }
+</script>
+
 
 
 </body>
