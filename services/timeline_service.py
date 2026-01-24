@@ -7,14 +7,15 @@ def load_timeline_tasks(user_id):
     today = date.today().isoformat()
 
     rows = get(
-        "project_tasks",
-        params={
-            "user_id": f"eq.{user_id}",
-            "is_deleted": "eq.false",
-            "select": "id,task_text,status,due_date,project_id",
-            "order": "due_date.asc,created_at.asc",
-        },
+    "project_tasks",
+    params={
+        "user_id": f"eq.{user_id}",
+        "is_deleted": "eq.false",
+        "select": "id,task_text,status,due_date,project_id,created_at",
+        "order": "due_date.asc,created_at.asc",
+    },
     ) or []
+
 
     today_tasks = []
     future_tasks = []
