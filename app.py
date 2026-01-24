@@ -541,7 +541,6 @@ def untimed_slot_preview():
 
     return preview, 200
 
-
 @app.route("/todo/autosave", methods=["POST"])
 @login_required
 def todo_autosave():
@@ -550,32 +549,32 @@ def todo_autosave():
 
     task_id = data["id"]
 
-    # 🔹 Project-only update (NO plan_date needed)
-    if "project_id" in data and "plan_date" not in data:
-        update(
-            "todo_matrix",
-            params={"id": f"eq.{task_id}"},
-            json={"project_id": data["project_id"]},
-        )
+    # 🔹 METADATA-ONLY SAVE (project change, etc.)
+    if "quadrant" not in data:
+        if "project_id" in data:
+            update(
+                "todo_matrix",
+                params={"id": f"eq.{task_id}"},
+                json={"project_id": data["project_id"]},
+            )
         return jsonify({"id": task_id})
 
-    # 🔹 Normal task autosave
+    # 🔹 FULL TASK AUTOSAVE
     result = autosave_task(
         plan_date=data["plan_date"],
         task_id=task_id,
         quadrant=data["quadrant"],
         text=data.get("task_text"),
         is_done=data.get("is_done", False),
-        project_id=data.get("project_id"),
     )
-    # 🔒 GUARANTEE project save
+
+    # 🔒 Never lose project_id
     if "project_id" in data:
         update(
-        "todo_matrix",
-        params={"id": f"eq.{task_id}"},
-        json={"project_id": data["project_id"]},
-    )
-    logger.info("AUTOSAVE project_id=%s plan_date=%s", data.get("project_id"), data.get("plan_date"))
+            "todo_matrix",
+            params={"id": f"eq.{task_id}"},
+            json={"project_id": data["project_id"]},
+        )
 
     return jsonify(result)
 
