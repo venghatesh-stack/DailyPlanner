@@ -2,7 +2,7 @@ import logging
 
 from supabase_client import get, post, update  
 
-from datetime import timedelta ,datetime
+from datetime import timedelta ,datetime,date
 from config import TRAVEL_MODE_TASKS
 from flask import session
 from collections import defaultdict
@@ -50,23 +50,47 @@ def load_todo(plan_date):
     # ----------------------------
     data = {"do": [], "schedule": [], "delegate": [], "eliminate": []}
 
+    
     for r in rows:
-        data[r["quadrant"]].append(
-        {
-            "id": r["id"],
-            "text": r["task_text"],
-            "done": bool(r.get("is_done")),
-            "task_date": r.get("task_date"),
-            "task_time": r.get("task_time"),
-            "recurring": bool(r.get("recurring_id")),
-            "recurrence": recurring_map.get(r.get("recurring_id")),
-            "category": r.get("category") or "General",
-            "subcategory": r.get("subcategory") or "General",
-            "project_id": r.get("project_id"),   # 👈 ADD THIS
-            "subtasks": [],                       # 👈 TEMP (important)
-        }
 
+        # --------------------------------------------------
+        # 🔁 AUTO MOVE: Schedule → Do when date reaches today
+        # --------------------------------------------------
+        effective_quadrant = r["quadrant"]
+
+        task_date = r.get("task_date")
+        is_done = bool(r.get("is_done"))
+
+        if not is_done and task_date:
+            try:
+                task_date_val = (
+                    task_date if isinstance(task_date, date)
+                    else date.fromisoformat(task_date)
+                )
+                if task_date_val > plan_date:
+                    effective_quadrant = "schedule"
+                else:
+                    effective_quadrant = "do"
+            except Exception:
+                # fallback safely to stored quadrant
+                pass
+
+        data[effective_quadrant].append(
+            {
+                "id": r["id"],
+                "text": r["task_text"],
+                "done": is_done,
+                "task_date": task_date,
+                "task_time": r.get("task_time"),
+                "recurring": bool(r.get("recurring_id")),
+                "recurrence": recurring_map.get(r.get("recurring_id")),
+                "category": r.get("category") or "General",
+                "subcategory": r.get("subcategory") or "General",
+                "project_id": r.get("project_id"),
+                "subtasks": [],
+            }
         )
+
 
     # ----------------------------
     # Sort within each quadrant
