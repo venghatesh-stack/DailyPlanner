@@ -889,7 +889,7 @@ def task_timeline():
 
     today_tasks, future_tasks = load_timeline_tasks(user_id)
 
-    return render_template_string(
+    return render_template(
         "task_timeline.html",
         today_tasks=today_tasks,
         future_tasks=future_tasks,
