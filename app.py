@@ -733,7 +733,20 @@ def send_task_to_eisenhower():
     data = request.get_json()
 
     task_id = data["task_id"]
-    quadrant = QUADRANT_MAP[data["quadrant"].upper()]
+    raw = data["quadrant"].strip().lower()
+
+    QUADRANT_ALIASES = {
+    "do": "DO",
+    "decide": "DECIDE",
+    "delegate": "DELEGATE",
+    "delete": "DELETE",
+    }
+
+    if raw not in QUADRANT_ALIASES:
+        return jsonify({"error": "Invalid quadrant"}), 400
+
+    quadrant = QUADRANT_MAP[QUADRANT_ALIASES[raw]]
+
     plan_date = date.fromisoformat(data["plan_date"])
 
     task_rows = get("project_tasks", params={"id": f"eq.{task_id}"})
