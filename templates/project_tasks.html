@@ -267,11 +267,13 @@ function updateDueTime(taskId, time) {
 </script>
 <script>
 function updatePlanning(taskId) {
+  console.log("updatePlanning fired for", taskId);
   const taskEl = document.getElementById(`task-${taskId}`);
-
+  console.log("taskEl", taskEl);
   const startDate = taskEl.querySelector(".start-date").value;
   const duration  = taskEl.querySelector(".duration-days").value;
-
+  console.log("startInput", startInput);
+  console.log("durationInput", durationInput);
   fetch("/projects/tasks/update-planning", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
