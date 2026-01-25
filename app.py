@@ -998,14 +998,13 @@ def eliminate_task():
     task_id = data["id"]
     reason = data.get("reason")
 
-    # 🔧 UPDATE existing row (not insert, not upsert)
-    post(
+    update(
         "project_tasks",
-        {
+        params={"id": f"eq.{task_id}"},
+        json={
             "is_eliminated": True,
             "elimination_reason": reason,
-        },
-        params={"id": f"eq.{task_id}"}
+        }
     )
 
     return "", 204
