@@ -868,7 +868,7 @@ def todo_set_project():
 @login_required
 def project_tasks(project_id):
     user_id = session["user_id"]
-    today = date.today().isoformat()
+
     rows = get(
         "projects",
         params={"id": f"eq.{project_id}", "user_id": f"eq.{user_id}"},
@@ -878,7 +878,7 @@ def project_tasks(project_id):
 
     project = rows[0]
 
-    tasks = get(
+    raw_tasks = get(
         "project_tasks",
         params={
             "project_id": f"eq.{project_id}",
@@ -886,12 +886,29 @@ def project_tasks(project_id):
         },
     )
 
+    # ✅ NORMALIZE FOR SHARED UI
+    tasks = [
+        {
+            "id": t["id"],
+            "text": t["task_text"],                 # 🔑 FIX
+            "status": t.get("status"),
+            "done": t.get("status") == "done",
+            "due_date": t.get("due_date"),
+            "due_time": t.get("due_time"),
+            "delegated_to": t.get("delegated_to"),
+            "elimination_reason": t.get("elimination_reason"),
+            "project_name": project["name"],
+            "urgency": None,
+        }
+        for t in raw_tasks
+    ]
+
     return render_template(
         "project_tasks.html",
         project=project,
         tasks=tasks,
-        today=today
     )
+
 
 @app.route("/projects/<project_id>/tasks/add", methods=["POST"])
 @login_required
