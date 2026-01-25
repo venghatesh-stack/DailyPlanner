@@ -185,19 +185,28 @@ summary::-webkit-details-marker { display:none; }
 
             <div class="task-text">
               {{ t.text }}
-              {% if t.project_id %}
-                <span class="badge">📁 Project</span>
-              {% endif %}
-              {% if t.delegated_to %}
-                <span class="badge">👤 {{ t.delegated_to }}</span>
-              {% endif %}
-              {% if t.elimination_reason %}
-                <small class="muted">Reason: {{ t.elimination_reason }}</small>
-              {% endif %}
+               {% if t.due_date %}
+                  <div style="font-size:12px; color:#6b7280; margin-top:2px;">
+                    📅 {{ t.due_date }}
+                    {% if t.due_time %}
+                      ⏰ {{ t.due_time }}
+                    {% endif %}
+                  </div>
+                {% endif %}
+                {% if t.project_name %}
+                  <span class="badge">📁 {{ t.project_name }}</span>
+                {% endif %}
 
-              {% if t.recurring %}
-                <span class="badge">🔁 {{ t.recurrence or "Recurring" }}</span>
-              {% endif %}
+                {% if t.delegated_to %}
+                  <span class="badge">👤 {{ t.delegated_to }}</span>
+                {% endif %}
+                {% if t.elimination_reason %}
+                  <small class="muted">Reason: {{ t.elimination_reason }}</small>
+                {% endif %}
+
+                {% if t.recurring %}
+                  <span class="badge">🔁 {{ t.recurrence or "Recurring" }}</span>
+                {% endif %}
             </div>
             
           </div>

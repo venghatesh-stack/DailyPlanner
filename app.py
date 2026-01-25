@@ -177,8 +177,8 @@ def empty_quadrant():
     return defaultdict(lambda: defaultdict(list))
 
 
-def build_eisenhower_view(project_tasks, plan_date):
-    today = plan_date
+def build_eisenhower_view(project_tasks, plan_date,project_map):
+
 
     todo = {
         "do": empty_quadrant(),
@@ -186,7 +186,7 @@ def build_eisenhower_view(project_tasks, plan_date):
         "delegate": empty_quadrant(),
         "eliminate": empty_quadrant(),
     }
-
+  
     for t in project_tasks:
         
         if not t.get("due_date"):
@@ -198,17 +198,27 @@ def build_eisenhower_view(project_tasks, plan_date):
             urgency = compute_urgency(
                 t.get("due_date"),
                 t.get("due_time")
-            )
-    
+            ) if t.get("due_date") == plan_date else None
+
+        print(
+            t["task_text"],
+            "due:", t.get("due_date"),
+            t.get("due_time"),
+            "urgency:", urgency
+        )
+     
         task = {
             "id": t["id"],
             "text": t["task_text"],
             "done": t.get("status") == "done",
             "project_id": t.get("project_id"),
+            "project_name": project_map.get(t.get("project_id")),
             "recurring": bool(t.get("recurrence")),
             "recurrence": t.get("recurrence"),
             "delegated_to": t.get("delegated_to"),
             "elimination_reason": t.get("elimination_reason"),
+            "due_date": t.get("due_date"),
+            "due_time": t.get("due_time"),
             "urgency":urgency,
         }
           # 🗑 Eliminate
@@ -286,9 +296,12 @@ def todo():
         if t["due_date"].year == year
         and t["due_date"].month == month
     ]
-
+    project_map = {
+        p["id"]: p["name"]
+        for p in projects
+    }
     # 2. Build Eisenhower (urgency is computed there)
-    todo = build_eisenhower_view(tasks, plan_date)
+    todo = build_eisenhower_view(tasks, plan_date,project_map)
 
     # 3. Render
     days = calendar.monthrange(year, month)[1]
