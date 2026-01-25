@@ -198,26 +198,28 @@ def build_eisenhower_view(project_tasks, plan_date,project_map):
             )
 
         print(
-            t["task_text"],
+            t["text"],
             "due:", t.get("due_date"),
             t.get("due_time"),
             "urgency:", urgency
         )
-     
+
         task = {
             "id": t["id"],
-            "text": t["task_text"],
-            "done": t.get("status") == "done",
+            "text": t["text"],           # ✅ FIX
+            "status": t["status"],       # ✅ keep status
+            "done": t["done"],           # ✅ already computed
             "project_id": t.get("project_id"),
-            "project_name": project_map.get(t.get("project_id")),
-            "recurring": bool(t.get("recurrence")),
+            "project_name": t.get("project_name"),
+            "recurring": t.get("recurring"),
             "recurrence": t.get("recurrence"),
             "delegated_to": t.get("delegated_to"),
             "elimination_reason": t.get("elimination_reason"),
             "due_date": t.get("due_date"),
             "due_time": t.get("due_time"),
-            "urgency":urgency,
+            "urgency": urgency,
         }
+
           # 🗑 Eliminate
         if t.get("is_eliminated"):
             todo["eliminate"]["eliminated"]["tasks"].append(task)
@@ -294,6 +296,21 @@ def compute_urgency(due_date, due_time):
     return None
 
 
+def normalize_task(t, project_name=None):
+    return {
+        "id": t["id"],
+        "text": t.get("task_text") or t.get("text"),
+        "status": t.get("status"),
+        "done": t.get("status") == "done",
+        "due_date": t.get("due_date"),
+        "due_time": t.get("due_time"),
+        "delegated_to": t.get("delegated_to"),
+        "elimination_reason": t.get("elimination_reason"),
+        "project_id": t.get("project_id"),
+        "project_name": project_name,
+        "recurring": bool(t.get("recurrence")),
+        "recurrence": t.get("recurrence"),
+    }
 
 # ==========================================================
 # ROUTES – EISENHOWER MATRIX
@@ -311,9 +328,19 @@ def todo():
     plan_date = date(year, month, day)
 
     # 1. Fetch tasks
-    tasks = get("project_tasks")
+    projects = get("projects")
 
-    tasks = [t for t in tasks if t.get("due_date")]
+    project_map = {
+        p["id"]: p["name"]
+        for p in projects
+    }
+    raw_tasks = get("project_tasks")
+
+    tasks = [
+        normalize_task(t, project_name=project_map.get(t.get("project_id")))
+        for t in raw_tasks
+    ]
+
 
     for t in tasks:
         t["due_date"] = parse_date(t["due_date"])
@@ -323,12 +350,7 @@ def todo():
         if t["due_date"].year == year
         and t["due_date"].month == month
     ]
-    projects = get("projects")
-
-    project_map = {
-        p["id"]: p["name"]
-        for p in projects
-    }
+   
     # 2. Build Eisenhower (urgency is computed there)
     todo = build_eisenhower_view(tasks, plan_date,project_map)
     quadrant_counts = compute_quadrant_counts(todo)
