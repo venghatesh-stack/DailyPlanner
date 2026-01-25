@@ -22,19 +22,23 @@
   <div class="task-row task-meta">
 
   
-        <!-- START DATE -->
-        <label>Start</label>
-        <input type="date"
-            value="{{ task.start_date or '' }}"
-            onchange="updatePlanning('{{ task.id }}', this.value)">
+     <!-- START DATE -->
+    <label>Start</label>
+    <input type="date"
+        class="start-date"
+        value="{{ task.start_date or '' }}"
+        onchange="updatePlanning('{{ task.id }}')">
+
 
 
     <!-- DURATION -->
     <label>Duration</label>
-    <input type="number"
-           min="1"
-           value="{{ task.duration_days or 1 }}"
-           onchange="updatePlanning('{{ task.id }}', this.value)">
+     <input type="number"
+       class="duration-days"
+       min="1"
+       value="{{ task.duration_days or 1 }}"
+       onchange="updatePlanning('{{ task.id }}')">
+
     <span>days</span>
 
     <!-- DUE -->
