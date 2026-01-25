@@ -13,6 +13,15 @@
 
 <script>
   const tasks = {{ gantt_tasks | tojson }};
+  tasks = [
+    {
+      id: "test-1",
+      name: "Hardcoded Test Task",
+      start: "2026-01-26",
+      end: "2026-01-28",
+      progress: 0
+    }
+  ];
   const ganttTasks = Array.isArray(tasks) ? tasks : [];
 
   console.log("GANTT TASKS", ganttTasks);
