@@ -517,3 +517,69 @@ h2 {
 .task-details .icon-btn.danger:hover {
   color: #b91c1c;
 }
+/* =========================================================
+   MOBILE FIX — TASK CARDS
+========================================================= */
+
+@media (max-width: 640px) {
+
+  .task {
+    padding: 10px;
+  }
+
+  /* Summary row stacks cleanly */
+  .task-main {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .task-main input[type="date"] {
+    width: 100%;
+  }
+
+  .task-text {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  /* Expanded section becomes vertical */
+  .task-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding-left: 0;
+  }
+
+  .task-meta label {
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .task-meta input,
+  .task-meta select {
+    width: 100%;
+  }
+
+  .task-details {
+    padding-left: 0;
+  }
+
+  .task-details .meta input,
+  .task-details .meta textarea {
+    width: 100%;
+  }
+}
+/* Auto-growing text areas */
+textarea.auto-grow {
+  resize: none;
+  overflow: hidden;
+  min-height: 32px;
+  max-height: 120px;
+  font-size: 13px;
+  line-height: 1.4;
+  padding: 6px 8px;
+}
+input[type="number"] {
+  max-width: 100%;
+}

@@ -343,6 +343,14 @@ function updateActual(id, hours) {
   });
 }
 </script>
+<script>
+document.addEventListener("input", function (e) {
+  if (!e.target.classList.contains("auto-grow")) return;
+
+  e.target.style.height = "auto";
+  e.target.style.height = e.target.scrollHeight + "px";
+});
+</script>
 
 </body>
 </html>

@@ -32,8 +32,10 @@
       <label>Duration</label>
       <input type="number"
              class="duration-days"
-             min="1"
-             value="{{ task.duration_days or 1 }}"
+             min="0"
+             max="999"
+             Step="0.5"
+             value="{{ task.duration_days or 0 }}"
              oninput="updatePlanning('{{ task.id }}')">
       <span>days</span>
 
@@ -68,9 +70,14 @@
     <!-- Elimination -->
     <div class="meta">
       🗑 Elimination reason:
-      <input type="text"
-             value="{{ task.elimination_reason or '' }}"
-             onchange="updateElimination('{{ task.id }}', this.value)">
+      <textarea
+        rows="1"
+        maxlength="250"
+        class="auto-grow"
+        placeholder="Reason (optional)"
+        onchange="updateElimination('{{ task.id }}', this.value)"
+        >{{ task.elimination_reason or '' }}</textarea>
+
     </div>
 
     <!-- Time tracking -->
@@ -78,6 +85,7 @@
       ⏳ Planned hours:
       <input type="number"
              min="0"
+             max="999"
              step="0.5"
              value="{{ task.planned_hours or 0 }}"
              onchange="updatePlanned('{{ task.id }}', this.value)">
@@ -87,6 +95,7 @@
       ✅ Actual hours:
       <input type="number"
              min="0"
+             max="999"
              step="0.5"
              value="{{ task.actual_hours or 0 }}"
              onchange="updateActual('{{ task.id }}', this.value)">
