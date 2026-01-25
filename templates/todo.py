@@ -195,9 +195,15 @@ summary::-webkit-details-marker { display:none; }
       {% for t in tasks %}
         <div class="task
           {% if t.done %}done{% endif %}
-          {% if t.urgency == 'overdue' %}<span class="urgency-pill overdue">overdue{% endif %}
-          {% if t.urgency == 'soon' %}<span class="urgency-pill soon">soon{% endif %}
+          {% if t.urgency == 'overdue' %}overdue{% endif %}
+          {% if t.urgency == 'soon' %}soon{% endif %}
         " data-id="{{ t.id }}">
+          {% if t.urgency %}
+            <span class="urgency-pill {{ t.urgency }}">
+              {% if t.urgency == 'overdue' %}Overdue{% endif %}
+              {% if t.urgency == 'soon' %}Due soon{% endif %}
+            </span>
+          {% endif %}
 
           <div class="task-main">
             <span class="task-index">{{ loop.index }}.</span>
