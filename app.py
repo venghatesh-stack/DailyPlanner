@@ -911,12 +911,31 @@ def project_tasks(project_id):
 
 def compute_due_date(start_date, duration_days):
     return start_date + timedelta(days=duration_days)
+from datetime import date
+
+def _sort_key(task):
+    """
+    Normalizes start_date / due_date for safe sorting.
+    Handles:
+    - datetime.date
+    - ISO date strings
+    - None
+    """
+    d = task.get("start_date") or task.get("due_date")
+
+    if not d:
+        return date.max
+
+    if isinstance(d, str):
+        return date.fromisoformat(d)
+
+    return d
 
 @app.route("/projects/<project_id>/tasks/add", methods=["POST"])
 @login_required
 def add_project_task(project_id):
     text = request.form["task_text"]
-    
+
     post(
         "project_tasks",
         {
@@ -1261,9 +1280,7 @@ def group_tasks_smart(tasks):
 
     # Optional: sort inside each group
     for key in groups:
-        groups[key].sort(
-            key=lambda t: t.get("start_date") or t.get("due_date") or date.max
-        )
+        groups[key].sort(key=_sort_key)
 
     return groups
 
