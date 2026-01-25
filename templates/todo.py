@@ -128,6 +128,49 @@ summary::-webkit-details-marker { display:none; }
 .task.done .urgency-pill {
   display: none;
 }
+.task-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.task-title {
+  flex: 1;
+  font-size: 16px;
+}
+
+.task-details {
+  display: none;
+  margin-top: 6px;
+  padding-left: 28px; /* aligns under text */
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.task.expanded .task-details {
+  display: block;
+}
+
+.meta {
+  margin-top: 2px;
+}
+
+/* Overdue stays strong but not loud */
+.urgency-pill.overdue {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.urgency-pill.soon {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Completed tasks */
+.task.done .urgency-pill {
+  display: none;
+}
 
 </style>
 </head>
@@ -205,51 +248,53 @@ summary::-webkit-details-marker { display:none; }
   {% for category, subs in todo[q].items() %}
     {% for tasks in subs.values() %}
       {% for t in tasks %}
-         <div class="task
+        <div class="task
             {% if t.done %}done{% endif %}
             {% if t.urgency %}urgency-{{ t.urgency }}{% endif %}
-          " data-id="{{ t.id }}">
+        "
+        data-id="{{ t.id }}">
 
-          <div class="task-main">
+          <!-- HEADER (always visible) -->
+          <div class="task-header" onclick="toggleTask(this)">
+            <input type="checkbox"
+                  {% if t.done %}checked{% endif %}
+                  onclick="event.stopPropagation()"
+                  onchange="toggleDone(this)">
+
+            <div class="task-title">
+              {{ t.text }}
+            </div>
+
             {% if t.urgency %}
               <span class="urgency-pill {{ t.urgency }}">
                 {{ "Overdue" if t.urgency == "overdue" else "Due soon" }}
               </span>
             {% endif %}
-            <span class="task-index">{{ loop.index }}.</span>
-
-            <input type="checkbox"
-                   {% if t.done %}checked{% endif %}
-                   onchange="toggleDone(this)">
-
-            <div class="task-text">
-              {{ t.text }}
-               {% if t.due_date %}
-                  <div style="font-size:12px; color:#6b7280; margin-top:2px;">
-                    📅 {{ t.due_date }}
-                    {% if t.due_time %}
-                      ⏰ {{ t.due_time }}
-                    {% endif %}
-                  </div>
-                {% endif %}
-                {% if t.project_name %}
-                  <span class="badge">📁 {{ t.project_name }}</span>
-                {% endif %}
-
-                {% if t.delegated_to %}
-                  <span class="badge">👤 {{ t.delegated_to }}</span>
-                {% endif %}
-                {% if t.elimination_reason %}
-                  <small class="muted">Reason: {{ t.elimination_reason }}</small>
-                {% endif %}
-
-                {% if t.recurring %}
-                  <span class="badge">🔁 {{ t.recurrence or "Recurring" }}</span>
-                {% endif %}
-            </div>
-            
           </div>
+
+          <!-- DETAILS (hidden by default) -->
+          <div class="task-details">
+            {% if t.due_date %}
+              <div class="meta">📅 {{ t.due_date }}
+                {% if t.due_time %} ⏰ {{ t.due_time }}{% endif %}
+              </div>
+            {% endif %}
+
+            {% if t.project_name %}
+              <div class="meta">📁 {{ t.project_name }}</div>
+            {% endif %}
+
+            {% if t.delegated_to %}
+              <div class="meta">👤 {{ t.delegated_to }}</div>
+            {% endif %}
+
+            {% if t.elimination_reason %}
+              <div class="meta muted">Reason: {{ t.elimination_reason }}</div>
+            {% endif %}
+          </div>
+
         </div>
+
       {% endfor %}
     {% endfor %}
   {% endfor %}
@@ -298,6 +343,14 @@ function toggleDone(checkbox) {
 
 
 
+</script>
+<script>
+function toggleTask(el) {
+  const card = el.closest(".task");
+  if (!card) return;
+
+  card.classList.toggle("expanded");
+}
 </script>
 
 </body>
