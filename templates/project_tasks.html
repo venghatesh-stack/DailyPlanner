@@ -274,6 +274,14 @@ button[disabled] {
               <span class="badge">🧠 In Eisenhower</span>
             {% endif %}
           </div>
+          <button
+            onclick="eliminateTask('{{ task.id }}')"
+            title="Eliminate task"
+            style="margin-left:8px; cursor:pointer;"
+          >
+            🗑
+          </button>
+
         </div>
 
         <div class="task-actions">
@@ -518,7 +526,25 @@ function updateDelegation(taskId, value) {
     })
   });
 }
-</script>
 
+
+</script>
+<script>
+function eliminateTask(taskId) {
+  const reason = prompt("Why are you eliminating this task? (optional)");
+
+  fetch("/projects/tasks/eliminate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: taskId,
+      reason: reason
+    })
+  }).then(() => {
+    // Reload page to reflect removal
+    location.reload();
+  });
+}
+</script>
 </body>
 </html>

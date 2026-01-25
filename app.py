@@ -990,6 +990,22 @@ def update_delegation():
     )
 
     return "", 204
+@app.route("/projects/tasks/eliminate", methods=["POST"])
+@login_required
+def eliminate_task():
+    data = request.get_json()
+
+    post(
+        "project_tasks",
+        {
+            "id": data["id"],
+            "is_eliminated": True,
+            "elimination_reason": data.get("reason")
+        },
+        upsert=True
+    )
+
+    return "", 204
 
 # ==========================================================
 # ENTRY POINT
