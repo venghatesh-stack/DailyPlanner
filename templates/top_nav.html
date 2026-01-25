@@ -1,0 +1,100 @@
+<!-- ======================================================
+     GLOBAL TOP NAV / CONTEXT HEADER
+     ====================================================== -->
+
+<div class="top-context">
+
+  <!-- Date + Time -->
+  <div class="date-row">
+    <span class="date">{{ today_str }}</span>
+    <span class="time" id="live-time"></span>
+  </div>
+
+  <!-- Context -->
+  <div class="context-row">
+    <a href="/projects" class="context-link">
+      📁 Projects
+    </a>
+  </div>
+
+  <!-- Icon Navigation -->
+  <div class="nav-icons">
+    <a href="/" title="Daily Planner">🏠</a>
+    <a href="/todo" title="Eisenhower Matrix">🎯</a>
+    <a href="/projects" title="Projects">📁</a>
+    <a href="/projects/timeline" title="Project Timeline">🗓</a>
+  </div>
+
+  <!-- Section Title -->
+  <div class="section-title">
+    {{ section_title }}
+  </div>
+
+</div>
+
+<style>
+.top-context {
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.date-row {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.date-row .time {
+  color: #2563eb;
+  margin-left: 6px;
+}
+
+.context-row {
+  margin-top: 6px;
+  font-size: 16px;
+}
+
+.context-link {
+  text-decoration: none;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.nav-icons {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  font-size: 22px;
+}
+
+.nav-icons a {
+  text-decoration: none;
+  opacity: 0.85;
+}
+
+.nav-icons a:hover {
+  opacity: 1;
+}
+
+.section-title {
+  margin-top: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #4f46e5;
+}
+</style>
+
+<script>
+function updateLiveTime() {
+  const now = new Date();
+  document.getElementById("live-time").textContent =
+    now.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    }) + " IST";
+}
+
+updateLiveTime();
+setInterval(updateLiveTime, 1000);
+</script>

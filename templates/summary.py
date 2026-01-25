@@ -2,6 +2,7 @@ SUMMARY_TEMPLATE = """
 {% if view == "daily" %}
 
 <h3>📊 Daily Summary – {{ date }}</h3>
+{% include "_top_nav.html" %}
 
 <!-- TASKS -->
 <div class="section">

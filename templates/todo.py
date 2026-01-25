@@ -177,6 +177,8 @@ summary::-webkit-details-marker { display:none; }
 </head>
 
 <body>
+{% include "_top_nav.html" %}
+
 <div class="container">
 
 <a href="/">⬅ Back to Daily Planner</a>
