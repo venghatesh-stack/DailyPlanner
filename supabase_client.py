@@ -70,7 +70,8 @@ def update(table, params, json):
     json example: {"is_done": True}
     """
     url = f"{SUPABASE_URL}/rest/v1/{table}"
-
+    # 🔍 Log intent
+    logger.debug("SUPABASE UPDATE → %s | params=%s", url, params)
     response = requests.patch(
         url,
         headers=HEADERS,
@@ -78,10 +79,12 @@ def update(table, params, json):
         json=json,
         timeout=10
     )
-
+    # 🔑 Log final URL (THIS IS WHAT SUPABASE SEES)
+    logger.debug("SUPABASE FINAL URL → %s", response.url)
     if not response.ok:
+        logger.error("SUPABASE RESPONSE → %s", response.text)
         raise Exception(
-            f"UPDATE failed {response.status_code}: {response.text}"
+            f"UPDATE failed {response.status_code}: {response.text}",
         )
 
     return response.json() if response.text else None
