@@ -171,6 +171,7 @@ summary::-webkit-details-marker { display:none; }
 .task.done .urgency-pill {
   display: none;
 }
+.task.done .task-text { text-decoration: line-through; }
 
 </style>
 </head>
@@ -249,18 +250,19 @@ summary::-webkit-details-marker { display:none; }
     {% for tasks in subs.values() %}
       {% for t in tasks %}
         <div class="task
-            {% if t.done %}done{% endif %}
+            {% if t.status== 'done' %}done{% endif %}
             {% if t.urgency %}urgency-{{ t.urgency }}{% endif %}
         "
         data-id="{{ t.id }}">
 
           <!-- HEADER (always visible) -->
           <div class="task-header" onclick="toggleTask(this)">
-            <input type="checkbox"
-                  
-                  {% if t.done %}checked{% endif %}
-                  onclick="event.stopPropagation()"
-                  onchange="toggleDone(this)">
+              <input type="checkbox"
+              data-id="{{ t.id }}"
+              {% if t.status == "done" %}checked{% endif %}
+              onclick="event.stopPropagation()"
+              onchange="toggleDone(this)">
+
 
             <div class="task-title">
               {{ t.text }}
@@ -309,25 +311,25 @@ summary::-webkit-details-marker { display:none; }
 <script>
 function toggleDone(checkbox) {
   const taskId = checkbox.dataset.id;
-  if (!taskId) {
-    console.error("Missing task id on checkbox");
-    return;
-  }
+  if (!taskId) return;
 
   const task = checkbox.closest(".task");
+  const isDone = checkbox.checked;
+
+  // UI update (instant feedback)
   if (task) {
-    task.classList.toggle("done", checkbox.checked);
+    task.classList.toggle("done", isDone);
   }
 
-  fetch("/todo/toggle-done", {
+  fetch("/projects/tasks/status", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      id: taskId,
-      is_done: checkbox.checked
+      task_id: taskId,
+      status: isDone ? "done" : "open"
     })
   }).catch(err => {
-    console.error("Toggle done failed", err);
+    console.error("Failed to update task status", err);
   });
 }
 </script>
