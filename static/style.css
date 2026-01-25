@@ -31,7 +31,7 @@ body {
 }
 
 /* =========================================================
-   GLOBAL NAV
+   TOP NAV / ICONS
 ========================================================= */
 
 .nav-icons {
@@ -51,7 +51,86 @@ body {
 }
 
 /* =========================================================
-   PLANNER GRID (ISOLATED — NO TASK BLEED)
+   PLANNER HEADER (MISSING — FIXED)
+========================================================= */
+
+.timeline-header {
+  margin-bottom: 16px;
+}
+
+.month-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.month-nav {
+  border: none;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.month-label {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.date-jump {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+/* =========================================================
+   DAY TIMELINE (CRITICAL FIX)
+========================================================= */
+
+.day-timeline {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.day-item {
+  min-width: 48px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  text-align: center;
+  text-decoration: none;
+  color: #111827;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  font-size: 12px;
+}
+
+.day-item.active {
+  background: #2563eb;
+  color: #fff;
+}
+
+.day-item.today {
+  border-color: #2563eb;
+}
+
+.day-item .dow {
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.day-item .num {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* =========================================================
+   PLANNER GRID (SAFE)
 ========================================================= */
 
 .day-schedule {
@@ -99,7 +178,7 @@ body {
 }
 
 /* =========================================================
-   TASK CARDS — BASE
+   TASK CARDS
 ========================================================= */
 
 .task {
@@ -118,10 +197,6 @@ body {
   text-decoration: line-through;
 }
 
-/* =========================================================
-   TASK SUMMARY ROW
-========================================================= */
-
 .task-row {
   display: flex;
   align-items: center;
@@ -136,17 +211,11 @@ body {
   flex: 1;
   font-size: 15px;
   line-height: 1.4;
-}
-
-.task-main input[type="date"] {
-  font-size: 12px;
-  padding: 4px 6px;
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
+  word-wrap: break-word;
 }
 
 /* =========================================================
-   TASK DETAILS (CANONICAL — SINGLE SOURCE)
+   TASK DETAILS (FIXED FIELD DIRECTION)
 ========================================================= */
 
 .task-details {
@@ -161,13 +230,8 @@ body {
   display: block;
 }
 
-/* =========================================================
-   TASK DETAILS — 2 ROW LAYOUT
-========================================================= */
-
 .task-details-row {
   display: flex;
-  align-items: center;
   gap: 10px;
   flex-wrap: nowrap;
   margin-top: 8px;
@@ -175,14 +239,13 @@ body {
 
 .task-details-row .field {
   display: flex;
-  flex-direction: row;
+  flex-direction: column; /* 🔑 FIX */
   font-size: 11px;
 }
 
 .task-details-row label {
   font-weight: 600;
   color: #6b7280;
-  margin-bottom: 2px;
 }
 
 .task-details-row input,
@@ -192,11 +255,6 @@ body {
   padding: 4px 6px;
   border-radius: 6px;
   border: 1px solid #d1d5db;
-}
-
-.task-details-row textarea {
-  resize: none;
-  overflow: hidden;
 }
 
 .task-details-row .wide {
@@ -212,22 +270,7 @@ body {
 }
 
 /* =========================================================
-   INPUT SAFETY
-========================================================= */
-
-input[type="number"] {
-  max-width: 100%;
-}
-
-textarea.auto-grow {
-  resize: none;
-  overflow: hidden;
-  min-height: 32px;
-  max-height: 120px;
-}
-
-/* =========================================================
-   MOBILE FIXES (SINGLE CONSOLIDATED BLOCK)
+   MOBILE FIXES
 ========================================================= */
 
 @media (max-width: 640px) {
@@ -242,12 +285,7 @@ textarea.auto-grow {
 
   .task-main {
     flex-direction: row;
-    align-items: stretch;
     gap: 8px;
-  }
-
-  .task-main input[type="date"] {
-    width: 100%;
   }
 
   .task-details {
