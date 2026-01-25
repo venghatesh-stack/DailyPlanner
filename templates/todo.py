@@ -98,35 +98,33 @@ summary::-webkit-details-marker { display:none; }
   white-space:nowrap;
 }
 
-.task.overdue {
-  background: #fee2e2;
-  border-color: #ef4444;
-}
 
-.task.soon {
-  background: #ffedd5;
-  border-color: #f97316;
-}
-.task.urgent {
-  border-left: 4px solid #ef4444; /* red-500 */
-  background: #fff;
-}
 .urgency-pill {
   font-size: 11px;
-  padding: 2px 6px;
+  padding: 1px 6px;        /* ⬅ smaller */
   border-radius: 999px;
   font-weight: 600;
+  margin-bottom: 4px;
+  display: inline-block;
+}
+.urgency-pill.soon {
+  background: #fef3c7;
+  color: #92400e;
 }
 
 .urgency-pill.overdue {
   background: #fee2e2;
   color: #991b1b;
 }
-
-.urgency-pill.soon {
-  background: #ffedd5;
-  color: #9a3412;
+.task.urgency-overdue {
+  border-left: 4px solid #ef4444;
 }
+
+.task.urgency-soon {
+  border-left: 4px solid #f59e0b;
+}
+
+
 .task.done .urgency-pill {
   display: none;
 }
@@ -193,19 +191,17 @@ summary::-webkit-details-marker { display:none; }
   {% for category, subs in todo[q].items() %}
     {% for tasks in subs.values() %}
       {% for t in tasks %}
-        <div class="task
-          {% if t.done %}done{% endif %}
-          {% if t.urgency == 'overdue' %}overdue{% endif %}
-          {% if t.urgency == 'soon' %}soon{% endif %}
-        " data-id="{{ t.id }}">
-          {% if t.urgency %}
-            <span class="urgency-pill {{ t.urgency }}">
-              {% if t.urgency == 'overdue' %}Overdue{% endif %}
-              {% if t.urgency == 'soon' %}Due soon{% endif %}
-            </span>
-          {% endif %}
+         <div class="task
+            {% if t.done %}done{% endif %}
+            {% if t.urgency %}urgency-{{ t.urgency }}{% endif %}
+          " data-id="{{ t.id }}">
 
           <div class="task-main">
+            {% if t.urgency %}
+              <span class="urgency-pill {{ t.urgency }}">
+                {{ "Overdue" if t.urgency == "overdue" else "Due soon" }}
+              </span>
+            {% endif %}
             <span class="task-index">{{ loop.index }}.</span>
 
             <input type="checkbox"
