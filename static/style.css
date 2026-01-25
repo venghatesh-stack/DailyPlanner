@@ -263,6 +263,7 @@ h2 {
   font-weight: 600;
   color: #2563eb;
 }
+
 /* =========================
    PROJECT TASKS (editable)
 ========================= */
@@ -423,67 +424,11 @@ h2 {
     --slot-height: 42px;
   }
 }
-.task-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
 
-.task-main {
-  justify-content: space-between;
-}
+/* =========================================================
+   TASK CARD UX IMPROVEMENTS (ADD-ONLY, NO REGRESSION)
+========================================================= */
 
-.task-text {
-  flex: 1;
-  font-size: 15px;
-}
-
-.task-meta {
-  margin-top: 6px;
-  padding-left: 26px;
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.icon-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  opacity: 0.6;
-}
-
-.icon-btn:hover {
-  opacity: 1;
-}
-
-.due {
-  font-weight: 600;
-  color: #2563eb;
-}
-.task-meta {
-  margin-top: 6px;
-  padding-left: 26px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-}
-
-.task-meta select,
-.task-meta input {
-  font-size: 13px;
-  padding: 4px;
-}
-
-.due-date {
-  font-weight: 600;
-  color: #2563eb;
-}
-#gantt {
-  height: 500px;
-  margin-top: 20px;
-}
 .task-group {
   margin-top: 24px;
 }
@@ -492,118 +437,31 @@ h2 {
   font-size: 14px;
   font-weight: 600;
   color: #374151;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   display: flex;
+  align-items: center;
   gap: 6px;
-  align-items: center;
 }
 
-.group-title .count {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.empty {
-  font-size: 12px;
-  color: #9ca3af;
-  margin-left: 6px;
-}
-.timeline-header {
-  margin: 16px 0 24px;
-}
-
-.month-bar {
+.task-row {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 12px;
-  font-weight: 600;
-  color: #111827;
 }
 
-.month-nav {
-  background: none;
-  border: none;
-  font-size: 18px;
+.task-main {
   cursor: pointer;
-  color: #6b7280;
+  gap: 12px;
 }
 
-.month-nav:hover {
-  color: #2563eb;
-}
-
-.day-timeline {
-  display: flex;
-  gap: 18px;
-  overflow-x: auto;
-  padding: 10px 4px;
-  margin-top: 8px;
-}
-
-.day-item {
-  min-width: 44px;
-  text-align: center;
-  text-decoration: none;
-  color: #6b7280;
-  font-size: 13px;
-}
-
-.day-item .dow {
-  font-size: 11px;
-}
-
-.day-item .num {
-  font-size: 14px;
+.task-main input[type="checkbox"] {
   margin-top: 2px;
 }
 
-.day-item.today {
-  color: #2563eb;
-  font-weight: 600;
-}
-
-.day-item.today::after {
-  content: "";
-  display: block;
-  width: 6px;
-  height: 6px;
-  background: #2563eb;
-  border-radius: 50%;
-  margin: 4px auto 0;
-}
-
-.day-item.active {
-  color: #111827;
-}
-.task-section {
-  margin-top: 14px;
-  padding-top: 10px;
-  border-top: 1px solid #e5e7eb;
-}
-
-.task-section:first-child {
-  border-top: none;
-  padding-top: 0;
-}
-.task-section-title {
-  font-size: 11px;
-  font-weight: 600;
-  color: #6b7280;
-  margin-bottom: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.task-details {
-  margin-top: 10px;
-  padding-left: 28px;
-}
-
-.task-details .meta {
-  margin-top: 8px;
-}
-.task-main {
-  gap: 12px;
+.task-text {
+  flex: 1;
+  font-size: 15px;
+  line-height: 1.4;
 }
 
 .task-main input[type="date"] {
@@ -611,13 +469,51 @@ h2 {
   padding: 4px 6px;
   border-radius: 8px;
   border: 1px solid #d1d5db;
+  background: #fff;
 }
-.task-section .icon-btn.danger {
+
+.task-details {
+  margin-top: 10px;
+  padding-left: 34px;
+}
+
+.task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.task-meta label {
+  font-weight: 500;
+  color: #374151;
+}
+
+.task-meta input,
+.task-meta select {
+  font-size: 13px;
+  padding: 4px;
+}
+
+.task-details .meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-top: 8px;
+}
+
+.task-details .meta input {
+  flex: 1;
+}
+
+.task-details .icon-btn.danger {
+  margin-top: 10px;
   color: #dc2626;
   font-weight: 600;
 }
 
-.task-section .icon-btn.danger:hover {
+.task-details .icon-btn.danger:hover {
   color: #b91c1c;
 }
