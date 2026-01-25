@@ -235,12 +235,20 @@ def parse_date(d):
     if isinstance(d, str):
         return datetime.fromisoformat(d).date()
     return d
+
+
 def compute_urgency(due_date, due_time):
     if not due_date or not due_time:
         return None
 
-    now = datetime.now()
+    # 🔧 Convert due_time string -> datetime.time
+    if isinstance(due_time, str):
+        try:
+            due_time = datetime.strptime(due_time, "%H:%M").time()
+        except ValueError:
+            return None  # safety guard
 
+    now = datetime.now()
     due_dt = datetime.combine(due_date, due_time)
 
     if due_dt < now:
@@ -248,6 +256,7 @@ def compute_urgency(due_date, due_time):
     elif due_dt <= now + timedelta(hours=2):
         return "soon"      # 🟠
     return None
+
 
 # ==========================================================
 # ROUTES – EISENHOWER MATRIX
