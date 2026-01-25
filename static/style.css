@@ -175,7 +175,7 @@ body {
 
 .task-details-row .field {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   font-size: 11px;
 }
 
@@ -241,7 +241,7 @@ textarea.auto-grow {
   }
 
   .task-main {
-    flex-direction: column;
+    flex-direction: row;
     align-items: stretch;
     gap: 8px;
   }
