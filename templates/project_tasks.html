@@ -268,12 +268,6 @@ button[disabled] {
        <div class="task" id="task-{{ task.id }}" data-status="{{ task.status }}">
 
         <div class="task-main">
-          <div class="task-text" id="text-{{ task.id }}">
-            {{ task.task_text }}
-            {% if task.sent_to_eisenhower %}
-              <span class="badge">🧠 In Eisenhower</span>
-            {% endif %}
-          </div>
           <button
             onclick="eliminateTask('{{ task.id }}')"
             title="Eliminate task"
@@ -285,13 +279,7 @@ button[disabled] {
         </div>
 
         <div class="task-actions">
-          <select id="q-{{ task.id }}"
-            {% if task.sent_to_eisenhower %}disabled{% endif %}>
-            <option value="do_now">⚡ Do now</option>
-            <option value="schedule">🗓️ Schedule</option>
-            <option value="delegate">👥 Delegate</option>
-            <option value="eliminate">🗑️ Eliminate</option>
-          </select>
+         
 
           <input type="date"
             id="d-{{ task.id }}"
@@ -314,25 +302,6 @@ button[disabled] {
           placeholder="Delegate to (name)"
           value="{{ task.delegated_to or '' }}"
           onchange="updateDelegation('{{ task.id }}', this.value)">
-
-         <button type="button" class="send-btn"
-            id="send-{{ task.id }}"
-            onclick="sendTask('{{ task.id }}')"
-            {% if task.sent_to_eisenhower %}disabled{% endif %}>
-            {% if task.sent_to_eisenhower %}
-              🧠 Sent
-            {% else %}
-              Send →
-            {% endif %}
-         </button>
-
-          {% if task.sent_to_eisenhower %}
-            <button type="button" class="unsend-btn"
-              onclick="unsendFromEisenhower('{{ task.id }}')">
-               ❌ Remove from Eisenhower
-           </button>
-          {% endif %}
-
         </div>
 
       </div>

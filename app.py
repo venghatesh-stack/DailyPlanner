@@ -974,22 +974,21 @@ def update_project_task_date():
     )
     logger.info(f"👉 task_id={task_id}, new_date={due_date}")
     return jsonify({"status": "ok"})
-
 @app.route("/projects/tasks/update-delegation", methods=["POST"])
 @login_required
 def update_delegation():
     data = request.get_json()
 
-    post(
+    update(
         "project_tasks",
-        {
-            "id": data["id"],
+        params={"id": f"eq.{data['id']}"},
+        json={
             "delegated_to": data.get("delegated_to")
-        },
-        upsert=True
+        }
     )
 
     return "", 204
+
 @app.route("/projects/tasks/eliminate", methods=["POST"])
 @login_required
 def eliminate_task():
