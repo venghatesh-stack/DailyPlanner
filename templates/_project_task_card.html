@@ -103,7 +103,9 @@
                   oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
                   onchange="updateElimination('{{ task.id }}', this.value)">{{ task.elimination_reason or '' }}</textarea>
       </div>
-
+      <div class="task-actions">
+            <button class="save-task-btn">💾 Save</button>
+      </div>
       <button class="icon-btn danger"
               onclick="eliminateTask('{{ task.id }}')">
         🗑 Delete

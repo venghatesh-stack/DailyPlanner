@@ -121,7 +121,48 @@
   }
 
 </script>
+
 <script>
+  document.addEventListener("click", async (e) => {
+  if (!e.target.classList.contains("save-task-btn")) return;
+
+  const card = e.target.closest(".task-card");
+  const taskId = card.dataset.taskId;
+
+  const payload = {
+    title: card.querySelector(".task-title-input")?.value,
+    start_time: card.querySelector(".start-time")?.value,
+    end_time: card.querySelector(".end-time")?.value,
+    project: card.querySelector(".project-select")?.value,
+    notes: card.querySelector(".task-notes")?.value,
+    completed: card.querySelector("input[type=checkbox]")?.checked
+  };
+
+  e.target.disabled = true;
+  e.target.textContent = "Saving...";
+
+  try {
+    const res = await fetch(`/projects/tasks/${taskId}/update`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) throw new Error("Save failed");
+
+    e.target.textContent = "Saved ✓";
+    setTimeout(() => {
+      e.target.textContent = "💾 Save";
+      e.target.disabled = false;
+    }, 1200);
+
+  } catch (err) {
+    e.target.textContent = "Retry";
+    e.target.disabled = false;
+    console.error(err);
+  }
+});
+
   function updateDateTime() {
     const now = new Date();
     const options = {
