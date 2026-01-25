@@ -246,7 +246,27 @@ def parse_date(d):
         return datetime.fromisoformat(d).date()
     return d
 
-from datetime import datetime, timedelta
+def compute_quadrant_counts(todo):
+    counts = {}
+
+    for q, categories in todo.items():
+        total = 0
+        done = 0
+
+        for subs in categories.values():
+            for tasks in subs.values():
+                for t in tasks:
+                    total += 1
+                    if t.get("done"):
+                        done += 1
+
+        counts[q] = {
+            "total": total,
+            "done": done
+        }
+
+    return counts
+
 
 def compute_urgency(due_date, due_time):
     # 🚫 Missing date or time → no urgency
@@ -314,7 +334,7 @@ def todo():
     }
     # 2. Build Eisenhower (urgency is computed there)
     todo = build_eisenhower_view(tasks, plan_date,project_map)
-
+    quadrant_counts = compute_quadrant_counts(todo)
     # 3. Render
     days = calendar.monthrange(year, month)[1]
 
@@ -327,6 +347,7 @@ def todo():
         days=days,
         calendar=calendar,
         toast=session.pop("toast", None),
+        quadrant_counts=quadrant_counts,
     )
 
 

@@ -186,7 +186,21 @@ summary::-webkit-details-marker { display:none; }
 ] %}
 
 <details class="quad" open>
-  <summary>{{ label }}</summary>
+  <summary>
+    {{ label }}
+    {% set c = quadrant_counts[q] %}
+    {% if c.total > 0 %}
+      <span style="
+        font-size:12px;
+        font-weight:500;
+        color:#6b7280;
+        margin-left:6px;
+      ">
+        ({{ c.done }} / {{ c.total }} done)
+      </span>
+    {% endif %}
+  </summary>
+
 
   {% for category, subs in todo[q].items() %}
     {% for tasks in subs.values() %}
