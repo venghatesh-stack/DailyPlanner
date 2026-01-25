@@ -213,40 +213,37 @@ def build_eisenhower_view(project_tasks, plan_date):
 @app.route("/todo", methods=["GET"])
 @login_required
 def todo():
+    from datetime import date
+    import calendar
+
     year = int(request.args.get("year", date.today().year))
-    months = request.args.getlist("months")  # e.g. ["1", "2"]
+    month = int(request.args.get("month", date.today().month))
+    day = int(request.args.get("day", date.today().day))
 
-    if not months:
-        months = [str(date.today().month)]
+    plan_date = date(year, month, day)
 
-    months = [int(m) for m in months]
+    # -----------------------------
+    # 1. Fetch project tasks
+    # -----------------------------
+    tasks = get("project_tasks")
 
-    # Fetch Eisenhower tasks
-    tasks = get(
-        "project_tasks",
-        filters={
-            "sent_to_eisenhower": "eq.true"
-        }
-    )
-
-    # Filter month-wise (DATE based)
-    filtered_tasks = [
+    tasks = [
         t for t in tasks
-        if t.get("due_date")
+        if t.get("sent_to_eisenhower") is True
+        and t.get("due_date")
         and t["due_date"].year == year
-        and t["due_date"].month in months
+        and t["due_date"].month == month
     ]
 
-    
-    quadrants = compute_eisenhower_quadrants(filtered_tasks)
+    # -----------------------------
+    # 2. Build Eisenhower view
+    # -----------------------------
+    todo = build_eisenhower_view(tasks, plan_date)
 
-    return render_template(
-        "todo.html",
-        quadrants=quadrants,
-        year=year,
-        selected_months=months
-    )
-
+    # -----------------------------
+    # 3. Variables already used by template
+    # -----------------------------
+    days = calendar.monthrange(year, month)[1]
 
     return render_template_string(
         TODO_TEMPLATE,
@@ -256,14 +253,9 @@ def todo():
         month=month,
         days=days,
         calendar=calendar,
-        quote=quote,
-        TASK_CATEGORIES=TASK_CATEGORIES,
-        STATIC_TRAVEL_SUBGROUPS=STATIC_TRAVEL_SUBGROUPS,
-        toast = session.pop("toast", None),
-        projects=projects,
-        project_progress=project_progress,
-
+        toast=session.pop("toast", None),
     )
+
 
 @app.route("/todo/toggle-done", methods=["POST"])
 @login_required
