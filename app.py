@@ -198,11 +198,26 @@ def build_eisenhower_view(project_tasks, plan_date):
             "project_id": t.get("project_id"),
             "recurring": bool(t.get("recurrence")),
             "recurrence": t.get("recurrence"),
+            "delegated_to": t.get("delegated_to"),
+            "elimination_reason": t.get("elimination_reason"),
         }
+          # 🗑 Eliminate
+        if t.get("is_eliminated"):
+            todo["eliminate"]["eliminated"]["tasks"].append(task)
+            continue
 
-        if t["due_date"] == today:
+        # 🤝 Delegate
+        if t.get("delegated_to"):
+            todo["delegate"]["delegated"]["tasks"].append(task)
+            continue
+
+        # 🔥 Do Now
+        if t["due_date"] == plan_date:
             todo["do"]["today"]["tasks"].append(task)
-        elif t["due_date"] > today:
+            continue
+
+        # 📅 Schedule
+        if t["due_date"] > plan_date:
             todo["schedule"]["future"]["tasks"].append(task)
 
     return todo
@@ -959,6 +974,22 @@ def update_project_task_date():
     )
     logger.info(f"👉 task_id={task_id}, new_date={due_date}")
     return jsonify({"status": "ok"})
+
+@app.route("/projects/tasks/update-delegation", methods=["POST"])
+@login_required
+def update_delegation():
+    data = request.get_json()
+
+    post(
+        "project_tasks",
+        {
+            "id": data["id"],
+            "delegated_to": data.get("delegated_to")
+        },
+        upsert=True
+    )
+
+    return "", 204
 
 # ==========================================================
 # ENTRY POINT

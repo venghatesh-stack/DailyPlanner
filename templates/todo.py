@@ -172,10 +172,18 @@ summary::-webkit-details-marker { display:none; }
               {% if t.project_id %}
                 <span class="badge">📁 Project</span>
               {% endif %}
+              {% if t.delegated_to %}
+                <span class="badge">👤 {{ t.delegated_to }}</span>
+              {% endif %}
+              {% if t.elimination_reason %}
+                <small class="muted">Reason: {{ t.elimination_reason }}</small>
+              {% endif %}
+
               {% if t.recurring %}
                 <span class="badge">🔁 {{ t.recurrence or "Recurring" }}</span>
               {% endif %}
             </div>
+            
           </div>
         </div>
       {% endfor %}

@@ -302,6 +302,10 @@ button[disabled] {
           <option value="done" {% if task.status == 'done' %}selected{% endif %}>Done</option>
         </select>
 
+        <input type="text"
+          placeholder="Delegate to (name)"
+          value="{{ task.delegated_to or '' }}"
+          onchange="updateDelegation('{{ task.id }}', this.value)">
 
          <button type="button" class="send-btn"
             id="send-{{ task.id }}"
@@ -332,6 +336,9 @@ button[disabled] {
       </div>
     {% endif %}
 </div>
+
+
+
   <script>
   function sendTask(taskId) {
     const quadrantSelect = document.getElementById(`q-${taskId}`);
@@ -499,6 +506,16 @@ function updateDueDate(taskId, date) {
     })
   }).catch(err => {
     console.error("Failed to update due date", err);
+  });
+}
+function updateDelegation(taskId, value) {
+  fetch("/projects/tasks/update-delegation", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: taskId,
+      delegated_to: value || null
+    })
   });
 }
 </script>
