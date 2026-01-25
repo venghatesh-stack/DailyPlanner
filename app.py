@@ -296,6 +296,8 @@ def todo():
         if t["due_date"].year == year
         and t["due_date"].month == month
     ]
+    projects = get("projects")
+
     project_map = {
         p["id"]: p["name"]
         for p in projects
