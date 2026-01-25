@@ -1,5 +1,5 @@
 <!-- ======================================================
-     GLOBAL TOP NAV / CONTEXT HEADER
+     GLOBAL TOP NAV / CONTEXT HEADER (COMPACT ICONS ONLY)
      ====================================================== -->
 
 <div class="top-context">
@@ -10,34 +10,31 @@
     <span class="time" id="live-time"></span>
   </div>
 
-  <!-- Context -->
-  <div class="context-row">
-    <a href="/projects" class="context-link">
-      📁 Projects
-    </a>
+  <!-- Navigation Icons -->
+  <div class="nav-icons">
+
+    <a href="/" title="Daily Planner">🏠</a>
+
+    <a href="/todo" title="Eisenhower Matrix">🎯</a>
+
+    <a href="/projects" title="Projects">📁</a>
+
+    <a href="/projects/timeline" title="Project Timeline">🗓</a>
+
+    <button type="button"
+            onclick="openSummary()"
+            title="Daily Summary">
+      📝
+    </button>
+
+    <a href="/summary?view=weekly" title="Weekly Summary">📆</a>
+
+    {% if project is defined %}
+      <a href="/projects/{{ project.id }}/gantt" title="Gantt">📊</a>
+      <a href="/projects/{{ project.id }}/tasks" title="Project Planner">🧠</a>
+    {% endif %}
+
   </div>
-
-<div class="nav-icons">
-  <a href="/" title="Daily Planner">🏠</a>
-  <a href="/todo" title="Eisenhower Matrix">🎯</a>
-  <a href="/projects" title="Projects">📁</a>
-  <a href="/projects/timeline" title="Project Timeline">🗓</a>
-  
-        <button type="button" onclick="openSummary()" title="Daily Summary">
-          📝
-        </button>
-
-        <a href="/summary?view=weekly" title="Weekly Summary">
-          📆
-        </a>
-      </div>
-      <a href="/tasks/timeline">🗓 Project Timeline</a>
-  {% if project is defined %}
-    <a href="/projects/{{ project.id }}/gantt" title="Gantt">📊</a>
-    <a href="/projects/{{ project.id }}/tasks" title="Planner">🧠</a>
-  {% endif %}
-</div>
-
 
   <!-- Section Title -->
   <div class="section-title">
