@@ -349,31 +349,6 @@ body {
 }
 
 /* =========================================================
-   MOBILE — PROJECT TASKS
-========================================================= */
-
-@media (max-width: 640px) {
-
-  .project-task .task-row {
-    grid-template-columns: 1fr;
-    align-items: stretch;
-  }
-
-  .project-task input,
-  .project-task select {
-    max-width: 100%;
-    width: 100%;
-  }
-
-  .project-task .task-text {
-    font-size: 14px;
-  }
-
-  .project-task .icon-btn.danger {
-    align-self: flex-start;
-  }
-}
-/* =========================================================
    MOBILE UX FIX — PROJECT TASKS (FINAL)
 ========================================================= */
 
