@@ -39,17 +39,26 @@
     </label>
 
 
-   <!-- Task List -->
-    {% if tasks %}
-      {% for task in tasks %}
-        {% include "_project_task_card.html" with context %}
+   <!-- Grouped Task List -->
+    {% for group, tasks in grouped_tasks.items() %}
+        <div class="task-group">
 
+          <h3 class="group-title">
+            {{ group }}
+            <span class="count">{{ tasks|length }}</span>
+          </h3>
+
+          {% if tasks %}
+            {% for task in tasks %}
+              {% include "partials/task_row.html" %}
+            {% endfor %}
+          {% else %}
+            <div class="empty">No tasks</div>
+          {% endif %}
+
+        </div>
       {% endfor %}
-    {% else %}
-      <div class="empty">
-        No tasks in this project yet
-      </div>
-    {% endif %}
+
 </div>
 
 

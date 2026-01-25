@@ -19,7 +19,7 @@ from services.eisenhower_service import (
     copy_open_tasks_from_previous_day,  
     enable_travel_mode,
 )
-from collections import defaultdict
+from collections import defaultdict,OrderedDict
 from services.untimed_service import remove_untimed_task  
 from services.timeline_service import load_timeline_tasks
 from templates.planner import PLANNER_TEMPLATE
@@ -902,11 +902,11 @@ def project_tasks(project_id):
         }
         for t in raw_tasks
     ]
-
+    grouped_tasks = group_tasks_smart(tasks)
     return render_template(
         "project_tasks.html",
         project=project,
-        tasks=tasks,
+        grouped_tasks=grouped_tasks,
     )
 
 def compute_due_date(start_date, duration_days):
@@ -1217,6 +1217,55 @@ def update_actual():
         json={"actual_hours": data["actual_hours"]}
     )
     return "", 204
+
+
+def group_tasks_smart(tasks):
+    today = date.today()
+    tomorrow = today + timedelta(days=1)
+
+    # Week ends on Sunday
+    end_of_week = today + timedelta(days=(6 - today.weekday()))
+
+    # End of month
+    next_month = today.replace(day=28) + timedelta(days=4)
+    end_of_month = next_month.replace(day=1) - timedelta(days=1)
+
+    groups = OrderedDict({
+        "Today": [],
+        "Tomorrow": [],
+        "This Week": [],
+        "This Month": [],
+        "Later": []
+    })
+
+    for t in tasks:
+        d = t.get("start_date") or t.get("due_date")
+
+        if not d:
+            groups["Later"].append(t)
+            continue
+
+        if isinstance(d, str):
+            d = date.fromisoformat(d)
+
+        if d == today:
+            groups["Today"].append(t)
+        elif d == tomorrow:
+            groups["Tomorrow"].append(t)
+        elif tomorrow < d <= end_of_week:
+            groups["This Week"].append(t)
+        elif d <= end_of_month:
+            groups["This Month"].append(t)
+        else:
+            groups["Later"].append(t)
+
+    # Optional: sort inside each group
+    for key in groups:
+        groups[key].sort(
+            key=lambda t: t.get("start_date") or t.get("due_date") or date.max
+        )
+
+    return groups
 
 # ==========================================================
 # ENTRY POINT
