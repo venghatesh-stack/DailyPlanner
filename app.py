@@ -229,7 +229,9 @@ def todo():
     # 1. Fetch project tasks
     # -----------------------------
     tasks = get("project_tasks")
-
+    
+    print("DEBUG total tasks:", len(tasks))
+    print("DEBUG sample task:", tasks[0] if tasks else "NO TASKS")
     tasks = [
         t for t in tasks
         if t.get("sent_to_eisenhower") is True
@@ -253,7 +255,18 @@ def todo():
     # 3. Variables already used by template
     # -----------------------------
     days = calendar.monthrange(year, month)[1]
-    
+    filtered = []
+    for t in tasks:
+        print(
+            "DEBUG sent_to_eisenhower:",
+            t.get("sent_to_eisenhower"),
+            type(t.get("sent_to_eisenhower"))
+        )
+        if str(t.get("sent_to_eisenhower")).lower() == "true":
+            filtered.append(t)
+
+    tasks = filtered
+    print("DEBUG after sent_to_eisenhower filter:", len(tasks))
 
     return render_template_string(
         TODO_TEMPLATE,
