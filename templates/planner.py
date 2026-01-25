@@ -54,9 +54,18 @@ PLANNER_TEMPLATE = """
     ‹ {{ selected_date.strftime("%b") }}
   </a>
   <span>{{ selected_date.strftime("%B %Y") }}</span>
-  <a href="/?year={{ selected_date.year }}&month={{ selected_date.month + 1 }}&day=1">
-    {{ (selected_date.replace(day=28) + timedelta(days=4)).strftime("%b") }} ›
+    <a href="/?year={{ prev_month.year }}&month={{ prev_month.month }}&day=1">
+    ‹ {{ prev_month_label }}
   </a>
+
+  <span class="month-label">
+    {{ selected_date.strftime("%B %Y") }}
+  </span>
+
+  <a href="/?year={{ next_month.year }}&month={{ next_month.month }}&day=1">
+    {{ next_month_label }} ›
+  </a>
+
 </div>
 
     <form method="post" id="planner-form">
