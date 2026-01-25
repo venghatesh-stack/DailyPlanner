@@ -107,6 +107,29 @@ summary::-webkit-details-marker { display:none; }
   background: #ffedd5;
   border-color: #f97316;
 }
+.task.urgent {
+  border-left: 4px solid #ef4444; /* red-500 */
+  background: #fff;
+}
+.urgency-pill {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.urgency-pill.overdue {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.urgency-pill.soon {
+  background: #ffedd5;
+  color: #9a3412;
+}
+.task.done .urgency-pill {
+  display: none;
+}
 
 </style>
 </head>
@@ -172,8 +195,8 @@ summary::-webkit-details-marker { display:none; }
       {% for t in tasks %}
         <div class="task
           {% if t.done %}done{% endif %}
-          {% if t.urgency == 'overdue' %}overdue{% endif %}
-          {% if t.urgency == 'soon' %}soon{% endif %}
+          {% if t.urgency == 'overdue' %}<span class="urgency-pill overdue">overdue{% endif %}
+          {% if t.urgency == 'soon' %}<span class="urgency-pill soon">soon{% endif %}
         " data-id="{{ t.id }}">
 
           <div class="task-main">
