@@ -904,9 +904,14 @@ def project_tasks(project_id):
     tasks = [
         {
             "id": t["id"],
-            "text": t["task_text"],                 # 🔑 FIX
+            "text": t["task_text"],
             "status": t.get("status"),
             "done": t.get("status") == "done",
+
+            # 🔑 ADD THESE
+            "start_date": t.get("start_date"),
+            "duration_days": t.get("duration_days"),
+
             "due_date": t.get("due_date"),
             "due_time": t.get("due_time"),
             "delegated_to": t.get("delegated_to"),
@@ -916,6 +921,7 @@ def project_tasks(project_id):
         }
         for t in raw_tasks
     ]
+
     grouped_tasks = group_tasks_smart(tasks)
     return render_template(
         "project_tasks.html",
