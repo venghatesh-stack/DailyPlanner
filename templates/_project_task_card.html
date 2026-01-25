@@ -27,7 +27,7 @@
     <input type="date"
         class="start-date"
         value="{{ task.start_date or '' }}"
-        onchange="updatePlanning('{{ task.id }}')">
+        oninput="updatePlanning('{{ task.id }}')">
 
 
 
@@ -37,7 +37,7 @@
        class="duration-days"
        min="1"
        value="{{ task.duration_days or 1 }}"
-       onchange="updatePlanning('{{ task.id }}')">
+       oninput="updatePlanning('{{ task.id }}')">
 
     <span>days</span>
 
