@@ -97,6 +97,17 @@ summary::-webkit-details-marker { display:none; }
   margin-left:6px;
   white-space:nowrap;
 }
+
+.task.overdue {
+  background: #fee2e2;
+  border-color: #ef4444;
+}
+
+.task.soon {
+  background: #ffedd5;
+  border-color: #f97316;
+}
+
 </style>
 </head>
 
@@ -159,7 +170,12 @@ summary::-webkit-details-marker { display:none; }
   {% for category, subs in todo[q].items() %}
     {% for tasks in subs.values() %}
       {% for t in tasks %}
-        <div class="task {% if t.done %}done{% endif %}" data-id="{{ t.id }}">
+        <div class="task
+          {% if t.done %}done{% endif %}
+          {% if t.urgency == 'overdue' %}overdue{% endif %}
+          {% if t.urgency == 'soon' %}soon{% endif %}
+        " data-id="{{ t.id }}">
+
           <div class="task-main">
             <span class="task-index">{{ loop.index }}.</span>
 

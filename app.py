@@ -188,9 +188,18 @@ def build_eisenhower_view(project_tasks, plan_date):
     }
 
     for t in project_tasks:
+        
         if not t.get("due_date"):
             continue
+        urgency = None
 
+        # 🔴🟠 ONLY compute urgency for today's tasks
+        if t["due_date"] == plan_date:
+            urgency = compute_urgency(
+                t.get("due_date"),
+                t.get("due_time")
+            )
+    
         task = {
             "id": t["id"],
             "text": t["task_text"],
@@ -200,6 +209,7 @@ def build_eisenhower_view(project_tasks, plan_date):
             "recurrence": t.get("recurrence"),
             "delegated_to": t.get("delegated_to"),
             "elimination_reason": t.get("elimination_reason"),
+            "urgency":urgency,
         }
           # 🗑 Eliminate
         if t.get("is_eliminated"):
@@ -225,6 +235,20 @@ def parse_date(d):
     if isinstance(d, str):
         return datetime.fromisoformat(d).date()
     return d
+def compute_urgency(due_date, due_time):
+    if not due_date or not due_time:
+        return None
+
+    now = datetime.now()
+
+    due_dt = datetime.combine(due_date, due_time)
+
+    if due_dt < now:
+        return "overdue"   # 🔴
+    elif due_dt <= now + timedelta(hours=2):
+        return "soon"      # 🟠
+    return None
+
 # ==========================================================
 # ROUTES – EISENHOWER MATRIX
 # ==========================================================
@@ -240,18 +264,11 @@ def todo():
 
     plan_date = date(year, month, day)
 
-    # -----------------------------
-    # 1. Fetch project tasks
-    # -----------------------------
+    # 1. Fetch tasks
     tasks = get("project_tasks")
-    
-    print("DEBUG total tasks:", len(tasks))
-    print("DEBUG sample task:", tasks[0] if tasks else "NO TASKS")
-    tasks = [
-        t for t in tasks
-        if t.get("due_date")
-    ]
-    # normalize due_date
+
+    tasks = [t for t in tasks if t.get("due_date")]
+
     for t in tasks:
         t["due_date"] = parse_date(t["due_date"])
 
@@ -260,27 +277,12 @@ def todo():
         if t["due_date"].year == year
         and t["due_date"].month == month
     ]
-    # -----------------------------
-    # 2. Build Eisenhower view
-    # -----------------------------
+
+    # 2. Build Eisenhower (urgency is computed there)
     todo = build_eisenhower_view(tasks, plan_date)
 
-    # -----------------------------
-    # 3. Variables already used by template
-    # -----------------------------
+    # 3. Render
     days = calendar.monthrange(year, month)[1]
-    filtered = []
-    for t in tasks:
-        print(
-            "DEBUG sent_to_eisenhower:",
-            t.get("sent_to_eisenhower"),
-            type(t.get("sent_to_eisenhower"))
-        )
-        if str(t.get("sent_to_eisenhower")).lower() == "true":
-            filtered.append(t)
-
-    tasks = filtered
-    print("DEBUG after sent_to_eisenhower filter:", len(tasks))
 
     return render_template_string(
         TODO_TEMPLATE,
@@ -292,7 +294,6 @@ def todo():
         calendar=calendar,
         toast=session.pop("toast", None),
     )
-
 
 
 @app.route("/todo/toggle-done", methods=["POST"])
@@ -1008,6 +1009,20 @@ def eliminate_task():
 
     return "", 204
 
+@app.route("/projects/tasks/update-time", methods=["POST"])
+@login_required
+def update_due_time():
+    data = request.get_json()
+
+    update(
+        "project_tasks",
+        params={"id": f"eq.{data['id']}"},
+        json={
+            "due_time": data.get("due_time")
+        }
+    )
+
+    return "", 204
 
 # ==========================================================
 # ENTRY POINT

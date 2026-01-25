@@ -300,6 +300,9 @@ button[disabled] {
           <option value="dropped" {% if task.status == 'dropped' %}selected{% endif %}>Dropped</option>
           <option value="done" {% if task.status == 'done' %}selected{% endif %}>Done</option>
         </select>
+        <input type="time"
+            value="{{ task.due_time or '' }}"
+            onchange="updateDueTime('{{ task.id }}', this.value)" />
 
         <input type="text"
           placeholder="Delegate to (name)"
@@ -518,5 +521,19 @@ function eliminateTask(taskId) {
   });
 }
 </script>
+<script>
+function updateDueTime(taskId, time) {
+  fetch("/projects/tasks/update-time", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: taskId,
+      due_time: time || null
+    })
+  });
+}
+</script>
+
+
 </body>
 </html>
