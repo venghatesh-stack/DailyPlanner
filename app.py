@@ -206,7 +206,10 @@ def build_eisenhower_view(project_tasks, plan_date):
             todo["schedule"]["future"]["tasks"].append(task)
 
     return todo
-
+def parse_date(d):
+    if isinstance(d, str):
+        return datetime.fromisoformat(d).date()
+    return d
 # ==========================================================
 # ROUTES – EISENHOWER MATRIX
 # ==========================================================
@@ -231,10 +234,16 @@ def todo():
         t for t in tasks
         if t.get("sent_to_eisenhower") is True
         and t.get("due_date")
-        and t["due_date"].year == year
+    ]
+    # normalize due_date
+    for t in tasks:
+        t["due_date"] = parse_date(t["due_date"])
+
+    tasks = [
+        t for t in tasks
+        if t["due_date"].year == year
         and t["due_date"].month == month
     ]
-
     # -----------------------------
     # 2. Build Eisenhower view
     # -----------------------------
@@ -244,6 +253,7 @@ def todo():
     # 3. Variables already used by template
     # -----------------------------
     days = calendar.monthrange(year, month)[1]
+    print("DEBUG:", t["due_date"], type(t["due_date"]), plan_date)
 
     return render_template_string(
         TODO_TEMPLATE,
@@ -255,6 +265,7 @@ def todo():
         calendar=calendar,
         toast=session.pop("toast", None),
     )
+
 
 
 @app.route("/todo/toggle-done", methods=["POST"])
