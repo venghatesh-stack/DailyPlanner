@@ -255,52 +255,7 @@ button[disabled] {
    <!-- Task List -->
     {% if tasks %}
       {% for task in tasks %}
-       <div class="task" id="task-{{ task.id }}" data-status="{{ task.status }}">
-
-        <div class="task-main">
-          <div class="task-text">
-            {{ task.task_text }}
-          </div>
-          <button
-            onclick="eliminateTask('{{ task.id }}')"
-            title="Eliminate task"
-            style="margin-left:8px; cursor:pointer;"
-          >
-            🗑
-          </button>
-
-        </div>
-
-        <div class="task-actions">
-         
-
-          <input type="date"
-            id="d-{{ task.id }}"
-            {% if task.due_date %}
-              value="{{ task.due_date }}"
-            {% endif %}
-            onchange="updateDueDate('{{ task.id }}', this.value)" />
-
-
-         <select class="status-select"
-          onchange="updateStatus('{{ task.id }}', this.value)">
-          <option value="open" {% if task.status == 'open' %}selected{% endif %}>Open</option>
-          <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>In Progress</option>
-          <option value="on_hold" {% if task.status == 'on_hold' %}selected{% endif %}>On Hold</option>
-          <option value="dropped" {% if task.status == 'dropped' %}selected{% endif %}>Dropped</option>
-          <option value="done" {% if task.status == 'done' %}selected{% endif %}>Done</option>
-        </select>
-        <input type="time"
-            value="{{ task.due_time or '' }}"
-            onchange="updateDueTime('{{ task.id }}', this.value)" />
-
-        <input type="text"
-          placeholder="Delegate to (name)"
-          value="{{ task.delegated_to or '' }}"
-          onchange="updateDelegation('{{ task.id }}', this.value)">
-        </div>
-
-      </div>
+        {% include "_task_card.html" with context %}
 
       {% endfor %}
     {% else %}

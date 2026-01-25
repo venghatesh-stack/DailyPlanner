@@ -1,0 +1,44 @@
+.task-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.task-title {
+  flex: 1;
+  font-size: 16px;
+}
+
+.task-details {
+  display: none;
+  margin-top: 6px;
+  padding-left: 28px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.task.expanded .task-details {
+  display: block;
+}
+
+.urgency-pill {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.urgency-pill.overdue {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.urgency-pill.soon {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.task.done .urgency-pill {
+  display: none;
+}
