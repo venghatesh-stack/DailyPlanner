@@ -5,6 +5,7 @@ PLANNER_TEMPLATE = """
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+<script src="{{ url_for('static', filename='planner.js') }}"></script>
 
 <body>
 {% include "_top_nav.html" %}
