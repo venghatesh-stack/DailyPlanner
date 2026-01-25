@@ -16,118 +16,6 @@
       {{ task.text }}
     </div>
 
-    <!-- START DATE (visible always) -->
-    <input type="date"
-           class="start-date"
-           value="{{ task.start_date or '' }}"
-           onclick="event.stopPropagation()"
-           oninput="updatePlanning('{{ task.id }}')">
-  </div>
-
-  <!-- 🔽 EXPANDED SECTION (hidden by default) -->
-  <div class="task-details">
-
-    <!-- Planning -->
-    <div class="task-row task-meta">
-      <label>Duration</label>
-      <input type="number"
-             class="duration-days"
-             min="0"
-             max="999"
-             Step="0.5"
-             value="{{ task.duration_days or 0 }}"
-             oninput="updatePlanning('{{ task.id }}')">
-      <span>days</span>
-
-      <label>Due</label>
-      <span class="due-date">{{ task.due_date }}</span>
-
-      <select onchange="updateDueTime('{{ task.id }}', this.value)">
-        {% for h in range(0,24) %}
-          <option value="{{ "%02d:00"|format(h) }}"
-            {% if task.due_time == "%02d:00"|format(h) %}selected{% endif %}>
-            {{ "%02d:00"|format(h) }}
-          </option>
-        {% endfor %}
-      </select>
-
-      <label>Status</label>
-      <select onchange="updateStatus('{{ task.id }}', this.value)">
-        <option value="open" {% if task.status=='open' %}selected{% endif %}>Open</option>
-        <option value="in_progress" {% if task.status=='in_progress' %}selected{% endif %}>In Progress</option>
-        <option value="done" {% if task.status=='done' %}selected{% endif %}>Done</option>
-      </select>
-    </div>
-
-    <!-- Delegation -->
-    <div class="meta">
-      👤 Delegate to:
-      <input type="text"
-             value="{{ task.delegated_to or '' }}"
-             onchange="updateDelegation('{{ task.id }}', this.value)">
-    </div>
-
-    <!-- Elimination -->
-    <div class="meta">
-      🗑 Elimination reason:
-      <textarea
-        rows="1"
-        maxlength="250"
-        class="auto-grow"
-        placeholder="Reason (optional)"
-        onchange="updateElimination('{{ task.id }}', this.value)"
-        >{{ task.elimination_reason or '' }}</textarea>
-
-    </div>
-
-    <!-- Time tracking -->
-    <div class="meta">
-      ⏳ Planned hours:
-      <input type="number"
-             min="0"
-             max="999"
-             step="0.5"
-             value="{{ task.planned_hours or 0 }}"
-             onchange="updatePlanned('{{ task.id }}', this.value)">
-    </div>
-
-    <div class="meta">
-      ✅ Actual hours:
-      <input type="number"
-             min="0"
-             max="999"
-             step="0.5"
-             value="{{ task.actual_hours or 0 }}"
-             onchange="updateActual('{{ task.id }}', this.value)">
-    </div>
-
-    <!-- Delete -->
-    <button class="icon-btn danger"
-            onclick="eliminateTask('{{ task.id }}')">
-      🗑 Delete task
-    </button>
-
-  </div>
-</div>
-<div id="task-{{ task.id }}"
-     class="task {% if task.done %}done{% endif %}"
-     data-id="{{ task.id }}"
-     data-status="{{ task.status }}">
-
-  <!-- 🔹 SUMMARY ROW (always visible) -->
-  <div class="task-row task-main"
-       onclick="toggleTask(this.parentElement)">
-
-    <input type="checkbox"
-           {% if task.status == "done" %}checked{% endif %}
-           onclick="event.stopPropagation()"
-           onchange="updateStatus('{{ task.id }}', this.checked ? 'done' : 'open')">
-
-    <div class="task-text">
-      {{ task.text }}
-    </div>
-
-    <!-- START DATE (always visible, compact) -->
     <input type="date"
            class="start-date"
            value="{{ task.start_date or '' }}"
@@ -138,22 +26,45 @@
   <!-- 🔽 EXPANDED SECTION -->
   <div class="task-details">
 
-    <!-- 📅 PLANNING -->
-    <div class="task-section">
-      <div class="task-section-title">Planning</div>
+    <!-- ROW 1: PLANNING / STATUS -->
+    <div class="task-row task-details-row planning-row">
 
-      <div class="task-row task-meta">
+      <div class="field">
         <label>Duration</label>
         <input type="number"
                class="duration-days"
-               min="1"
-               value="{{ task.duration_days or 1 }}"
+               min="0"
+               max="999"
+               value="{{ task.duration_days or 0 }}"
                oninput="updatePlanning('{{ task.id }}')">
-        <span>days</span>
+      </div>
 
+      <div class="field">
+        <label>Planned</label>
+        <input type="number"
+               min="0"
+               max="999"
+               step="0.5"
+               value="{{ task.planned_hours or 0 }}"
+               onchange="updatePlanned('{{ task.id }}', this.value)">
+      </div>
+
+      <div class="field">
+        <label>Actual</label>
+        <input type="number"
+               min="0"
+               max="999"
+               step="0.5"
+               value="{{ task.actual_hours or 0 }}"
+               onchange="updateActual('{{ task.id }}', this.value)">
+      </div>
+
+      <div class="field">
         <label>Due</label>
         <span class="due-date">{{ task.due_date }}</span>
+      </div>
 
+      <div class="field">
         <select onchange="updateDueTime('{{ task.id }}', this.value)">
           {% for h in range(0,24) %}
             <option value="{{ "%02d:00"|format(h) }}"
@@ -162,8 +73,9 @@
             </option>
           {% endfor %}
         </select>
+      </div>
 
-        <label>Status</label>
+      <div class="field">
         <select onchange="updateStatus('{{ task.id }}', this.value)">
           <option value="open" {% if task.status=='open' %}selected{% endif %}>Open</option>
           <option value="in_progress" {% if task.status=='in_progress' %}selected{% endif %}>In Progress</option>
@@ -172,53 +84,28 @@
       </div>
     </div>
 
-    <!-- 👤 OWNERSHIP -->
-    <div class="task-section">
-      <div class="task-section-title">Ownership</div>
-      <div class="meta">
-        👤 Delegate to:
+    <!-- ROW 2: ACTIONS -->
+    <div class="task-row task-details-row action-row">
+
+      <div class="field wide">
+        <label>Delegate</label>
         <input type="text"
+               maxlength="25"
                value="{{ task.delegated_to or '' }}"
                onchange="updateDelegation('{{ task.id }}', this.value)">
       </div>
-    </div>
 
-    <!-- ⏱ TRACKING -->
-    <div class="task-section">
-      <div class="task-section-title">Tracking</div>
-
-      <div class="meta">
-        ⏳ Planned hours:
-        <input type="number"
-               min="0"
-               step="0.5"
-               value="{{ task.planned_hours or 0 }}"
-               onchange="updatePlanned('{{ task.id }}', this.value)">
-      </div>
-
-      <div class="meta">
-        ✅ Actual hours:
-        <input type="number"
-               min="0"
-               step="0.5"
-               value="{{ task.actual_hours or 0 }}"
-               onchange="updateActual('{{ task.id }}', this.value)">
-      </div>
-    </div>
-
-    <!-- 🗑 ELIMINATION -->
-    <div class="task-section">
-      <div class="task-section-title">Elimination</div>
-      <div class="meta">
-        🗑 Reason:
-        <input type="text"
-               value="{{ task.elimination_reason or '' }}"
-               onchange="updateElimination('{{ task.id }}', this.value)">
+      <div class="field wide">
+        <label>Elimination reason</label>
+        <textarea rows="1"
+                  maxlength="25"
+                  oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+                  onchange="updateElimination('{{ task.id }}', this.value)">{{ task.elimination_reason or '' }}</textarea>
       </div>
 
       <button class="icon-btn danger"
               onclick="eliminateTask('{{ task.id }}')">
-        🗑 Delete task
+        🗑 Delete
       </button>
     </div>
 

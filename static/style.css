@@ -583,3 +583,70 @@ textarea.auto-grow {
 input[type="number"] {
   max-width: 100%;
 }
+/* =========================================================
+   TASK DETAILS – 2 ROW LAYOUT (NON-BREAKING)
+========================================================= */
+
+.task-details-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  margin-top: 8px;
+}
+
+.task-details-row .field {
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+}
+
+.task-details-row .field label {
+  color: #6b7280;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.task-details-row input,
+.task-details-row select,
+.task-details-row textarea {
+  font-size: 13px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+}
+
+.task-details-row textarea {
+  resize: none;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.task-details-row .wide {
+  flex: 1;
+}
+
+.task-details-row .danger {
+  white-space: nowrap;
+  color: #dc2626;
+  font-weight: 600;
+}
+
+/* =========================================================
+   MOBILE FIXES
+========================================================= */
+
+@media (max-width: 640px) {
+  .task-details-row {
+    flex-wrap: wrap;
+  }
+
+  .task-details-row .field,
+  .task-details-row .wide {
+    flex: 1 1 100%;
+  }
+
+  .task-details-row .danger {
+    align-self: flex-start;
+  }
+}
