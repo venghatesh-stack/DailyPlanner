@@ -80,3 +80,24 @@
 
   </div>
 </div>
+<div class="task-details">
+
+  <div class="meta">
+    ⏳ Planned hours:
+    <input type="number"
+           min="0"
+           step="0.5"
+           value="{{ task.planned_hours or 0 }}"
+           onchange="updatePlanned('{{ task.id }}', this.value)">
+  </div>
+
+  <div class="meta">
+    ✅ Actual hours:
+    <input type="number"
+           min="0"
+           step="0.5"
+           value="{{ task.actual_hours or 0 }}"
+           onchange="updateActual('{{ task.id }}', this.value)">
+  </div>
+
+</div>

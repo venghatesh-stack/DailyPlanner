@@ -1180,6 +1180,43 @@ def update_task_planning():
     return jsonify({
         "due_date": str(due_date)
     })
+@app.route("/projects/<project_id>/gantt")
+@login_required
+def project_gantt(project_id):
+    tasks = get(
+        "project_tasks",
+        params={"project_id": f"eq.{project_id}"}
+    )
+
+    gantt_tasks = build_gantt_tasks(tasks)
+
+    return render_template(
+        "project_gantt.html",
+        project_id=project_id,
+        gantt_tasks=json.dumps(gantt_tasks)
+    )
+@app.route("/projects/tasks/update-planned", methods=["POST"])
+@login_required
+def update_planned():
+    data = request.get_json()
+    update(
+        "project_tasks",
+        params={"id": f"eq.{data['task_id']}"},
+        json={"planned_hours": data["planned_hours"]}
+    )
+    return "", 204
+
+
+@app.route("/projects/tasks/update-actual", methods=["POST"])
+@login_required
+def update_actual():
+    data = request.get_json()
+    update(
+        "project_tasks",
+        params={"id": f"eq.{data['task_id']}"},
+        json={"actual_hours": data["actual_hours"]}
+    )
+    return "", 204
 
 # ==========================================================
 # ENTRY POINT

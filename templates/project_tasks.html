@@ -295,6 +295,23 @@ function toggleTask(el) {
 }
 </script>
 
+<script>
+function updatePlanned(id, hours) {
+  fetch("/projects/tasks/update-planned", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ task_id: id, planned_hours: hours })
+  });
+}
+
+function updateActual(id, hours) {
+  fetch("/projects/tasks/update-actual", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ task_id: id, actual_hours: hours })
+  });
+}
+</script>
 
 </body>
 </html>

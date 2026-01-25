@@ -1,0 +1,13 @@
+<link rel="stylesheet" href="https://unpkg.com/frappe-gantt/dist/frappe-gantt.css">
+<script src="https://unpkg.com/frappe-gantt/dist/frappe-gantt.js"></script>
+
+<div id="gantt"></div>
+
+<script>
+const tasks = {{ gantt_tasks | safe }}
+
+new Gantt("#gantt", tasks, {
+  view_mode: "Day",
+  date_format: "YYYY-MM-DD",
+});
+</script>
