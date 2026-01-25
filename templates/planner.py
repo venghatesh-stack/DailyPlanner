@@ -107,15 +107,15 @@ PLANNER_TEMPLATE = """
 
   <!-- Time grid -->
   <div class="day-grid">
-    {% for slot in plans %}
-      <div class="time-row">
-      {% if now_slot and slot == now_slot %}id="now-slot"{% endif %}>
-        <div class="time-column">
-          {{ slot_labels[slot] }}
-        </div>
-        <div class="grid-line"></div>
-      </div>
-    {% endfor %}
+   {% for slot in plans %}
+  <div class="time-row {% if now_slot and slot == now_slot %}now-slot{% endif %}">
+    <div class="time-column">
+      {{ slot_labels[slot] }}
+    </div>
+    <div class="grid-line"></div>
+  </div>
+{% endfor %}
+
   </div>
 
   <!-- Event blocks overlay -->

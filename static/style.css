@@ -31,37 +31,10 @@ body {
 }
 
 /* =========================================================
-   GLOBAL TOP CONTEXT NAV (_top_nav.html)
+   GLOBAL NAV
 ========================================================= */
 
-.top-context {
-  text-align: center;
-  margin-bottom: 18px;
-}
-
-.date-row {
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.date-row .time {
-  color: #2563eb;
-  margin-left: 6px;
-}
-
-.context-row {
-  margin-top: 6px;
-  font-size: 16px;
-}
-
-.context-link {
-  text-decoration: none;
-  color: #2563eb;
-  font-weight: 600;
-}
-
 .nav-icons {
-  margin-top: 10px;
   display: flex;
   justify-content: center;
   gap: 18px;
@@ -77,73 +50,56 @@ body {
   opacity: 1;
 }
 
-.section-title {
-  margin-top: 10px;
-  font-size: 18px;
-  font-weight: 700;
-  color: #4f46e5;
-}
-
 /* =========================================================
-   HEADERS / COMMON
+   PLANNER GRID (ISOLATED — NO TASK BLEED)
 ========================================================= */
 
-.header {
+.day-schedule {
+  position: relative;
+}
+
+.day-grid {
+  position: relative;
+}
+
+.time-row {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
+  height: var(--slot-height);
 }
 
-.back {
-  text-decoration: none;
-  font-size: 14px;
-  color: #2563eb;
-  font-weight: 600;
+.time-column {
+  width: 64px;
+  font-size: 12px;
+  color: #6b7280;
 }
 
-h2 {
-  margin: 0;
-  font-size: 20px;
-}
-
-/* =========================================================
-   ADD TASK BOX
-========================================================= */
-
-.add-box {
-  background: #fff;
-  padding: 12px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,.06);
-  margin-bottom: 16px;
-}
-
-.add-box form {
-  display: flex;
-  gap: 8px;
-}
-
-.add-box input {
+.grid-line {
   flex: 1;
-  padding: 10px;
-  font-size: 15px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
+  border-bottom: 1px solid #e5e7eb;
 }
 
-.add-box button {
-  padding: 10px 14px;
+.events-layer {
+  position: absolute;
+  top: 0;
+  left: 64px;
+  right: 0;
+}
+
+.event-block {
+  background: #dbeafe;
+  border-left: 4px solid #2563eb;
   border-radius: 8px;
-  border: none;
-  font-weight: 600;
-  background: #2563eb;
-  color: #fff;
+  padding: 8px;
+  font-size: 14px;
   cursor: pointer;
 }
 
+.now-slot {
+  background: rgba(37, 99, 235, 0.08);
+}
+
 /* =========================================================
-   TASK CARDS (PROJECTS / EISENHOWER / TIMELINE)
+   TASK CARDS — BASE
 ========================================================= */
 
 .task {
@@ -158,290 +114,13 @@ h2 {
   opacity: 0.6;
 }
 
-.task.done .task-text,
-.task.done .task-title {
+.task.done .task-text {
   text-decoration: line-through;
 }
 
-.task-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-}
-
-.task-title {
-  flex: 1;
-  font-size: 16px;
-}
-
-.task-details {
-  display: none;
-  margin-top: 6px;
-  padding-left: 28px;
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.task.expanded .task-details {
-  display: block;
-}
-
 /* =========================================================
-   BADGES & URGENCY
+   TASK SUMMARY ROW
 ========================================================= */
-
-.badge {
-  margin-left: 8px;
-  font-size: 12px;
-  background: #eef2ff;
-  color: #3730a3;
-  padding: 2px 6px;
-  border-radius: 6px;
-  font-weight: 600;
-}
-
-.urgency-pill {
-  font-size: 11px;
-  padding: 1px 6px;
-  border-radius: 999px;
-  font-weight: 600;
-}
-
-.urgency-pill.overdue {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.urgency-pill.soon {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.task.done .urgency-pill {
-  display: none;
-}
-
-/* =========================================================
-   META / STATUS
-========================================================= */
-
-.meta {
-  font-size: 12px;
-  color: #6b7280;
-  margin-top: 6px;
-}
-
-.status {
-  font-weight: 600;
-  text-transform: capitalize;
-}
-
-/* =========================================================
-   PROJECT LIST
-========================================================= */
-
-.project {
-  background: #fff;
-  padding: 14px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,.06);
-  margin-bottom: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.project-name {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.open {
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 600;
-  color: #2563eb;
-}
-
-/* =========================
-   PROJECT TASKS (editable)
-========================= */
-
-.project-task {
-  background: #fff;
-  padding: 14px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,.05);
-  margin-bottom: 10px;
-}
-
-.project-task[data-status="done"] {
-  opacity: 0.6;
-}
-
-.project-task .task-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.project-task select,
-.project-task input {
-  font-size: 13px;
-}
-
-/* =========================================================
-   SECTIONS / EMPTY
-========================================================= */
-
-.section {
-  margin-bottom: 24px;
-}
-
-.section h3 {
-  margin-bottom: 12px;
-}
-
-.empty {
-  text-align: center;
-  color: #6b7280;
-  font-size: 14px;
-  margin-top: 24px;
-}
-
-/* =========================================================
-   DAILY PLANNER / TIMELINE
-========================================================= */
-
-.day-strip,
-.date-strip {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-}
-
-.day-btn,
-.date-pill {
-  min-width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 1px solid #ddd;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  color: #000;
-}
-
-.date-pill {
-  border-radius: 12px;
-  padding: 6px 8px;
-}
-
-.date-pill.active,
-.day-btn.selected {
-  background: #2563eb;
-  color: #fff;
-}
-
-.event-block {
-  background: #dbeafe;
-  border-left: 4px solid #2563eb;
-  border-radius: 8px;
-  padding: 8px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-/* =========================================================
-   HABITS / REFLECTION
-========================================================= */
-
-.habits {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.habit-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
-}
-
-.habits-card,
-.card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 12px;
-  margin-bottom: 16px;
-}
-
-/* =========================================================
-   FLOATING ACTIONS
-========================================================= */
-
-.action-stack {
-  position: fixed;
-  right: 16px;
-  bottom: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  z-index: 2000;
-}
-
-.action-btn {
-  padding: 12px 16px;
-  border-radius: 999px;
-  border: none;
-  font-size: 14px;
-  box-shadow: 0 6px 16px rgba(0,0,0,.2);
-}
-
-.save-btn {
-  background: #16a34a;
-  color: #fff;
-}
-
-.cancel-btn {
-  background: #ef4444;
-  color: #fff;
-}
-
-/* =========================================================
-   MOBILE
-========================================================= */
-
-@media (max-width: 640px) {
-  .container {
-    padding: 12px;
-  }
-
-  :root {
-    --slot-height: 42px;
-  }
-}
-
-/* =========================================================
-   TASK CARD UX IMPROVEMENTS (ADD-ONLY, NO REGRESSION)
-========================================================= */
-
-.task-group {
-  margin-top: 24px;
-}
-
-.group-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
 
 .task-row {
   display: flex;
@@ -451,11 +130,6 @@ h2 {
 
 .task-main {
   cursor: pointer;
-  gap: 12px;
-}
-
-.task-main input[type="checkbox"] {
-  margin-top: 2px;
 }
 
 .task-text {
@@ -469,122 +143,26 @@ h2 {
   padding: 4px 6px;
   border-radius: 8px;
   border: 1px solid #d1d5db;
-  background: #fff;
 }
 
-.task-details {
-  margin-top: 10px;
-  padding-left: 34px;
-}
-
-.task-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 14px;
-  font-size: 13px;
-  margin-bottom: 10px;
-}
-
-.task-meta label {
-  font-weight: 500;
-  color: #374151;
-}
-
-.task-meta input,
-.task-meta select {
-  font-size: 13px;
-  padding: 4px;
-}
-
-.task-details .meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.task-details .meta input {
-  flex: 1;
-}
-
-.task-details .icon-btn.danger {
-  margin-top: 10px;
-  color: #dc2626;
-  font-weight: 600;
-}
-
-.task-details .icon-btn.danger:hover {
-  color: #b91c1c;
-}
 /* =========================================================
-   MOBILE FIX — TASK CARDS
+   TASK DETAILS (CANONICAL — SINGLE SOURCE)
 ========================================================= */
 
-@media (max-width: 640px) {
-
-  .task {
-    padding: 10px;
-  }
-
-  /* Summary row stacks cleanly */
-  .task-main {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-  }
-
-  .task-main input[type="date"] {
-    width: 100%;
-  }
-
-  .task-text {
-    font-size: 14px;
-    line-height: 1.4;
-  }
-
-  /* Expanded section becomes vertical */
-  .task-meta {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-    padding-left: 0;
-  }
-
-  .task-meta label {
-    font-size: 11px;
-    font-weight: 600;
-  }
-
-  .task-meta input,
-  .task-meta select {
-    width: 100%;
-  }
-
-  .task-details {
-    padding-left: 0;
-  }
-
-  .task-details .meta input,
-  .task-details .meta textarea {
-    width: 100%;
-  }
-}
-/* Auto-growing text areas */
-textarea.auto-grow {
-  resize: none;
-  overflow: hidden;
-  min-height: 32px;
-  max-height: 120px;
+.task-details {
+  display: none;
+  margin-top: 10px;
+  padding-left: 34px;
   font-size: 13px;
-  line-height: 1.4;
-  padding: 6px 8px;
+  color: #6b7280;
 }
-input[type="number"] {
-  max-width: 100%;
+
+.task.expanded .task-details {
+  display: block;
 }
+
 /* =========================================================
-   TASK DETAILS – 2 ROW LAYOUT (NON-BREAKING)
+   TASK DETAILS — 2 ROW LAYOUT
 ========================================================= */
 
 .task-details-row {
@@ -601,9 +179,9 @@ input[type="number"] {
   font-size: 11px;
 }
 
-.task-details-row .field label {
-  color: #6b7280;
+.task-details-row label {
   font-weight: 600;
+  color: #6b7280;
   margin-bottom: 2px;
 }
 
@@ -619,24 +197,63 @@ input[type="number"] {
 .task-details-row textarea {
   resize: none;
   overflow: hidden;
-  max-width: 100%;
 }
 
 .task-details-row .wide {
   flex: 1;
 }
 
-.task-details-row .danger {
-  white-space: nowrap;
+.icon-btn.danger {
+  background: none;
+  border: none;
+  cursor: pointer;
   color: #dc2626;
   font-weight: 600;
 }
 
 /* =========================================================
-   MOBILE FIXES
+   INPUT SAFETY
+========================================================= */
+
+input[type="number"] {
+  max-width: 100%;
+}
+
+textarea.auto-grow {
+  resize: none;
+  overflow: hidden;
+  min-height: 32px;
+  max-height: 120px;
+}
+
+/* =========================================================
+   MOBILE FIXES (SINGLE CONSOLIDATED BLOCK)
 ========================================================= */
 
 @media (max-width: 640px) {
+
+  :root {
+    --slot-height: 42px;
+  }
+
+  .container {
+    padding: 12px;
+  }
+
+  .task-main {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .task-main input[type="date"] {
+    width: 100%;
+  }
+
+  .task-details {
+    padding-left: 0;
+  }
+
   .task-details-row {
     flex-wrap: wrap;
   }
@@ -644,9 +261,5 @@ input[type="number"] {
   .task-details-row .field,
   .task-details-row .wide {
     flex: 1 1 100%;
-  }
-
-  .task-details-row .danger {
-    align-self: flex-start;
   }
 }
