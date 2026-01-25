@@ -995,17 +995,21 @@ def update_delegation():
 def eliminate_task():
     data = request.get_json()
 
+    task_id = data["id"]
+    reason = data.get("reason")
+
+    # 🔧 UPDATE existing row (not insert, not upsert)
     post(
         "project_tasks",
         {
-            "id": data["id"],
             "is_eliminated": True,
-            "elimination_reason": data.get("reason")
+            "elimination_reason": reason,
         },
-        upsert=True
+        params={"id": f"eq.{task_id}"}
     )
 
     return "", 204
+
 
 # ==========================================================
 # ENTRY POINT
