@@ -180,7 +180,7 @@ def planner():
         today_display=formatted_date,
         prev_month=prev_month,
         next_month=next_month,
-        timeline_days=timeline_days
+        timeline_days=timeline_days,
         selected_date=selected_date,
         
     )
