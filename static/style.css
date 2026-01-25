@@ -423,3 +423,41 @@ h2 {
     --slot-height: 42px;
   }
 }
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.task-main {
+  justify-content: space-between;
+}
+
+.task-text {
+  flex: 1;
+  font-size: 15px;
+}
+
+.task-meta {
+  margin-top: 6px;
+  padding-left: 26px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  opacity: 0.6;
+}
+
+.icon-btn:hover {
+  opacity: 1;
+}
+
+.due {
+  font-weight: 600;
+  color: #2563eb;
+}
