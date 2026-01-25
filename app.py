@@ -14,14 +14,14 @@ from services.login_service import login_required
 from services.eisenhower_service import autosave_task
 from config import MIN_HEALTH_HABITS
 from services.recurring_service import materialize_recurring_slots,materialize_recurring_tasks
-
+from utils.eisenhower_utils import compute_eisenhower_quadrants
 from services.eisenhower_service import (
     load_todo,
     save_todo,
     copy_open_tasks_from_previous_day,  
     enable_travel_mode,
 )
-
+from collections import defaultdict
 from services.untimed_service import remove_untimed_task  
 from services.timeline_service import load_timeline_tasks
 from templates.planner import PLANNER_TEMPLATE
@@ -173,49 +173,80 @@ def planner():
         today_display=formatted_date,
     )
 
+def empty_quadrant():
+    return defaultdict(lambda: defaultdict(list))
+
+
+def build_eisenhower_view(project_tasks, plan_date):
+    today = plan_date
+
+    todo = {
+        "do": empty_quadrant(),
+        "schedule": empty_quadrant(),
+        "delegate": empty_quadrant(),
+        "eliminate": empty_quadrant(),
+    }
+
+    for t in project_tasks:
+        if not t.get("due_date"):
+            continue
+
+        task = {
+            "id": t["id"],
+            "text": t["task_text"],
+            "done": t.get("status") == "done",
+            "project_id": t.get("project_id"),
+            "recurring": bool(t.get("recurrence")),
+            "recurrence": t.get("recurrence"),
+        }
+
+        if t["due_date"] == today:
+            todo["do"]["today"]["tasks"].append(task)
+        elif t["due_date"] > today:
+            todo["schedule"]["future"]["tasks"].append(task)
+
+    return todo
 
 # ==========================================================
 # ROUTES – EISENHOWER MATRIX
 # ==========================================================
-@app.route("/todo", methods=["GET", "POST"])
+@app.route("/todo", methods=["GET"])
 @login_required
 def todo():
-    user_id="VenghateshS"
-    if request.method == "HEAD":
-        return "", 200
-    today = datetime.now(IST).date()
+    year = int(request.args.get("year", date.today().year))
+    months = request.args.getlist("months")  # e.g. ["1", "2"]
 
-    year = int(request.args.get("year", today.year))
-    month = int(request.args.get("month", today.month))
-    day = int(request.args.get("day", today.day))
-    plan_date = safe_date(year, month, day)
-    logger.debug("Todo route: %s %s", request.method, plan_date)
-    if request.method == "POST":
-        save_todo(plan_date, request.form)
-        logger.debug("Session toast after save: %s", session.get("toast"))
-        if "toast" not in session:
-            session["toast"] = {
-            "type": "success",
-            "message": "💾 Eisenhower Matrix saved"
-            }
-            logger.debug("Fallback save toast set")
-        return redirect(url_for("todo", year=plan_date.year, month=plan_date.month, day=plan_date.day, saved=1))
+    if not months:
+        months = [str(date.today().month)]
 
-    materialize_recurring_tasks(plan_date,user_id)
-    todo,project_progress = load_todo(plan_date)
-    logger.debug("Rendering todo page, toast=%s", session.get("toast"))
-    days = [
-        date(year, month, d) for d in range(1, calendar.monthrange(year, month)[1] + 1)
+    months = [int(m) for m in months]
+
+    # Fetch Eisenhower tasks
+    tasks = get(
+        "project_tasks",
+        filters={
+            "sent_to_eisenhower": "eq.true"
+        }
+    )
+
+    # Filter month-wise (DATE based)
+    filtered_tasks = [
+        t for t in tasks
+        if t.get("due_date")
+        and t["due_date"].year == year
+        and t["due_date"].month in months
     ]
-    quote = MOTIVATIONAL_QUOTES[plan_date.day % len(MOTIVATIONAL_QUOTES)]
-    projects = get(
-    "projects",
-    params={
-        "user_id": f"eq.{user_id}",
-        "is_archived": "eq.false",
-        "order": "created_at.asc",
-    },
-)
+
+    
+    quadrants = compute_eisenhower_quadrants(filtered_tasks)
+
+    return render_template(
+        "todo.html",
+        quadrants=quadrants,
+        year=year,
+        selected_months=months
+    )
+
 
     return render_template_string(
         TODO_TEMPLATE,
