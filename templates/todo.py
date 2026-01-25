@@ -257,7 +257,7 @@ summary::-webkit-details-marker { display:none; }
           <!-- HEADER (always visible) -->
           <div class="task-header" onclick="toggleTask(this)">
             <input type="checkbox"
-                  data-id="{{ t.id }}"
+                  
                   {% if t.done %}checked{% endif %}
                   onclick="event.stopPropagation()"
                   onchange="toggleDone(this)">
@@ -332,31 +332,6 @@ function toggleDone(checkbox) {
 }
 </script>
 
-  const taskId = task.dataset.id;
-  if (!taskId) {
-    console.error("Missing task id on task element");
-    return;
-  }
-
-  // UI update
-  task.classList.toggle("done", checkbox.checked);
-
-  // Persist
-  fetch("/todo/toggle-done", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      id: taskId,
-      is_done: checkbox.checked
-    })
-  }).catch(err => {
-    console.error("Toggle done failed", err);
-  });
-}
-
-
-
-</script>
 <script>
 function toggleTask(el) {
   const card = el.closest(".task");
