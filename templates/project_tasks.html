@@ -286,10 +286,12 @@ button[disabled] {
           </select>
 
           <input type="date"
-              id="d-{{ task.id }}"
-              value="{{ task.due_date or today }}"
-              {% if task.sent_to_eisenhower %}disabled{% endif %}
-              onchange="updateDueDate('{{ task.id }}', this.value)" />
+            id="d-{{ task.id }}"
+            {% if task.due_date %}
+              value="{{ task.due_date }}"
+            {% endif %}
+            onchange="updateDueDate('{{ task.id }}', this.value)" />
+
 
          <select class="status-select"
           onchange="updateStatus('{{ task.id }}', this.value)">
