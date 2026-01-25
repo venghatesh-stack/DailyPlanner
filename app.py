@@ -142,7 +142,17 @@ def planner():
     health_streak = compute_health_streak(user_id, plan_date)
 
     streak_active_today = is_health_day(set(habits))
+    selected_date = date(year, month, day)
+    today = date.today()
+    # ✅ ADD THIS HERE
+    timeline_days = [
+        selected_date + timedelta(days=i)
+        for i in range(-6, 7)
+    ]
 
+    # ✅ Month navigation helpers
+    prev_month = (selected_date.replace(day=1) - timedelta(days=1)).replace(day=1)
+    next_month = (selected_date.replace(day=28) + timedelta(days=4)).replace(day=1)
     return render_template_string(
         PLANNER_TEMPLATE,
         year=year,
@@ -168,6 +178,10 @@ def planner():
         min_health_habits=MIN_HEALTH_HABITS,
         blocks=blocks,
         today_display=formatted_date,
+        prev_month=prev_month,
+        next_month=next_month,
+        timeline_days=timeline_days
+        
     )
 
 def empty_quadrant():
@@ -318,7 +332,7 @@ def normalize_task(t, project_name=None):
 def todo():
     from datetime import date
     import calendar
-
+    
     year = int(request.args.get("year", date.today().year))
     month = int(request.args.get("month", date.today().month))
     day = int(request.args.get("day", date.today().day))
@@ -911,7 +925,7 @@ def project_tasks(project_id):
 
 def compute_due_date(start_date, duration_days):
     return start_date + timedelta(days=duration_days)
-from datetime import date
+
 
 def _sort_key(task):
     """

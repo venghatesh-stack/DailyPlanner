@@ -15,37 +15,49 @@ PLANNER_TEMPLATE = """
 <body>
 {% include "_top_nav.html" %}
 <div class="container">
-  <div class="header mobile-header">
+  
+  <div class="timeline-header">
 
+  <!-- Month Context -->
+  <div class="month-bar">
+    <button class="month-nav"
+            onclick="location.href='/?year={{ prev_month.year }}&month={{ prev_month.month }}&day=1'">
+      ‹
+    </button>
+
+    <span class="month-label">
+      {{ selected_date.strftime("%B %Y") }}
+    </span>
+
+    <button class="month-nav"
+            onclick="location.href='/?year={{ next_month.year }}&month={{ next_month.month }}&day=1'">
+      ›
+    </button>
   </div>
-    <form method="get" class="month-controls">
-      <input type="hidden" name="day" value="{{ selected_day }}">
-      <select name="month" onchange="this.form.submit()">
-        {% for m in range(1,13) %}
-          <option value="{{m}}" {% if m==month %}selected{% endif %}>{{ calendar.month_name[m] }}</option>
-        {% endfor %}
-      </select>
-      <select name="year" onchange="this.form.submit()">
-        {% for y in range(year-5, year+6) %}
-          <option value="{{y}}" {% if y==year %}selected{% endif %}>{{y}}</option>
-        {% endfor %}
-      </select>
-    </form>
 
-    <div class="date-strip" id="dateStrip">
-      {% for d in days %}
-        <a
-          href="/?year={{year}}&month={{month}}&day={{d.day}}"
-          class="date-pill {% if d.day==selected_day %}active{% endif %}"
-          {% if d.day==selected_day %}id="selected-day"{% endif %}
-        >
-          <div class="dow">{{ d.strftime('%a') }}</div>
-          <div class="dom">{{ d.day }}</div>
-        </a>
-      {% endfor %}
-    </div>
+  <!-- Day Timeline -->
+  <div class="day-timeline">
+    {% for d in timeline_days %}
+      <a href="/?year={{ d.year }}&month={{ d.month }}&day={{ d.day }}"
+         class="day-item
+                {% if d == selected_date %}active{% endif %}
+                {% if d == today %}today{% endif %}">
+        <div class="dow">{{ d.strftime("%a") }}</div>
+        <div class="num">{{ d.day }}</div>
+      </a>
+    {% endfor %}
+  </div>
 
-
+</div>
+<div class="month-jump">
+  <a href="/?year={{ selected_date.year }}&month={{ selected_date.month - 1 }}&day=1">
+    ‹ {{ selected_date.strftime("%b") }}
+  </a>
+  <span>{{ selected_date.strftime("%B %Y") }}</span>
+  <a href="/?year={{ selected_date.year }}&month={{ selected_date.month + 1 }}&day=1">
+    {{ (selected_date.replace(day=28) + timedelta(days=4)).strftime("%b") }} ›
+  </a>
+</div>
 
     <form method="post" id="planner-form">
     <input type="hidden" name="year" value="{{ year }}">
@@ -501,20 +513,7 @@ function saveEvent(startSlot, endSlot) {
   }).then(() => location.reload());
 }
 </script>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const selected = document.getElementById("selected-day");
-  if (!selected) return;
 
-  requestAnimationFrame(() => {
-    selected.scrollIntoView({
-      behavior: "smooth",
-      inline: "center",
-      block: "nearest"
-    });
-  });
-});
-</script>
 
 <script>
 function toggleSubtask(id, isDone) {
