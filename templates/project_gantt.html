@@ -1,13 +1,26 @@
-<link rel="stylesheet" href="https://unpkg.com/frappe-gantt/dist/frappe-gantt.css">
-<script src="https://unpkg.com/frappe-gantt/dist/frappe-gantt.js"></script>
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet"
+        href="https://unpkg.com/frappe-gantt/dist/frappe-gantt.css">
+</head>
 
-<div id="gantt"></div>
+<body>
 
-<script>
-const tasks = {{ gantt_tasks | safe }}
+  <div id="gantt"></div>
 
-new Gantt("#gantt", tasks, {
-  view_mode: "Day",
-  date_format: "YYYY-MM-DD",
-});
-</script>
+  <!-- LOAD LIBRARY FIRST -->
+  <script src="https://unpkg.com/frappe-gantt/dist/frappe-gantt.js"></script>
+
+  <!-- THEN YOUR SCRIPT -->
+  <script>
+    const tasks = {{ gantt_tasks | tojson }};
+
+    new Gantt("#gantt", tasks, {
+      view_mode: "Day",
+      date_format: "YYYY-MM-DD"
+    });
+  </script>
+
+</body>
+</html>

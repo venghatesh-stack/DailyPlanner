@@ -7,17 +7,15 @@ import json
 from supabase_client import get, post, update
 from logger import setup_logger
 from utils.dates import safe_date 
-from config import TOTAL_SLOTS,QUADRANT_MAP,TASK_CATEGORIES,STATIC_TRAVEL_SUBGROUPS
+from config import TOTAL_SLOTS,QUADRANT_MAP
 from utils.calender_links import google_calendar_link
 from services.planner_service import load_day, save_day, get_daily_summary, get_weekly_summary,compute_health_streak,is_health_day,ensure_daily_habits_row,group_slots_into_blocks
 from services.login_service import login_required
 from services.eisenhower_service import autosave_task
 from config import MIN_HEALTH_HABITS
-from services.recurring_service import materialize_recurring_slots,materialize_recurring_tasks
-from utils.eisenhower_utils import compute_eisenhower_quadrants
+from services.recurring_service import materialize_recurring_slots
+from services.gantt_service import build_gantt_tasks
 from services.eisenhower_service import (
-    load_todo,
-    save_todo,
     copy_open_tasks_from_previous_day,  
     enable_travel_mode,
 )
@@ -33,7 +31,6 @@ from config import (
     IST,
     STATUSES,
     DEFAULT_STATUS, 
-    MOTIVATIONAL_QUOTES,
     HABIT_ICONS,
     HABIT_LIST,
 )
