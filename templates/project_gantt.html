@@ -1,29 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/frappe-gantt/dist/frappe-gantt.css"
-    />
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/frappe-gantt/dist/frappe-gantt.css">
 </head>
 
 <body>
 
-  <div id="gantt"></div>
+<div id="gantt"></div>
 
-  <!-- LOAD LIBRARY FIRST -->
 <script src="https://cdn.jsdelivr.net/npm/frappe-gantt/dist/frappe-gantt.umd.js"></script>
 
-  <!-- THEN YOUR SCRIPT -->
-  <script>
-    const tasks = {{ gantt_tasks | tojson }};
-    console.log("GANTT TASKS", tasks);
+<script>
+  const tasks = {{ gantt_tasks | tojson }};
+  const ganttTasks = Array.isArray(tasks) ? tasks : [];
 
-    new Gantt("#gantt", tasks, {
-      view_mode: "Day",
-      date_format: "YYYY-MM-DD"
-    });
-  </script>
+  console.log("GANTT TASKS", ganttTasks);
+  console.log("isArray?", Array.isArray(ganttTasks));
+
+  new Gantt("#gantt", ganttTasks, {
+    view_mode: "Day"
+  });
+</script>
 
 </body>
 </html>
+
