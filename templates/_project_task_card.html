@@ -4,38 +4,79 @@
      data-status="{{ task.status }}">
 
   <!-- ROW 1: checkbox + text + delete -->
-  <div class="task-row task-main">
-
+  <div class="task-row task-main" onclick="toggleTask(this.parentElement)">
     <input type="checkbox"
            {% if task.status == "done" %}checked{% endif %}
+           onclick="event.stopPropagation()"
            onchange="updateStatus('{{ task.id }}', this.checked ? 'done' : 'open')">
 
-    <div class="task-text">
-      {{ task.text }}
-    </div>
+    <div class="task-text">{{ task.text }}</div>
 
     <button class="icon-btn danger"
-            onclick="eliminateTask('{{ task.id }}')"
-            title="Remove task">
+            onclick="event.stopPropagation(); eliminateTask('{{ task.id }}')">
       🗑
     </button>
-
   </div>
 
-  <!-- ROW 2: planning controls -->
+  <!-- ROW 2: planning -->
   <div class="task-row task-meta">
 
-    <label>Status</label>
+    <!-- START DATE -->
+    <label>Start</label>
+    <select onchange="updatePlanning('{{ task.id }}', this.value)">
+      {% for d in next_14_days %}
+        <option value="{{ d }}"
+          {% if task.start_date == d %}selected{% endif %}>
+          {{ d }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <!-- DURATION -->
+    <label>Duration</label>
+    <input type="number"
+           min="1"
+           value="{{ task.duration_days or 1 }}"
+           onchange="updatePlanning('{{ task.id }}', this.value)">
+    <span>days</span>
+
+    <!-- DUE -->
+    <label>Due</label>
+    <span class="due-date">{{ task.due_date }}</span>
+
+    <select onchange="updateDueTime('{{ task.id }}', this.value)">
+      {% for h in range(0,24) %}
+        <option value="{{ "%02d:00"|format(h) }}"
+          {% if task.due_time == "%02d:00"|format(h) %}selected{% endif %}>
+          {{ "%02d:00"|format(h) }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <!-- STATUS -->
     <select onchange="updateStatus('{{ task.id }}', this.value)">
       <option value="open" {% if task.status=='open' %}selected{% endif %}>Open</option>
       <option value="in_progress" {% if task.status=='in_progress' %}selected{% endif %}>In Progress</option>
       <option value="done" {% if task.status=='done' %}selected{% endif %}>Done</option>
     </select>
+  </div>
 
-    <!-- FUTURE READY -->
-    {% if task.due_date %}
-      <span class="due">📅 {{ task.due_date }}</span>
-    {% endif %}
+  <!-- 🔽 DETAILS (hidden by default) -->
+  <div class="task-details">
+
+    <div class="meta">
+      👤 Delegate to:
+      <input type="text"
+             value="{{ task.delegated_to or '' }}"
+             onchange="updateDelegation('{{ task.id }}', this.value)">
+    </div>
+
+    <div class="meta">
+      🗑 Elimination reason:
+      <input type="text"
+             value="{{ task.elimination_reason or '' }}"
+             onchange="updateElimination('{{ task.id }}', this.value)">
+    </div>
 
   </div>
 </div>

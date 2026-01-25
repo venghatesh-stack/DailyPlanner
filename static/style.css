@@ -461,3 +461,22 @@ h2 {
   font-weight: 600;
   color: #2563eb;
 }
+.task-meta {
+  margin-top: 6px;
+  padding-left: 26px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.task-meta select,
+.task-meta input {
+  font-size: 13px;
+  padding: 4px;
+}
+
+.due-date {
+  font-weight: 600;
+  color: #2563eb;
+}

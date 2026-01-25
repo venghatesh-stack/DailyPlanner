@@ -909,6 +909,8 @@ def project_tasks(project_id):
         tasks=tasks,
     )
 
+def compute_due_date(start_date, duration_days):
+    return start_date + timedelta(days=duration_days)
 
 @app.route("/projects/<project_id>/tasks/add", methods=["POST"])
 @login_required
@@ -1066,6 +1068,46 @@ def update_project_task_date():
     )
     logger.info(f"👉 task_id={task_id}, new_date={due_date}")
     return jsonify({"status": "ok"})
+@app.route("/projects/tasks/update-duration", methods=["POST"])
+@login_required
+def update_task_duration():
+    data = request.get_json()
+
+    task_id = data["task_id"]
+    duration_days = int(data["duration_days"])
+
+    # 1️⃣ Fetch start_date from DB (source of truth)
+    rows = get(
+        "project_tasks",
+        params={
+            "id": f"eq.{task_id}",
+            "select": "start_date",
+        },
+    )
+
+    if not rows or not rows[0].get("start_date"):
+        return jsonify({"error": "Missing start date"}), 400
+
+    start_date = date.fromisoformat(rows[0]["start_date"])
+
+    # 2️⃣ ✅ Compute due date HERE
+    due_date = compute_due_date(start_date, duration_days)
+
+    # 3️⃣ Persist everything
+    update(
+        "project_tasks",
+        params={"id": f"eq.{task_id}"},
+        json={
+            "duration_days": duration_days,
+            "due_date": due_date.isoformat(),
+        },
+    )
+
+    return jsonify({
+        "due_date": due_date.isoformat()
+    })
+
+
 @app.route("/projects/tasks/update-delegation", methods=["POST"])
 @login_required
 def update_delegation():
@@ -1114,6 +1156,30 @@ def update_due_time():
     )
 
     return "", 204
+@app.route("/projects/tasks/update-planning", methods=["POST"])
+@login_required
+def update_task_planning():
+    data = request.get_json()
+
+    task_id = data["task_id"]
+    start   = date.fromisoformat(data["start_date"])
+    days    = int(data.get("duration_days", 1))
+
+    due_date = start + timedelta(days=days)
+
+    update(
+        "project_tasks",
+        params={"id": f"eq.{task_id}"},
+        json={
+            "start_date": str(start),
+            "duration_days": days,
+            "due_date": str(due_date),
+        }
+    )
+
+    return jsonify({
+        "due_date": str(due_date)
+    })
 
 # ==========================================================
 # ENTRY POINT

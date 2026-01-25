@@ -265,6 +265,35 @@ function updateDueTime(taskId, time) {
   });
 }
 </script>
+<script>
+function updatePlanning(taskId) {
+  const taskEl = document.getElementById(`task-${taskId}`);
+
+  const startDate = taskEl.querySelector(".start-date").value;
+  const duration  = taskEl.querySelector(".duration-days").value;
+
+  fetch("/projects/tasks/update-planning", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      task_id: taskId,
+      start_date: startDate,
+      duration_days: duration
+    })
+  })
+  .then(r => r.json())
+  .then(res => {
+    // ✅ update UI without reload
+    taskEl.querySelector(".due-date").textContent = res.due_date;
+  });
+}
+</script>
+
+<script>
+function toggleTask(el) {
+  el.classList.toggle("expanded");
+}
+</script>
 
 
 </body>
