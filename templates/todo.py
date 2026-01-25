@@ -257,6 +257,7 @@ summary::-webkit-details-marker { display:none; }
           <!-- HEADER (always visible) -->
           <div class="task-header" onclick="toggleTask(this)">
             <input type="checkbox"
+                  data-id="{{ t.id }}"
                   {% if t.done %}checked{% endif %}
                   onclick="event.stopPropagation()"
                   onchange="toggleDone(this)">
@@ -307,17 +308,29 @@ summary::-webkit-details-marker { display:none; }
 
 <script>
 function toggleDone(checkbox) {
-  // 🔒 Safety check
-  if (!(checkbox instanceof HTMLElement)) {
-    console.error("toggleDone called with invalid argument:", checkbox);
+  const taskId = checkbox.dataset.id;
+  if (!taskId) {
+    console.error("Missing task id on checkbox");
     return;
   }
 
   const task = checkbox.closest(".task");
-  if (!task) {
-    console.error("Task container not found");
-    return;
+  if (task) {
+    task.classList.toggle("done", checkbox.checked);
   }
+
+  fetch("/todo/toggle-done", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: taskId,
+      is_done: checkbox.checked
+    })
+  }).catch(err => {
+    console.error("Toggle done failed", err);
+  });
+}
+</script>
 
   const taskId = task.dataset.id;
   if (!taskId) {
