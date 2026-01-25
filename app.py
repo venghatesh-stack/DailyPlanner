@@ -251,12 +251,17 @@ def compute_urgency(due_date, due_time):
     if not due_date or not due_time:
         return None
 
-    # 🔧 Convert due_time string -> datetime.time
+    # Convert due_time string -> datetime.time
     if isinstance(due_time, str):
-        try:
-            due_time = datetime.strptime(due_time, "%H:%M").time()
-        except ValueError:
-            return None  # safety guard
+        for fmt in ("%H:%M", "%H:%M:%S"):
+            try:
+                due_time = datetime.strptime(due_time, fmt).time()
+                break
+            except ValueError:
+                due_time = None
+
+    if not due_time:
+        return None
 
     now = datetime.now()
     due_dt = datetime.combine(due_date, due_time)
