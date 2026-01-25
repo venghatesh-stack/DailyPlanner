@@ -19,12 +19,11 @@ def build_gantt_tasks(tasks):
 
         gantt.append({
             "id": t["id"],
-            "text": t["task_text"],
-            "start_date": start.isoformat(),
-            "end_date": end.isoformat(),
-            "duration": t["duration_days"],
-            "progress": progress / 100,  # JS libraries expect 0–1
-            "project_id": t.get("project_id")
+            "name": t["task_text"],        # REQUIRED
+            "start": start.isoformat(),    # REQUIRED
+            "end": end.isoformat(),        # REQUIRED
+            "progress": int(progress)      # 0–100 (NOT 0–1)
         })
+
 
     return gantt

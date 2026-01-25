@@ -15,6 +15,7 @@
   <!-- THEN YOUR SCRIPT -->
   <script>
     const tasks = {{ gantt_tasks | tojson }};
+    console.log("GANTT TASKS", tasks);
 
     new Gantt("#gantt", tasks, {
       view_mode: "Day",

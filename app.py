@@ -228,12 +228,13 @@ def build_eisenhower_view(project_tasks, plan_date,project_map):
             continue
 
         # 🔥 Do Now
-        if t["due_date"] == plan_date:
+        if t.get("due_date") and t["due_date"] == plan_date:
             todo["do"]["today"]["tasks"].append(task)
             continue
 
         # 📅 Schedule
-        if t["due_date"] > plan_date:
+        if t.get("due_date") and t["due_date"] > plan_date:
+
             todo["schedule"]["future"]["tasks"].append(task)
 
     return todo
@@ -299,7 +300,7 @@ def normalize_task(t, project_name=None):
         "text": t.get("task_text") or t.get("text"),
         "status": t.get("status"),
         "done": t.get("status") == "done",
-        "due_date": t.get("due_date"),
+        "due_date": parse_date(t.get("due_date")),
         "due_time": t.get("due_time"),
         "delegated_to": t.get("delegated_to"),
         "elimination_reason": t.get("elimination_reason"),
@@ -342,11 +343,13 @@ def todo():
     for t in tasks:
         t["due_date"] = parse_date(t["due_date"])
 
-    tasks = [
-        t for t in tasks
-        if t["due_date"].year == year
-        and t["due_date"].month == month
-    ]
+        tasks = [
+            t for t in tasks
+            if t.get("due_date")
+            and t["due_date"].year == year
+            and t["due_date"].month == month
+        ]
+
    
     # 2. Build Eisenhower (urgency is computed there)
     todo = build_eisenhower_view(tasks, plan_date,project_map)
