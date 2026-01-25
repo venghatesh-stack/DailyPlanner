@@ -373,3 +373,74 @@ body {
     align-self: flex-start;
   }
 }
+/* =========================================================
+   MOBILE UX FIX — PROJECT TASKS (FINAL)
+========================================================= */
+
+@media (max-width: 640px) {
+
+  /* Card spacing */
+  .project-task {
+    padding: 12px;
+  }
+
+  /* ===== SUMMARY ROW ===== */
+  .project-task .task-row:first-child {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .project-task input[type="checkbox"] {
+    margin-top: 3px;
+    flex-shrink: 0;
+  }
+
+  .project-task .task-text {
+    font-size: 15px;
+    line-height: 1.45;
+    word-break: break-word;
+  }
+
+  /* ===== ALL DETAIL ROWS ===== */
+  .project-task .task-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  /* Label above input (mobile-friendly) */
+  .project-task label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+  }
+
+  .project-task input,
+  .project-task select,
+  .project-task textarea {
+    width: 100%;
+    max-width: 100%;
+    font-size: 14px;
+  }
+
+  /* Compact numeric inputs */
+  .project-task input[type="number"] {
+    max-width: 120px;
+  }
+
+  /* Auto-grow textareas */
+  .project-task textarea {
+    resize: none;
+    overflow: hidden;
+  }
+
+  /* ===== DELETE BUTTON ===== */
+  .project-task .icon-btn.danger {
+    align-self: flex-start;
+    margin-top: 6px;
+    padding: 6px 0;
+  }
+}
