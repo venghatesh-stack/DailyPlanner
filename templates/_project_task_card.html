@@ -1,0 +1,29 @@
+<div id="task-{{ task.id }}"
+     class="task {% if task.done %}done{% endif %}"
+     data-id="{{ task.id }}"
+     data-status="{{ task.status }}">
+
+
+  <div class="task-row">
+    <input type="checkbox"
+           {% if task.status == "done" %}checked{% endif %}
+           onchange="updateStatus('{{ task.id }}', this.checked ? 'done' : 'open')">
+
+    <div class="task-text">
+      {{ task.text }}
+    </div>
+  </div>
+
+  <div class="task-row">
+    Status:
+    <select onchange="updateStatus('{{ task.id }}', this.value)">
+      <option value="open" {% if task.status=='open' %}selected{% endif %}>Open</option>
+      <option value="in_progress" {% if task.status=='in_progress' %}selected{% endif %}>In Progress</option>
+      <option value="done" {% if task.status=='done' %}selected{% endif %}>Done</option>
+    </select>
+  </div>
+
+  {% if task.due_date %}
+    <div class="meta">📅 {{ task.due_date }}</div>
+  {% endif %}
+</div>

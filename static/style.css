@@ -263,6 +263,32 @@ h2 {
   font-weight: 600;
   color: #2563eb;
 }
+/* =========================
+   PROJECT TASKS (editable)
+========================= */
+
+.project-task {
+  background: #fff;
+  padding: 14px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
+  margin-bottom: 10px;
+}
+
+.project-task[data-status="done"] {
+  opacity: 0.6;
+}
+
+.project-task .task-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.project-task select,
+.project-task input {
+  font-size: 13px;
+}
 
 /* =========================================================
    SECTIONS / EMPTY

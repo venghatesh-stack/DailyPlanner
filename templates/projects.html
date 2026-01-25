@@ -4,17 +4,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Projects</title>
   <link rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}">   
+        href="{{ url_for('static', filename='style.css') }}">
 </head>
 
-
 <body>
-    {% include "_top_nav.html" %}
 
-    <div class="nav-right">
-        <span id="current-datetime"></span>
-    </div>
-    </div>
+  {% include "_top_nav.html" %}
 
   <div class="container">
     <h2>Projects</h2>
@@ -36,23 +31,7 @@
       </div>
     {% endif %}
   </div>
-  <script>
-  function updateDateTime() {
-    const now = new Date();
-    const options = {
-      weekday: "short",
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    };
-    document.getElementById("current-datetime").textContent =
-      now.toLocaleString(undefined, options);
-  }
 
-  updateDateTime();
-  setInterval(updateDateTime, 60000); // update every minute
-</script>
 </body>
 </html>
+
