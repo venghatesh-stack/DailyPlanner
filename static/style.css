@@ -419,3 +419,52 @@ body {
     padding: 6px 0;
   }
 }
+
+/* =========================================================
+   MOBILE-ONLY TASK LAYOUT FIX (DESKTOP UNTOUCHED)
+========================================================= */
+@media (max-width: 768px) {
+
+  /* Header row: checkbox + title + arrow */
+  .task-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .task-header input[type="checkbox"] {
+    flex: 0 0 auto;
+  }
+
+  .task-title {
+    flex: 1;
+    min-width: 0; /* allows text wrapping */
+    font-size: 15px;
+    line-height: 1.3;
+    white-space: normal;
+  }
+
+  /* Arrow stays on the right */
+  .expand-btn {
+    flex: 0 0 auto;
+    padding: 6px;
+    font-size: 18px;
+    background: none;
+    border: none;
+  }
+
+  /* Everything except header moves below */
+  .task-details,
+  .task-meta,
+  .task-actions {
+    margin-left: 28px; /* aligns under text, not checkbox */
+    margin-top: 6px;
+    width: calc(100% - 28px);
+  }
+
+  /* Optional: tighten visual noise */
+  .task-meta {
+    font-size: 13px;
+    opacity: 0.85;
+  }
+}
