@@ -188,17 +188,14 @@ def build_eisenhower_view(project_tasks, plan_date,project_map):
     }
   
     for t in project_tasks:
-        
-        if not t.get("due_date"):
-            continue
         urgency = None
 
-        # 🔴🟠 ONLY compute urgency for today's tasks
-        if t["due_date"] == plan_date:
+        # 🔴🟠 Compute urgency ONLY for today AND only if not done
+        if t.get("due_date") == plan_date and t.get("status") != "done":
             urgency = compute_urgency(
                 t.get("due_date"),
                 t.get("due_time")
-            ) if t.get("due_date") == plan_date else None
+            )
 
         print(
             t["task_text"],
