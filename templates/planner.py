@@ -131,6 +131,31 @@ PLANNER_TEMPLATE = """
 
 <!-- ================= SCRIPTS ================= -->
 <!-- (all your existing inline JS stays exactly as-is below) -->
+  <div id="modal" style="display:none"></div>
+  <div id="summary-modal" style="display:none"></div>
+
+  <!-- ================= IST TIME HELPERS ================= -->
+  <script>
+    const PLAN_DATE = "{{ plan_date.isoformat() }}";
+
+    /* Single source of truth for IST */
+    function istNow() {
+      return new Date(
+        new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+      );
+    }
+
+    /* yyyy-mm-dd + hh:mm → IST Date */
+    function istDateFromInputs(dateStr, timeStr = "00:00") {
+      return new Date(
+        new Date(`${dateStr}T${timeStr}`)
+          .toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+      );
+    }
+  </script>
+
+  <!-- ================= SCRIPTS ================= -->
+  <!-- (all your existing inline JS stays exactly as-is below) -->
 
 </body>
 </html>
