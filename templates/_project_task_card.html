@@ -21,16 +21,13 @@
   <!-- ROW 2: planning -->
   <div class="task-row task-meta">
 
-    <!-- START DATE -->
-    <label>Start</label>
-    <select onchange="updatePlanning('{{ task.id }}', this.value)">
-      {% for d in next_14_days %}
-        <option value="{{ d }}"
-          {% if task.start_date == d %}selected{% endif %}>
-          {{ d }}
-        </option>
-      {% endfor %}
-    </select>
+  
+        <!-- START DATE -->
+        <label>Start</label>
+        <input type="date"
+            value="{{ task.start_date or '' }}"
+            onchange="updatePlanning('{{ task.id }}', this.value)">
+
 
     <!-- DURATION -->
     <label>Duration</label>
