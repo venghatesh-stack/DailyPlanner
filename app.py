@@ -253,7 +253,7 @@ def todo():
     # 3. Variables already used by template
     # -----------------------------
     days = calendar.monthrange(year, month)[1]
-    print("DEBUG:", t["due_date"], type(t["due_date"]), plan_date)
+    print("DEBUG:", tasks["due_date"], type(tasks["due_date"]), plan_date)
 
     return render_template_string(
         TODO_TEMPLATE,
