@@ -34,6 +34,19 @@ PLANNER_TEMPLATE = """
       ›
     </button>
   </div>
+<div class="date-jump">
+  <input type="month"
+         id="jump-month"
+         value="{{ selected_date.strftime('%Y-%m') }}">
+
+  <input type="number"
+         id="jump-day"
+         min="1"
+         max="31"
+         value="{{ selected_date.day }}">
+
+  <button type="button" onclick="jumpToDate()">Go</button>
+</div>
 
   <!-- Day Timeline -->
   <div class="day-timeline">
@@ -48,25 +61,6 @@ PLANNER_TEMPLATE = """
     {% endfor %}
   </div>
 
-</div>
-<div class="month-jump">
-  <a href="/?year={{ selected_date.year }}&month={{ selected_date.month - 1 }}&day=1">
-    ‹ {{ selected_date.strftime("%b") }}
-  </a>
-  <span>{{ selected_date.strftime("%B %Y") }}</span>
-    <a href="/?year={{ prev_month.year }}&month={{ prev_month.month }}&day=1">
-    ‹ {{ prev_month_label }}
-  </a>
-
-  <span class="month-label">
-    {{ selected_date.strftime("%B %Y") }}
-  </span>
-
-  <a href="/?year={{ next_month.year }}&month={{ next_month.month }}&day=1">
-    {{ next_month_label }} ›
-  </a>
-
-</div>
 
     <form method="post" id="planner-form">
     <input type="hidden" name="year" value="{{ year }}">
@@ -535,6 +529,31 @@ function toggleSubtask(id, isDone) {
     })
   });
 }
+</script>
+<script>
+function jumpToDate() {
+  const monthVal = document.getElementById("jump-month").value; // yyyy-mm
+  const dayVal   = document.getElementById("jump-day").value;
+
+  if (!monthVal || !dayVal) return;
+
+  const [year, month] = monthVal.split("-");
+  window.location.href = `/?year=${year}&month=${parseInt(month)}&day=${parseInt(dayVal)}`;
+}
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const activeDay = document.querySelector(".day-item.active");
+  if (!activeDay) return;
+
+  requestAnimationFrame(() => {
+    activeDay.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest"
+    });
+  });
+});
 </script>
 
 
