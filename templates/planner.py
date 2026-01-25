@@ -13,35 +13,9 @@ PLANNER_TEMPLATE = """
 </head>
 
 <body>
+{% include "_top_nav.html" %}
 <div class="container">
   <div class="header mobile-header">
-
-    <!-- Row 1: Date + Time -->
-    <div class="header-top">
-      <div class="date">{{ today_display }}</div>
-      <div class="time">🕒 <span id="clock"></span> IST</div>
-    </div>
-    <a href="/projects"
-       style="font-size:14px; font-weight:600; color:#2563eb; text-decoration:none;">
-       📁 Projects
-    </a>
-    <!-- Row 2: Navigation icons -->
-    <div class="header-nav">
-        <a href="/" title="Planner">🏠</a>
-
-        <a href="/todo" title="Eisenhower Matrix">
-          🎯
-        </a>
-
-        <button type="button" onclick="openSummary()" title="Daily Summary">
-          📝
-        </button>
-
-        <a href="/summary?view=weekly" title="Weekly Summary">
-          📆
-        </a>
-      </div>
-      <a href="/tasks/timeline">🗓 Project Timeline</a>
 
   </div>
     <form method="get" class="month-controls">

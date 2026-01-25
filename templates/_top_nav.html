@@ -22,7 +22,16 @@
   <a href="/todo" title="Eisenhower Matrix">🎯</a>
   <a href="/projects" title="Projects">📁</a>
   <a href="/projects/timeline" title="Project Timeline">🗓</a>
+  
+        <button type="button" onclick="openSummary()" title="Daily Summary">
+          📝
+        </button>
 
+        <a href="/summary?view=weekly" title="Weekly Summary">
+          📆
+        </a>
+      </div>
+      <a href="/tasks/timeline">🗓 Project Timeline</a>
   {% if project is defined %}
     <a href="/projects/{{ project.id }}/gantt" title="Gantt">📊</a>
     <a href="/projects/{{ project.id }}/tasks" title="Planner">🧠</a>
