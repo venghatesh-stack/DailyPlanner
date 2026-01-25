@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta,datetime
 
 def build_gantt_tasks(tasks):
     gantt = []
