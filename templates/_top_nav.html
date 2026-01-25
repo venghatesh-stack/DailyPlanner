@@ -17,16 +17,18 @@
     </a>
   </div>
 
-  <!-- Icon Navigation -->
-  <div class="nav-icons">
-    <a href="/" title="Daily Planner">🏠</a>
-    <a href="/todo" title="Eisenhower Matrix">🎯</a>
-    <a href="/projects" title="Projects">📁</a>
-    <a href="/projects/timeline" title="Project Timeline">🗓</a>
-    <a href="/projects/{{ project.id }}/gantt">📊 Gantt</a>
-    <a href="/projects/{{ project.id }}/tasks">🧠 Planner</a>
+<div class="nav-icons">
+  <a href="/" title="Daily Planner">🏠</a>
+  <a href="/todo" title="Eisenhower Matrix">🎯</a>
+  <a href="/projects" title="Projects">📁</a>
+  <a href="/projects/timeline" title="Project Timeline">🗓</a>
 
-  </div>
+  {% if project is defined %}
+    <a href="/projects/{{ project.id }}/gantt" title="Gantt">📊</a>
+    <a href="/projects/{{ project.id }}/tasks" title="Planner">🧠</a>
+  {% endif %}
+</div>
+
 
   <!-- Section Title -->
   <div class="section-title">
