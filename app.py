@@ -911,7 +911,7 @@ def update_project_task_date():
         params={"id": f"eq.{task_id}"},
         json={"due_date": due_date},
     )
-
+    logger.info(f"👉 task_id={task_id}, new_date={due_date}")
     return jsonify({"status": "ok"})
 
 # ==========================================================
