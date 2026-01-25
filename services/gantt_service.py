@@ -7,8 +7,8 @@ def build_gantt_tasks(tasks):
         if not t.get("start_date") or not t.get("duration_days"):
             continue
 
-        start = t["start_date"]
-        end = start + timedelta(days=t["duration_days"] - 1)
+        start = datetime.fromisoformat(t["start_date"]).date()
+        end = start + timedelta(days=(t["duration_days"] or 1) - 1)
 
         progress = 0
         if t.get("planned_hours", 0) > 0:
