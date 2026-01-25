@@ -301,3 +301,75 @@ body {
     flex: 1 1 100%;
   }
 }
+/* =========================================================
+   PROJECT TASKS — HARD ISOLATION (FIX REGRESSION)
+========================================================= */
+
+.project-task {
+  display: block;
+}
+
+/* Reset planner flex rules inside project tasks */
+.project-task .task-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+/* First row: checkbox + text */
+.project-task .task-row:first-child {
+  grid-template-columns: auto 1fr;
+}
+
+/* Inputs inside project tasks */
+.project-task input,
+.project-task select {
+  max-width: 140px;
+  font-size: 13px;
+}
+
+/* Text should wrap naturally */
+.project-task .task-text {
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+/* Second row (delegate / elimination / delete) */
+.project-task .task-row + .task-row {
+  margin-top: 8px;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: center;
+}
+
+/* Delete button alignment */
+.project-task .icon-btn.danger {
+  justify-self: end;
+}
+
+/* =========================================================
+   MOBILE — PROJECT TASKS
+========================================================= */
+
+@media (max-width: 640px) {
+
+  .project-task .task-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .project-task input,
+  .project-task select {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .project-task .task-text {
+    font-size: 14px;
+  }
+
+  .project-task .icon-btn.danger {
+    align-self: flex-start;
+  }
+}
