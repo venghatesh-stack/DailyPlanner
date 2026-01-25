@@ -268,25 +268,45 @@ function updateDueTime(taskId, time) {
 <script>
 function updatePlanning(taskId) {
   console.log("updatePlanning fired for", taskId);
+
   const taskEl = document.getElementById(`task-${taskId}`);
   console.log("taskEl", taskEl);
-  const startDate = taskEl.querySelector(".start-date").value;
-  const duration  = taskEl.querySelector(".duration-days").value;
+
+  if (!taskEl) {
+    console.warn("Task element not found");
+    return;
+  }
+
+  const startInput = taskEl.querySelector(".start-date");
+  const durationInput = taskEl.querySelector(".duration-days");
+
   console.log("startInput", startInput);
   console.log("durationInput", durationInput);
+
+  if (!startInput || !durationInput) {
+    console.warn("Missing planning inputs");
+    return;
+  }
+
+  const payload = {
+    task_id: taskId,
+    start_date: startInput.value,
+    duration_days: durationInput.value
+  };
+
+  console.log("payload", payload);
+
   fetch("/projects/tasks/update-planning", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      task_id: taskId,
-      start_date: startDate,
-      duration_days: duration
-    })
+    body: JSON.stringify(payload)
   })
   .then(r => r.json())
   .then(res => {
-    // ✅ update UI without reload
-    taskEl.querySelector(".due-date").textContent = res.due_date;
+    const dueEl = taskEl.querySelector(".due-date");
+    if (dueEl && res.due_date) {
+      dueEl.textContent = res.due_date;
+    }
   });
 }
 </script>
