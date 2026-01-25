@@ -480,3 +480,7 @@ h2 {
   font-weight: 600;
   color: #2563eb;
 }
+#gantt {
+  height: 500px;
+  margin-top: 20px;
+}
