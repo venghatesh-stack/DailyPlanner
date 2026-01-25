@@ -47,7 +47,7 @@ def post(path, data, prefer=None):
     headers = HEADERS.copy()
     if prefer:
         headers["Prefer"] = prefer
-
+    logger.debug("SUPABASE Post → %s | params=%s", path, data)
     r = requests.post(
         f"{SUPABASE_URL}/rest/v1/{path}",
         headers=headers,

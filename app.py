@@ -916,7 +916,7 @@ def compute_due_date(start_date, duration_days):
 @login_required
 def add_project_task(project_id):
     text = request.form["task_text"]
-
+    
     post(
         "project_tasks",
         {
@@ -925,7 +925,7 @@ def add_project_task(project_id):
             "status": "backlog",
         },
     )
-
+  
     return redirect(url_for("project_tasks", project_id=project_id))
 
 @app.route("/projects/tasks/send", methods=["POST"])
