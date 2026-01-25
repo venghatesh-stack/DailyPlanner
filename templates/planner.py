@@ -60,7 +60,7 @@ PLANNER_TEMPLATE = """
       </a>
     {% endfor %}
   </div>
-
+</div> <!-- ✅ CLOSE timeline-header -->
 
     <form method="post" id="planner-form">
     <input type="hidden" name="year" value="{{ year }}">
