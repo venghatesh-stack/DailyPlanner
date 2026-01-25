@@ -234,8 +234,7 @@ def todo():
     print("DEBUG sample task:", tasks[0] if tasks else "NO TASKS")
     tasks = [
         t for t in tasks
-        if t.get("sent_to_eisenhower") is True
-        and t.get("due_date")
+        if t.get("due_date")
     ]
     # normalize due_date
     for t in tasks:
