@@ -246,19 +246,23 @@ def parse_date(d):
         return datetime.fromisoformat(d).date()
     return d
 
+from datetime import datetime, timedelta
 
 def compute_urgency(due_date, due_time):
+    # 🚫 Missing date or time → no urgency
     if not due_date or not due_time:
         return None
 
-    # Convert due_time string -> datetime.time
+    # Normalize due_time (Supabase may return HH:MM or HH:MM:SS)
     if isinstance(due_time, str):
+        parsed = None
         for fmt in ("%H:%M", "%H:%M:%S"):
             try:
-                due_time = datetime.strptime(due_time, fmt).time()
+                parsed = datetime.strptime(due_time, fmt).time()
                 break
             except ValueError:
-                due_time = None
+                continue
+        due_time = parsed
 
     if not due_time:
         return None
@@ -267,10 +271,11 @@ def compute_urgency(due_date, due_time):
     due_dt = datetime.combine(due_date, due_time)
 
     if due_dt < now:
-        return "overdue"   # 🔴
+        return "overdue"    # 🔴
     elif due_dt <= now + timedelta(hours=2):
-        return "soon"      # 🟠
+        return "soon"       # 🟠
     return None
+
 
 
 # ==========================================================
