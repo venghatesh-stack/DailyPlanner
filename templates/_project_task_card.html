@@ -4,31 +4,32 @@
      data-status="{{ task.status }}">
 
   <!-- 🔹 SUMMARY ROW (always visible) -->
-  <div class="task-row task-main"
-       onclick="toggleTask(this.parentElement)">
+ <div class="task-row task-main"
+     onclick="toggleTask(this.parentElement)">
 
-    <input type="checkbox"
-           {% if task.status == "done" %}checked{% endif %}
-           onclick="event.stopPropagation()"
-           onchange="updateStatus('{{ task.id }}', this.checked ? 'done' : 'open')">
+  <input type="checkbox"
+         {% if task.status == "done" %}checked{% endif %}
+         onclick="event.stopPropagation()"
+         onchange="updateStatus('{{ task.id }}', this.checked ? 'done' : 'open')">
 
-    <div class="task-text">
-      {{ task.text }}
-    </div>
-
-    <input type="date"
-           class="start-date"
-           value="{{ task.start_date or '' }}"
-           onclick="event.stopPropagation()"
-           oninput="updatePlanning('{{ task.id }}')">
+  <div class="task-text">
+    {{ task.text }}
   </div>
+  
+</div>
+
 
   <!-- 🔽 EXPANDED SECTION -->
   <div class="task-details">
 
     <!-- ROW 1: PLANNING / STATUS -->
     <div class="task-row task-details-row planning-row">
-
+       <div class="field">
+    <label>Start</label>
+    <input type="date"
+           value="{{ task.start_date or '' }}"
+           oninput="updatePlanning('{{ task.id }}')">
+    </div>
       <div class="field">
         <label>Duration</label>
         <input type="number"
