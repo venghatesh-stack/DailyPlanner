@@ -268,7 +268,6 @@ def save_day(plan_date, form):
                     existing = get(
                         "recurring_slots",
                         params={
-                            "user_id": f"eq.{user_id}",
                             "title": f"eq.{parsed['title']}",
                             "start_slot": f"eq.{first_slot}",
                             "slot_count": f"eq.{slot_count}",

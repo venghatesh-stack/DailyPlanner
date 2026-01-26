@@ -784,7 +784,7 @@ def untimed_slot_preview():
         row = get(
             "daily_slots",
             params={
-                "plan_date": f"eq.{plan_date}",
+                "plan_date":f"eq.{plan_date.isoformat()}",
                 "slot": f"eq.{slot}",
                 "select": "slot,plan",
             },
