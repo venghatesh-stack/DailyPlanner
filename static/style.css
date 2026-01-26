@@ -5,7 +5,7 @@
 :root {
   --slot-height: 34px;
   --action-bar-height: 190px;
-  --time-column-width: 110px; /* ✅ clearer labels */
+  --time-column-width: 110px;
 }
 
 html {
@@ -129,7 +129,7 @@ body {
 }
 
 /* =========================================================
-   DAY SCHEDULE — FIXED (CRITICAL)
+   DAY SCHEDULE (RESTORED MODEL)
 ========================================================= */
 
 .day-schedule {
@@ -137,13 +137,34 @@ body {
   margin-top: 12px;
 }
 
-/* Grid rows */
+/* Grid occupies full width but shifted */
 .day-grid {
   position: relative;
+  margin-left: var(--time-column-width);
 }
 
+/* Each slot row */
+.time-row {
+  display: flex;
+  height: var(--slot-height);
+  align-items: center;
+}
 
+/* Time labels */
+.time-column {
+  width: var(--time-column-width);
+  min-width: var(--time-column-width);
+  text-align: right;
+  padding-right: 12px;
 
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+
+  white-space: nowrap;
+  overflow: visible;
+  line-height: var(--slot-height);
+}
 
 /* Grid line */
 .grid-line {
@@ -151,23 +172,35 @@ body {
   border-bottom: 1px solid #e5e7eb;
 }
 
-/* ================= EVENTS ================= */
+/* =========================================================
+   EVENTS LAYER
+========================================================= */
 
 .events-layer {
   position: absolute;
   top: 0;
   left: var(--time-column-width);
-  right: 0;
+  right: 12px;
   pointer-events: none;
 }
 
 .event-block {
+  position: absolute;
   left: 0;
-  right: 12px;
+  right: 0;
+
+  background: #dbeafe;
+  border-left: 4px solid #2563eb;
+  border-radius: 8px;
+  padding: 8px 10px;
+
+  font-size: 14px;
+  box-sizing: border-box;
+
+  pointer-events: auto;
 }
 
-
-/* Current time */
+/* Current slot emphasis */
 .now-slot .time-column {
   color: #dc2626;
   font-weight: 600;
@@ -279,8 +312,9 @@ body {
   border-radius: 10px;
   margin-bottom: 16px;
 }
+
 /* =========================================================
-   FLOATING ACTION STACK (RESTORED)
+   FLOATING ACTION STACK
 ========================================================= */
 
 .action-stack {
@@ -301,7 +335,6 @@ body {
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
 }
 
-/* Buttons inside floating bar */
 .action-stack button {
   border: none;
   border-radius: 12px;
@@ -311,46 +344,8 @@ body {
   background: #f3f4f6;
 }
 
-/* Primary action emphasis */
 .action-stack button[type="submit"] {
   background: #2563eb;
   color: #fff;
-  font-weight: 600;
-}
-/* =========================================================
-   TIME LABELS — HARD FIX (PLANNER ONLY)
-========================================================= */
-
-.time-row {
-  display: flex;
-  align-items: center;          /* vertical centering */
-  height: var(--slot-height);
-}
-
-.time-column {
-  width: var(--time-column-width);
-  min-width: var(--time-column-width);
-  max-width: var(--time-column-width);
-
-  display: flex;
-  align-items: center;          /* vertical centering */
-  justify-content: flex-end;
-
-  padding-right: 10px;
-
-  font-size: 13px;
-  font-weight: 500;
-  color: #374151;
-
-  white-space: nowrap;          /* 🔑 NO WRAP */
-  overflow: hidden;
-  text-overflow: ellipsis;
-
-  line-height: 1;               /* 🔑 stop multi-line collapse */
-}
-
-/* Subtle emphasis for current slot */
-.now-slot .time-column {
-  color: #dc2626;
   font-weight: 600;
 }
