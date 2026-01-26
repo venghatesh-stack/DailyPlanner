@@ -27,9 +27,11 @@ def load_day(plan_date, tag=None):
     habits = set()
     reflection = ""
     untimed_tasks = []  
+    user_id ="VenghateshS"
     meta = get(
         "daily_meta",
         params={
+            "user_id": f"eq.{user_id}",
             "plan_date": f"eq.{plan_date}",
             "select": "habits,reflection,untimed_tasks",
         },
@@ -45,6 +47,7 @@ def load_day(plan_date, tag=None):
         get(
             "daily_slots",
             params={
+                "user_id":f"eq.{user_id}",
                 "plan_date": f"eq.{plan_date}",
                 "select": "slot,plan,status,priority,category,tags",
             },
@@ -56,7 +59,7 @@ def load_day(plan_date, tag=None):
         slot = r.get("slot")
 
         if not isinstance(slot, int) or not (1 <= slot <= TOTAL_SLOTS):
-            logger.error("Invalid slot dropped", r)
+            logger.error("Invalid slot dropped %s", r)
             continue
 
         row_tags = []
@@ -159,7 +162,7 @@ def save_day(plan_date, form):
                         post(
                             "todo_matrix",
                             {
-                                "plan_date": f"eq.{plan_date}",
+                                "plan_date": str(plan_date),
                                 "quadrant": quadrant,
                                 "task_text": parsed["title"],
                                 "is_done": False,
@@ -229,7 +232,7 @@ def save_day(plan_date, form):
                       post(
                             "todo_matrix",
                             {
-                                "plan_date": f"eq.{task_date}",
+                                "plan_date": str(task_date),
                                 "quadrant": quadrant,
                                 "task_text": parsed["title"],
                                 "task_date": str(task_date),   # ✅ retain date
@@ -279,7 +282,7 @@ def save_day(plan_date, form):
                         post(
                             "recurring_slots",
                             {
-                                "user_id": f"eq.{user_id}",
+                                "user_id": user_id,
                                 "title": parsed["title"],
                                 "start_slot": first_slot,
                                 "slot_count": slot_count,
@@ -306,7 +309,7 @@ def save_day(plan_date, form):
                     if 1 <= s["slot"] <= TOTAL_SLOTS:
                         payload.append(
                             {
-                                "plan_date": f"eq.{task_date}",
+                                "plan_date": str(task_date),
                                 "slot": s["slot"],          # ⭐ USE THE SOURCE OF TRUTH
                                 "plan": s["task"],
                                 "status": DEFAULT_STATUS,
@@ -395,7 +398,7 @@ def save_day(plan_date, form):
             "daily_meta",
             {
                 "user_id": f"eq.{user_id}",
-                "plan_date": f"eq.{plan_date}",
+                "plan_date": str(plan_date),
                 **meta,
             },
         )
@@ -489,12 +492,13 @@ def get_daily_summary(plan_date):
 def get_weekly_summary(start_date, end_date):
     rows = get(
         "daily_slots",
-        params={
-            "plan_date": f"gte.{start_date},lte.{end_date}",
+      params={
+            "plan_date": f"gte.{start_date}",
+            "and": f"(plan_date.lte.{end_date})",
             "select": "plan_date,slot,plan",
             "order": "plan_date.asc,slot.asc",
         },
-    ) or []
+        ) or []
 
     weekly = {}
 
@@ -523,7 +527,7 @@ def ensure_daily_habits_row(user_id, plan_date):
         post(
             "daily_habits",
             {
-                "user_id": f"eq.{user_id}",
+                "user_id": user_id,
                 "plan_date": plan_date.isoformat(),
                 "habits": {},# habits is a dict: {habit_name: boolean}
             },
@@ -571,11 +575,10 @@ def parse_recurrence_block(text, default_date):
 
     if m := re.search(STARTING_RE, text, re.I):
         try:
-            recurrence["start_date"] = date.fromisoformat(m.group(1),
-            default=datetime.combine(default_date, datetime.min.time())
-            ).date()
+            recurrence["start_date"] = date.fromisoformat(m.group(1))
         except Exception:
-            recurrence["start_date"] = default_date # fallback to default_date
+            recurrence["start_date"] = default_date
+
 
     if re.search(EVERY_DAY_RE, text, re.I):
         recurrence["type"] = "daily"

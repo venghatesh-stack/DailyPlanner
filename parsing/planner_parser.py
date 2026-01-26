@@ -219,6 +219,7 @@ def generate_half_hour_slots(parsed):
 
 
 
+
 ORDINAL_RE = re.compile(r'(\d+)(st|nd|rd|th)', re.I)
 
 def normalize_ordinal_dates(text: str) -> str:
