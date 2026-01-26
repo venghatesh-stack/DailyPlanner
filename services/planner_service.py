@@ -279,7 +279,7 @@ def save_day(plan_date, form):
                         post(
                             "recurring_slots",
                             {
-                                "user_id": user_id,
+                                "user_id": f"eq.{user_id}",
                                 "title": parsed["title"],
                                 "start_slot": first_slot,
                                 "slot_count": slot_count,
@@ -385,7 +385,7 @@ def save_day(plan_date, form):
         update(
             "daily_meta",
             params={
-                "user_id": user_id,
+                "user_id": f"eq.{user_id}",
                 "plan_date": str(plan_date),
             },
             json=meta,
@@ -394,7 +394,7 @@ def save_day(plan_date, form):
         post(
             "daily_meta",
             {
-                "user_id": user_id,
+                "user_id": f"eq.{user_id}",
                 "plan_date": str(plan_date),
                 **meta,
             },
@@ -523,7 +523,7 @@ def ensure_daily_habits_row(user_id, plan_date):
         post(
             "daily_habits",
             {
-                "user_id": user_id,
+                "user_id": f"eq.{user_id}",
                 "plan_date": plan_date.isoformat(),
                 "habits": {},# habits is a dict: {habit_name: boolean}
             },
