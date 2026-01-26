@@ -159,7 +159,7 @@ def save_day(plan_date, form):
                         post(
                             "todo_matrix",
                             {
-                                "plan_date": str(plan_date),
+                                "plan_date": f"eq.{plan_date}",
                                 "quadrant": quadrant,
                                 "task_text": parsed["title"],
                                 "is_done": False,
@@ -229,7 +229,7 @@ def save_day(plan_date, form):
                       post(
                             "todo_matrix",
                             {
-                                "plan_date": str(task_date),
+                                "plan_date": f"eq.{task_date}",
                                 "quadrant": quadrant,
                                 "task_text": parsed["title"],
                                 "task_date": str(task_date),   # ✅ retain date
@@ -306,7 +306,7 @@ def save_day(plan_date, form):
                     if 1 <= s["slot"] <= TOTAL_SLOTS:
                         payload.append(
                             {
-                                "plan_date": str(task_date),
+                                "plan_date": f"eq.{task_date}",
                                 "slot": s["slot"],          # ⭐ USE THE SOURCE OF TRUTH
                                 "plan": s["task"],
                                 "status": DEFAULT_STATUS,
@@ -386,7 +386,7 @@ def save_day(plan_date, form):
             "daily_meta",
             params={
                 "user_id": f"eq.{user_id}",
-                "plan_date": str(plan_date),
+                "plan_date":f"eq.{plan_date}",
             },
             json=meta,
         )
@@ -395,7 +395,7 @@ def save_day(plan_date, form):
             "daily_meta",
             {
                 "user_id": f"eq.{user_id}",
-                "plan_date": str(plan_date),
+                "plan_date": f"eq.{plan_date}",
                 **meta,
             },
         )
