@@ -302,3 +302,41 @@ body {
   border-radius: 10px;
   margin-bottom: 16px;
 }
+/* =========================================================
+   FLOATING ACTION STACK (RESTORED)
+========================================================= */
+
+.action-stack {
+  position: fixed;
+  bottom: env(safe-area-inset-bottom, 16px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999;
+
+  display: flex;
+  gap: 10px;
+
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(6px);
+
+  padding: 10px 14px;
+  border-radius: 18px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+}
+
+/* Buttons inside floating bar */
+.action-stack button {
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 15px;
+  cursor: pointer;
+  background: #f3f4f6;
+}
+
+/* Primary action emphasis */
+.action-stack button[type="submit"] {
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+}
