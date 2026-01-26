@@ -388,7 +388,7 @@ def save_day(plan_date, form):
                 "user_id": user_id,
                 "plan_date": str(plan_date),
             },
-            data=meta,
+            json=meta,
         )
     else:
         post(
