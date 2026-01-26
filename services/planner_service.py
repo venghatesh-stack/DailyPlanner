@@ -47,7 +47,6 @@ def load_day(plan_date, tag=None):
         get(
             "daily_slots",
             params={
-                "user_id":f"eq.{user_id}",
                 "plan_date": f"eq.{plan_date}",
                 "select": "slot,plan,status,priority,category,tags",
             },
