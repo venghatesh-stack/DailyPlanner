@@ -142,22 +142,8 @@ body {
   position: relative;
 }
 
-/* Each slot row */
-.time-row {
-  display: flex;
-  height: var(--slot-height);
-}
 
-/* Time label */
-.time-column {
-  width: var(--time-column-width);
-  flex-shrink: 0;
-  text-align: right;
-  padding-right: 12px;
-  font-size: 13px;
-  color: #374151;
-  line-height: var(--slot-height);
-}
+
 
 /* Grid line */
 .grid-line {
@@ -170,25 +156,16 @@ body {
 .events-layer {
   position: absolute;
   top: 0;
-  left: 0;
+  left: var(--time-column-width);
   right: 0;
   pointer-events: none;
 }
 
 .event-block {
-  position: absolute;
-  left: var(--time-column-width);
+  left: 0;
   right: 12px;
-
-  background: #dbeafe;
-  border-left: 4px solid #2563eb;
-  border-radius: 8px;
-  padding: 8px 10px;
-  font-size: 14px;
-
-  pointer-events: auto;
-  box-sizing: border-box;
 }
+
 
 /* Current time */
 .now-slot .time-column {
@@ -262,7 +239,7 @@ body {
 
   :root {
     --slot-height: 44px;
-    --time-column-width: 92px;
+    --time-column-width: 96px;
   }
 
   .container {
@@ -338,5 +315,42 @@ body {
 .action-stack button[type="submit"] {
   background: #2563eb;
   color: #fff;
+  font-weight: 600;
+}
+/* =========================================================
+   TIME LABELS — HARD FIX (PLANNER ONLY)
+========================================================= */
+
+.time-row {
+  display: flex;
+  align-items: center;          /* vertical centering */
+  height: var(--slot-height);
+}
+
+.time-column {
+  width: var(--time-column-width);
+  min-width: var(--time-column-width);
+  max-width: var(--time-column-width);
+
+  display: flex;
+  align-items: center;          /* vertical centering */
+  justify-content: flex-end;
+
+  padding-right: 10px;
+
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+
+  white-space: nowrap;          /* 🔑 NO WRAP */
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  line-height: 1;               /* 🔑 stop multi-line collapse */
+}
+
+/* Subtle emphasis for current slot */
+.now-slot .time-column {
+  color: #dc2626;
   font-weight: 600;
 }
