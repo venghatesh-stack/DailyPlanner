@@ -28,19 +28,23 @@ function promoteUntimed(btn) {
 
   const modal = document.getElementById("modal");
   const content = document.getElementById("modal-content");
-  console.log("DEBUG promoteUntimed", {
-  untimedList: document.getElementById("untimed-list"),
-  clickedItem: btn.closest(".untimed-item")
-});
+  content.innerHTML = `
+      <h3>📋 Promote Task</h3>
 
-  content.innerHTML =
-    "<h3>📋 Promote Task</h3>" +
-    "<div id='preview'></div><br>" +
-    "<button onclick=\"confirmPromote('" + id + "','Q1')\">🔥 Do</button><br>" +
-    "<button onclick=\"confirmPromote('" + id + "','Q2')\">📅 Schedule</button><br>" +
-    "<button onclick=\"confirmPromote('" + id + "','Q3')\">🤝 Delegate</button><br>" +
-    "<button onclick=\"confirmPromote('" + id + "','Q4')\">🗑 Eliminate</button><br><br>" +
-    "<button onclick=\"modal.style.display='none'\">Cancel</button>";
+      <div id="preview"></div>
+
+      <div class="modal-actions">
+        <button class="btn-do" onclick="confirmPromote('${id}','Q1')">🔥 Do now</button>
+        <button class="btn-schedule" onclick="confirmPromote('${id}','Q2')">📅 Schedule</button>
+        <button class="btn-delegate" onclick="confirmPromote('${id}','Q3')">🤝 Delegate</button>
+        <button class="btn-eliminate" onclick="confirmPromote('${id}','Q4')">🗑 Eliminate</button>
+      </div>
+
+      <button class="modal-cancel" onclick="modal.style.display='none'">
+        Cancel
+      </button>
+    `;
+
 
   content.querySelector("#preview").textContent = text;
   modal.style.display = "flex";
