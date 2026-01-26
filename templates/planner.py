@@ -127,7 +127,9 @@ PLANNER_TEMPLATE = """
 </div>
 
 <!-- ================= MODALS ================= -->
-<div id="modal" style="display:none"></div>
+<div id="modal" style="display:none">
+<div id="modal-content"></div>
+</div>
 <div id="summary-modal" style="display:none"></div>
 
 <!-- ================= SCRIPTS ================= -->

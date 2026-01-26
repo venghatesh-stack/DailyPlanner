@@ -28,6 +28,10 @@ function promoteUntimed(btn) {
 
   const modal = document.getElementById("modal");
   const content = document.getElementById("modal-content");
+  console.log("DEBUG promoteUntimed", {
+  untimedList: document.getElementById("untimed-list"),
+  clickedItem: btn.closest(".untimed-item")
+});
 
   content.innerHTML =
     "<h3>📋 Promote Task</h3>" +
