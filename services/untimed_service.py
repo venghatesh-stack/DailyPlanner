@@ -33,7 +33,7 @@ def remove_untimed_task(user_id, plan_date, task_id):
 
     update(
         "daily_meta",
-        where={
+        params={
             "user_id": user_id,
             "plan_date": str(plan_date),
         },
