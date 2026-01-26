@@ -384,7 +384,7 @@ def save_day(plan_date, form):
     if existing_meta:
         update(
             "daily_meta",
-            where={
+            params={
                 "user_id": user_id,
                 "plan_date": str(plan_date),
             },
