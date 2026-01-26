@@ -9,7 +9,7 @@ PLANNER_TEMPLATE = """
 
 <body>
 {% include "_top_nav.html" %}
-
+<div id="clock"> </div>
 <div class="container">
 
   <!-- ================= TIMELINE HEADER ================= -->
