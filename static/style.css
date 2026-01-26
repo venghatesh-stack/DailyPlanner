@@ -5,6 +5,7 @@
 :root {
   --slot-height: 30px;
   --action-bar-height: 190px;
+  --time-column-width: 88px; /* ⬅️ increased from ~60 */
 }
 
 html {
@@ -139,7 +140,9 @@ body {
 
 .day-grid {
   position: relative;
+  margin-left: var(--time-column-width);
 }
+
 
 .time-row {
   display: flex;
@@ -147,10 +150,14 @@ body {
 }
 
 .time-column {
-  width: 64px;
-  font-size: 12px;
-  color: #6b7280;
+  width: var(--time-column-width);
+  font-weight: 500;
+  text-align: right;
+  padding-right: 8px;
+  color: #444;
+  font-size: 13px;
 }
+
 
 .grid-line {
   flex: 1;
@@ -159,10 +166,10 @@ body {
 
 .events-layer {
   position: absolute;
-  top: 0;
-  left: 64px;
+  left: var(--time-column-width);
   right: 0;
 }
+
 
 .event-block {
   background: #dbeafe;
@@ -173,9 +180,11 @@ body {
   cursor: pointer;
 }
 
-.now-slot {
-  background: rgba(37, 99, 235, 0.08);
+.now-slot .time-column {
+  color: #d32f2f;
+  font-weight: 600;
 }
+
 
 /* =========================================================
    TASK CARDS
@@ -554,6 +563,7 @@ body {
 .time-row {
   position: relative;
   margin-bottom: 4px;          /* 👈 GAP between slots */
+  border-bottom: 1px solid #eee;
 }
 
 /* horizontal divider line */
