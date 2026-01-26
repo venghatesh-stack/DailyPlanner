@@ -34,7 +34,7 @@ from config import (
     HABIT_ICONS,
     HABIT_LIST,
 )
-from config import META_SLOT
+
 from utils.slots import current_slot,slot_label
 import traceback
 
@@ -589,122 +589,182 @@ def summary():
         data=data,
         date=plan_date,
     )
-
 @app.route("/untimed/promote", methods=["POST"])
 @login_required
 def promoteuntimed():
     data = request.get_json()
 
+    user_id = "VenghateshS"
     plan_date = date.fromisoformat(data["plan_date"])
+    plan_date_str = plan_date.isoformat()
     task_id = data["id"]
-    # Resolve text from META instead of trusting client
+
+    # -------------------------------------------------
+    # Load untimed tasks from daily_meta
+    # -------------------------------------------------
     rows = get(
-        "daily_slots",
+        "daily_meta",
         params={
-            "plan_date": f"eq.{plan_date}",
-            "slot": f"eq.{META_SLOT}",
-            "select": "plan",
+            "user_id": f"eq.{user_id}",
+            "plan_date": f"eq.{plan_date_str}",
+            "select": "untimed_tasks",
         },
     )
 
-    meta = json.loads(rows[0]["plan"]) if rows else {}
-    task = next(t for t in meta.get("untimed_tasks", []) if t["id"] == task_id)
+    if not rows:
+        return ("Untimed task not found", 404)
+
+    untimed = rows[0].get("untimed_tasks") or []
+
+    task = next(
+        (t for t in untimed if isinstance(t, dict) and t.get("id") == task_id),
+        None
+    )
+    if not task:
+        return ("Untimed task not found", 404)
+
     text = task["text"]
 
-
+    # -------------------------------------------------
+    # Quadrant validation
+    # -------------------------------------------------
     raw_q = data["quadrant"].upper()
     if raw_q not in QUADRANT_MAP:
         return ("Invalid quadrant", 400)
 
     quadrant = QUADRANT_MAP[raw_q]
-    # 🔹 Compute next position in the quadrant
+
+    # -------------------------------------------------
+    # Compute next position
+    # -------------------------------------------------
     max_pos = get(
-    "todo_matrix",
-    params={
-        "plan_date": f"eq.{plan_date}",
-        "quadrant": f"eq.{quadrant}",
-        "is_deleted": "eq.false",
-        "select": "position",
-        "order": "position.desc",
-        "limit": 1,
-    },
-  )
-    existing = get(
-    "todo_matrix",
-    params={
-        "plan_date": f"eq.{plan_date}",
-        "quadrant": f"eq.{quadrant}",
-        "task_text": f"eq.{text}",
-        "is_deleted": "eq.false",
-    },
+        "todo_matrix",
+        params={
+            "plan_date": f"eq.{plan_date_str}",
+            "quadrant": f"eq.{quadrant}",
+            "is_deleted": "eq.false",
+            "select": "position",
+            "order": "position.desc",
+            "limit": 1,
+        },
     )
+
+    existing = get(
+        "todo_matrix",
+        params={
+            "plan_date": f"eq.{plan_date_str}",
+            "quadrant": f"eq.{quadrant}",
+            "task_text": f"eq.{text}",
+            "is_deleted": "eq.false",
+        },
+    )
+
     if existing:
         return ("Task already exists in the selected quadrant", 400)
-    else:
-        next_pos = max_pos[0]["position"] + 1 if max_pos else 0
-        post(
-            "todo_matrix",
-            {
-                "plan_date": str(plan_date),
-                "quadrant": quadrant,
-                "task_text": text,
-                "is_done": False,
-                "is_deleted": False,
-                "position": next_pos,
-                "category": "General",
-                "subcategory": "General",
-            },
-        )
-        remove_untimed_task(plan_date, task_id)
-        return ("", 204)
+
+    next_pos = max_pos[0]["position"] + 1 if max_pos else 0
+
+    # -------------------------------------------------
+    # Insert into Eisenhower matrix
+    # -------------------------------------------------
+    post(
+        "todo_matrix",
+        {
+            "plan_date": plan_date_str,
+            "quadrant": quadrant,
+            "task_text": text,
+            "is_done": False,
+            "is_deleted": False,
+            "position": next_pos,
+            "category": "General",
+            "subcategory": "General",
+        },
+    )
+
+    # -------------------------------------------------
+    # Remove from untimed list
+    # -------------------------------------------------
+    remove_untimed_task(user_id, plan_date, task_id)
+
+    return ("", 204)
+
 
 @app.route("/untimed/schedule", methods=["POST"])
 @login_required
 def schedule_untimed():
     data = request.get_json()
 
+    user_id = "VenghateshS"
     plan_date = date.fromisoformat(data["plan_date"])
+    plan_date_str = plan_date.isoformat()
+
     if plan_date < datetime.now(IST).date():
-      return ("Cannot schedule in the past", 400)
+        return ("Cannot schedule in the past", 400)
+
     task_id = data["id"]
-    # Resolve text from META (never trust client)
-    rows = get(
-          "daily_slots",
-          params={
-              "plan_date": f"eq.{plan_date}",
-              "slot": f"eq.{META_SLOT}",
-              "select": "plan",
-          },
-      )
-
-    meta = json.loads(rows[0]["plan"]) if rows else {}
-    task = next(t for t in meta.get("untimed_tasks", []) if t["id"] == task_id)
-
-    text = data.get("final_text") or task["text"]
-
     start_slot = int(data["start_slot"])
     slot_count = int(data["slot_count"])
 
+    # -------------------------------------------------
+    # Resolve untimed task from daily_meta (SOURCE OF TRUTH)
+    # -------------------------------------------------
+    rows = get(
+        "daily_meta",
+        params={
+            "user_id": f"eq.{user_id}",
+            "plan_date": f"eq.{plan_date_str}",
+            "select": "untimed_tasks",
+        },
+    )
+
+    if not rows:
+        return ("Untimed task not found", 404)
+
+    untimed = rows[0].get("untimed_tasks") or []
+
+    task = next(
+        (t for t in untimed if isinstance(t, dict) and t.get("id") == task_id),
+        None
+    )
+    if not task:
+        return ("Untimed task not found", 404)
+
+    # Prefer confirmed text from client, fallback to stored text
+    text = data.get("final_text") or task["text"]
+
+    # -------------------------------------------------
+    # Build slot payload
+    # -------------------------------------------------
     payload = []
     for i in range(slot_count):
         slot = start_slot + i
         if 1 <= slot <= TOTAL_SLOTS:
             payload.append({
-                "plan_date": str(plan_date),
+                "plan_date": plan_date_str,
                 "slot": slot,
                 "plan": text,
                 "status": DEFAULT_STATUS,
             })
 
+    if not payload:
+        return ("Invalid slot range", 400)
+
+    # -------------------------------------------------
+    # Insert / update daily slots
+    # -------------------------------------------------
     post(
         "daily_slots?on_conflict=plan_date,slot",
         payload,
         prefer="resolution=merge-duplicates",
     )
 
-    remove_untimed_task(plan_date, task_id)
+    # -------------------------------------------------
+    # Remove from untimed list
+    # -------------------------------------------------
+    remove_untimed_task(user_id, plan_date, task_id)
 
     return ("", 204)
+
 @app.route("/untimed/slot-preview", methods=["POST"])
 @login_required
 def untimed_slot_preview():

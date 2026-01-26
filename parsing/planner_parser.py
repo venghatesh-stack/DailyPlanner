@@ -13,7 +13,7 @@ from config import (
 )
 
 
-META_SLOT = "__meta__"
+
    
 def extract_tags(text):
     return list(set(tag.lower() for tag in re.findall(r"#(\w+)", text)))

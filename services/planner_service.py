@@ -3,7 +3,6 @@ import re
 from datetime import datetime,date
 from config import MONTHLY_RE,STARTING_RE,EVERY_DAY_RE,EVERY_WEEKDAY_RE,INTERVAL_RE,WEEKDAYS
 from config import (
-    META_SLOT,
     TOTAL_SLOTS,
     DEFAULT_STATUS,
     HEALTH_HABITS,
@@ -11,7 +10,7 @@ from config import (
 )
 from utils.slots import generate_half_hour_slots
 import logging
-from supabase_client import get, post, delete
+from supabase_client import get, post, delete,update
 from parsing.planner_parser import parse_planner_input
 from utils.slots import slot_label
 
@@ -28,6 +27,19 @@ def load_day(plan_date, tag=None):
     habits = set()
     reflection = ""
     untimed_tasks = []  
+    meta = get(
+        "daily_meta",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "select": "habits,reflection,untimed_tasks",
+        },
+    )
+
+    if meta:
+        row = meta[0]
+        habits = set(row.get("habits") or [])
+        reflection = row.get("reflection") or ""
+        untimed_tasks = row.get("untimed_tasks") or []
 
     rows = (
         get(
@@ -41,25 +53,10 @@ def load_day(plan_date, tag=None):
     )
 
     for r in rows:
-        if r["slot"] == META_SLOT:
-            try:
-                meta = json.loads(r.get("plan") or "{}")
-                habits = set(meta.get("habits", []))
-                reflection = meta.get("reflection", "")
-                raw = meta.get("untimed_tasks", [])
-                untimed_tasks = []
+        slot = r.get("slot")
 
-                for t in raw:
-                    if isinstance(t, str):
-                        untimed_tasks.append({
-                            "id": f"legacy_{hash(t)}",
-                            "text": t
-                        })
-                    else:
-                        untimed_tasks.append(t)
-
-            except Exception:
-                pass
+        if not isinstance(slot, int) or not (1 <= slot <= TOTAL_SLOTS):
+            logger.error("Invalid slot dropped", r)
             continue
 
         row_tags = []
@@ -93,6 +90,18 @@ def save_day(plan_date, form):
     user_id="VenghateshS"
     payload = []
     auto_untimed = []
+    existing_meta = {}
+    meta_rows = get(
+        "daily_meta",
+        params={
+            "user_id": f"eq.{user_id}",
+            "plan_date": f"eq.{plan_date}",
+            "select": "habits,reflection,untimed_tasks",
+        },
+    )
+
+    if meta_rows:   
+        existing_meta = meta_rows[0]
 
     # Track slots already filled by smart parsing
     smart_block = form.get("smart_plan", "").strip()
@@ -238,11 +247,12 @@ def save_day(plan_date, form):
                
                 affected_slots = set()
 
-                for s in slots:
-                    start_h, start_m = map(int, s["time"].split(" - ")[0].split(":"))
-                    target_slot = (start_h * 60 + start_m) // 30 + 1
-                    if 1 <= target_slot <= TOTAL_SLOTS:
-                        affected_slots.add(target_slot)
+                affected_slots = {
+                    s["slot"]
+                    for s in slots
+                    if 1 <= s["slot"] <= TOTAL_SLOTS
+                }
+
                 # -------------------------------
                 # Slot metadata for recurrence
                 # -------------------------------
@@ -287,19 +297,17 @@ def save_day(plan_date, form):
                         "daily_slots",
                         params={
                             "plan_date": f"eq.{task_date}",
-                            "slot": f"in.({','.join(str(s) for s in affected_slots if s != META_SLOT)})",
+                            "slot": f"in.({','.join(str(s) for s in affected_slots )})",
                         },
                     )
 
                 # Re-insert smart slots
                 for s in slots:
-                    start_h, start_m = map(int, s["time"].split(" - ")[0].split(":"))
-                    target_slot = (start_h * 60 + start_m) // 30 + 1
-                    if 1 <= target_slot <= TOTAL_SLOTS:
+                    if 1 <= s["slot"] <= TOTAL_SLOTS:
                         payload.append(
                             {
                                 "plan_date": str(task_date),
-                                "slot": target_slot,
+                                "slot": s["slot"],          # ⭐ USE THE SOURCE OF TRUTH
                                 "plan": s["task"],
                                 "status": DEFAULT_STATUS,
                                 "priority": s["priority"],
@@ -307,6 +315,7 @@ def save_day(plan_date, form):
                                 "tags": s["tags"],
                             }
                         )
+
             except Exception as e:
                 logger.error(
                     f"Smart planner parse failed for line '{line}': {e}"
@@ -332,23 +341,7 @@ def save_day(plan_date, form):
                 }
             )
 
-    # ---- SAVE META (habits + reflection) ----
-    # ---- LOAD EXISTING META (for safe merge) ----
-    existing_meta = {}
-    existing_rows = get(
-        "daily_slots",
-        params={
-            "plan_date": f"eq.{plan_date}",
-            "slot": f"eq.{META_SLOT}",
-            "select": "plan",
-        },
-    )
-
-    if existing_rows:
-        try:
-            existing_meta = json.loads(existing_rows[0].get("plan") or "{}")
-        except Exception:
-            existing_meta = {}
+  
 
     untimed_raw = form.get("untimed_tasks", "")
     untimed_raw = untimed_raw.strip() if untimed_raw is not None else ""
@@ -364,46 +357,49 @@ def save_day(plan_date, form):
             if line.strip()
         ]
 
-
-    raw_existing = existing_meta.get("untimed_tasks", [])
-    existing_untimed = []
-
-    for t in raw_existing:
-        if isinstance(t, str):
-            existing_untimed.append({
-                "id": f"legacy_{hash(t)}",
-                "text": t
-            })
-        else:
-            existing_untimed.append(t)
-
     merged = {}
 
-    # Always preserve existing untimed tasks
-    for t in existing_untimed:
-        merged[t["id"]] = t
+    # Existing untimed tasks from DB
+    existing_untimed = existing_meta.get("untimed_tasks", [])
+    if isinstance(existing_untimed, list):
+        for t in existing_untimed:
+            merged[t["id"]] = t
 
-    # Add newly detected untimed tasks (smart planner)
+    # Auto-detected untimed (smart planner)
     for t in auto_untimed:
         merged[t["id"]] = t
 
-    # Add manually entered untimed tasks (if any)
+    # Manually entered untimed
     for t in new_untimed:
         merged[t["id"]] = t
 
+    habits = form.getlist("habits")
+    if habits is None:
+        habits = existing_meta.get("habits", [])
     meta = {
-        "habits": form.getlist("habits") or existing_meta.get("habits", []),
+        "habits": habits,
         "reflection": form.get("reflection", "").strip(),
         "untimed_tasks": list(merged.values()),
     }
+    if existing_meta:
+        update(
+            "daily_meta",
+            where={
+                "user_id": user_id,
+                "plan_date": str(plan_date),
+            },
+            data=meta,
+        )
+    else:
+        post(
+            "daily_meta",
+            {
+                "user_id": user_id,
+                "plan_date": str(plan_date),
+                **meta,
+            },
+        )
 
-
-    meta_payload = {
-      "plan_date": str(plan_date),
-      "slot": META_SLOT,
-      "plan": json.dumps(meta),
-      "status": DEFAULT_STATUS,
-    }
 
     # -------------------------------------------------
     # FINAL WRITE (REQUIRED)
@@ -421,7 +417,6 @@ def save_day(plan_date, form):
     clean_payload = [
         {k: v for k, v in row.items() if k in ALLOWED_DAILY_COLUMNS}
         for row in payload
-        if row.get("slot") != META_SLOT   # ✅ EXCLUDE META
     ]
 
     if clean_payload:
@@ -431,18 +426,33 @@ def save_day(plan_date, form):
             prefer="resolution=merge-duplicates",
         )
 
-    post(
-        "daily_slots?on_conflict=plan_date,slot",
-        meta_payload,
-        prefer="resolution=merge-duplicates",
-    )
-    
-
 
 
 SLOT_LABELS = {i: slot_label(i) for i in range(1, TOTAL_SLOTS + 1)}
 
 def get_daily_summary(plan_date):
+    # ----------------------------
+    # Load day meta (habits + reflection)
+    # ----------------------------
+    meta_rows = get(
+        "daily_meta",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "select": "habits,reflection",
+        },
+    ) or []
+
+    habits = []
+    reflection = ""
+
+    if meta_rows:
+        row = meta_rows[0]
+        habits = row.get("habits") or []
+        reflection = row.get("reflection") or ""
+
+    # ----------------------------
+    # Load slot-based tasks
+    # ----------------------------
     rows = get(
         "daily_slots",
         params={
@@ -453,26 +463,22 @@ def get_daily_summary(plan_date):
     ) or []
 
     tasks = []
-    habits = []
-    reflection = ""
 
     for r in rows:
         slot = r.get("slot")
         plan = (r.get("plan") or "").strip()
 
-        if slot == META_SLOT:
-            try:
-                meta = json.loads(plan or "{}")
-                habits = meta.get("habits", [])
-                reflection = meta.get("reflection", "")
-            except Exception:
-                pass
-        elif plan:
-            tasks.append({
-                "slot": slot,
-                "label": SLOT_LABELS[slot],
-                "text": plan,
-            })
+        if not plan:
+            continue
+
+        if not isinstance(slot, int) or slot not in SLOT_LABELS:
+            continue  # defensive: ignore garbage slots
+
+        tasks.append({
+            "slot": slot,
+            "label": SLOT_LABELS[slot],
+            "text": plan,
+        })
 
     return {
         "tasks": tasks,
@@ -480,16 +486,11 @@ def get_daily_summary(plan_date):
         "reflection": reflection,
     }
 
-
-# NOTE:
-# Weekly summary is intentionally compact (day → tasks with time).
-# Tag and priority aggregation is handled only in daily summary to avoid noise.
 def get_weekly_summary(start_date, end_date):
     rows = get(
         "daily_slots",
         params={
-            "plan_date": f"gte.{start_date}",
-            "plan_date": f"lte.{end_date}",
+            "plan_date": f"gte.{start_date},lte.{end_date}",
             "select": "plan_date,slot,plan",
             "order": "plan_date.asc,slot.asc",
         },
@@ -502,13 +503,16 @@ def get_weekly_summary(start_date, end_date):
         plan = (row.get("plan") or "").strip()
         plan_date = row.get("plan_date")
 
-        # ✅ Skip META + empty
-        if slot == META_SLOT or not plan:
+        if not plan:
+            continue
+
+        # Defensive: only real slots
+        if not isinstance(slot, int) or slot not in SLOT_LABELS:
             continue
 
         weekly.setdefault(plan_date, []).append({
             "slot": slot,
-            "label": SLOT_LABELS.get(slot),
+            "label": SLOT_LABELS[slot],
             "text": plan,
         })
 
@@ -521,7 +525,7 @@ def ensure_daily_habits_row(user_id, plan_date):
             {
                 "user_id": user_id,
                 "plan_date": plan_date.isoformat(),
-                "habits": {},
+                "habits": {},# habits is a dict: {habit_name: boolean}
             },
             
         )
