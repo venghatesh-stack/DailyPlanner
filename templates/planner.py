@@ -55,7 +55,7 @@ PLANNER_TEMPLATE = """
       placeholder="One task per line."></textarea>
 
     <h3>🗒 Tasks (No Time Yet)</h3>
-
+    <div id ="untimed-list">
     {% for t in untimed_tasks %}
       <div class="untimed-item" data-id="{{ t.id }}" data-text="{{ t.text | e }}">
         <div>{{ t.text }}</div>
@@ -63,7 +63,7 @@ PLANNER_TEMPLATE = """
         <button type="button" onclick="scheduleUntimed('{{ t.id }}')">🕒 Schedule</button>
       </div>
     {% endfor %}
-
+    </div>
     <h3>📅 Day Schedule</h3>
 
     <div class="day-schedule">
