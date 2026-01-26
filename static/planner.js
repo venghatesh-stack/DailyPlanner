@@ -2,7 +2,7 @@
    GLOBAL CONSTANTS
 ========================================================= */
 
-const PLAN_DATE = "{{ plan_date.isoformat() }}";
+ /* const PLAN_DATE = "{{ plan_date.isoformat() }}"; */
 
 /* =========================================================
    CLOCK (IST)
