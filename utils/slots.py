@@ -57,3 +57,4 @@ def generate_half_hour_slots(parsed):
 
     return slots
 
+

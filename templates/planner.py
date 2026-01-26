@@ -4,8 +4,9 @@ PLANNER_TEMPLATE = """
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='planner.js') }}" defer></script>
 </head>
-<script src="{{ url_for('static', filename='planner.js') }}" defer></script>
+
 
 <body>
 {% include "_top_nav.html" %}
@@ -136,7 +137,7 @@ PLANNER_TEMPLATE = """
 <!-- (all your existing inline JS stays exactly as-is below) -->
   <div id="modal" style="display:none"></div>
   <div id="summary-modal" style="display:none"></div>
-
+  <div id="summary-content"></div>
   <!-- ================= IST TIME HELPERS ================= -->
   <script>
     const PLAN_DATE = "{{ plan_date.isoformat() }}";
