@@ -38,11 +38,12 @@ def generate_half_hour_slots(parsed):
     current = parsed["start"]
 
     while current < parsed["end"]:
-        slot = (current.hour * 60 + current.minute) // 30 + 1  # 🔥 ADD THIS
         slot_end = min(current + timedelta(minutes=30), parsed["end"])
 
+        slot = (current.hour * 60 + current.minute) // 30 + 1
+
         slots.append({
-            "slot":slot,
+            "slot": slot,  # ✅ SOURCE OF TRUTH
             "task": parsed["title"],
             "time": f"{current.strftime('%H:%M')} - {slot_end.strftime('%H:%M')}",
             "priority": parsed["priority"],
@@ -53,4 +54,6 @@ def generate_half_hour_slots(parsed):
         })
 
         current = slot_end
+
     return slots
+
