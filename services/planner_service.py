@@ -10,7 +10,7 @@ from config import (
 )
 from utils.slots import generate_half_hour_slots
 import logging
-from supabase_client import get, post, delete,update
+from supabase_client import get, post, update
 from parsing.planner_parser import parse_planner_input
 from utils.slots import slot_label
 
@@ -369,11 +369,7 @@ def save_day(plan_date, form):
     habits = form.getlist("habits")
     if habits is None:
         habits = existing_meta.get("habits", [])
-    meta = {
-        "habits": habits,
-        "reflection": form.get("reflection", "").strip(),
-        "untimed_tasks": list(merged.values()),
-    }
+   
     update(
     "daily_meta",
     params={
