@@ -299,3 +299,10 @@ function toggleSubtask(id, isDone) {
     body: JSON.stringify({ id, is_done: isDone })
   });
 }
+window.addEventListener("focusin", () =>
+  document.body.classList.add("keyboard-open")
+);
+
+window.addEventListener("focusout", () =>
+  document.body.classList.remove("keyboard-open")
+);
