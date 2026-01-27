@@ -688,6 +688,42 @@ def promoteuntimed():
 
     return ("", 204)
 
+from flask import request, jsonify
+from datetime import date
+
+@app.route("/smart/preview", methods=["POST"])
+def smart_preview():
+    data = request.get_json(force=True)
+
+    text = data.get("text", "").strip()
+    plan_date = data.get("plan_date")
+
+    if not text or not plan_date:
+        return jsonify({"conflicts": []})
+
+    # Try parsing smart sentence
+    try:
+        parsed = parse_smart_sentence(text, date.fromisoformat(plan_date))
+    except Exception:
+        # If parsing fails → no conflicts, allow save
+        return jsonify({"conflicts": []})
+
+    start_slot = parsed["start_slot"]
+    slot_count = parsed["slot_count"]
+
+    # Fetch existing plans for those slots
+    conflicts = []
+    for i in range(slot_count):
+        slot = start_slot + i
+        existing = get_plan_for_slot(plan_date, slot)  # ← YOUR EXISTING helper
+        if existing and existing.strip():
+            conflicts.append({
+                "time": f"Slot {slot}",
+                "existing": existing,
+                "incoming": parsed["text"]
+            })
+
+    return jsonify({"conflicts": conflicts})
 
 @app.route("/untimed/schedule", methods=["POST"])
 @login_required
