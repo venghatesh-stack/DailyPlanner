@@ -374,25 +374,16 @@ def save_day(plan_date, form):
         "reflection": form.get("reflection", "").strip(),
         "untimed_tasks": list(merged.values()),
     }
-    if existing_meta:
-        update(
-            "daily_meta",
-            params={
-                "user_id": f"eq.{user_id}",
-                "plan_date":f"eq.{plan_date}",
-            },
-            json=meta,
-        )
-    else:
-        post(
-            "daily_meta?on_conflict=user_id,plan_date",
-            {
-                "user_id": user_id,                 # ✅ NO eq.
-                "plan_date": str(plan_date),
-                **meta,
-            },
-            prefer="resolution=merge-duplicates",
-        )
+    post(
+        "daily_meta?on_conflict=user_id,plan_date",
+        {
+            "user_id": user_id,              # ✅ NO eq.
+            "plan_date": str(plan_date),
+            **meta,
+        },
+        prefer="resolution=merge-duplicates",
+    )
+
 
 
 
