@@ -16,6 +16,10 @@ HEADERS = {
 }
 logger = logging.getLogger("daily_plan")
 
+def _strip_eq(value):
+    if isinstance(value, str) and value.startswith("eq."):
+        return value[3:]
+    return value
 
 
 def get(path, params=None):
@@ -47,6 +51,14 @@ def post(path, data, prefer=None):
     headers = HEADERS.copy()
     if prefer:
         headers["Prefer"] = prefer
+       # 🔒 SAFETY: strip eq. from POST payload
+    if isinstance(data, dict):
+        data = {k: _strip_eq(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        data = [
+            {k: _strip_eq(v) for k, v in row.items()}
+            for row in data
+        ]
     logger.debug("SUPABASE Post → %s | params=%s", path, data)
     r = requests.post(
         f"{SUPABASE_URL}/rest/v1/{path}",
