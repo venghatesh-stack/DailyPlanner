@@ -629,6 +629,8 @@ window.addEventListener("focusout", () =>
   document.body.classList.remove("keyboard-open")
 );
 function handleSmartSave() {
+  // prepare slots / smart planner logic
+  document.getElementById("planner-form").submit();
   const smartText = document.querySelector(
     'textarea[name="smart_plan"]'
   ).value.trim();
