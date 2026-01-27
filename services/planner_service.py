@@ -374,15 +374,19 @@ def save_day(plan_date, form):
         "reflection": form.get("reflection", "").strip(),
         "untimed_tasks": list(merged.values()),
     }
-    post(
-        "daily_meta?on_conflict=user_id,plan_date",
-        {
-            "user_id": user_id,              # ✅ NO eq.
-            "plan_date": str(plan_date),
-            **meta,
-        },
-        prefer="resolution=merge-duplicates",
-    )
+    update(
+    "daily_meta",
+    params={
+        "user_id": f"eq.{user_id}",
+        "plan_date": f"eq.{plan_date}",
+    },
+    json={
+        "habits": habits,
+        "reflection": form.get("reflection", "").strip(),
+        "untimed_tasks": list(merged.values()),
+    },
+)
+
 
 
 
@@ -506,18 +510,28 @@ def get_weekly_summary(start_date, end_date):
     return weekly
 
 def ensure_daily_habits_row(user_id, plan_date):
-    try:
-        post(
-            "daily_habits",
-            {
-                "user_id": user_id,
-                "plan_date": plan_date.isoformat(),
-                "habits": {},# habits is a dict: {habit_name: boolean}
-            },
-            
-        )
-    except Exception as e:
-        logger.warning(f"ensure_daily_habits_row failed: {e}")
+    existing = get(
+        "daily_meta",
+        params={
+            "user_id": f"eq.{user_id}",
+            "plan_date": f"eq.{plan_date}",
+        },
+    )
+
+    if existing:
+        return
+
+    post(
+        "daily_meta",
+        {
+            "user_id": user_id,
+            "plan_date": str(plan_date),
+            "habits": [],
+            "reflection": "",
+            "untimed_tasks": [],
+        },
+    )
+
 
 
 def is_health_day(habits):
