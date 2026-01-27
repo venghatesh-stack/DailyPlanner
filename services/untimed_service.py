@@ -35,9 +35,9 @@ def remove_untimed_task(user_id, plan_date, task_id):
         "daily_meta",
         params={
             "user_id": f"eq.{user_id}",
-            "plan_date": str(plan_date),
+            "plan_date": f"eq.{plan_date}",
         },
-        data={
+        json={
             "untimed_tasks": cleaned,
         },
     )
