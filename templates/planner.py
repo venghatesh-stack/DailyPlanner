@@ -50,23 +50,31 @@ PLANNER_TEMPLATE = """
     <input type="hidden" name="month" value="{{ month }}">
     <input type="hidden" name="day" value="{{ selected_day }}">
 
-    <h3>🧠 Smart Planner Input</h3>
-   <div class="smart-planner">
-  <textarea
-    name="smart_plan"
-    placeholder="One task per line. Example: 
-9:30 am Gym
-2 pm Call client"
-  ></textarea>
+
+<h3>🧠 Smart Planner Input</h3>
+
+<textarea
+  name="smart_plan"
+  id="smart-plan"
+  style="width:100%;min-height:120px;"
+  placeholder="Example: 9.30-10.30 Deep work"></textarea>
+
+<div style="display:flex;gap:10px;margin-top:8px;">
+  <button
+    type="button"
+    onclick="handleSmartSave(event)"
+    style="padding:8px 14px;">
+    💾 Save
+  </button>
 
   <button
     type="button"
-    class="smart-save-btn"
-    onclick="handleSmartSave(event)"
-  >
-    💾 Save
+    onclick="document.getElementById('smart-plan').value=''"
+    style="padding:8px 14px;">
+    ❌ Cancel
   </button>
 </div>
+
 
 
     <h3>🗒 Tasks (No Time Yet)</h3>

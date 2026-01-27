@@ -137,31 +137,35 @@ window.addEventListener("focusout", () =>
   document.body.classList.remove("keyboard-open")
 );
 
-/* =========================================================
-   SMART SAVE
-========================================================= */
 function handleSmartSave(e) {
   e?.preventDefault?.();
 
   const form = document.getElementById("planner-form");
-  const smartText = document
-  .querySelector('textarea[name="smart_plan"]')
-  .value
-  .split("\n")
-  .map(l => normalizeSmartTime(l.trim()))
-  .join("\n");
+  const text = document
+    .querySelector('textarea[name="smart_plan"]')
+    .value
+    .trim();
 
-  if (!smartText || !/@|\bfrom\b/i.test(smartText)) {
+  if (!text) {
     form.submit();
     return;
   }
 
+  const timeRange = parseTimeRange(text);
+
+  // No time detected → safe submit
+  if (!timeRange) {
+    form.submit();
+    return;
+  }
+
+  // Ask backend to preview slot conflicts
   fetch("/smart/preview", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       plan_date: PLAN_DATE,
-      text: smartText
+      text
     })
   })
     .then(r => r.json())
@@ -170,6 +174,7 @@ function handleSmartSave(e) {
         form.submit();
         return;
       }
+
       openSmartPreview(result);
     });
 }
@@ -216,4 +221,27 @@ function normalizeSmartTime(line) {
   else period = "pm";
 
   return `${hour}:${minute} ${period} ${text}`;
+}
+function parseTimeRange(text) {
+  // Matches: 9-10 | 9.30-10.30 | 9:30-10:30
+  const m = text.match(
+    /(\d{1,2})(?:[.:](\d{2}))?\s*-\s*(\d{1,2})(?:[.:](\d{2}))?/
+  );
+
+  if (!m) return null;
+
+  const sh = parseInt(m[1], 10);
+  const sm = parseInt(m[2] || "0", 10);
+  const eh = parseInt(m[3], 10);
+  const em = parseInt(m[4] || "0", 10);
+
+  if (
+    sh > 23 || eh > 23 ||
+    sm > 59 || em > 59
+  ) return null;
+
+  return {
+    startMinutes: sh * 60 + sm,
+    endMinutes: eh * 60 + em
+  };
 }
