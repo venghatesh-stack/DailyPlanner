@@ -3,9 +3,18 @@
 ========================================================= */
 
 :root {
-  --slot-height: 34px;
+  --slot-height: 36px;
   --time-column-width: 110px;
   --action-bar-height: 190px;
+
+  --slot-bg-even: #ffffff;
+  --slot-bg-odd: #f9fafb;
+  --slot-border: #e5e7eb;
+  --hour-border: #cbd5e1;
+
+  --event-bg: #eaf2ff;
+  --event-bg-strong: #dbeafe;
+  --event-border: #2563eb;
 }
 
 html {
@@ -119,27 +128,43 @@ body {
 }
 
 /* =========================================================
-   DAY SCHEDULE (CRITICAL – FIXED)
+   DAY SCHEDULE (STABLE)
 ========================================================= */
 
 .day-schedule {
-  position: relative; /* 🔑 shared coordinate system */
+  position: relative;
   margin-top: 12px;
 }
 
-/* Grid wrapper */
 .day-grid {
   position: relative;
 }
 
-/* Each time row */
+/* =========================================================
+   TIME ROWS
+========================================================= */
+
 .time-row {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   height: var(--slot-height);
+  background: var(--slot-bg-even);
 }
 
-/* Time label column */
+.time-row:nth-child(odd) {
+  background: var(--slot-bg-odd);
+}
+
+/* Hour emphasis (every 2 slots = 1 hour) */
+.time-row:nth-child(4n) {
+  border-bottom: 2px solid var(--hour-border);
+}
+
+.time-row:nth-child(4n) .time-column {
+  font-weight: 600;
+  color: #111827;
+}
+
 .time-column {
   width: var(--time-column-width);
   min-width: var(--time-column-width);
@@ -154,16 +179,22 @@ body {
   color: #374151;
 
   white-space: nowrap;
+  letter-spacing: 0.2px;
 }
 
-/* Grid line */
 .grid-line {
   flex: 1;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--slot-border);
+}
+
+/* Current time highlight */
+.now-slot .time-column {
+  color: #dc2626;
+  font-weight: 600;
 }
 
 /* =========================================================
-   EVENTS LAYER (CORRECTED)
+   EVENTS LAYER (FINAL, SINGLE SOURCE)
 ========================================================= */
 
 .events-layer {
@@ -173,24 +204,71 @@ body {
   right: 0;
   pointer-events: none;
 }
-.event-block {
-  white-space: pre-wrap;   /* preserves line breaks */
-  line-height: 1.45;
 
-  overflow-y: auto;        /* scroll, don’t break layout */
-  max-height: 100%;        /* never exceed allocated slot height */
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.12);
-  margin-top: 2px;
-  margin-bottom: 2px;
+.event-block {
+  position: absolute;
+  left: calc(var(--time-column-width) + 12px);
+  right: 12px;
+
+  background: linear-gradient(
+    180deg,
+    var(--event-bg) 0%,
+    var(--event-bg-strong) 100%
+  );
+
+  border-left: 4px solid var(--event-border);
+  border-radius: 12px;
+
+  padding: 10px 14px;
+
+  font-size: 14px;
+  line-height: 1.45;
+  color: #0f172a;
+
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.04),
+    0 6px 14px rgba(37,99,235,0.12);
+
+  box-sizing: border-box;
+
+  white-space: normal;
+  word-break: break-word;
+
+  height: auto;
+  min-height: var(--slot-height);
+
+  pointer-events: auto;
 }
+
 .event-block::first-line {
   font-weight: 600;
 }
 
-/* Highlight current time */
-.now-slot .time-column {
-  color: #dc2626;
-  font-weight: 600;
+/* Subtle visual continuation for multi-slot events */
+.event-block::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: -6px;
+  height: 6px;
+  background: linear-gradient(
+    to bottom,
+    rgba(37,99,235,0.25),
+    transparent
+  );
+  border-radius: 0 0 6px 6px;
+  pointer-events: none;
+}
+
+/* Hover polish (desktop only) */
+@media (hover: hover) {
+  .event-block:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 3px 6px rgba(0,0,0,0.06),
+      0 10px 24px rgba(37,99,235,0.18);
+  }
 }
 
 /* =========================================================
@@ -289,21 +367,6 @@ body {
 }
 
 /* =========================================================
-   MOBILE FIXES
-========================================================= */
-
-@media (max-width: 640px) {
-  :root {
-    --slot-height: 44px;
-    --time-column-width: 96px;
-  }
-
-  .container {
-    padding: 12px;
-  }
-}
-
-/* =========================================================
    MODAL
 ========================================================= */
 
@@ -331,126 +394,32 @@ body {
   border-radius: 10px;
   margin-bottom: 16px;
 }
-/* =========================================================
-   VISUAL RHYTHM & SLOT SEPARATION (SAFE ENHANCEMENT)
-========================================================= */
-
-/* Subtle alternating background for scanability */
-.time-row:nth-child(odd) {
-  background: rgba(249, 250, 251, 0.6);
-}
-
-/* Stronger divider every full hour (every 2 slots) */
-.time-row:nth-child(4n) .grid-line {
-  border-bottom: 2px solid #d1d5db;
-}
-
-/* Slight spacing illusion between slots */
-.time-row {
-  box-sizing: border-box;
-}
-
-/* Time label emphasis on the hour */
-.time-row:nth-child(4n) .time-column {
-  font-weight: 600;
-  color: #111827;
-}
 
 /* =========================================================
-   EVENT BLOCK — MORE POLISHED
-========================================================= */
-
-.event-block {
-  background: linear-gradient(
-    180deg,
-    #eaf2ff 0%,
-    #dbeafe 100%
-  );
-
-  box-shadow:
-    0 1px 2px rgba(0,0,0,0.04),
-    0 6px 14px rgba(37,99,235,0.12);
-
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-/* Gentle lift on hover (desktop only) */
-@media (hover: hover) {
-  .event-block:hover {
-    transform: translateY(-1px);
-    box-shadow:
-      0 3px 6px rgba(0,0,0,0.06),
-      0 10px 24px rgba(37,99,235,0.18);
-  }
-}
-
-/* =========================================================
-   TIME COLUMN — CLEANER & MORE LEGIBLE
-========================================================= */
-
-.time-column {
-  letter-spacing: 0.2px;
-}
-
-/* Reduce visual noise of half-hour labels */
-.time-row:nth-child(2n) .time-column {
-  color: #6b7280;
-}
-
-/* =========================================================
-   DAY SCHEDULE HEADER POLISH
-========================================================= */
-
-h3 {
-  margin-top: 22px;
-  margin-bottom: 10px;
-}
-
-/* =========================================================
-   MOBILE — KEEP IT AIRY
+   MOBILE FIXES
 ========================================================= */
 
 @media (max-width: 640px) {
+  :root {
+    --slot-height: 46px;
+    --time-column-width: 96px;
+  }
+
+  .container {
+    padding: 12px;
+  }
+
   .event-block {
     padding: 12px 14px;
     border-radius: 14px;
   }
 }
+
 /* =========================================================
-   AUTO-EXPANDING EVENT CONTENT (SAFE MODE)
+   HEADINGS
 ========================================================= */
 
-.event-block {
-  height: auto !important;        /* 🔑 allow growth */
-  min-height: var(--slot-height); /* respect at least one slot */
-
-  white-space: normal;            /* allow wrapping */
-  word-break: break-word;
-  line-height: 1.4;
-
-  padding: 10px 14px;
-
-  overflow: visible;              /* allow content to show */
-}
-
-/* Make sure text wraps nicely */
-.event-block * {
-  white-space: normal;
-}
-
-/* Visually indicate multi-slot expansion */
-.event-block::after {
-  content: "";
-  position: absolute;
-  bottom: -6px;
-  left: 12px;
-  right: 12px;
-  height: 6px;
-  background: linear-gradient(
-    to bottom,
-    rgba(37,99,235,0.25),
-    transparent
-  );
-  border-radius: 0 0 6px 6px;
-  pointer-events: none;
+h3 {
+  margin-top: 22px;
+  margin-bottom: 10px;
 }
