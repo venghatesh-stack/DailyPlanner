@@ -4,8 +4,8 @@
 
 :root {
   --slot-height: 34px;
-  --action-bar-height: 190px;
   --time-column-width: 110px;
+  --action-bar-height: 190px;
 }
 
 html {
@@ -118,55 +118,41 @@ body {
   border-color: #2563eb;
 }
 
-.day-item .dow {
-  font-weight: 600;
-  font-size: 11px;
-}
-
-.day-item .num {
-  font-size: 14px;
-  font-weight: 700;
-}
-
 /* =========================================================
-   DAY SCHEDULE (RESTORED MODEL)
+   DAY SCHEDULE (CRITICAL – FIXED)
 ========================================================= */
 
 .day-schedule {
-  position: relative;
+  position: relative; /* 🔑 shared coordinate system */
   margin-top: 12px;
 }
 
-/* Grid occupies full width but shifted */
+/* Grid wrapper */
 .day-grid {
   position: relative;
-  margin-left: var(--time-column-width);
 }
 
-/* Each slot row */
+/* Each time row */
 .time-row {
   display: flex;
-  height: var(--slot-height);
   align-items: center;
-}
-.time-row:nth-child(even) .grid-line {
-  background: #fafafa;
+  height: var(--slot-height);
 }
 
-/* Time labels */
+/* Time label column */
 .time-column {
   width: var(--time-column-width);
-  padding-right: 14px;
-
-  font-size: 12px;
-  font-weight: 600;
-  color: #4b5563;
+  min-width: var(--time-column-width);
+  padding-right: 12px;
 
   display: flex;
   align-items: center;
   justify-content: flex-end;
 
-  letter-spacing: 0.02em;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+
   white-space: nowrap;
 }
 
@@ -177,44 +163,35 @@ body {
 }
 
 /* =========================================================
-   EVENTS LAYER
+   EVENTS LAYER (CORRECTED)
 ========================================================= */
 
 .events-layer {
   position: absolute;
   top: 0;
-  left: 0;                     /* 🔑 restore */
+  left: 0;
   right: 0;
   pointer-events: none;
 }
 
-
 .event-block {
   position: absolute;
-  left: calc(var(--time-column-width) + 8px);
+
+  left: calc(var(--time-column-width) + 12px);
   right: 12px;
 
   background: #e0ecff;
   border-left: 4px solid #2563eb;
-  border-radius: 10px;
+  border-radius: 12px;
 
-  padding: 10px 12px;
+  padding: 10px 14px;
   font-size: 14px;
-  line-height: 1.4;
 
-  box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+  box-sizing: border-box;
   pointer-events: auto;
 }
-.now-slot {
-  background: linear-gradient(
-    to right,
-    rgba(37, 99, 235, 0.08),
-    transparent
-  );
-}
 
-
-/* Current slot emphasis */
+/* Highlight current time */
 .now-slot .time-column {
   color: #dc2626;
   font-weight: 600;
@@ -279,63 +256,6 @@ body {
 }
 
 /* =========================================================
-   MOBILE FIXES
-========================================================= */
-
-@media (max-width: 640px) {
-
-  :root {
-    --slot-height: 44px;
-    --time-column-width: 96px;
-  }
-
-  .container {
-    padding: 12px;
-  }
-
-  .project-task {
-    padding: 12px;
-  }
-    .action-stack {
-    bottom: calc(env(safe-area-inset-bottom) + 8px);
-  }
-
-  body.keyboard-open .action-stack {
-    display: none;
-  }
-
-}
-
-/* =========================================================
-   MODAL
-========================================================= */
-
-#modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.45);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-#modal-content {
-  background: #fff;
-  width: min(92vw, 420px);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 20px 60px rgba(0,0,0,.2);
-}
-
-#preview {
-  background: #f6f7f9;
-  padding: 12px;
-  border-radius: 10px;
-  margin-bottom: 16px;
-}
-
-/* =========================================================
    FLOATING ACTION STACK
 ========================================================= */
 
@@ -370,4 +290,48 @@ body {
   background: #2563eb;
   color: #fff;
   font-weight: 600;
+}
+
+/* =========================================================
+   MOBILE FIXES
+========================================================= */
+
+@media (max-width: 640px) {
+  :root {
+    --slot-height: 44px;
+    --time-column-width: 96px;
+  }
+
+  .container {
+    padding: 12px;
+  }
+}
+
+/* =========================================================
+   MODAL
+========================================================= */
+
+#modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+#modal-content {
+  background: #fff;
+  width: min(92vw, 420px);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+}
+
+#preview {
+  background: #f6f7f9;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 16px;
 }
