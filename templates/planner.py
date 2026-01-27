@@ -123,7 +123,7 @@ PLANNER_TEMPLATE = """
 
 <div class="action-stack">
   <button type="button" onclick="toggleCheckin()">🧭 Check-in</button>
-  <button type="submit" form="planner-form">💾 Save</button>
+  <button type="submit" form="planner-form" onclick="handleSmartSave()">💾 Save</button>
   <button type="button" onclick="location.reload()">❌ Cancel</button>
 </div>
 

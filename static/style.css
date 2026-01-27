@@ -173,22 +173,18 @@ body {
   right: 0;
   pointer-events: none;
 }
-
 .event-block {
-  position: absolute;
+  white-space: pre-wrap;   /* preserves line breaks */
+  line-height: 1.45;
 
-  left: calc(var(--time-column-width) + 12px);
-  right: 12px;
-
-  background: #e0ecff;
-  border-left: 4px solid #2563eb;
-  border-radius: 12px;
-
-  padding: 10px 14px;
-  font-size: 14px;
-
-  box-sizing: border-box;
-  pointer-events: auto;
+  overflow-y: auto;        /* scroll, don’t break layout */
+  max-height: 100%;        /* never exceed allocated slot height */
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.12);
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+.event-block::first-line {
+  font-weight: 600;
 }
 
 /* Highlight current time */
