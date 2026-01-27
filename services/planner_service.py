@@ -385,13 +385,15 @@ def save_day(plan_date, form):
         )
     else:
         post(
-            "daily_meta",
+            "daily_meta?on_conflict=user_id,plan_date",
             {
-                "user_id": user_id, # ✅ RAW VALUE ONLY
+                "user_id": user_id,                 # ✅ NO eq.
                 "plan_date": str(plan_date),
                 **meta,
             },
+            prefer="resolution=merge-duplicates",
         )
+
 
 
     # -------------------------------------------------
