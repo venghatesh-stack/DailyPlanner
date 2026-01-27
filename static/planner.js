@@ -1,3 +1,5 @@
+
+
 /* =========================================================
    CLOCK (IST)
 ========================================================= */
@@ -141,10 +143,12 @@ function handleSmartSave(e) {
   e?.preventDefault?.();
 
   const form = document.getElementById("planner-form");
-  const text = document
-    .querySelector('textarea[name="smart_plan"]')
-    .value
-    .trim();
+  let text = document
+  .querySelector('textarea[name="smart_plan"]')
+  .value
+  .trim();
+
+  text = normalizeSmartTime(text);
 
   if (!text) {
     form.submit();
