@@ -387,7 +387,7 @@ def save_day(plan_date, form):
         post(
             "daily_meta",
             {
-                "user_id": f"eq.{user_id}",
+                "user_id": user_id, # ✅ RAW VALUE ONLY
                 "plan_date": str(plan_date),
                 **meta,
             },
