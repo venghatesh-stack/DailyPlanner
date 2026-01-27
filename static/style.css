@@ -335,3 +335,88 @@ body {
   border-radius: 10px;
   margin-bottom: 16px;
 }
+/* =========================================================
+   VISUAL RHYTHM & SLOT SEPARATION (SAFE ENHANCEMENT)
+========================================================= */
+
+/* Subtle alternating background for scanability */
+.time-row:nth-child(odd) {
+  background: rgba(249, 250, 251, 0.6);
+}
+
+/* Stronger divider every full hour (every 2 slots) */
+.time-row:nth-child(4n) .grid-line {
+  border-bottom: 2px solid #d1d5db;
+}
+
+/* Slight spacing illusion between slots */
+.time-row {
+  box-sizing: border-box;
+}
+
+/* Time label emphasis on the hour */
+.time-row:nth-child(4n) .time-column {
+  font-weight: 600;
+  color: #111827;
+}
+
+/* =========================================================
+   EVENT BLOCK — MORE POLISHED
+========================================================= */
+
+.event-block {
+  background: linear-gradient(
+    180deg,
+    #eaf2ff 0%,
+    #dbeafe 100%
+  );
+
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.04),
+    0 6px 14px rgba(37,99,235,0.12);
+
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Gentle lift on hover (desktop only) */
+@media (hover: hover) {
+  .event-block:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 3px 6px rgba(0,0,0,0.06),
+      0 10px 24px rgba(37,99,235,0.18);
+  }
+}
+
+/* =========================================================
+   TIME COLUMN — CLEANER & MORE LEGIBLE
+========================================================= */
+
+.time-column {
+  letter-spacing: 0.2px;
+}
+
+/* Reduce visual noise of half-hour labels */
+.time-row:nth-child(2n) .time-column {
+  color: #6b7280;
+}
+
+/* =========================================================
+   DAY SCHEDULE HEADER POLISH
+========================================================= */
+
+h3 {
+  margin-top: 22px;
+  margin-bottom: 10px;
+}
+
+/* =========================================================
+   MOBILE — KEEP IT AIRY
+========================================================= */
+
+@media (max-width: 640px) {
+  .event-block {
+    padding: 12px 14px;
+    border-radius: 14px;
+  }
+}
