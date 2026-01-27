@@ -292,15 +292,7 @@ def save_day(plan_date, form):
                             },
                         )
 
-                # Clear existing tasks in affected slots
-                if affected_slots:
-                    delete(
-                        "daily_slots",
-                        params={
-                            "plan_date": f"eq.{task_date}",
-                            "slot": f"in.({','.join(str(s) for s in affected_slots )})",
-                        },
-                    )
+              
 
                 # Re-insert smart slots
                 for s in slots:
