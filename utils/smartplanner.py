@@ -4,26 +4,30 @@ from config import SLOT_MINUTES,WEEKDAYS,IST
 HOUR_RANGE_RE = re.compile(
     r"\b(?P<start>\d{1,2})(?:[:\.](?P<sm>\d{2}))?\s*-\s*(?P<end>\d{1,2})(?:[:\.](?P<em>\d{2}))?\b"
 )
-def parse_24h_range(text: str):
-    """
-    Parses:
-      7-9
-      9.30-10.30
-      14-15
-    Returns (start_minutes, end_minutes, cleaned_text)
-    """
-    m = HOUR_RANGE_RE.search(text)
+def parse_24h_range(text: str, base_date: date | None = None) -> dict | None:
+    m = re.match(
+        r"""
+        (?P<sh>\d{1,2})
+        (?:[.:](?P<sm>\d{2}))?
+        \s*-\s*
+        (?P<eh>\d{1,2})
+        (?:[.:](?P<em>\d{2}))?
+        \s+(?P<title>.+)
+        """,
+        text.strip(),
+        re.VERBOSE,
+    )
+
     if not m:
         return None
 
-    sh = int(m.group("start"))
+    sh = int(m.group("sh"))
     sm = int(m.group("sm") or 0)
-    eh = int(m.group("end"))
+    eh = int(m.group("eh"))
     em = int(m.group("em") or 0)
 
-    # validation
-    if not (0 <= sh <= 23 and 0 <= eh <= 23):
-        raise ValueError("Hour must be between 0 and 23")
+    if sh > 23 or eh > 23 or sm > 59 or em > 59:
+        raise ValueError("Invalid time")
 
     start_minutes = sh * 60 + sm
     end_minutes = eh * 60 + em
@@ -31,9 +35,15 @@ def parse_24h_range(text: str):
     if end_minutes <= start_minutes:
         raise ValueError("End time must be after start time")
 
-    cleaned = HOUR_RANGE_RE.sub("", text).strip()
+    base_date = base_date or datetime.now(IST).date()
 
-    return start_minutes, end_minutes, cleaned
+    return {
+        "plan_date": base_date,
+        "start_slot": start_minutes // SLOT_MINUTES + 1,
+        "slot_count": (end_minutes - start_minutes) // SLOT_MINUTES,
+        "text": m.group("title").strip(),
+    }
+
 
 
 def parse_time(t: str) -> int:
@@ -71,22 +81,37 @@ def resolve_date(date_phrase: str, base_date: date | None = None) -> date:
 
 
 def parse_smart_sentence(text: str, base_date: date | None = None) -> dict:
-    """
-    Main parser: converts natural sentence → planner structure
-    """
-        base_date = base_date or datetime.now(IST).date()
+    base_date = base_date or datetime.now(IST).date()
 
-    # 1️⃣ Try 24h numeric range FIRST (7-9, 9.30-10.30)
-    parsed = parse_24h_range(text)
+    # 1️⃣ Try 24h numeric range FIRST
+    parsed = parse_24h_range(text, base_date)
     if parsed:
-        start_minutes, end_minutes, title = parsed
+        return parsed
 
-        start_slot = start_minutes // SLOT_MINUTES + 1
-        slot_count = (end_minutes - start_minutes) // SLOT_MINUTES
+    # 2️⃣ Fallback to natural language (am/pm, today, tomorrow, etc)
+    pattern = re.compile(
+        r"""
+        (?P<title>.+?)
+        from\s+(?P<start>\d{1,2}(:\d{2})?\s?(am|pm))
+        \s+to\s+(?P<end>\d{1,2}(:\d{2})?\s?(am|pm))
+        """,
+        re.IGNORECASE | re.VERBOSE,
+    )
 
-        return {
-            "plan_date": base_date,
-            "start_slot": start_slot,
-            "slot_count": slot_count,
-            "text": title,
-        }
+    match = pattern.search(text)
+    if not match:
+        raise ValueError("Unsupported smart planner format")
+
+    title = match.group("title").strip()
+    start_minutes = parse_time(match.group("start"))
+    end_minutes = parse_time(match.group("end"))
+
+    if end_minutes <= start_minutes:
+        raise ValueError("End time must be after start time")
+
+    return {
+        "plan_date": base_date,
+        "start_slot": start_minutes // SLOT_MINUTES + 1,
+        "slot_count": (end_minutes - start_minutes) // SLOT_MINUTES,
+        "text": title,
+    }
