@@ -79,6 +79,37 @@ def logout():
 def health():
     return "OK", 200
 
+def build_tasks_for_ui(plan_date):
+    rows = get(
+        "daily_slots",
+        params={
+            "plan_date": f"eq.{plan_date}",
+            "select": "plan,start_time,end_time,slot",
+            "order": "slot.asc",
+        },
+    ) or []
+
+    tasks = []
+
+    for r in rows:
+        if not r.get("start_time") or not r.get("end_time"):
+            continue  # manual slot-only tasks
+
+        start_h, start_m = map(int, r["start_time"].split(":"))
+        end_h, end_m = map(int, r["end_time"].split(":"))
+
+        start_min = start_h * 60 + start_m
+        end_min = end_h * 60 + end_m
+
+        tasks.append({
+            "text": r["plan"],
+            "start_time": r["start_time"],
+            "end_time": r["end_time"],
+            "start_min": start_min,
+            "duration_min": end_min - start_min,
+        })
+
+    return tasks
 
 # ==========================================================
 # ROUTES – DAILY PLANNER
@@ -153,6 +184,7 @@ def planner():
     # ✅ Month navigation helpers
     prev_month = (selected_date.replace(day=1) - timedelta(days=1)).replace(day=1)
     next_month = (selected_date.replace(day=28) + timedelta(days=4)).replace(day=1)
+    tasks = build_tasks_for_ui(plan_date)
     return render_template_string(
         PLANNER_TEMPLATE,
         year=year,
@@ -182,6 +214,7 @@ def planner():
         next_month=next_month,
         timeline_days=timeline_days,
         selected_date=selected_date,
+        tasks=tasks
         
     )
 
