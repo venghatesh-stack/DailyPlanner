@@ -266,3 +266,19 @@ function snapDown(mins) {
 function snapUp(mins) {
   return Math.ceil(mins / 30) * 30;
 }
+document.addEventListener("change", async (e) => {
+  if (!e.target.classList.contains("slot-checkbox")) return;
+
+  const slot = e.target.dataset.slot;
+  const checked = e.target.checked;
+
+  await fetch("/slot/toggle-status", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      plan_date: document.body.dataset.planDate,
+      slot: slot,
+      status: checked ? "done" : "open"
+    })
+  });
+});

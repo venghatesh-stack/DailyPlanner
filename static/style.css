@@ -480,3 +480,7 @@ h3 {
   padding: 6px 8px;
   font-size: 13px;
 }
+.slot-checkbox:checked + span {
+  text-decoration: line-through;
+  opacity: 0.6;
+}

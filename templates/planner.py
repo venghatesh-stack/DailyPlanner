@@ -8,7 +8,7 @@ PLANNER_TEMPLATE = """
 </head>
 
 
-<body>
+<body  data-plan-date="{{ plan_date }}">
 {% include "_top_nav.html" %}
 <div id="clock"> </div>
 <div class="container">
@@ -95,7 +95,14 @@ PLANNER_TEMPLATE = """
         <div class="day-grid">
           {% for slot in plans %}
             <div class="time-row {% if now_slot and slot == now_slot %}now-slot{% endif %}">
-              <div class="time-column">{{ slot_labels[slot] }}</div>
+              <div class="time-column">
+                <input
+                  type="checkbox"
+                  class="slot-checkbox"
+                  data-slot="{{ slot }}"
+                  {% if plans[slot].status == "done" %}checked{% endif %}
+                >
+              {{ slot_labels[slot] }}</div>
               <div class="grid-line"></div>
             </div>
           {% endfor %}

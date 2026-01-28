@@ -753,6 +753,21 @@ def smart_add():
 
     return jsonify({"status": "ok"})
 
+@app.route("/slot/toggle-status", methods=["POST"])
+@login_required
+def toggle_slot_status():
+    data = request.get_json()
+
+    update(
+        "daily_slots",
+        params={
+            "plan_date": f"eq.{data['plan_date']}",
+            "slot": f"eq.{data['slot']}",
+        },
+        json={"status": data["status"]},
+    )
+
+    return ("", 204)
 
 @app.route("/smart/preview", methods=["POST"])
 def smart_preview():
