@@ -114,6 +114,27 @@ def save_day(plan_date, form):
     # -------------------------------------------------
     if smart_block:
         for line in smart_block.splitlines():
+            # -------------------------------------------------
+            # Normalize leading time formats
+            # -------------------------------------------------
+
+            # Case 1: "9 task" → "task @9"
+            m = re.match(r"^(\d{1,2})(?:\s+)(.+)$", line)
+            if m:
+                line = f"{m.group(2)} @{m.group(1)}"
+
+            # Case 2: "9-10 task" → "task from 9 to 10"
+            m = re.match(r"^(\d{1,2})\s*-\s*(\d{1,2})\s+(.+)$", line)
+            if m:
+                line = f"{m.group(3)} from {m.group(1)} to {m.group(2)}"
+
+            # Case 3: "9.30-10.30 task" → "task from 9:30 to 10:30"
+            m = re.match(r"^(\d{1,2})\.(\d{2})\s*-\s*(\d{1,2})\.(\d{2})\s+(.+)$", line)
+            if m:
+                start = f"{m.group(1)}:{m.group(2)}"
+                end = f"{m.group(3)}:{m.group(4)}"
+                line = f"{m.group(5)} from {start} to {end}"
+
             line = line.strip()
             if not line:
                 continue
