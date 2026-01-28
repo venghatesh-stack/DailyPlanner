@@ -159,7 +159,7 @@ function handleSmartSave(e) {
 
   // No time detected → safe submit
   if (!timeRange) {
-    form.submit();
+    smartAdd(text);
     return;
   }
 
@@ -175,12 +175,24 @@ function handleSmartSave(e) {
     .then(r => r.json())
     .then(result => {
       if (!result.conflicts || !result.conflicts.length) {
-        form.submit();
+        smartAdd(text);
         return;
       }
 
       openSmartPreview(result);
     });
+}
+function smartAdd(text) {
+  return fetch("/smart/add", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      plan_date: PLAN_DATE,
+      text: text
+    })
+  }).then(() => {
+    window.location.reload();
+  });
 }
 
 function openSmartPreview(result) {
@@ -200,9 +212,10 @@ function openSmartPreview(result) {
     <h3>⚠️ Slot conflicts</h3>
     ${html}
     <button onclick="modal.style.display='none'">Cancel</button>
-    <button onclick="document.getElementById('planner-form').submit()">
-      Overwrite & Save
+    <button onclick="smartAdd(document.querySelector('textarea[name=smart_plan]').value)">
+        Overwrite & Save
     </button>
+
   `;
 
   modal.style.display = "flex";

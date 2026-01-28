@@ -701,6 +701,41 @@ def get_plan_for_slot(plan_date, slot):
             return plan["text"]
 
     return None
+
+@app.route("/smart/add", methods=["POST"])
+@login_required
+def smart_add():
+    data = request.get_json(force=True)
+
+    text = data["text"]
+    plan_date = date.fromisoformat(data["plan_date"])
+    user_id = session["user_id"]
+
+    try:
+        parsed = parse_smart_sentence(text, plan_date)
+
+        payload = []
+        for i in range(parsed["slot_count"]):
+            slot = parsed["start_slot"] + i
+            payload.append({
+                "plan_date": plan_date.isoformat(),
+                "slot": slot,
+                "plan": parsed["text"],
+                "status": DEFAULT_STATUS,
+            })
+
+        post(
+            "daily_slots?on_conflict=plan_date,slot",
+            payload,
+            prefer="resolution=merge-duplicates",
+        )
+
+    except ValueError:
+        # fallback → untimed
+        save_day(plan_date, {"untimed_tasks": [text]})
+
+    return jsonify({"status": "ok"})
+
 @app.route("/smart/preview", methods=["POST"])
 def smart_preview():
     data = request.get_json(force=True)
