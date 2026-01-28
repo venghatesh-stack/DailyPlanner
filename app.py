@@ -26,7 +26,7 @@ from templates.planner import PLANNER_TEMPLATE
 from templates.todo import TODO_TEMPLATE
 from templates.summary import SUMMARY_TEMPLATE
 from templates.login import LOGIN_TEMPLATE
-
+from utils.smartplanner import parse_smart_sentence
 from config import (
     IST,
     STATUSES,
@@ -687,10 +687,20 @@ def promoteuntimed():
     remove_untimed_task(user_id, plan_date, task_id)
 
     return ("", 204)
+def get_plans_for_date(plan_date):
+    return [
+        p for p in session.get("plans", [])
+        if p["plan_date"] == plan_date
+    ]
 
-from flask import request, jsonify
-from datetime import date
+def get_plan_for_slot(plan_date, slot):
+    plans = get_plans_for_date(plan_date)  # DB / cache / session
 
+    for plan in plans:
+        if plan["start_slot"] <= slot < plan["start_slot"] + plan["slot_count"]:
+            return plan["text"]
+
+    return None
 @app.route("/smart/preview", methods=["POST"])
 def smart_preview():
     data = request.get_json(force=True)

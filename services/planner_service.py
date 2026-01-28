@@ -11,7 +11,7 @@ from config import (
 from utils.slots import generate_half_hour_slots
 import logging
 from supabase_client import get, post, update
-from parsing.planner_parser import parse_planner_input
+from utils.planner_parser import parse_planner_input
 from utils.slots import slot_label
 
 logger = logging.getLogger(__name__)
