@@ -462,7 +462,7 @@ def get_daily_summary(plan_date):
 
         tasks.append({
             "slot": slot,
-            "label": SLOT_LABELS[slot],
+            "label": "",
             "text": plan,
         })
 
@@ -499,7 +499,7 @@ def get_weekly_summary(start_date, end_date):
 
         weekly.setdefault(plan_date, []).append({
             "slot": slot,
-            "label": SLOT_LABELS[slot],
+            "label": "",
             "text": plan,
         })
 
