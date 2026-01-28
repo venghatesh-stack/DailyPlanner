@@ -380,7 +380,12 @@ def save_day(plan_date, form):
     for t in new_untimed:
         merged[t["id"]] = t
 
-    habits = form.getlist("habits")
+    # 🔒 Support both request.form and dict inputs
+    if hasattr(form, "getlist"):
+        habits = form.getlist("habits")
+    else:
+        habits = form.get("habits", []) or []
+
     if habits is None:
         habits = existing_meta.get("habits", [])
    
