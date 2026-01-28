@@ -117,7 +117,19 @@ def save_day(plan_date, form):
             line = line.strip()
             if not line:
                 continue
-            has_time = re.search(r"(@\s*\d|\bfrom\s+\d)", line, re.I)
+            has_time = re.search(
+                r"""
+                (
+                    @\s*\d{1,2}(:\d{2})?\s*(am|pm)? |
+                    \bfrom\s+\d{1,2} |
+                    ^\d{1,2}(\.\d{2})?(\s*(am|pm))? |
+                    ^\d{1,2}(\.\d{2})?\s*-\s*\d{1,2}(\.\d{2})?
+                )
+                """,
+                line,
+                re.I | re.X
+                )
+
             quadrant_match = re.search(r"\b(Q[1-4])\b", line, re.I)
 
             # -------------------------------------------------
