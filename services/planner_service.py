@@ -343,7 +343,15 @@ def save_day(plan_date, form):
   
 
     untimed_raw = form.get("untimed_tasks", "")
-    untimed_raw = untimed_raw.strip() if untimed_raw is not None else ""
+
+    # 🔒 normalize untimed_raw to string
+    if isinstance(untimed_raw, list):
+        untimed_raw = "\n".join(untimed_raw)
+    elif untimed_raw is None:
+        untimed_raw = ""
+
+    untimed_raw = untimed_raw.strip()
+
     new_untimed = []
 
     if untimed_raw:
