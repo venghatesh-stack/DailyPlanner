@@ -221,24 +221,10 @@ function openSmartPreview(result) {
   modal.style.display = "flex";
 }
 function normalizeSmartTime(line) {
-  // already has am/pm → leave it
-  if (/\b(am|pm)\b/i.test(line)) return line;
-
-  const match = line.match(/^(\d{1,2})([:.](\d{2}))?\s+(.*)$/);
-  if (!match) return line;
-
-  let hour = parseInt(match[1], 10);
-  const minute = match[3] || "00";
-  const text = match[4];
-
-  let period = "am";
-
-  if (hour === 12) period = "pm";
-  else if (hour >= 5 && hour <= 11) period = "am";
-  else period = "pm";
-
-  return `${hour}:${minute} ${period} ${text}`;
+  // Only normalize whitespace, do NOT infer time
+  return line.trim().replace(/\s+/g, " ");
 }
+
 function parseTimeRange(text) {
   // Matches: 9-10 | 9.30-10.30 | 9:30-10:30
   const m = text.match(
