@@ -412,6 +412,9 @@ def save_day(plan_date, form):
         "priority",
         "category",
         "tags",
+         # 🔥 ADD THESE
+        "start_time",
+        "end_time",
     }
 
     clean_payload = [

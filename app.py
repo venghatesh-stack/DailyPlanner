@@ -742,32 +742,17 @@ def smart_add():
 
     text = data["text"]
     plan_date = date.fromisoformat(data["plan_date"])
-    user_id = session["user_id"]
 
-    try:
-        parsed = parse_smart_sentence(text, plan_date)
-
-        payload = []
-        for i in range(parsed["slot_count"]):
-            slot = parsed["start_slot"] + i
-            payload.append({
-                "plan_date": plan_date.isoformat(),
-                "slot": slot,
-                "plan": parsed["text"],
-                "status": DEFAULT_STATUS,
-            })
-
-        post(
-            "daily_slots?on_conflict=plan_date,slot",
-            payload,
-            prefer="resolution=merge-duplicates",
-        )
-
-    except ValueError:
-        # fallback → untimed
-        save_day(plan_date, {"untimed_tasks": [text]})
+    # 🔥 ALWAYS delegate to save_day
+    # This ensures:
+    # - smart parsing
+    # - generate_half_hour_slots
+    # - start_time / end_time persistence
+    # - recurrence handling
+    save_day(plan_date, {"smart_plan": text})
 
     return jsonify({"status": "ok"})
+
 
 @app.route("/smart/preview", methods=["POST"])
 def smart_preview():
