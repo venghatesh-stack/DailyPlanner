@@ -298,16 +298,22 @@ def save_day(plan_date, form):
                 for s in slots:
                     if 1 <= s["slot"] <= TOTAL_SLOTS:
                         payload.append(
-                            {
-                                "plan_date": str(task_date),
-                                "slot": s["slot"],          # ⭐ USE THE SOURCE OF TRUTH
-                                "plan": s["task"],
-                                "status": DEFAULT_STATUS,
-                                "priority": s["priority"],
-                                "category": s["category"],
-                                "tags": s["tags"],
-                            }
-                        )
+                        {
+                            "plan_date": str(task_date),
+                            "slot": s["slot"],
+                            "plan": s["task"],
+
+                            # 🔥 ADD THESE TWO LINES
+                            "start_time": s["start"].strftime("%H:%M"),
+                            "end_time": s["end"].strftime("%H:%M"),
+
+                            "status": DEFAULT_STATUS,
+                            "priority": s["priority"],
+                            "category": s["category"],
+                            "tags": s["tags"],
+                        }
+                    )
+
 
             except Exception as e:
                 logger.error(

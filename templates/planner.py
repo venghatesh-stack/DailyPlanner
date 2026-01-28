@@ -91,14 +91,33 @@ PLANNER_TEMPLATE = """
 
     <div class="day-schedule">
 
-      <div class="day-grid">
-        {% for slot in plans %}
-          <div class="time-row {% if now_slot and slot == now_slot %}now-slot{% endif %}">
-            <div class="time-column">{{ slot_labels[slot] }}</div>
-            <div class="grid-line"></div>
-          </div>
-        {% endfor %}
+     <div class="day-grid-wrapper">
+        <div class="day-grid">
+          {% for slot in plans %}
+            <div class="time-row {% if now_slot and slot == now_slot %}now-slot{% endif %}">
+              <div class="time-column">{{ slot_labels[slot] }}</div>
+              <div class="grid-line"></div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- 🔥 ADD THIS -->
+        <div class="task-layer">
+          {% for task in tasks %}
+            <div
+              class="task-block"
+              style="
+                top: {{ task.start_min }}px;
+                height: {{ task.duration_min }}px;
+              "
+            >
+              {{ task.start_time }} – {{ task.end_time }}<br>
+              {{ task.text }}
+            </div>
+          {% endfor %}
+        </div>
       </div>
+
 
       <div class="events-layer">
         {% for block in blocks %}
