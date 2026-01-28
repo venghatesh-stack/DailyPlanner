@@ -248,3 +248,21 @@ function parseTimeRange(text) {
     endMinutes: eh * 60 + em
   };
 }
+function parseTimeToMinutes(timeStr) {
+  // supports: 2.15, 2:15, 14.15, 14:15
+  const [h, m = "00"] = timeStr.replace(".", ":").split(":");
+  return parseInt(h, 10) * 60 + parseInt(m, 10);
+}
+
+function minutesToTime(mins) {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${h}:${m.toString().padStart(2, "0")}`;
+}
+function snapDown(mins) {
+  return Math.floor(mins / 30) * 30;
+}
+
+function snapUp(mins) {
+  return Math.ceil(mins / 30) * 30;
+}

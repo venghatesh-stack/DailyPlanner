@@ -17,15 +17,11 @@ def slot_label(slot: int) -> str:
 def current_slot():
     now = datetime.now(IST)
     return (now.hour * 60 + now.minute) // 30 + 1
-def slots_to_timerange(slots):
-    slots = sorted(slots)
-    start_min = (slots[0] - 1) * 30
-    end_min = slots[-1] * 30
+def slots_to_timerange(slot_objs):
+    start = min(s["time"].split(" - ")[0] for s in slot_objs)
+    end = max(s["time"].split(" - ")[1] for s in slot_objs)
+    return f"{start}–{end}"
 
-    start = datetime.min + timedelta(minutes=start_min)
-    end = datetime.min + timedelta(minutes=end_min)
-
-    return f"{start.strftime('%I:%M %p').lstrip('0')}–{end.strftime('%I:%M %p').lstrip('0')}"
 def slot_start_end(plan_date: date, slot: int):
     start = datetime.combine(plan_date, datetime.min.time(), tzinfo=IST) + timedelta(
         minutes=(slot - 1) * 30
@@ -44,6 +40,8 @@ def generate_half_hour_slots(parsed):
 
         slots.append({
             "slot": slot,  # ✅ SOURCE OF TRUTH
+            "start": current,
+            "end": slot_end,
             "task": parsed["title"],
             "time": f"{current.strftime('%H:%M')} - {slot_end.strftime('%H:%M')}",
             "priority": parsed["priority"],
