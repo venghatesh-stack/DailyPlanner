@@ -223,6 +223,8 @@ def planner():
     prev_month = (selected_date.replace(day=1) - timedelta(days=1)).replace(day=1)
     next_month = (selected_date.replace(day=28) + timedelta(days=4)).replace(day=1)
     tasks = build_tasks_for_ui(plan_date)
+    daily_slots = daily_slots or []
+
     return render_template_string(
         PLANNER_TEMPLATE,
         year=year,
@@ -252,7 +254,8 @@ def planner():
         next_month=next_month,
         timeline_days=timeline_days,
         selected_date=selected_date,
-        tasks=tasks
+        tasks=tasks,
+        daily_slots=daily_slots
         
     )
 
