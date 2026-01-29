@@ -156,6 +156,7 @@ def build_tasks_for_ui(plan_date):
 @login_required
 def planner():
     user_id = session["user_id"]
+    daily_slots = []
     if request.method == "HEAD":
         return "", 200
     today = datetime.now(IST).date()
@@ -195,7 +196,7 @@ def planner():
     materialize_recurring_slots(plan_date, user_id)
     ensure_daily_habits_row(user_id, plan_date)
   
-    plans, habits, reflection,untimed_tasks = load_day(plan_date)
+    plans, habits, reflection,untimed_tasks,daily_slots = load_day(plan_date)
     blocks = group_slots_into_blocks(plans)
 
 
@@ -223,7 +224,7 @@ def planner():
     prev_month = (selected_date.replace(day=1) - timedelta(days=1)).replace(day=1)
     next_month = (selected_date.replace(day=28) + timedelta(days=4)).replace(day=1)
     tasks = build_tasks_for_ui(plan_date)
-    daily_slots = daily_slots or []
+   
 
     return render_template_string(
         PLANNER_TEMPLATE,
