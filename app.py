@@ -33,6 +33,9 @@ from config import (
     DEFAULT_STATUS, 
     HABIT_ICONS,
     HABIT_LIST,
+    SLOT_HEIGHT_PX,
+    MINUTES_PER_SLOT,
+    PX_PER_MIN
 )
 
 from utils.slots import current_slot,slot_label
@@ -75,10 +78,6 @@ def logout():
 # ==========================================================
 # Log in code ends here
 # ==========================================================
-@app.route("/health", methods=["GET", "HEAD"])
-def health():
-    return "OK", 200
-
 def build_tasks_for_ui(plan_date):
     rows = get(
         "daily_slots",
@@ -88,6 +87,7 @@ def build_tasks_for_ui(plan_date):
             "order": "slot.asc",
         },
     ) or []
+
 
     tasks = []
 
@@ -100,16 +100,27 @@ def build_tasks_for_ui(plan_date):
 
         start_min = start_h * 60 + start_m
         end_min = end_h * 60 + end_m
+        duration_min = end_min - start_min
+
+        # 🔥 FIX: convert minutes → pixels
+        top_px = int(start_min * PX_PER_MIN)
+        height_px = max(
+            int(duration_min * PX_PER_MIN),
+            SLOT_HEIGHT_PX  # minimum visible height
+        )
 
         tasks.append({
             "text": r["plan"],
             "start_time": r["start_time"],
             "end_time": r["end_time"],
-            "start_min": start_min,
-            "duration_min": end_min - start_min,
+            "start_min": start_min,          # keep (debug / future use)
+            "duration_min": duration_min,    # keep
+            "top_px": top_px,                # ✅ new
+            "height_px": height_px,          # ✅ new
         })
 
     return tasks
+
 
 # ==========================================================
 # ROUTES – DAILY PLANNER

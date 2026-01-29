@@ -114,9 +114,10 @@ PLANNER_TEMPLATE = """
             <div
               class="task-block"
               style="
-                top: {{ task.start_min }}px;
-                height: {{ task.duration_min }}px;
+                top: {{ task.top_px }}px;
+                height: {{ task.height_px }}px;
               "
+
             >
               {{ task.start_time }} – {{ task.end_time }}<br>
               {{ task.text }}

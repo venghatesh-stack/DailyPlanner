@@ -171,3 +171,6 @@ QUADRANT_ALIASES = {
     "delegate": "delegate",
     "eliminate": "eliminate",
     }
+SLOT_HEIGHT_PX = 36      # must match CSS --slot-height
+MINUTES_PER_SLOT = 30
+PX_PER_MIN = SLOT_HEIGHT_PX / MINUTES_PER_SLOT
