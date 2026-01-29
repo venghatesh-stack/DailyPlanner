@@ -1,5 +1,7 @@
 
 const USE_TIMELINE_VIEW = true;
+const summaryModal = document.getElementById("summary-modal");
+const summaryContent = document.getElementById("summary-content");
 
 
 /* =========================================================
@@ -44,24 +46,7 @@ if (summaryModal && summaryContent) {
   });
 }
 
-summaryModal.addEventListener("touchstart", e => {
-  if (e.touches.length !== 1) return;
-  touchStartY = e.touches[0].clientY;
-  isAtTop = summaryContent.scrollTop === 0;
-});
 
-summaryModal.addEventListener("touchmove", e => {
-  if (!touchStartY || !isAtTop) return;
-  const deltaY = e.touches[0].clientY - touchStartY;
-  if (deltaY > 80) {
-    closeSummary();
-    touchStartY = null;
-  }
-});
-
-summaryModal.addEventListener("touchend", () => {
-  touchStartY = null;
-});
 
 /* =========================================================
    ESC KEY
@@ -129,7 +114,6 @@ function saveEvent(startSlot, endSlot) {
 ========================================================= */
 document.addEventListener("DOMContentLoaded", () => {
 
-  /* Day header auto-scroll */
   const selected = document.getElementById("selected-day");
   if (selected) {
     requestAnimationFrame(() => {
@@ -141,14 +125,18 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  /* Planner UI switch */
   if (USE_TIMELINE_VIEW) {
     document.body.classList.add("timeline-mode");
-    renderTimeline(window.PLANNER_TASKS || [], document.getElementById("timeline-root"));
+
+    const root = document.getElementById("timeline-root");
+    if (root) {
+      renderTimeline(window.PLANNER_TASKS || [], root);
+    }
   } else {
     document.body.classList.remove("timeline-mode");
   }
 });
+
 
 
 

@@ -551,11 +551,10 @@ h3 {
   opacity: 0.6;
 }
 .hour-marker {
-  display: flex;
-  align-items: center;
-  margin: 16px 0 8px;
+  font-size: 13px;
   font-weight: 600;
   color: #6b7280;
+  margin: 16px 0 8px;
 }
 
 .task-card {
@@ -591,7 +590,17 @@ body.timeline-mode .events-layer {
   display: none !important;
 }
 
+#timeline-root {
+  position: relative;
+  min-height: 300px;
+  padding: 12px;
+  background: #f6f7f9;
+}
+
 /* ===== Timeline visible ===== */
 body.timeline-mode #timeline-root {
   display: block !important;
+}
+body.timeline-mode .day-schedule {
+  display: none !important;
 }
