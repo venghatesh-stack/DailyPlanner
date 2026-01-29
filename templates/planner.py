@@ -112,16 +112,17 @@ PLANNER_TEMPLATE = """
         <div class="task-layer">
           {% for task in tasks %}
             <div
-              class="task-block"
-              style="
-                top: {{ task.top_px }}px;
-                height: {{ task.height_px }}px;
-              "
+                class="task-block"
+                style="top: {{ task.top_px }}px; height: {{ task.height_px }}px;
+                --col-index: {{ task.col }};
+                --col-count: {{ task.col_count }};"
+              >
+                <div class="task-title">{{ task.text }}</div>
+                <div class="task-time">
+                  {{ task.start_time }} – {{ task.end_time }}
+                </div>
+              </div>
 
-            >
-              {{ task.start_time }} – {{ task.end_time }}<br>
-              {{ task.text }}
-            </div>
           {% endfor %}
         </div>
       </div>

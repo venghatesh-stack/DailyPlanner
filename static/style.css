@@ -303,6 +303,33 @@ body {
   line-height: 1.4;
   word-wrap: break-word;
 }
+.task-block {
+  width: calc(
+    (100% - var(--time-column-width) - 24px)
+    / var(--col-count)
+  );
+  left: calc(
+    var(--time-column-width) + 12px +
+    (var(--col-index) * (100% - var(--time-column-width) - 24px) / var(--col-count))
+  );
+  cursor:pointer;
+}
+.task-block .task-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.task-block .task-time {
+  font-size: 12px;
+  opacity: 0.65;
+}
+.task-block:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 4px 8px rgba(0,0,0,0.08),
+    0 14px 30px rgba(79,70,229,0.25);
+}
+
 
 /* =========================================================
    PROJECT TASKS — HARD ISOLATION (DO NOT TOUCH)
@@ -472,14 +499,26 @@ h3 {
 
 .task-block {
   position: absolute;
-  left: 90px; /* width of time column */
-  right: 10px;
-  background: #e8f1ff;
+  left: calc(var(--time-column-width) + 12px);
+  right: 12px;
+
+  background: linear-gradient(180deg, #eef4ff, #e0ebff);
   border-left: 4px solid #4f46e5;
-  border-radius: 6px;
-  padding: 6px 8px;
-  font-size: 13px;
+  border-radius: 12px;
+
+  padding: 10px 12px;
+
+  font-size: 14px;
+  line-height: 1.4;
+  color: #0f172a;
+
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.06),
+    0 6px 16px rgba(79,70,229,0.15);
+
+  overflow: hidden;
 }
+
 .slot-checkbox:checked + span {
   text-decoration: line-through;
   opacity: 0.6;

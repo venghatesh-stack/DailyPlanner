@@ -118,7 +118,28 @@ def build_tasks_for_ui(plan_date):
             "top_px": top_px,                # ✅ new
             "height_px": height_px,          # ✅ new
         })
+    # Sort by start time
+    tasks.sort(key=lambda t: t["start_min"])
 
+    columns = []
+
+    for task in tasks:
+        placed = False
+        for col in columns:
+            if task["start_min"] >= col[-1]["end_min"]:
+                col.append(task)
+                placed = True
+                break
+        if not placed:
+            columns.append([task])
+
+    # Assign column + width
+    total_cols = len(columns)
+    for col_index, col in enumerate(columns):
+        for t in col:
+            t["col"] = col_index
+            t["col_count"] = total_cols
+    
     return tasks
 
 
