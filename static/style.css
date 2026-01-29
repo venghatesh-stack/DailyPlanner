@@ -304,16 +304,28 @@ body {
   word-wrap: break-word;
 }
 .task-block {
+  position: absolute;
+
+  /* ❗️IMPORTANT: remove right */
+  right: auto;
+
+  /* Safe defaults */
+  --col-index: 0;
+  --col-count: 1;
+
   width: calc(
     (100% - var(--time-column-width) - 24px)
     / var(--col-count)
   );
+
   left: calc(
     var(--time-column-width) + 12px +
     (var(--col-index) * (100% - var(--time-column-width) - 24px) / var(--col-count))
   );
-  cursor:pointer;
+
+  cursor: pointer;
 }
+
 .task-block .task-title {
   font-weight: 600;
   margin-bottom: 4px;
