@@ -10,6 +10,7 @@ from utils.dates import safe_date
 from config import TOTAL_SLOTS,QUADRANT_MAP
 from utils.calender_links import google_calendar_link
 from services.planner_service import load_day, save_day, get_daily_summary, get_weekly_summary,compute_health_streak,is_health_day,ensure_daily_habits_row,group_slots_into_blocks
+from services.planner_service import fetch_daily_slots
 from services.login_service import login_required
 from services.eisenhower_service import autosave_task
 from config import MIN_HEALTH_HABITS
@@ -149,6 +150,7 @@ def build_tasks_for_ui(plan_date):
     return tasks
 
 
+
 # ==========================================================
 # ROUTES – DAILY PLANNER
 # ==========================================================
@@ -196,7 +198,8 @@ def planner():
     materialize_recurring_slots(plan_date, user_id)
     ensure_daily_habits_row(user_id, plan_date)
   
-    plans, habits, reflection,untimed_tasks,daily_slots = load_day(plan_date)
+    plans, habits, reflection,untimed_tasks= load_day(plan_date)
+    daily_slots = fetch_daily_slots(plan_date)
     blocks = group_slots_into_blocks(plans)
 
 

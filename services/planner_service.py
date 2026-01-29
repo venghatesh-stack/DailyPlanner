@@ -15,7 +15,38 @@ from utils.planner_parser import parse_planner_input
 from utils.slots import slot_label
 
 logger = logging.getLogger(__name__)
-    
+
+def fetch_daily_slots(plan_date):
+    user_id = "VenghateshS"
+
+    # ensure correct format
+    if hasattr(plan_date, "strftime"):
+        plan_date = plan_date.strftime("%Y-%m-%d")
+
+    rows = get(
+        "daily_slots",
+        params={
+            "user_id": f"eq.{user_id}",
+            "plan_date": f"eq.{plan_date}",
+            "select": "plan,start_time,end_time,slot",
+            "order": "slot.asc",
+        },
+    )
+
+    if not rows or not rows.data:
+        return []
+
+    return [
+        {
+            "text": r["plan"],
+            "start_time": r["start_time"],
+            "end_time": r["end_time"],
+            "slot": r["slot"],
+        }
+        for r in rows.data
+        if r.get("plan") and r.get("slot") is not None
+    ]
+
 # ==========================================================
 # DATA ACCESS – DAILY PLANNER
 # ==========================================================
