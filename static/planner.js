@@ -1,4 +1,6 @@
 
+const USE_TIMELINE_VIEW = true;
+
 
 /* =========================================================
    CLOCK (IST)
@@ -21,8 +23,26 @@ updateClock();
 let touchStartY = null;
 let isAtTop = false;
 
-const summaryModal = document.getElementById("summary-modal");
-const summaryContent = document.getElementById("summary-content");
+if (summaryModal && summaryContent) {
+  summaryModal.addEventListener("touchstart", e => {
+    if (e.touches.length !== 1) return;
+    touchStartY = e.touches[0].clientY;
+    isAtTop = summaryContent.scrollTop === 0;
+  });
+
+  summaryModal.addEventListener("touchmove", e => {
+    if (!touchStartY || !isAtTop) return;
+    const deltaY = e.touches[0].clientY - touchStartY;
+    if (deltaY > 80) {
+      closeSummary();
+      touchStartY = null;
+    }
+  });
+
+  summaryModal.addEventListener("touchend", () => {
+    touchStartY = null;
+  });
+}
 
 summaryModal.addEventListener("touchstart", e => {
   if (e.touches.length !== 1) return;
@@ -107,18 +127,39 @@ function saveEvent(startSlot, endSlot) {
 /* =========================================================
    DAY STRIP AUTO-SCROLL
 ========================================================= */
-document.addEventListener("DOMContentLoaded", () => {
-  const selected = document.getElementById("selected-day");
-  if (!selected) return;
 
-  requestAnimationFrame(() => {
-    selected.scrollIntoView({
-      behavior: "smooth",
-      inline: "center",
-      block: "nearest"
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  /* ===== Day header auto-scroll (existing logic) ===== */
+  const selected = document.getElementById("selected-day");
+  if (selected) {
+    requestAnimationFrame(() => {
+      selected.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest"
+      });
     });
-  });
+  }
+
+  /* ===== Planner UI switch (NEW) ===== */
+  const gridRoot = document.getElementById("grid-root");
+  const timelineRoot = document.getElementById("timeline-root");
+
+  if (!gridRoot || !timelineRoot) return;
+
+  if (USE_TIMELINE_VIEW) {
+    gridRoot.style.display = "none";
+    timelineRoot.style.display = "block";
+
+    renderTimeline(window.PLANNER_TASKS || [],timelineRoot);
+  } else {
+    timelineRoot.style.display = "none";
+    gridRoot.style.display = "block";
+  }
 });
+
 
 /* =========================================================
    SUBTASK TOGGLE
@@ -282,3 +323,67 @@ document.addEventListener("change", async (e) => {
     })
   });
 });
+function getHourLabel(timeStr) {
+  const [h, m] = timeStr.split(":").map(Number);
+  const hour12 = h % 12 || 12;
+  const ampm = h >= 12 ? "PM" : "AM";
+  return `${hour12} ${ampm}`;
+}
+
+function calculateDuration(start, end) {
+  if (!end) return "";
+  const [sh, sm] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  const mins = (eh * 60 + em) - (sh * 60 + sm);
+  const hrs = mins / 60;
+  return hrs % 1 === 0 ? `${hrs} hr` : `${hrs.toFixed(1)} hrs`;
+}
+function renderTimeline(tasks, root) {
+  root.innerHTML = "";
+  root.id = "timeline"; // optional, for CSS
+
+  tasks.sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+  let lastHour = null;
+
+  tasks.forEach(task => {
+    const hour = task.start_time.split(":")[0];
+
+    if (hour !== lastHour) {
+      root.appendChild(renderHourMarker(task.start_time));
+      lastHour = hour;
+    }
+
+    root.appendChild(renderTaskCard(task));
+  });
+}
+
+function renderHourMarker(startTime) {
+  const div = document.createElement("div");
+  div.className = "hour-marker";
+  div.innerHTML = `
+    <div class="hour-label">
+      ${getHourLabel(startTime)}
+    </div>
+  `;
+  return div;
+}
+function renderTaskCard(task) {
+  const div = document.createElement("div");
+  div.className = "task-card";
+
+  const duration = calculateDuration(task.start_time, task.end_time);
+
+  div.innerHTML = `
+    <div class="task-main">
+      <input type="checkbox" class="task-check" />
+      <div class="task-content">
+        <div class="task-title">${task.text}</div>
+        ${duration ? `<div class="task-meta">${duration}</div>` : ""}
+      </div>
+    </div>
+  `;
+
+  return div;
+}
+

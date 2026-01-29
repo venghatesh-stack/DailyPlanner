@@ -5,6 +5,7 @@ PLANNER_TEMPLATE = """
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <script src="{{ url_for('static', filename='planner.js') }}" defer></script>
+
 </head>
 
 
@@ -89,9 +90,13 @@ PLANNER_TEMPLATE = """
     </div>
     <h3>📅 Day Schedule</h3>
 
+<div id="planner-root">
+
+  <!-- ===== OLD GRID UI (unchanged) ===== -->
+  <div id="grid-root">
     <div class="day-schedule">
 
-     <div class="day-grid-wrapper">
+      <div class="day-grid-wrapper">
         <div class="day-grid">
           {% for slot in plans %}
             <div class="time-row {% if now_slot and slot == now_slot %}now-slot{% endif %}">
@@ -102,25 +107,24 @@ PLANNER_TEMPLATE = """
                   data-slot="{{ slot }}"
                   {% if plans[slot].status == "done" %}checked{% endif %}
                 >
-              {{ slot_labels[slot] }}</div>
+                {{ slot_labels[slot] }}
+              </div>
               <div class="grid-line"></div>
             </div>
           {% endfor %}
         </div>
 
-        <!-- 🔥 ADD THIS -->
         <div class="task-layer">
           {% for task in tasks %}
-              <div
-                class="task-block"
-                style="
-                  top: {{ task.top_px }}px;
-                  height: {{ task.height_px }}px;
-                  --col-index: {{ task.col | default(0) }};
-                  --col-count: {{ task.col_count | default(1) }};
-                "
-              >
-
+            <div
+              class="task-block"
+              style="
+                top: {{ task.top_px }}px;
+                height: {{ task.height_px }}px;
+                --col-index: {{ task.col | default(0) }};
+                --col-count: {{ task.col_count | default(1) }};
+              "
+            >
               <div class="task-title">{{ task.text }}</div>
               <div class="task-time">
                 {{ task.start_time }} – {{ task.end_time }}
@@ -128,18 +132,18 @@ PLANNER_TEMPLATE = """
             </div>
           {% endfor %}
         </div>
-
       </div>
-
 
       <div class="events-layer">
         {% for block in blocks %}
-          <div class="event-block"
-               onclick="editEvent({{ block.start_slot }}, {{ block.end_slot }})"
-               style="
-                 top: calc({{ block.start_slot - 1 }} * var(--slot-height));
-                 height: calc({{ block.end_slot - block.start_slot + 1 }} * var(--slot-height));
-               ">
+          <div
+            class="event-block"
+            onclick="editEvent({{ block.start_slot }}, {{ block.end_slot }})"
+            style="
+              top: calc({{ block.start_slot - 1 }} * var(--slot-height));
+              height: calc({{ block.end_slot - block.start_slot + 1 }} * var(--slot-height));
+            "
+          >
             {% if block.recurring_id %}🔁 {% endif %}
             {{ block.text }}
           </div>
@@ -147,6 +151,12 @@ PLANNER_TEMPLATE = """
       </div>
 
     </div>
+  </div>
+
+  <!-- ===== NEW TIMELINE UI ===== -->
+  <div id="timeline-root" style="display:none;"></div>
+
+</div>
 
     <div style="display:none">
       {% for slot in plans %}
@@ -189,14 +199,10 @@ PLANNER_TEMPLATE = """
 
 <!-- ================= MODALS ================= -->
 <div id="modal" style="display:none">
-<div id="modal-content"></div>
+  <div id="modal-content"></div>
 </div>
 <div id="summary-modal" style="display:none"></div>
 
-<!-- ================= SCRIPTS ================= -->
-<!-- (all your existing inline JS stays exactly as-is below) -->
-  <div id="modal" style="display:none"></div>
-  <div id="summary-modal" style="display:none"></div>
   <div id="summary-content"></div>
   <!-- ================= IST TIME HELPERS ================= -->
   <script>
@@ -220,7 +226,9 @@ PLANNER_TEMPLATE = """
 
   <!-- ================= SCRIPTS ================= -->
   <!-- (all your existing inline JS stays exactly as-is below) -->
-
+<script>
+  window.PLANNER_TASKS = {{ tasks | tojson }};
+</script>
 </body>
 </html>
 """

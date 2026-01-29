@@ -550,3 +550,35 @@ h3 {
   text-decoration: line-through;
   opacity: 0.6;
 }
+.hour-marker {
+  display: flex;
+  align-items: center;
+  margin: 16px 0 8px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.task-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-left: 48px;
+  margin-bottom: 12px;
+}
+
+.task-main {
+  display: flex;
+  gap: 10px;
+}
+
+.task-title {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.task-meta {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+}
