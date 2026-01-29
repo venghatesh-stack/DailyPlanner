@@ -40,6 +40,7 @@ body {
   border-radius: 14px;
 }
 
+
 /* =========================================================
    TOP NAV
 ========================================================= */
@@ -550,38 +551,11 @@ h3 {
   text-decoration: line-through;
   opacity: 0.6;
 }
-.hour-marker {
-  font-size: 13px;
-  font-weight: 600;
-  color: #6b7280;
-  margin: 16px 0 8px;
-}
+/* =========================================================
+   TIMELINE MODE (ISOLATED + SAFE)
+========================================================= */
 
-.task-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 12px 14px;
-  margin-left: 48px;
-  margin-bottom: 12px;
-}
-
-.task-main {
-  display: flex;
-  gap: 10px;
-}
-
-.task-title {
-  font-size: 15px;
-  font-weight: 500;
-}
-
-.task-meta {
-  font-size: 12px;
-  color: #6b7280;
-  margin-top: 2px;
-}
-/* ===== Timeline mode: kill grid UI ===== */
+/* Hide grid UI completely */
 body.timeline-mode .day-schedule,
 body.timeline-mode .day-grid-wrapper,
 body.timeline-mode .day-grid,
@@ -590,17 +564,57 @@ body.timeline-mode .events-layer {
   display: none !important;
 }
 
+/* Timeline container */
 #timeline-root {
-  position: relative;
-  min-height: 300px;
-  padding: 12px;
-  background: #f6f7f9;
+  display: none;
+  margin-top: 14px;
 }
 
-/* ===== Timeline visible ===== */
 body.timeline-mode #timeline-root {
-  display: block !important;
+  display: block;
+  background: #f1f5f9;
+  border-radius: 14px;
+  padding: 16px;
 }
-body.timeline-mode .day-schedule {
-  display: none !important;
+
+/* Hour markers */
+body.timeline-mode .hour-marker {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  margin: 18px 0 10px;
+  padding-left: 6px;
+}
+
+/* Timeline cards */
+body.timeline-mode .task-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.04),
+    0 6px 16px rgba(0,0,0,0.08);
+}
+
+/* Timeline card layout */
+body.timeline-mode .task-main {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+/* Timeline text */
+body.timeline-mode .task-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+body.timeline-mode .task-meta {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
 }
