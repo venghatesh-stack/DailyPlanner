@@ -582,3 +582,16 @@ h3 {
   color: #6b7280;
   margin-top: 2px;
 }
+/* ===== Timeline mode: kill grid UI ===== */
+body.timeline-mode .day-schedule,
+body.timeline-mode .day-grid-wrapper,
+body.timeline-mode .day-grid,
+body.timeline-mode .task-layer,
+body.timeline-mode .events-layer {
+  display: none !important;
+}
+
+/* ===== Timeline visible ===== */
+body.timeline-mode #timeline-root {
+  display: block !important;
+}

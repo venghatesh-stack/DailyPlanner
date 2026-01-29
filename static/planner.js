@@ -1,5 +1,5 @@
 
-const USE_TIMELINE_VIEW = false;
+const USE_TIMELINE_VIEW = true;
 
 
 /* =========================================================
@@ -127,11 +127,9 @@ function saveEvent(startSlot, endSlot) {
 /* =========================================================
    DAY STRIP AUTO-SCROLL
 ========================================================= */
-
-
 document.addEventListener("DOMContentLoaded", () => {
 
-  /* ===== Day header auto-scroll (existing logic) ===== */
+  /* Day header auto-scroll */
   const selected = document.getElementById("selected-day");
   if (selected) {
     requestAnimationFrame(() => {
@@ -143,22 +141,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  /* ===== Planner UI switch (NEW) ===== */
-  const gridRoot = document.getElementById("grid-root");
-  const timelineRoot = document.getElementById("timeline-root");
-
-  if (!gridRoot || !timelineRoot) return;
-
+  /* Planner UI switch */
   if (USE_TIMELINE_VIEW) {
-    gridRoot.style.display = "none";
-    timelineRoot.style.display = "block";
-
-    renderTimeline(window.PLANNER_TASKS || [],timelineRoot);
+    document.body.classList.add("timeline-mode");
+    renderTimeline(window.PLANNER_TASKS || [], document.getElementById("timeline-root"));
   } else {
-    timelineRoot.style.display = "none";
-    gridRoot.style.display = "block";
+    document.body.classList.remove("timeline-mode");
   }
 });
+
 
 
 /* =========================================================

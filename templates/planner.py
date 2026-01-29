@@ -91,7 +91,8 @@ PLANNER_TEMPLATE = """
     <h3>📅 Day Schedule</h3>
 
 <div id="planner-root">
-
+  <!-- ===== NEW TIMELINE UI ===== -->
+  <div id="timeline-root" style="display:none;"></div>
   <!-- ===== OLD GRID UI (unchanged) ===== -->
   <div id="grid-root">
     <div class="day-schedule">
@@ -153,8 +154,7 @@ PLANNER_TEMPLATE = """
     </div>
   </div>
 
-  <!-- ===== NEW TIMELINE UI ===== -->
-  <div id="timeline-root" style="display:none;"></div>
+
 
 </div>
 
