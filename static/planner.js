@@ -1,5 +1,5 @@
 
-const USE_TIMELINE_VIEW = true;
+const USE_TIMELINE_VIEW = false;
 
 
 /* =========================================================
