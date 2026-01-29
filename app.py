@@ -88,7 +88,6 @@ def build_tasks_for_ui(plan_date):
         },
     ) or []
 
-
     tasks = []
 
     for r in rows:
@@ -102,22 +101,28 @@ def build_tasks_for_ui(plan_date):
         end_min = end_h * 60 + end_m
         duration_min = end_min - start_min
 
-        # 🔥 FIX: convert minutes → pixels
+        # Convert minutes → pixels
         top_px = int(start_min * PX_PER_MIN)
         height_px = max(
             int(duration_min * PX_PER_MIN),
-            SLOT_HEIGHT_PX  # minimum visible height
+            SLOT_HEIGHT_PX
         )
 
         tasks.append({
             "text": r["plan"],
             "start_time": r["start_time"],
             "end_time": r["end_time"],
-            "start_min": start_min,          # keep (debug / future use)
-            "duration_min": duration_min,    # keep
-            "top_px": top_px,                # ✅ new
-            "height_px": height_px,          # ✅ new
+            "start_min": start_min,
+            "end_min": end_min,              # ✅ REQUIRED
+            "duration_min": duration_min,
+            "top_px": top_px,
+            "height_px": height_px,
         })
+
+    # -------------------------------------------------
+    # OVERLAP HANDLING (column packing)
+    # -------------------------------------------------
+
     # Sort by start time
     tasks.sort(key=lambda t: t["start_min"])
 
@@ -126,6 +131,7 @@ def build_tasks_for_ui(plan_date):
     for task in tasks:
         placed = False
         for col in columns:
+            # compare against last task in column
             if task["start_min"] >= col[-1]["end_min"]:
                 col.append(task)
                 placed = True
@@ -133,13 +139,13 @@ def build_tasks_for_ui(plan_date):
         if not placed:
             columns.append([task])
 
-    # Assign column + width
-    total_cols = len(columns)
+    # Assign column metadata
+    total_cols = max(len(columns), 1)
     for col_index, col in enumerate(columns):
         for t in col:
             t["col"] = col_index
             t["col_count"] = total_cols
-    
+
     return tasks
 
 
