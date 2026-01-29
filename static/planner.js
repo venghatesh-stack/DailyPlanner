@@ -130,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const root = document.getElementById("timeline-root");
     if (root) {
-      renderTimeline(window.PLANNER_TASKS || [], root);
+      renderTimeline(window.TIMELINE_TASKS || [], root);
     }
   } else {
     document.body.classList.remove("timeline-mode");
@@ -318,14 +318,28 @@ function calculateDuration(start, end) {
   return hrs % 1 === 0 ? `${hrs} hr` : `${hrs.toFixed(1)} hrs`;
 }
 function renderTimeline(tasks, root) {
+  if (!root) return;
+
   root.innerHTML = "";
   root.id = "timeline"; // optional, for CSS
 
-  tasks.sort((a, b) => a.start_time.localeCompare(b.start_time));
+  if (!Array.isArray(tasks) || tasks.length === 0) {
+    root.innerHTML = "<div style='opacity:.6'>No scheduled tasks</div>";
+    return;
+  }
+
+  // Normalize + filter
+  const normalized = tasks
+    .filter(t => t.start_time) // timeline needs time
+    .map(t => ({
+      ...t,
+      text: t.text || t.plan || ""
+    }))
+    .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
   let lastHour = null;
 
-  tasks.forEach(task => {
+  normalized.forEach(task => {
     const hour = task.start_time.split(":")[0];
 
     if (hour !== lastHour) {
@@ -336,6 +350,7 @@ function renderTimeline(tasks, root) {
     root.appendChild(renderTaskCard(task));
   });
 }
+
 
 function renderHourMarker(startTime) {
   const div = document.createElement("div");
