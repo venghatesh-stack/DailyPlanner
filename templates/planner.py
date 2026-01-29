@@ -4,9 +4,7 @@ PLANNER_TEMPLATE = """
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <script>
-  window.PLANNER_TASKS = {{ tasks | tojson }};
-</script>
+
 </body>
 <script>
   window.TIMELINE_TASKS = {{ daily_slots | tojson }};
