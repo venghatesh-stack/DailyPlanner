@@ -8,31 +8,42 @@ def parse_time_token(token, plan_date):
     token = token.lower().strip()
 
     # ----------------------------------
-    # 1️⃣ am / pm format (existing logic)
+    # 1️⃣ 24-hour HH:MM or HH.MM (PRIMARY)
+    # ----------------------------------
+    match = re.search(r"\b(\d{1,2})[:\.](\d{2})\b", token)
+    if match:
+        hour, minute = map(int, match.groups())
+
+        if not (0 <= hour <= 23):
+            raise ValueError(f"Invalid hour in time: {token}")
+        if not (0 <= minute < 60):
+            raise ValueError(f"Invalid minute in time: {token}")
+
+        naive = datetime.strptime(
+            f"{plan_date} {hour:02d}:{minute:02d}",
+            "%Y-%m-%d %H:%M",
+        )
+        return naive.replace(tzinfo=IST)
+
+    # ----------------------------------
+    # 2️⃣ am / pm format (secondary)
     # ----------------------------------
     match = re.search(
         r"\b(\d{1,2})(?:[:\.](\d{2}))?\s*(am|pm)\b",
         token
     )
-
     if match:
         hour, minute, meridiem = match.groups()
         minute = minute or "00"
-
-        if not (1 <= int(hour) <= 12):
-            raise ValueError(f"Invalid hour in time: {token}")
-        if not (0 <= int(minute) < 60):
-            raise ValueError(f"Invalid minute in time: {token}")
 
         naive = datetime.strptime(
             f"{plan_date} {hour}:{minute}{meridiem}",
             "%Y-%m-%d %I:%M%p",
         )
-
         return naive.replace(tzinfo=IST)
 
     # ----------------------------------
-    # 2️⃣ Plain hour fallback: "9", "at 9", "9 meeting"
+    # 3️⃣ Plain hour fallback ("10" → 10:00)
     # ----------------------------------
     match = re.search(r"\b(\d{1,2})\b", token)
     if match:
@@ -40,7 +51,7 @@ def parse_time_token(token, plan_date):
 
         if 0 <= hour <= 23:
             naive = datetime.strptime(
-                f"{plan_date} {hour}:00",
+                f"{plan_date} {hour:02d}:00",
                 "%Y-%m-%d %H:%M",
             )
             return naive.replace(tzinfo=IST)
@@ -49,6 +60,7 @@ def parse_time_token(token, plan_date):
     # ❌ Nothing matched
     # ----------------------------------
     raise ValueError(f"Invalid time token: {token}")
+
 def parse_time_range(text, plan_date):
     text = text.lower().strip()
 
