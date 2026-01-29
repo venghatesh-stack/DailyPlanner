@@ -3,7 +3,7 @@
 ========================================================= */
 
 :root {
-  --slot-height: 36px;
+  --slot-height: 40px;
   --time-column-width: 110px;
   --action-bar-height: 190px;
 
@@ -169,25 +169,27 @@ body {
   width: var(--time-column-width);
   min-width: var(--time-column-width);
   padding-right: 12px;
-  padding-top: 6px;              /* 🔥 adds breathing room at top */
+  padding-top: 6px;
 
   display: flex;
-  align-items: flex-start;       /* 🔥 KEY FIX */
+  align-items: flex-start;
   justify-content: flex-end;
 
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
-  color: #374151;
+  color: #6b7280;
 
   white-space: nowrap;
   letter-spacing: 0.2px;
 }
 
 
+
+
 .grid-line {
-  flex: 1;
-  border-bottom: 1px solid var(--slot-border);
+  border-bottom: 1px solid #eef2f7;
 }
+
 
 /* Current time highlight */
 .now-slot .time-column {
@@ -305,46 +307,28 @@ body {
   line-height: 1.4;
   word-wrap: break-word;
 }
-.task-block {
-  position: absolute;
 
-  /* ❗️IMPORTANT: remove right */
-  right: auto;
 
-  /* Safe defaults */
-  --col-index: 0;
-  --col-count: 1;
-
-  width: calc(
-    (100% - var(--time-column-width) - 24px)
-    / var(--col-count)
-  );
-
-  left: calc(
-    var(--time-column-width) + 12px +
-    (var(--col-index) * (100% - var(--time-column-width) - 24px) / var(--col-count))
-  );
-
-  cursor: pointer;
-}
 .time-column input[type="checkbox"] {
   margin-top: 2px;
 }
 
-.task-block .task-title {
+
+
+
+.task-title {
+  font-size: 13px;
   font-weight: 600;
+  line-height: 1.3;
   margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.task-block .task-time {
-  font-size: 12px;
-  opacity: 0.65;
-}
-.task-block:hover {
-  transform: translateY(-1px);
-  box-shadow:
-    0 4px 8px rgba(0,0,0,0.08),
-    0 14px 30px rgba(79,70,229,0.25);
+.task-time {
+  font-size: 11px;
+  opacity: 0.6;
 }
 
 
@@ -516,24 +500,50 @@ h3 {
 
 .task-block {
   position: absolute;
-  left: calc(var(--time-column-width) + 12px);
-  right: 12px;
 
-  background: linear-gradient(180deg, #eef4ff, #e0ebff);
-  border-left: 4px solid #4f46e5;
+  /* column layout */
+  --col-index: 0;
+  --col-count: 1;
+
+  width: calc(
+    (100% - var(--time-column-width) - 24px)
+    / var(--col-count)
+  );
+
+  left: calc(
+    var(--time-column-width) + 12px +
+    (var(--col-index) * (100% - var(--time-column-width) - 24px) / var(--col-count))
+  );
+
+  /* visual */
+  background: #f8fbff;
+  border-left: 3px solid #4f46e5;
   border-radius: 12px;
 
   padding: 10px 12px;
 
-  font-size: 14px;
+  box-shadow:
+    0 2px 6px rgba(0,0,0,0.04),
+    0 12px 24px rgba(79,70,229,0.12);
+
+  font-size: 13px;
   line-height: 1.4;
   color: #0f172a;
 
-  box-shadow:
-    0 1px 3px rgba(0,0,0,0.06),
-    0 6px 16px rgba(79,70,229,0.15);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 
   overflow: hidden;
+  cursor: pointer;
+
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.task-block:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 4px 10px rgba(0,0,0,0.06),
+    0 16px 32px rgba(79,70,229,0.18);
 }
 
 .slot-checkbox:checked + span {
