@@ -139,6 +139,11 @@ def parse_planner_input(raw_text, plan_date):
         re.I,
     )
 
+    bare_single_match = re.search(
+    r"\b([0-9]{1,2}[:\.][0-9]{2}\s*(?:am|pm)?)\b",
+    raw_text,
+    re.I,
+)
 
 
     if range_match:
@@ -151,8 +156,14 @@ def parse_planner_input(raw_text, plan_date):
         start_dt = parse_time_token(start_raw, task_date)
         end_dt = start_dt + timedelta(minutes=30)
 
+    elif bare_single_match:
+        start_raw = bare_single_match.group(1)
+        start_dt = parse_time_token(start_raw, task_date)
+        end_dt = start_dt + timedelta(minutes=30)
+
     else:
         raise ValueError("Time missing")
+
 
     if end_dt <= start_dt:
         raise ValueError("End time must be after start time")
