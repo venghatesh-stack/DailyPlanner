@@ -1,3 +1,17 @@
+<div id="project-health" class="project-health">
+  <div class="health-score">
+    <div class="score-value" id="health-score">—</div>
+    <div class="score-label">Project Health</div>
+  </div>
+
+  <div class="health-metrics">
+    <div><strong id="metric-complete">0%</strong><span>Complete</span></div>
+    <div><strong id="metric-overdue">0</strong><span>Overdue</span></div>
+    <div><strong id="metric-accuracy">0%</strong><span>Accuracy</span></div>
+    <div><strong id="metric-progress">0</strong><span>In Progress</span></div>
+  </div>
+</div>
+
 <div id="task-{{ task.id }}"
      class="task {% if task.done %}done{% endif %}"
      data-id="{{ task.id }}"
@@ -47,7 +61,7 @@
                max="999"
                step="0.5"
                value="{{ task.planned_hours or 0 }}"
-               onchange="updatePlanned('{{ task.id }}', this.value)">
+               onchange="updatePlanned('{{ task.id }}', this.value); updateProgress('{{ task.id }}')">
       </div>
 
       <div class="field">
@@ -57,12 +71,15 @@
                max="999"
                step="0.5"
                value="{{ task.actual_hours or 0 }}"
-               onchange="updateActual('{{ task.id }}', this.value)">
+               onchange="updateActual('{{ task.id }}', this.value); updateProgress('{{ task.id }}')">
       </div>
 
       <div class="field">
         <label>Due</label>
-        <span class="due-date">{{ task.due_date }}</span>
+        <span class="due-date {% if task.due_date and task.due_date < today %}overdue{% endif %}">
+            {{ task.due_date }}
+        </span>
+
       </div>
 
       <div class="field">

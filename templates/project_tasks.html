@@ -407,6 +407,88 @@ document.addEventListener("input", function (e) {
   e.target.style.height = e.target.scrollHeight + "px";
 });
 </script>
+<script>
+function calculateProjectHealth() {
+  const tasks = document.querySelectorAll(".task");
+  if (!tasks.length) return;
+
+  let total = 0;
+  let done = 0;
+  let inProgress = 0;
+  let overdue = 0;
+
+  let plannedTotal = 0;
+  let actualTotal = 0;
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  tasks.forEach(task => {
+    total++;
+
+    const status = task.dataset.status;
+    if (status === "done") done++;
+    if (status === "in_progress") inProgress++;
+
+    const due = task.querySelector(".due-date")?.textContent;
+    if (due && due < today && status !== "done") overdue++;
+
+    const planned = parseFloat(
+      task.querySelector('input[onchange*="updatePlanned"]')?.value || 0
+    );
+    const actual = parseFloat(
+      task.querySelector('input[onchange*="updateActual"]')?.value || 0
+    );
+
+    plannedTotal += planned;
+    actualTotal += actual;
+  });
+
+  /* ---- Metrics ---- */
+
+  const completionRate = total ? (done / total) * 100 : 0;
+
+  const accuracy =
+    plannedTotal > 0
+      ? Math.max(0, 100 - Math.abs(actualTotal - plannedTotal) / plannedTotal * 100)
+      : 100;
+
+  const overduePenalty =
+    total > 0 ? Math.min(100, (overdue / total) * 100) : 0;
+
+  /* ---- Weighted Health Score ---- */
+
+  const score =
+    completionRate * 0.35 +
+    accuracy * 0.25 +
+    (100 - overduePenalty) * 0.25 +
+    Math.min(100, (inProgress / total) * 100) * 0.15;
+
+  /* ---- Update UI ---- */
+
+  document.getElementById("health-score").textContent =
+    Math.round(score);
+
+  document.getElementById("metric-complete").textContent =
+    Math.round(completionRate) + "%";
+
+  document.getElementById("metric-overdue").textContent = overdue;
+
+  document.getElementById("metric-accuracy").textContent =
+    Math.round(accuracy) + "%";
+
+  document.getElementById("metric-progress").textContent = inProgress;
+
+  /* Color coding */
+  const scoreEl = document.getElementById("health-score");
+  scoreEl.style.color =
+    score >= 75 ? "#16a34a" :
+    score >= 50 ? "#f59e0b" :
+    "#dc2626";
+}
+
+/* Run once on load */
+document.addEventListener("DOMContentLoaded", calculateProjectHealth);
+</script>
 
 </body>
 </html>
