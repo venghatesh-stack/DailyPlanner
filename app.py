@@ -95,7 +95,7 @@ def build_tasks_for_ui(plan_date):
 
     for r in rows:
         if not r.get("start_time") or not r.get("end_time"):
-            continue  # manual slot-only tasks
+            continue
 
         start_h, start_m = map(int, r["start_time"].split(":"))
         end_h, end_m = map(int, r["end_time"].split(":"))
@@ -104,10 +104,12 @@ def build_tasks_for_ui(plan_date):
         end_min = end_h * 60 + end_m
         duration_min = end_min - start_min
 
-        # Convert minutes → pixels
-        top_px = int((start_min - GRID_START_MINUTES) * PX_PER_MIN)
+        # ✅ FILTER FIRST (important)
         if start_min < GRID_START_MINUTES:
-            continue  # do not render slots before grid start
+            continue
+
+        # ✅ THEN project into viewport pixels
+        top_px = int((start_min - GRID_START_MINUTES) * PX_PER_MIN)
 
         height_px = max(
             int(duration_min * PX_PER_MIN),
@@ -119,7 +121,7 @@ def build_tasks_for_ui(plan_date):
             "start_time": r["start_time"],
             "end_time": r["end_time"],
             "start_min": start_min,
-            "end_min": end_min,              # ✅ REQUIRED
+            "end_min": end_min,
             "duration_min": duration_min,
             "top_px": top_px,
             "height_px": height_px,
@@ -129,7 +131,6 @@ def build_tasks_for_ui(plan_date):
     # OVERLAP HANDLING (column packing)
     # -------------------------------------------------
 
-    # Sort by start time
     tasks.sort(key=lambda t: t["start_min"])
 
     columns = []
@@ -137,7 +138,6 @@ def build_tasks_for_ui(plan_date):
     for task in tasks:
         placed = False
         for col in columns:
-            # compare against last task in column
             if task["start_min"] >= col[-1]["end_min"]:
                 col.append(task)
                 placed = True
@@ -145,7 +145,6 @@ def build_tasks_for_ui(plan_date):
         if not placed:
             columns.append([task])
 
-    # Assign column metadata
     total_cols = max(len(columns), 1)
     for col_index, col in enumerate(columns):
         for t in col:
@@ -153,6 +152,7 @@ def build_tasks_for_ui(plan_date):
             t["col_count"] = total_cols
 
     return tasks
+
 
 
 
