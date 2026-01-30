@@ -140,20 +140,22 @@ PLANNER_TEMPLATE = """
         </div>
       </div>
 
-     <div class="events-layer">
-  {% for block in blocks %}
-    <div
-      class="event-block"
-      onclick="editEvent({{ block.start_slot }}, {{ block.end_slot }})"
-      style="
-        top: calc(
-          ({{ block.start_slot }} - {{ FIRST_VISIBLE_SLOT }}) * var(--slot-height)
-        );
-        height: calc(
-          ({{ block.end_slot }} - {{ block.start_slot }} + 1) * var(--slot-height)
-        );
-      "
-    >
+      <div class="events-layer">
+          {% for block in blocks %}
+            <div
+              class="event-block"
+              onclick="editEvent({{ block.start_slot }}, {{ block.end_slot }})"
+              style="
+                top: calc({{ block.start_slot - 1 }} * var(--slot-height));
+                height: calc({{ block.end_slot - block.start_slot + 1 }} * var(--slot-height));
+              "
+            >
+              {% if block.recurring_id %}🔁 {% endif %}
+              {{ block.text }}
+      </div>
+  {% endfor %}
+</div>
+
       {% if block.recurring_id %}🔁 {% endif %}
       {{ block.text }}
     </div>
