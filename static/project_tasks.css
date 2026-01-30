@@ -1,5 +1,5 @@
 /* ======================================================
-   PROJECT TASK PLANNER – CALM & RESPONSIVE
+   PROJECT TASKS – COMPACT, CALM, PROFESSIONAL
 ====================================================== */
 
 body {
@@ -10,55 +10,32 @@ body {
   color: #111827;
 }
 
-.container,
 body > div {
   max-width: 1100px;
   margin: auto;
 }
 
 /* ======================================================
-   SECTION HEADERS
-====================================================== */
-
-h3 {
-  margin: 28px 0 8px;
-  font-size: 18px;
-}
-
-h3 span {
-  font-weight: 500;
-  color: #6b7280;
-}
-
-/* ======================================================
-   SECTION CARDS
+   SECTION CARD
 ====================================================== */
 
 h3 + div,
 h3 + p {
   background: #ffffff;
   border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
-  margin-bottom: 24px;
-}
-
-/* Empty state */
-p {
-  margin: 0;
-  color: #6b7280;
-  font-style: italic;
+  padding: 14px;
+  margin-bottom: 20px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.05);
 }
 
 /* ======================================================
-   TASK CARD
+   TASK CARD (COMPACT)
 ====================================================== */
 
 .task-row,
 li {
-  display: block;
-  padding: 14px 0;
   border-bottom: 1px solid #eef2f7;
+  padding: 10px 0;
 }
 
 .task-row:last-child,
@@ -66,64 +43,80 @@ li:last-child {
   border-bottom: none;
 }
 
-/* Primary row: checkbox + title */
+/* ---------------- HEADER ROW ---------------- */
+
 .task-row > label,
 li > label {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
   gap: 10px;
+  align-items: center;
   font-size: 15px;
   font-weight: 600;
-  margin-bottom: 10px;
+}
+
+/* Fake meta chips */
+.task-row > label::after,
+li > label::after {
+  content: "▶";
+  font-size: 12px;
+  color: #6b7280;
 }
 
 /* ======================================================
-   META GRID (START / DURATION / ETC)
+   DETAILS (COLLAPSED BY DEFAULT)
+====================================================== */
+
+/* Everything except label = details */
+.task-row form,
+li form {
+  display: none;
+  margin-top: 12px;
+  padding-left: 26px;
+}
+
+/* Expand on hover OR focus within (keyboard + mobile tap friendly) */
+.task-row:hover form,
+.task-row:focus-within form,
+li:hover form,
+li:focus-within form {
+  display: grid;
+}
+
+/* ======================================================
+   DETAILS GRID
 ====================================================== */
 
 .task-row form,
 li form {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px 12px;
-  margin-left: 26px;
 }
 
 /* Inputs */
-input[type="text"],
-input[type="date"],
-input[type="number"],
+input,
 select,
 textarea {
+  width: 100%;
   padding: 8px 10px;
   border-radius: 10px;
   border: 1px solid #d1d5db;
   font-size: 14px;
-  width: 100%;
 }
 
 textarea {
-  grid-column: span 2;
-  min-height: 70px;
-  resize: vertical;
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-  outline: none;
-  border-color: #2563eb;
+  grid-column: span 3;
+  min-height: 60px;
 }
 
 /* ======================================================
-   ACTION ROW
+   ACTIONS
 ====================================================== */
 
 .task-actions {
+  grid-column: span 3;
   display: flex;
   gap: 10px;
-  margin-top: 10px;
-  margin-left: 26px;
 }
 
 button {
@@ -133,23 +126,14 @@ button {
   background: #2563eb;
   color: #fff;
   font-weight: 600;
-  cursor: pointer;
-}
-
-button:hover {
-  background: #1d4ed8;
 }
 
 button.delete {
   background: #ef4444;
 }
 
-button.delete:hover {
-  background: #dc2626;
-}
-
 /* ======================================================
-   MOBILE FIRST
+   MOBILE – TRUE COMPACT MODE
 ====================================================== */
 
 @media (max-width: 768px) {
@@ -158,29 +142,29 @@ button.delete:hover {
     padding: 12px;
   }
 
-  h3 {
-    font-size: 17px;
+  /* Header row simplified */
+  .task-row > label,
+  li > label {
+    grid-template-columns: auto 1fr;
   }
 
-  /* Stack meta fields */
+  /* Details stack */
   .task-row form,
   li form {
     grid-template-columns: 1fr;
-    margin-left: 0;
+    padding-left: 0;
   }
 
-  textarea {
+  textarea,
+  .task-actions {
     grid-column: span 1;
   }
 
-  /* Actions full-width */
   .task-actions {
     flex-direction: column;
-    margin-left: 0;
   }
 
   button {
     width: 100%;
   }
 }
-
