@@ -408,3 +408,44 @@ function openSummary() {
 
   summaryModal.style.display = "flex";
 }
+function promoteUntimed(btn) {
+  const id = btn.dataset.id;
+
+  fetch("/task/promote", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id,
+      plan_date: document.body.dataset.planDate
+    })
+  }).then(() => window.location.reload());
+}
+function scheduleUntimed(taskId) {
+  const modal = document.getElementById("modal");
+  const content = document.getElementById("modal-content");
+
+  content.innerHTML = `
+    <h3>🕒 Schedule task</h3>
+    <p>Select a start slot:</p>
+    <input type="number" id="schedule-slot" min="1" max="48" value="1">
+    <br><br>
+    <button onclick="modal.style.display='none'">Cancel</button>
+    <button onclick="confirmSchedule('${taskId}')">Schedule</button>
+  `;
+
+  modal.style.display = "flex";
+}
+
+function confirmSchedule(taskId) {
+  const slot = document.getElementById("schedule-slot").value;
+
+  fetch("/task/schedule", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: taskId,
+      plan_date: document.body.dataset.planDate,
+      slot: Number(slot)
+    })
+  }).then(() => window.location.reload());
+}
