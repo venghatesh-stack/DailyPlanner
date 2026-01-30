@@ -6,7 +6,8 @@
 
   <!-- Date + Time -->
   <div class="date-row">
-    <span class="date">{{ today_str }}</span>
+    <span class="date" id="live-date"></span>
+
     <span class="time" id="live-time"></span>
   </div>
 
@@ -44,8 +45,20 @@
 </div>
 
 <script>
-function updateLiveTime() {
-  const now = new Date();
+function updateDateTime() {
+  const now = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+  );
+
+  // Date: 30 Jan 2026
+  document.getElementById("live-date").textContent =
+    now.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    });
+
+  // Time: big blue
   document.getElementById("live-time").textContent =
     now.toLocaleTimeString("en-IN", {
       hour: "2-digit",
@@ -54,6 +67,6 @@ function updateLiveTime() {
     }) + " IST";
 }
 
-updateLiveTime();
-setInterval(updateLiveTime, 1000);
+updateDateTime();
+setInterval(updateDateTime, 1000);
 </script>
