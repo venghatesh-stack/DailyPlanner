@@ -56,12 +56,13 @@ body {
 /* =========================================================
    TIME ROWS (30 MIN SLOTS)
 ========================================================= */
-
 .time-row {
   display: flex;
   height: var(--slot-height);
-  background: var(--slot-bg-even);
+  box-sizing: border-box;   /* 🔑 important */
+  position: relative;
 }
+
 
 .time-row:nth-child(odd) {
   background: var(--slot-bg-odd);
@@ -75,6 +76,15 @@ body {
 .time-row:nth-child(2n) .time-column {
   font-weight: 600;
   color: #111827;
+}
+.time-row:nth-child(2n)::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--hour-border);
 }
 
 .time-column {
@@ -132,7 +142,7 @@ body {
   padding: 10px 14px;
 
   font-size: 14px;
-  line-height: 1.45;
+  line-height: 1.4;
   color: #0f172a;
 
   box-shadow:
@@ -290,3 +300,4 @@ body {
   border: 2px solid #2563eb;
   background: #fff;
 }
+
