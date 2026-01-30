@@ -150,6 +150,7 @@ PLANNER_TEMPLATE = """
               height: {{ block.height_px }}px;
             "
           >
+
             {% if block.recurring_id %}🔁 {% endif %}
             {{ block.text }}
           </div>
