@@ -131,33 +131,47 @@ SUMMARY_TEMPLATE = """
 {% include "_top_nav.html" %}
 
 <h2 class="summary-title">
-  📆 Weekly Summary
-  <span style="font-size:14px; font-weight:500; color:#6b7280;">
-    ({{ start.strftime("%d %b") }} – {{ end.strftime("%d %b %Y") }})
+  📆 Weekly Review
+  <span class="muted">
+    {{ start.strftime("%d %b") }} – {{ end.strftime("%d %b %Y") }}
   </span>
 </h2>
 
 <!-- STATS -->
-<div class="section stats">
+<div class="stats">
   <div class="stat-card">
-    <div class="stat-value">{{ data.total_tasks }}</div>
-    <div class="stat-label">Tasks Logged</div>
+    <div class="stat-value">{{ data.focused_hours }}</div>
+    <div class="stat-label">Focus Hours</div>
   </div>
-
   <div class="stat-card">
     <div class="stat-value">{{ data.habit_days }}/7</div>
     <div class="stat-label">Habit Days</div>
   </div>
-
   <div class="stat-card">
-    <div class="stat-value">{{ (data.total_tasks * 0.5)|round(1) }}h</div>
-    <div class="stat-label">Focused Time</div>
+    <div class="stat-value">{{ data.completion_rate }}%</div>
+    <div class="stat-label">Completion</div>
   </div>
 </div>
 
-<!-- REFLECTION SUMMARY -->
+<!-- INSIGHTS -->
 <div class="section card">
-  <h4>🧠 Weekly Reflection</h4>
+  <h4>🧠 Weekly Insights</h4>
+  <ul>
+    {% for i in insights %}
+      <li>{{ i }}</li>
+    {% endfor %}
+  </ul>
+  <h4>🔥 Habit Streak</h4>
+  <div class="streak">
+    {% for i in range(7) %}
+      <div class="day {{ 'on' if i < data.habit_days else '' }}"></div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- REFLECTION SYNTHESIS -->
+<div class="section card">
+  <h4>✍️ Reflection Highlights</h4>
   {% if data.reflections %}
     <ul>
       {% for r in data.reflections %}
@@ -165,19 +179,18 @@ SUMMARY_TEMPLATE = """
       {% endfor %}
     </ul>
   {% else %}
-    <div class="muted">No reflections this week</div>
+    <div class="muted">No reflections logged</div>
   {% endif %}
 </div>
 
-<!-- PER DAY -->
+<!-- DAILY BREAKDOWN -->
 {% for day, tasks in data.days.items() %}
   <div class="section card">
     <h4>{{ day }}</h4>
-
     <table class="summary-table">
       <tbody>
         {% for t in tasks %}
-          <tr>
+          <tr class="{{ 'done' if t.done }}">
             <td class="time">{{ t.label }}</td>
             <td>{{ t.text }}</td>
           </tr>
@@ -188,6 +201,7 @@ SUMMARY_TEMPLATE = """
 {% endfor %}
 
 {% endif %}
+
 
 """
 

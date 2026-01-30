@@ -586,37 +586,17 @@ def get_daily_summary(plan_date):
         "habits": habits,
         "reflection": reflection,
     }
-
 def get_weekly_summary(start_date, end_date):
-    rows = get(
+    slots = get(
         "daily_slots",
         params={
             "plan_date": f"gte.{start_date}",
             "and": f"(plan_date.lte.{end_date})",
-            "select": "plan_date,slot,plan",
+            "select": "plan_date,slot,plan,status",
             "order": "plan_date.asc,slot.asc",
         },
     ) or []
 
-    weekly = {}
-    total_slots = 0
-
-    for row in rows:
-        slot = row.get("slot")
-        text = (row.get("plan") or "").strip()
-        plan_date = row.get("plan_date")
-
-        if not text or slot not in SLOT_LABELS:
-            continue
-
-        weekly.setdefault(plan_date, []).append({
-            "slot": slot,
-            "label": SLOT_LABELS[slot],
-            "text": text,
-        })
-        total_slots += 1
-
-    # habits + reflections
     meta = get(
         "daily_meta",
         params={
@@ -626,15 +606,71 @@ def get_weekly_summary(start_date, end_date):
         },
     ) or []
 
-    habit_days = sum(1 for r in meta if r.get("habits"))
-    reflections = [r["reflection"] for r in meta if r.get("reflection")]
+    days = {}
+    focused_slots = 0
+    completed_slots = 0
+
+    for r in slots:
+        text = (r.get("plan") or "").strip()
+        slot = r.get("slot")
+        date = r.get("plan_date")
+
+        if not text or slot not in SLOT_LABELS:
+            continue
+
+        days.setdefault(date, []).append({
+            "slot": slot,
+            "label": SLOT_LABELS[slot],
+            "text": text,
+            "done": r.get("status") == "done",
+        })
+
+        focused_slots += 1
+        if r.get("status") == "done":
+            completed_slots += 1
+
+    habit_days = 0
+    reflections = []
+
+    for m in meta:
+        if m.get("habits"):
+            habit_days += 1
+        if m.get("reflection"):
+            reflections.append(m["reflection"])
 
     return {
-        "days": weekly,
-        "total_tasks": total_slots,
+        "days": days,
+        "focused_hours": round(focused_slots * 0.5, 1),
+        "completion_rate": round((completed_slots / focused_slots) * 100, 1)
+                            if focused_slots else 0,
         "habit_days": habit_days,
         "reflections": reflections,
     }
+def generate_weekly_insight(data):
+    insights = []
+
+    if data["completion_rate"] >= 80:
+        insights.append("🔥 Excellent execution this week.")
+    elif data["completion_rate"] >= 50:
+        insights.append("👍 Decent follow-through, room to tighten focus.")
+    else:
+        insights.append("⚠️ Planning exceeded execution — simplify next week.")
+
+    if data["habit_days"] >= 5:
+        insights.append("💪 Strong habit consistency.")
+    elif data["habit_days"] >= 3:
+        insights.append("🙂 Habits are forming — keep them visible.")
+    else:
+        insights.append("🧠 Habits slipped — reduce friction next week.")
+
+    if data["focused_hours"] >= 25:
+        insights.append("⏱ High focus output — watch for burnout.")
+    elif data["focused_hours"] >= 15:
+        insights.append("⏳ Solid focus foundation.")
+    else:
+        insights.append("⚡ Increase protected focus blocks.")
+
+    return insights
 
 
 def ensure_daily_habits_row(user_id, plan_date):

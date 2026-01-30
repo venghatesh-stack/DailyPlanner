@@ -9,7 +9,7 @@ from logger import setup_logger
 from utils.dates import safe_date 
 from config import TOTAL_SLOTS,QUADRANT_MAP
 from utils.calender_links import google_calendar_link
-from services.planner_service import load_day, save_day, get_daily_summary, get_weekly_summary,compute_health_streak,is_health_day,ensure_daily_habits_row,group_slots_into_blocks
+from services.planner_service import generate_weekly_insight, load_day, save_day, get_daily_summary, get_weekly_summary,compute_health_streak,is_health_day,ensure_daily_habits_row,group_slots_into_blocks
 from services.planner_service import fetch_daily_slots
 from services.login_service import login_required
 from services.eisenhower_service import autosave_task
@@ -584,12 +584,14 @@ def summary():
         end = start + timedelta(days=6)
 
         data = get_weekly_summary(start, end)
+        insights = generate_weekly_insight(data)
         return render_template_string(
             SUMMARY_TEMPLATE,
             view="weekly",
             data=data,
             start=start,
             end=plan_date,
+            insights=insights,
         )
 
     data = get_daily_summary(plan_date)
