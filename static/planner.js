@@ -1,5 +1,5 @@
 
-const USE_TIMELINE_VIEW = false;
+const USE_TIMELINE_VIEW = true; // Set to true to enable timeline view
 const summaryModal = document.getElementById("summary-modal");
 const summaryContent = document.getElementById("summary-content");
 
