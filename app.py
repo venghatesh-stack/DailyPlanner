@@ -37,7 +37,8 @@ from config import (
     HABIT_LIST,
     SLOT_HEIGHT_PX,
     MINUTES_PER_SLOT,
-    PX_PER_MIN
+    PX_PER_MIN,
+    GRID_START_MINUTES,
 )
 
 from utils.slots import current_slot,slot_label
@@ -104,7 +105,10 @@ def build_tasks_for_ui(plan_date):
         duration_min = end_min - start_min
 
         # Convert minutes → pixels
-        top_px = int(start_min * PX_PER_MIN)
+        top_px = int((start_min - GRID_START_MINUTES) * PX_PER_MIN)
+        if start_min < GRID_START_MINUTES:
+            continue  # do not render slots before grid start
+
         height_px = max(
             int(duration_min * PX_PER_MIN),
             SLOT_HEIGHT_PX
