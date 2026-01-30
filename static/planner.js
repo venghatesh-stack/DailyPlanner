@@ -398,16 +398,7 @@ function renderDailySummaryTable() {
     </table>
   `;
 }
-function openSummary() {
-  if (!summaryModal || !summaryContent) return;
 
-  summaryContent.innerHTML = `
-    <h3>📊 Daily Summary</h3>
-    ${renderDailySummaryTable()}
-  `;
-
-  summaryModal.style.display = "flex";
-}
 function promoteUntimed(btn) {
   const id = btn.dataset.id;
 

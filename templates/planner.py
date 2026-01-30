@@ -12,6 +12,8 @@ PLANNER_TEMPLATE = """
 <script>
   window.TIMELINE_TASKS = {{ daily_slots | tojson }};
 </script>
+<script src="{{ url_for('static', filename='top_nav.js') }}" defer></script>
+
 <script src="{{ url_for('static', filename='planner.js') }}" defer></script>
 
 </head>
