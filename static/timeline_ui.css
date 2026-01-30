@@ -78,7 +78,7 @@ body.timeline-mode #timeline-root {
 
 /* Date row (keep compact) */
 .date-row {
-  font-size: 13px;
+  font-size: 20px;
   opacity: 0.75;
 }
 
