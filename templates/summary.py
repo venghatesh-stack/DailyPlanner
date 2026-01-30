@@ -130,36 +130,65 @@ SUMMARY_TEMPLATE = """
 
 {% include "_top_nav.html" %}
 
-<h2 class="summary-title">📆 Weekly Summary</h2>
+<h2 class="summary-title">
+  📆 Weekly Summary
+  <span style="font-size:14px; font-weight:500; color:#6b7280;">
+    ({{ start.strftime("%d %b") }} – {{ end.strftime("%d %b %Y") }})
+  </span>
+</h2>
 
-{% if not data %}
-  <div class="section card empty">No scheduled tasks</div>
-{% endif %}
+<!-- STATS -->
+<div class="section stats">
+  <div class="stat-card">
+    <div class="stat-value">{{ data.total_tasks }}</div>
+    <div class="stat-label">Tasks Logged</div>
+  </div>
 
-{% for day, tasks in data.items() %}
+  <div class="stat-card">
+    <div class="stat-value">{{ data.habit_days }}/7</div>
+    <div class="stat-label">Habit Days</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-value">{{ (data.total_tasks * 0.5)|round(1) }}h</div>
+    <div class="stat-label">Focused Time</div>
+  </div>
+</div>
+
+<!-- REFLECTION SUMMARY -->
+<div class="section card">
+  <h4>🧠 Weekly Reflection</h4>
+  {% if data.reflections %}
+    <ul>
+      {% for r in data.reflections %}
+        <li>{{ r }}</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="muted">No reflections this week</div>
+  {% endif %}
+</div>
+
+<!-- PER DAY -->
+{% for day, tasks in data.days.items() %}
   <div class="section card">
     <h4>{{ day }}</h4>
 
-    {% if tasks %}
-      <table class="summary-table">
-        <tbody>
-          {% for task in tasks %}
-            <tr>
-              <td class="time">
-                {{ SLOT_LABELS[task.slot] if task.slot in SLOT_LABELS else "—" }}
-              </td>
-              <td>{{ task.text }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <div class="empty">No tasks</div>
-    {% endif %}
+    <table class="summary-table">
+      <tbody>
+        {% for t in tasks %}
+          <tr>
+            <td class="time">{{ t.label }}</td>
+            <td>{{ t.text }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 {% endfor %}
 
 {% endif %}
+
 """
 
 

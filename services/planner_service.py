@@ -587,39 +587,55 @@ def get_daily_summary(plan_date):
         "reflection": reflection,
     }
 
-
 def get_weekly_summary(start_date, end_date):
     rows = get(
         "daily_slots",
-      params={
+        params={
             "plan_date": f"gte.{start_date}",
             "and": f"(plan_date.lte.{end_date})",
             "select": "plan_date,slot,plan",
             "order": "plan_date.asc,slot.asc",
         },
-        ) or []
+    ) or []
 
     weekly = {}
+    total_slots = 0
 
     for row in rows:
         slot = row.get("slot")
-        plan = (row.get("plan") or "").strip()
+        text = (row.get("plan") or "").strip()
         plan_date = row.get("plan_date")
 
-        if not plan:
-            continue
-
-        # Defensive: only real slots
-        if not isinstance(slot, int) or slot not in SLOT_LABELS:
+        if not text or slot not in SLOT_LABELS:
             continue
 
         weekly.setdefault(plan_date, []).append({
             "slot": slot,
-            "label": "",
-            "text": plan,
+            "label": SLOT_LABELS[slot],
+            "text": text,
         })
+        total_slots += 1
 
-    return weekly
+    # habits + reflections
+    meta = get(
+        "daily_meta",
+        params={
+            "plan_date": f"gte.{start_date}",
+            "and": f"(plan_date.lte.{end_date})",
+            "select": "plan_date,habits,reflection",
+        },
+    ) or []
+
+    habit_days = sum(1 for r in meta if r.get("habits"))
+    reflections = [r["reflection"] for r in meta if r.get("reflection")]
+
+    return {
+        "days": weekly,
+        "total_tasks": total_slots,
+        "habit_days": habit_days,
+        "reflections": reflections,
+    }
+
 
 def ensure_daily_habits_row(user_id, plan_date):
     existing = get(

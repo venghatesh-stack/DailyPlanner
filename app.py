@@ -579,8 +579,11 @@ def summary():
         plan_date = datetime.now(IST).date()
 
     if view == "weekly":
-        start = plan_date - timedelta(days=6)
-        data = get_weekly_summary(start, plan_date)
+       # Monday → Sunday
+        start = plan_date - timedelta(days=plan_date.weekday())
+        end = start + timedelta(days=6)
+
+        data = get_weekly_summary(start, end)
         return render_template_string(
             SUMMARY_TEMPLATE,
             view="weekly",
