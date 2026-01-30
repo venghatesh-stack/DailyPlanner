@@ -240,3 +240,53 @@ body {
     border-radius: 14px;
   }
 }
+/* ================= DAY TIMELINE ================= */
+
+.day-timeline {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 10px 0;
+  scrollbar-width: thin;
+}
+
+.day-item {
+  flex: 0 0 auto;
+  width: 52px;
+  text-align: center;
+  padding: 8px 6px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #374151;
+  background: #f3f4f6;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.day-item:hover {
+  background: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+.day-item .dow {
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.7;
+}
+
+.day-item .num {
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* Active day */
+.day-item.active {
+  background: #2563eb;
+  color: #fff;
+}
+
+/* Today (but not active) */
+.day-item.today:not(.active) {
+  border: 2px solid #2563eb;
+  background: #fff;
+}
