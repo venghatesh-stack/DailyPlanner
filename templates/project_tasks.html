@@ -370,6 +370,16 @@ function updatePlanning(taskId) {
 function toggleTask(el) {
   el.classList.toggle("open");
 }
+function updateProgress(taskId) {
+  const task = document.getElementById(`task-${taskId}`);
+  if (!task) return;
+
+  const planned = parseFloat(task.querySelector('input[onchange*="updatePlanned"]')?.value || 0);
+  const actual  = parseFloat(task.querySelector('input[onchange*="updateActual"]')?.value || 0);
+
+  const percent = planned > 0 ? Math.min(100, (actual / planned) * 100) : 0;
+  task.style.setProperty("--progress", `${percent}%`);
+}
 </script>
 
 <script>

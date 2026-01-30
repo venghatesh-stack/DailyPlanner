@@ -1,5 +1,5 @@
 /* ======================================================
-   PROJECT TASKS – COMPACT, SCANNABLE, MOBILE-FRIENDLY
+   PROJECT TASKS – FINAL POLISHED VERSION
 ====================================================== */
 
 .task {
@@ -8,10 +8,16 @@
   margin-bottom: 12px;
   box-shadow: 0 6px 16px rgba(0,0,0,0.06);
   overflow: hidden;
+  transition: box-shadow 0.2s ease;
+  --progress: 0%;
+}
+
+.task:hover {
+  box-shadow: 0 10px 22px rgba(0,0,0,0.08);
 }
 
 /* ======================================================
-   SUMMARY ROW (COLLAPSED VIEW)
+   SUMMARY ROW
 ====================================================== */
 
 .task-main {
@@ -20,10 +26,18 @@
   gap: 10px;
   padding: 12px 14px;
   cursor: pointer;
+  position: relative;
 }
 
-.task-main:hover {
-  background: #f8fafc;
+.task-main::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: var(--progress);
+  background: #22c55e;
+  transition: width 0.3s ease;
 }
 
 .task-main input[type="checkbox"] {
@@ -34,30 +48,46 @@
 .task-text {
   font-size: 15px;
   font-weight: 600;
-  line-height: 1.3;
   flex: 1;
+  line-height: 1.3;
 }
 
-/* Completed task */
+/* Status accents */
+.task[data-status="open"] .task-main {
+  border-left: 4px solid #3b82f6;
+}
+.task[data-status="in_progress"] .task-main {
+  border-left: 4px solid #f59e0b;
+}
+.task[data-status="done"] .task-main {
+  border-left: 4px solid #22c55e;
+}
+
 .task.done .task-text {
   text-decoration: line-through;
   color: #9ca3af;
 }
 
+/* Overdue */
+.task[data-status!="done"] .due-date.overdue {
+  color: #dc2626;
+  font-weight: 600;
+}
+
 /* ======================================================
-   EXPANDED DETAILS
+   EXPAND / COLLAPSE
 ====================================================== */
 
 .task-details {
-  display: none;
-  padding: 12px 14px 14px;
-  border-top: 1px solid #eef2f7;
+  max-height: 0;
+  overflow: hidden;
   background: #fbfcfe;
+  transition: max-height 0.35s ease;
+  border-top: 1px solid #eef2f7;
 }
 
-/* Toggle controlled by your JS */
 .task.open .task-details {
-  display: block;
+  max-height: 1200px;
 }
 
 /* ======================================================
@@ -68,11 +98,11 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px 12px;
-  margin-bottom: 10px;
+  padding: 12px 14px;
 }
 
-.task-details-row:last-child {
-  margin-bottom: 0;
+.task-details-row + .task-details-row {
+  border-top: 1px dashed #e5e7eb;
 }
 
 /* ======================================================
@@ -106,14 +136,7 @@
 
 .field textarea {
   resize: none;
-  min-height: 34px;
-}
-
-/* Due date text */
-.due-date {
-  font-size: 13px;
-  color: #374151;
-  padding-top: 6px;
+  min-height: 36px;
 }
 
 /* ======================================================
@@ -122,6 +145,7 @@
 
 .task-actions {
   display: flex;
+  gap: 10px;
   align-items: flex-end;
 }
 
@@ -132,7 +156,6 @@
   background: #2563eb;
   color: #ffffff;
   font-weight: 600;
-  cursor: pointer;
 }
 
 .icon-btn.danger {
@@ -140,23 +163,13 @@
   border: none;
   color: #dc2626;
   font-size: 14px;
-  cursor: pointer;
-  align-self: flex-end;
 }
 
 /* ======================================================
-   MOBILE OPTIMIZATION
+   MOBILE – STICKY SAVE BAR
 ====================================================== */
 
 @media (max-width: 768px) {
-
-  .task-main {
-    padding: 10px 12px;
-  }
-
-  .task-text {
-    font-size: 14px;
-  }
 
   .task-details-row {
     grid-template-columns: 1fr;
@@ -167,16 +180,9 @@
   }
 
   .task-actions {
-    justify-content: stretch;
-  }
-
-  .save-task-btn,
-  .icon-btn.danger {
-    width: 100%;
-    text-align: center;
-  }
-
-  .icon-btn.danger {
-    margin-top: 6px;
-  }
-}
+    position: sticky;
+    bottom: 0;
+    background: #ffffff;
+    padding: 10px 0;
+    border-top: 1px solid #e5e7eb;
+    z-index: 5;
