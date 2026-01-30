@@ -161,14 +161,16 @@ body {
    → 2 slots per hour
    Do NOT change nth-child without changing slot duration
 */
-.time-row:nth-child(2n) {
-  border-bottom: 2px solid var(--hour-border);
+/* First slot of every hour (30-min slots) */
+.time-row:nth-child(2n - 1) {
+  border-top: 2px solid var(--hour-border);
 }
 
-.time-row:nth-child(2n) .time-column {
+.time-row:nth-child(2n - 1) .time-column {
   font-weight: 600;
   color: #111827;
 }
+
 
 .time-column {
   width: var(--time-column-width);
