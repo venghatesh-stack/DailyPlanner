@@ -64,10 +64,53 @@ body.timeline-mode #timeline-root {
 }
 /* ================= TOP ICON BAR ================= */
 
-.top-icon-bar {
+/* ======================================================
+   GLOBAL TOP CONTEXT HEADER
+====================================================== */
+
+.top-context {
   display: flex;
-  justify-content: center;   /* ⬅️ center horizontally */
+  flex-direction: column;
+  align-items: center;   /* center children horizontally */
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+/* Date row (keep compact) */
+.date-row {
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+/* ICON NAV — THIS IS THE IMPORTANT PART */
+.nav-icons {
+  display: flex;
+  justify-content: center;   /* ⬅️ centers icons */
   align-items: center;
   gap: 14px;
-  margin: 10px auto 6px;
+}
+
+/* Icon styling */
+.nav-icons a,
+.nav-icons button {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 10px;
+  line-height: 1;
+}
+
+/* Hover feedback */
+.nav-icons a:hover,
+.nav-icons button:hover {
+  background: #f3f4f6;
+}
+
+/* Section title */
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
 }
