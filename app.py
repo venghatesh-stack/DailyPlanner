@@ -20,6 +20,7 @@ from services.eisenhower_service import (
     copy_open_tasks_from_previous_day,  
     enable_travel_mode,
 )
+
 from collections import defaultdict,OrderedDict
 from services.untimed_service import remove_untimed_task  
 from services.timeline_service import load_timeline_tasks
@@ -199,8 +200,10 @@ def planner():
     ensure_daily_habits_row(user_id, plan_date)
   
     plans, habits, reflection,untimed_tasks= load_day(plan_date)
+ 
     daily_slots = fetch_daily_slots(plan_date)
     blocks = group_slots_into_blocks(plans)
+
 
 
     days = [

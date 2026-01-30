@@ -156,12 +156,16 @@ body {
   background: var(--slot-bg-odd);
 }
 
-/* Hour emphasis (every 2 slots = 1 hour) */
-.time-row:nth-child(4n) {
+/* IMPORTANT:
+   Slot duration = 30 minutes
+   → 2 slots per hour
+   Do NOT change nth-child without changing slot duration
+*/
+.time-row:nth-child(2n) {
   border-bottom: 2px solid var(--hour-border);
 }
 
-.time-row:nth-child(4n) .time-column {
+.time-row:nth-child(2n) .time-column {
   font-weight: 600;
   color: #111827;
 }
