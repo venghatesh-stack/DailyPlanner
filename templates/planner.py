@@ -119,25 +119,6 @@ PLANNER_TEMPLATE = """
             </div>
           {% endfor %}
         </div>
-
-        <div class="task-layer">
-          {% for task in tasks %}
-            <div
-              class="task-block"
-              style="
-                top: {{ task.top_px }}px;
-                height: {{ task.height_px }}px;
-                --col-index: {{ task.col | default(0) }};
-                --col-count: {{ task.col_count | default(1) }};
-              "
-            >
-              <div class="task-title">{{ task.text }}</div>
-              <div class="task-time">
-                {{ task.start_time }} – {{ task.end_time }}
-              </div>
-            </div>
-          {% endfor %}
-        </div>
       </div>
 
       <div class="events-layer">
@@ -152,23 +133,13 @@ PLANNER_TEMPLATE = """
             >
               {% if block.recurring_id %}🔁 {% endif %}
               {{ block.text }}
+            </div>
+          {% endfor %}
       </div>
-  {% endfor %}
-</div>
-
-      {% if block.recurring_id %}🔁 {% endif %}
-      {{ block.text }}
-    </div>
-  {% endfor %}
-</div>
 
 
     </div>
   </div>
-
-
-
-</div>
 
     <div style="display:none">
       {% for slot in plans %}

@@ -77,80 +77,6 @@ def logout():
     return redirect(url_for("login"))
 
 
-# ==========================================================
-# Log in code ends here
-# ==========================================================
-def build_tasks_for_ui(plan_date):
-    rows = get(
-        "daily_slots",
-        params={
-            "plan_date": f"eq.{plan_date}",
-            "select": "plan,start_time,end_time,slot",
-            "order": "slot.asc",
-        },
-    ) or []
-
-    tasks = []
-
-    for r in rows:
-        if not r.get("start_time") or not r.get("end_time"):
-            continue
-
-        start_h, start_m = map(int, r["start_time"].split(":"))
-        end_h, end_m = map(int, r["end_time"].split(":"))
-
-        start_min = start_h * 60 + start_m
-        end_min = end_h * 60 + end_m
-        duration_min = end_min - start_min
-
-        # ✅ FILTER FIRST (important)
-        if start_min < GRID_START_MINUTES:
-            continue
-
-        # ✅ THEN project into viewport pixels
-        top_px = int((start_min - GRID_START_MINUTES) * PX_PER_MIN)
-
-        height_px = max(
-            int(duration_min * PX_PER_MIN),
-            SLOT_HEIGHT_PX
-        )
-
-        tasks.append({
-            "text": r["plan"],
-            "start_time": r["start_time"],
-            "end_time": r["end_time"],
-            "start_min": start_min,
-            "end_min": end_min,
-            "duration_min": duration_min,
-            "top_px": top_px,
-            "height_px": height_px,
-        })
-
-    # -------------------------------------------------
-    # OVERLAP HANDLING (column packing)
-    # -------------------------------------------------
-
-    tasks.sort(key=lambda t: t["start_min"])
-
-    columns = []
-
-    for task in tasks:
-        placed = False
-        for col in columns:
-            if task["start_min"] >= col[-1]["end_min"]:
-                col.append(task)
-                placed = True
-                break
-        if not placed:
-            columns.append([task])
-
-    total_cols = max(len(columns), 1)
-    for col_index, col in enumerate(columns):
-        for t in col:
-            t["col"] = col_index
-            t["col_count"] = total_cols
-
-    return tasks
 
 
 
@@ -232,7 +158,7 @@ def planner():
     # ✅ Month navigation helpers
     prev_month = (selected_date.replace(day=1) - timedelta(days=1)).replace(day=1)
     next_month = (selected_date.replace(day=28) + timedelta(days=4)).replace(day=1)
-    tasks = build_tasks_for_ui(plan_date)
+   # tasks = build_tasks_for_ui(plan_date)
    
 
     return render_template_string(
@@ -264,7 +190,7 @@ def planner():
         next_month=next_month,
         timeline_days=timeline_days,
         selected_date=selected_date,
-        tasks=tasks,
+       # tasks=tasks,
         daily_slots=daily_slots
         
     )

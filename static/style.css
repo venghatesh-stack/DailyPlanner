@@ -40,96 +40,8 @@ body {
   border-radius: 14px;
 }
 
-
 /* =========================================================
-   TOP NAV
-========================================================= */
-
-.nav-icons {
-  display: flex;
-  justify-content: center;
-  gap: 18px;
-  font-size: 22px;
-}
-
-.nav-icons a {
-  text-decoration: none;
-  opacity: 0.85;
-}
-
-.nav-icons a:hover {
-  opacity: 1;
-}
-
-/* =========================================================
-   TIMELINE HEADER
-========================================================= */
-
-.timeline-header {
-  margin-bottom: 16px;
-}
-
-.month-bar {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.month-nav {
-  border: none;
-  background: #f3f4f6;
-  border-radius: 8px;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-
-.month-label {
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.date-jump {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-/* =========================================================
-   DAY STRIP
-========================================================= */
-
-.day-timeline {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 6px;
-}
-
-.day-item {
-  min-width: 48px;
-  padding: 6px 8px;
-  border-radius: 12px;
-  text-align: center;
-  text-decoration: none;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  font-size: 12px;
-  color: #111827;
-}
-
-.day-item.active {
-  background: #2563eb;
-  color: #fff;
-}
-
-.day-item.today {
-  border-color: #2563eb;
-}
-
-/* =========================================================
-   DAY SCHEDULE (STABLE)
+   DAY SCHEDULE (OLD SLOT GRID)
 ========================================================= */
 
 .day-schedule {
@@ -137,17 +49,16 @@ body {
   margin-top: 12px;
 }
 
-.day-grid {
+.day-grid-wrapper {
   position: relative;
 }
 
 /* =========================================================
-   TIME ROWS
+   TIME ROWS (30 MIN SLOTS)
 ========================================================= */
 
 .time-row {
   display: flex;
-  align-items: stretch;
   height: var(--slot-height);
   background: var(--slot-bg-even);
 }
@@ -156,21 +67,15 @@ body {
   background: var(--slot-bg-odd);
 }
 
-/* IMPORTANT:
-   Slot duration = 30 minutes
-   → 2 slots per hour
-   Do NOT change nth-child without changing slot duration
-*/
-/* First slot of every hour (30-min slots) */
-.time-row:nth-child(2n - 1) {
-  border-top: 2px solid var(--hour-border);
+/* Hour separator: every 2 slots = 1 hour */
+.time-row:nth-child(2n) {
+  border-bottom: 2px solid var(--hour-border);
 }
 
-.time-row:nth-child(2n - 1) .time-column {
+.time-row:nth-child(2n) .time-column {
   font-weight: 600;
   color: #111827;
 }
-
 
 .time-column {
   width: var(--time-column-width);
@@ -185,18 +90,13 @@ body {
   font-size: 12px;
   font-weight: 500;
   color: #6b7280;
-
   white-space: nowrap;
-  letter-spacing: 0.2px;
 }
-
-
-
 
 .grid-line {
+  flex: 1;
   border-bottom: 1px solid #eef2f7;
 }
-
 
 /* Current time highlight */
 .now-slot .time-column {
@@ -205,7 +105,7 @@ body {
 }
 
 /* =========================================================
-   EVENTS LAYER (FINAL, SINGLE SOURCE)
+   EVENTS LAYER (SLOT-BASED ONLY)
 ========================================================= */
 
 .events-layer {
@@ -229,7 +129,6 @@ body {
 
   border-left: 4px solid var(--event-border);
   border-radius: 12px;
-
   padding: 10px 14px;
 
   font-size: 14px;
@@ -241,13 +140,10 @@ body {
     0 6px 14px rgba(37,99,235,0.12);
 
   box-sizing: border-box;
-
   white-space: normal;
   word-break: break-word;
 
-  height: auto;
   min-height: var(--slot-height);
-
   pointer-events: auto;
 }
 
@@ -255,35 +151,8 @@ body {
   font-weight: 600;
 }
 
-/* Subtle visual continuation for multi-slot events */
-.event-block::after {
-  content: "";
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: -6px;
-  height: 6px;
-  background: linear-gradient(
-    to bottom,
-    rgba(37,99,235,0.25),
-    transparent
-  );
-  border-radius: 0 0 6px 6px;
-  pointer-events: none;
-}
-
-/* Hover polish (desktop only) */
-@media (hover: hover) {
-  .event-block:hover {
-    transform: translateY(-1px);
-    box-shadow:
-      0 3px 6px rgba(0,0,0,0.06),
-      0 10px 24px rgba(37,99,235,0.18);
-  }
-}
-
 /* =========================================================
-   TASK CARDS (UNCHANGED)
+   TASK LIST (UNTIMED)
 ========================================================= */
 
 .task {
@@ -315,57 +184,8 @@ body {
   word-wrap: break-word;
 }
 
-
-.time-column input[type="checkbox"] {
-  margin-top: 2px;
-}
-
-
-
-
-.task-title {
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.3;
-  margin-bottom: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.task-time {
-  font-size: 11px;
-  opacity: 0.6;
-}
-
-
 /* =========================================================
-   PROJECT TASKS — HARD ISOLATION (DO NOT TOUCH)
-========================================================= */
-
-.project-task {
-  display: block;
-}
-
-.project-task .task-row {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 12px;
-}
-
-.project-task input,
-.project-task select {
-  max-width: 140px;
-  font-size: 13px;
-}
-
-.project-task .task-text {
-  white-space: normal;
-  word-break: break-word;
-}
-
-/* =========================================================
-   FLOATING ACTION STACK
+   FLOATING ACTION BAR
 ========================================================= */
 
 .action-stack {
@@ -402,36 +222,7 @@ body {
 }
 
 /* =========================================================
-   MODAL
-========================================================= */
-
-#modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.45);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-#modal-content {
-  background: #fff;
-  width: min(92vw, 420px);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 20px 60px rgba(0,0,0,.2);
-}
-
-#preview {
-  background: #f6f7f9;
-  padding: 12px;
-  border-radius: 10px;
-  margin-bottom: 16px;
-}
-
-/* =========================================================
-   MOBILE FIXES
+   MOBILE
 ========================================================= */
 
 @media (max-width: 640px) {
@@ -448,179 +239,4 @@ body {
     padding: 12px 14px;
     border-radius: 14px;
   }
-}
-
-/* =========================================================
-   HEADINGS
-========================================================= */
-
-h3 {
-  margin-top: 22px;
-  margin-bottom: 10px;
-}
-.smart-planner {
-  position: relative;
-}
-
-.smart-planner textarea {
-  width: 100%;
-  min-height: 120px;
-  padding-right: 72px; /* space for button */
-}
-
-.smart-save-btn {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-
-  border: none;
-  border-radius: 10px;
-  padding: 8px 12px;
-
-  background: #2563eb;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.smart-save-btn:hover {
-  background: #1e40af;
-}
-.day-grid-wrapper {
-  position: relative;
-}
-
-.day-grid {
-  position: relative;
-  z-index: 1;
-}
-
-.task-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 2;
-  pointer-events: none;
-}
-
-.task-block {
-  position: absolute;
-
-  /* column layout */
-  --col-index: 0;
-  --col-count: 1;
-
-  width: calc(
-    (100% - var(--time-column-width) - 24px)
-    / var(--col-count)
-  );
-
-  left: calc(
-    var(--time-column-width) + 12px +
-    (var(--col-index) * (100% - var(--time-column-width) - 24px) / var(--col-count))
-  );
-
-  /* visual */
-  background: #f8fbff;
-  border-left: 3px solid #4f46e5;
-  border-radius: 12px;
-
-  padding: 10px 12px;
-
-  box-shadow:
-    0 2px 6px rgba(0,0,0,0.04),
-    0 12px 24px rgba(79,70,229,0.12);
-
-  font-size: 13px;
-  line-height: 1.4;
-  color: #0f172a;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-
-  overflow: hidden;
-  cursor: pointer;
-
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-.task-block:hover {
-  transform: translateY(-1px);
-  box-shadow:
-    0 4px 10px rgba(0,0,0,0.06),
-    0 16px 32px rgba(79,70,229,0.18);
-}
-
-.slot-checkbox:checked + span {
-  text-decoration: line-through;
-  opacity: 0.6;
-}
-/* =========================================================
-   TIMELINE MODE (ISOLATED + SAFE)
-========================================================= */
-
-/* Hide grid UI completely */
-body.timeline-mode .day-schedule,
-body.timeline-mode .day-grid-wrapper,
-body.timeline-mode .day-grid,
-body.timeline-mode .task-layer,
-body.timeline-mode .events-layer {
-  display: none !important;
-}
-
-/* Timeline container */
-#timeline-root {
-  display: none;
-  margin-top: 14px;
-}
-
-body.timeline-mode #timeline-root {
-  display: block;
-  background: #f1f5f9;
-  border-radius: 14px;
-  padding: 16px;
-}
-
-/* Hour markers */
-body.timeline-mode .hour-marker {
-  font-size: 12px;
-  font-weight: 600;
-  color: #475569;
-  margin: 18px 0 10px;
-  padding-left: 6px;
-}
-
-/* Timeline cards */
-body.timeline-mode .task-card {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  padding: 14px 16px;
-  margin-bottom: 12px;
-
-  box-shadow:
-    0 1px 2px rgba(0,0,0,0.04),
-    0 6px 16px rgba(0,0,0,0.08);
-}
-
-/* Timeline card layout */
-body.timeline-mode .task-main {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-}
-
-/* Timeline text */
-body.timeline-mode .task-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #0f172a;
-}
-
-body.timeline-mode .task-meta {
-  font-size: 12px;
-  color: #64748b;
-  margin-top: 4px;
 }
