@@ -1,5 +1,5 @@
 
-const USE_TIMELINE_VIEW = true;
+const USE_TIMELINE_VIEW = false;
 const summaryModal = document.getElementById("summary-modal");
 const summaryContent = document.getElementById("summary-content");
 
