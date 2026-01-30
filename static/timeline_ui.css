@@ -1,0 +1,64 @@
+/* =========================================================
+   TIMELINE MODE (ELEKEN) — HARD ISOLATION
+========================================================= */
+
+/* Activate via body.timeline-mode */
+body.timeline-mode .day-schedule,
+body.timeline-mode .day-grid-wrapper,
+body.timeline-mode .day-grid,
+body.timeline-mode .events-layer {
+  display: none !important;
+}
+
+/* Timeline root */
+#timeline-root {
+  display: none;
+}
+
+body.timeline-mode #timeline-root {
+  display: block;
+  margin-top: 14px;
+  background: #f1f5f9;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+/* Hour marker */
+.hour-marker {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  margin: 18px 0 10px;
+  padding-left: 6px;
+}
+
+/* Timeline cards */
+.task-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.04),
+    0 6px 16px rgba(0,0,0,0.08);
+}
+
+.task-main {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.task-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.task-meta {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
+}

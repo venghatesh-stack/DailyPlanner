@@ -112,19 +112,9 @@ function saveEvent(startSlot, endSlot) {
 /* =========================================================
    DAY STRIP AUTO-SCROLL
 ========================================================= */
+
+
 document.addEventListener("DOMContentLoaded", () => {
-
-  const selected = document.getElementById("selected-day");
-  if (selected) {
-    requestAnimationFrame(() => {
-      selected.scrollIntoView({
-        behavior: "smooth",
-        inline: "center",
-        block: "nearest"
-      });
-    });
-  }
-
   if (USE_TIMELINE_VIEW) {
     document.body.classList.add("timeline-mode");
 
@@ -132,8 +122,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (root) {
       renderTimeline(window.TIMELINE_TASKS || [], root);
     }
-  } else {
-    document.body.classList.remove("timeline-mode");
   }
 });
 
