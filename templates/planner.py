@@ -146,8 +146,8 @@ PLANNER_TEMPLATE = """
             class="event-block"
             onclick="editEvent({{ block.start_slot }}, {{ block.end_slot }})"
             style="
-              top: calc({{ block.start_slot - 1 }} * var(--slot-height));
-              height: calc({{ block.end_slot - block.start_slot + 1 }} * var(--slot-height));
+              top: {{ block.top_px }}px;
+              height: {{ block.height_px }}px;
             "
           >
             {% if block.recurring_id %}🔁 {% endif %}
