@@ -369,3 +369,42 @@ function renderTaskCard(task) {
   return div;
 }
 
+function renderDailySummaryTable() {
+  const rows = [];
+
+  document.querySelectorAll(".time-row").forEach(row => {
+    const label = row.querySelector(".time-column")?.innerText?.trim();
+    const checkbox = row.querySelector(".slot-checkbox");
+    if (!label || !checkbox) return;
+
+    rows.push({
+      time: label,
+      done: checkbox.checked
+    });
+  });
+
+  return `
+    <table style="width:100%; border-collapse:collapse">
+      <tr>
+        <th align="left">Time</th>
+        <th align="left">Status</th>
+      </tr>
+      ${rows.map(r => `
+        <tr>
+          <td>${r.time}</td>
+          <td>${r.done ? "✅ Done" : "⬜ Open"}</td>
+        </tr>
+      `).join("")}
+    </table>
+  `;
+}
+function openSummary() {
+  if (!summaryModal || !summaryContent) return;
+
+  summaryContent.innerHTML = `
+    <h3>📊 Daily Summary</h3>
+    ${renderDailySummaryTable()}
+  `;
+
+  summaryModal.style.display = "flex";
+}
