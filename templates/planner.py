@@ -9,11 +9,10 @@ PLANNER_TEMPLATE = """
   <link rel="stylesheet" href="{{ url_for('static', filename='timeline_ui.css') }}">
   {% endif %}
 
-</body>
 <script>
   window.TIMELINE_TASKS = {{ daily_slots | tojson }};
 </script>
-  <script src="{{ url_for('static', filename='planner.js') }}" defer></script>
+<script src="{{ url_for('static', filename='planner.js') }}" defer></script>
 
 </head>
 
