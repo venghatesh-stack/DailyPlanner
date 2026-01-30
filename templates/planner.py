@@ -187,9 +187,11 @@ PLANNER_TEMPLATE = """
 <div id="modal" style="display:none">
   <div id="modal-content"></div>
 </div>
-<div id="summary-modal" style="display:none"></div>
+<div id="summary-modal" style="display:none">
+ <div id="summary-content"></div>
+</div>
 
-  <div id="summary-content"></div>
+ 
   <!-- ================= IST TIME HELPERS ================= -->
   <script>
     const PLAN_DATE = "{{ plan_date.isoformat() }}";
