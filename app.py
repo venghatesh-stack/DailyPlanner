@@ -35,9 +35,6 @@ from config import (
     DEFAULT_STATUS, 
     HABIT_ICONS,
     HABIT_LIST,
-    SLOT_HEIGHT_PX,
-    GRID_START_MINUTES,
-    PX_PER_MIN
 )
 
 from utils.slots import current_slot,slot_label
