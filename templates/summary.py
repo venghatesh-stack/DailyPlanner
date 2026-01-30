@@ -5,34 +5,24 @@ SUMMARY_TEMPLATE = """
 {% include "_top_nav.html" %}
 
 <!-- TASKS -->
-<div class="section">
-  <h3>✅ Tasks</h3>
-
-  {% if data.tasks %}
-    <table style="width:100%; border-collapse:collapse; font-size:14px;">
-      <thead>
-        <tr style="text-align:left; border-bottom:1px solid #ddd;">
-          <th style="padding:6px 4px; width:30%;">Time</th>
-          <th style="padding:6px 4px;">Task</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for task in data.tasks %}
-        <tr style="border-bottom:1px solid #f0f0f0;">
-          <td style="padding:6px 4px; color:#2563eb; font-weight:600;">
-            {{ task.label or "—" }}
-          </td>
-          <td style="padding:6px 4px;">
-            {{ task.text }}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-    <div class="empty">No scheduled tasks</div>
-  {% endif %}
-</div>
+<table class="summary-table">
+  <thead>
+    <tr>
+      <th>Time</th>
+      <th>Task</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for t in data.tasks %}
+      <tr>
+        <td class="time">
+          {{ t.start_label }} – {{ t.end_label }}
+        </td>
+        <td>{{ t.text }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
 
 <div class="section">
   <h4>Habits</h4>

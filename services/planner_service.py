@@ -534,28 +534,51 @@ def get_daily_summary(plan_date):
     ) or []
 
     tasks = []
+    current = None
 
     for r in rows:
         slot = r.get("slot")
-        plan = (r.get("plan") or "").strip()
+        text = (r.get("plan") or "").strip()
 
-        if not plan:
+        if not text:
+            current = None
             continue
 
         if not isinstance(slot, int) or slot not in SLOT_LABELS:
-            continue  # defensive: ignore garbage slots
+            current = None
+            continue
 
-        tasks.append({
-            "slot": slot,
-            "label": "",
-            "text": plan,
-        })
+        # Start new block
+        if (
+            current is None
+            or current["text"] != text
+            or slot != current["end_slot"] + 1
+        ):
+            current = {
+                "start_slot": slot,
+                "end_slot": slot,
+                "text": text,
+            }
+            tasks.append(current)
+        else:
+            # Extend existing block
+            current["end_slot"] = slot
+
+    # ----------------------------
+    # Add labels
+    # ----------------------------
+    for t in tasks:
+        t["start_label"] = SLOT_LABELS[t["start_slot"]]
+        # end label = end of last slot
+        end_slot = t["end_slot"] + 1
+        t["end_label"] = SLOT_LABELS.get(end_slot)
 
     return {
         "tasks": tasks,
         "habits": habits,
         "reflection": reflection,
     }
+
 
 def get_weekly_summary(start_date, end_date):
     rows = get(
