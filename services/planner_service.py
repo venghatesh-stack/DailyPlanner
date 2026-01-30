@@ -32,7 +32,7 @@ def fetch_daily_slots(plan_date):
         },
     )
 
-    if not rows or not rows.data:
+    if not rows :
         return []
 
     return [
@@ -42,7 +42,7 @@ def fetch_daily_slots(plan_date):
             "end_time": r["end_time"],
             "slot": r["slot"],
         }
-        for r in rows.data
+        for r in rows
         if r.get("plan") and r.get("slot") is not None
     ]
 
