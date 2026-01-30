@@ -568,10 +568,18 @@ def get_daily_summary(plan_date):
     # Add labels
     # ----------------------------
     for t in tasks:
-        t["start_label"] = SLOT_LABELS[t["start_slot"]]
-        # end label = end of last slot
-        end_slot = t["end_slot"] + 1
-        t["end_label"] = SLOT_LABELS.get(end_slot)
+        start = t["start_slot"]
+        end = t["end_slot"]
+
+        start_label = SLOT_LABELS[start]
+        end_label = SLOT_LABELS[end]
+
+        # Extract ONLY the end time from the end slot label
+        # "01:30 AM – 02:00 AM" → "02:00 AM"
+        end_time = end_label.split("–")[-1].strip()
+
+        t["time_label"] = f"{start_label.split('–')[0].strip()} – {end_time}"
+
 
     return {
         "tasks": tasks,

@@ -1,64 +1,155 @@
 SUMMARY_TEMPLATE = """
+<style>
+  body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f6f7f9;
+    margin: 0;
+    padding: 16px;
+  }
+
+  .summary-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 12px 0 18px;
+  }
+
+  .section {
+    margin-bottom: 18px;
+  }
+
+  .card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+  }
+
+  /* ---------- TABLE ---------- */
+
+  .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .summary-table th {
+    text-align: left;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    padding: 10px 12px;
+    background: #f9fafb;
+  }
+
+  .summary-table td {
+    padding: 14px 12px;
+    border-top: 1px solid #eef2f7;
+    vertical-align: top;
+    font-size: 15px;
+  }
+
+  .summary-table td.time {
+    width: 190px;
+    font-weight: 700;
+    color: #2563eb;
+    white-space: nowrap;
+  }
+
+  .summary-table tr:hover {
+    background: #f8fafc;
+  }
+
+  .empty {
+    color: #9ca3af;
+    font-style: italic;
+    padding: 12px 0;
+  }
+
+  /* ---------- TEXT SECTIONS ---------- */
+
+  .section h4 {
+    margin: 0 0 8px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .muted {
+    color: #9ca3af;
+  }
+</style>
+
 {% if view == "daily" %}
 
-<h3>📊 Daily Summary – {{ date }}</h3>
 {% include "_top_nav.html" %}
 
-<!-- TASKS -->
-<table class="summary-table">
-  <thead>
-    <tr>
-      <th>Time</th>
-      <th>Task</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for t in data.tasks %}
-      <tr>
-        <td class="time">
-          {{ t.start_label }} – {{ t.end_label }}
-        </td>
-        <td>{{ t.text }}</td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<h2 class="summary-title">
+  📊 Daily Summary – {{ date.strftime("%d %b %Y") if date else date }}
+</h2>
 
-<div class="section">
-  <h4>Habits</h4>
-  {{ data.habits | join(", ") if data.habits else "—" }}
+<div class="section card">
+  <table class="summary-table">
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Task</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in data.tasks %}
+        <tr>
+          <td class="time">{{ t.time_label }}</td>
+          <td>{{ t.text }}</td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="2" class="empty">No tasks scheduled for this day</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 
-<div class="section">
-  <h4>Reflection</h4>
-  {{ data.reflection or "—" }}
+<div class="section card">
+  <h4>🔥 Habits</h4>
+  {% if data.habits %}
+    {{ data.habits | join(", ") }}
+  {% else %}
+    <div class="muted">—</div>
+  {% endif %}
+</div>
+
+<div class="section card">
+  <h4>✍️ Reflection</h4>
+  {% if data.reflection %}
+    {{ data.reflection }}
+  {% else %}
+    <div class="muted">—</div>
+  {% endif %}
 </div>
 
 {% else %}
 
-<!-- WEEKLY SUMMARY -->
-<h3>📆 Weekly Summary</h3>
+{% include "_top_nav.html" %}
+
+<h2 class="summary-title">📆 Weekly Summary</h2>
 
 {% if not data %}
-  <div class="empty">No scheduled tasks</div>
+  <div class="section card empty">No scheduled tasks</div>
 {% endif %}
 
 {% for day, tasks in data.items() %}
-  <div class="section">
+  <div class="section card">
     <h4>{{ day }}</h4>
 
     {% if tasks %}
-      <table style="width:100%; border-collapse:collapse; font-size:14px;">
+      <table class="summary-table">
         <tbody>
           {% for task in tasks %}
-          <tr style="border-bottom:1px solid #f0f0f0;">
-            <td style="padding:6px 4px; width:30%; color:#2563eb; font-weight:600;">
-              {{ task.label or "—" }}
-            </td>
-            <td style="padding:6px 4px;">
-              {{ task.text }}
-            </td>
-          </tr>
+            <tr>
+              <td class="time">
+                {{ SLOT_LABELS[task.slot] if task.slot in SLOT_LABELS else "—" }}
+              </td>
+              <td>{{ task.text }}</td>
+            </tr>
           {% endfor %}
         </tbody>
       </table>
@@ -69,6 +160,6 @@ SUMMARY_TEMPLATE = """
 {% endfor %}
 
 {% endif %}
-
 """
+
 
