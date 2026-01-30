@@ -1081,6 +1081,7 @@ def project_tasks(project_id):
         "project_tasks.html",
         project=project,
         grouped_tasks=grouped_tasks,
+        today=date.today().isoformat(), 
     )
 
 def compute_due_date(start_date, duration_days):
