@@ -14,7 +14,7 @@
          onclick="event.stopPropagation()"
          onchange="updateStatus('{{ task.task_id }}', this.checked ? 'done' : 'open')">
   <span class="priority-icon"
-        data-priority="{{ task.priority }}"
+        data-priority="{{ task.priority or 'medium' }}"
         onclick="cyclePriority(event, '{{ task.task_id }}')"
         title="Change priority" >
   </span>
