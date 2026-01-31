@@ -508,7 +508,10 @@ function updatePlanning(taskId) {
 <script>
 function toggleTask(taskId) {
   const el = document.getElementById(`task-${taskId}`);
-  if (!el) return;
+  if (!el) {
+    console.warn("toggleTask: task not found", taskId);
+    return;
+  }
   el.classList.toggle("open");
 }
 
