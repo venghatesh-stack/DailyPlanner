@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create Project</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='project_tasks.css') }}">
+</head>
+
+<body>
+{% include "_top_nav.html" %}
+
+<div class="container" style="max-width:600px; margin-top:40px;">
+
+  <a href="/projects" style="display:inline-block;margin-bottom:12px;">← Back to Projects</a>
+
+  <h2>Create New Project</h2>
+
+  <form method="post" style="margin-top:16px;">
+
+    <div class="field">
+      <label>Project name *</label>
+      <input
+        type="text"
+        name="name"
+        placeholder="e.g. Daily Planner Improvements"
+        required
+        autofocus
+      >
+    </div>
+
+    <div class="field" style="margin-top:12px;">
+      <label>Description (optional)</label>
+      <textarea
+        name="description"
+        rows="3"
+        placeholder="What is this project about?"
+      ></textarea>
+    </div>
+
+    <div style="margin-top:18px;">
+      <button class="save-task-btn" type="submit">
+        ➕ Create Project
+      </button>
+    </div>
+
+  </form>
+
+</div>
+</body>
+</html>

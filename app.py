@@ -1518,6 +1518,28 @@ def update_priority():
 
     return {"status": "ok"}
 
+@app.route("/projects/new", methods=["GET", "POST"])
+@login_required
+def create_project():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        description = request.form.get("description", "").strip()
+
+        if not name:
+            return "Project name is required", 400
+
+        post(
+            "projects",
+            {
+                "name": name,
+                "description": description or None,
+                "user_id": session.get("user_id")
+            }
+        )
+
+        return redirect("/projects")
+
+    return render_template("project_new.html")
 
 # ==========================================================
 # ENTRY POINT
