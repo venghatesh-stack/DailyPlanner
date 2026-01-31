@@ -1270,7 +1270,7 @@ def update_task(task_id):
         "project_tasks",
         params={"task_id": f"eq.{task_id}"},
         json={
-            "title": data.get("title"),
+            "task_text": data.get("task_text"),
             "start_date": data.get("start_date"),
             "due_date": data.get("due_date"),
             "due_time": data.get("due_time"),
