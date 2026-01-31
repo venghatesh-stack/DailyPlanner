@@ -210,6 +210,14 @@
   .due-badge {
     margin-left: 0;
   }
+  .task-title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 }
 /* ======================================================
    PROJECT HEALTH SCORE

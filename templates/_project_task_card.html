@@ -20,14 +20,14 @@
   </span>
 
   <div class="task-text">
-    {{ task.text }}
+  <span class="task-title">{{ task.text }}</span>
 
-    {% if task.due_date %}
-       <span class="due-badge" data-due="{{ task.due_date }}"></span>
-    {% endif %}
-
-
-  </div>
+  {% if task.due_date %}
+    <span class="due-badge {% if task.due_date < today %}overdue{% endif %}">
+      📅 {{ task.due_date }}
+    </span>
+  {% endif %}
+</div>
 
 </div>
 
