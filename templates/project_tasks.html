@@ -155,28 +155,25 @@
   }
 
 </script>
-
 <script>
- document.addEventListener("click", async (e) => {
+document.addEventListener("click", async (e) => {
   if (!e.target.classList.contains("save-task-btn")) return;
 
-  e.stopPropagation();
-
   const taskEl = e.target.closest(".task");
-  if (!taskEl) {
-    console.error("Save clicked but task element not found");
-    return;
-  }
+  if (!taskEl) return;
 
   const taskId = taskEl.dataset.id;
   if (!taskId) {
-    console.error("Save clicked but taskId missing", taskEl);
+    console.error("Task ID missing", taskEl);
     return;
   }
 
-  const payload = {
-    notes: taskEl.querySelector(".task-notes")?.value || null
-  };
+  const payload = serializeTask(taskEl);
+
+  if (!payload.task_text) {
+    alert("Task text cannot be empty");
+    return;
+  }
 
   e.target.disabled = true;
   e.target.textContent = "Saving…";
@@ -202,6 +199,7 @@
     e.target.disabled = false;
   }
 });
+
 
 
   function updateDateTime() {
@@ -669,6 +667,28 @@ function calculateProjectHealth() {
 }
 /* Run once on load */
 document.addEventListener("DOMContentLoaded", calculateProjectHealth);
+</script>
+<script> 
+function serializeTask(taskEl) {
+  return {
+    task_text: taskEl.querySelector(".task-title")?.textContent.trim() || null,
+    priority: taskEl.querySelector(".priority-icon")?.dataset.priority || null,
+
+    status: taskEl.dataset.status || null,
+
+    start_date: taskEl.querySelector(".start-date")?.value || null,
+    duration_days: taskEl.querySelector(".duration-days")?.value || 0,
+
+    planned_hours: taskEl.querySelector('input[onchange*="updatePlanned"]')?.value || 0,
+    actual_hours: taskEl.querySelector('input[onchange*="updateActual"]')?.value || 0,
+
+    due_time: taskEl.querySelector('select[onchange*="updateDueTime"]')?.value || null,
+
+    delegated_to: taskEl.querySelector('input[maxlength="25"]')?.value || null,
+
+    elimination_reason: taskEl.querySelector("textarea")?.value || null
+  };
+}
 </script>
 <script>
 function cyclePriority(event, taskId) {
