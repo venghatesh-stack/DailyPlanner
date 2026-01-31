@@ -160,20 +160,24 @@
   document.addEventListener("click", async (e) => {
   if (!e.target.classList.contains("save-task-btn")) return;
 
-  const card = e.target.closest(".task");
-  const taskId = card.dataset.taskId;
+  const taskEl = e.target.closest(".task");
+  if (!taskEl) {
+    console.error("Save clicked but task element not found");
+    return;
+  }
+
+  const taskId = taskEl.dataset.id;
+  if (!taskId) {
+    console.error("Save clicked but taskId missing", taskEl);
+    return;
+  }
 
   const payload = {
-    title: card.querySelector(".task-title-input")?.value,
-    start_time: card.querySelector(".start-time")?.value,
-    end_time: card.querySelector(".end-time")?.value,
-    project: card.querySelector(".project-select")?.value,
-    notes: card.querySelector(".task-notes")?.value,
-    completed: card.querySelector("input[type=checkbox]")?.checked
+    notes: taskEl.querySelector("textarea")?.value || null
   };
 
   e.target.disabled = true;
-  e.target.textContent = "Saving...";
+  e.target.textContent = "Saving…";
 
   try {
     const res = await fetch(`/projects/tasks/${taskId}/update`, {
@@ -188,14 +192,15 @@
     setTimeout(() => {
       e.target.textContent = "💾 Save";
       e.target.disabled = false;
-    }, 1200);
+    }, 1000);
 
   } catch (err) {
+    console.error(err);
     e.target.textContent = "Retry";
     e.target.disabled = false;
-    console.error(err);
   }
 });
+
 
   function updateDateTime() {
     const now = new Date();
