@@ -171,11 +171,17 @@
   font-size: 14px;
   cursor: pointer;
 }
+.task-title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* ======================================================
    MOBILE – STICKY ACTION BAR
 ====================================================== */
-
 @media (max-width: 768px) {
 
   .task-details-row {
@@ -203,22 +209,16 @@
   .icon-btn.danger {
     margin-top: 6px;
   }
-    .task-text {
+
+  .task-text {
     gap: 6px;
   }
 
   .due-badge {
     margin-left: 0;
   }
-  .task-title {
-  flex: 1;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-}
 /* ======================================================
    PROJECT HEALTH SCORE
 ====================================================== */
