@@ -19,7 +19,7 @@
 
   <!-- 🔹 SUMMARY ROW (always visible) -->
  <div class="task-row task-main"
-     onclick="toggleTask(this.parentElement)">
+     onclick="toggleTask('{{ task.id }}')">
 
   <input type="checkbox"
          {% if task.status == "done" %}checked{% endif %}
@@ -40,9 +40,12 @@
     <div class="task-row task-details-row planning-row">
        <div class="field">
     <label>Start</label>
-    <input type="date"
-           value="{{ task.start_date or '' }}"
-           oninput="updatePlanning('{{ task.id }}')">
+  <input type="date"
+       class="start-date"
+       value="{{ task.start_date or '' }}"
+       oninput="updatePlanning('{{ task.id }}')">
+
+
     </div>
       <div class="field">
         <label>Duration</label>
