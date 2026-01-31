@@ -1057,8 +1057,8 @@ def project_tasks(project_id):
     # ✅ NORMALIZE FOR SHARED UI
     tasks = [
         {
-            "id": t["id"],
-            "text": t["task_text"],
+            "task_id": t["task_id"],
+            "task_text": t["task_text"],
             "status": t.get("status"),
             "done": t.get("status") == "done",
 
