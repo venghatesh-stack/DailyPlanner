@@ -16,11 +16,11 @@
   <span class="priority-icon"
         data-priority="{{ task.priority }}"
         onclick="cyclePriority(event, '{{ task.task_id }}')"
-        title="Change priority" contenteditable="true">
+        title="Change priority" >
   </span>
 
 <div class="task-text">
-  <span class="task-title" contenteditable="true">{{ task.task_text}}</span>
+  <span class="task-title">{{ task.task_text}}</span>
 
   {% if task.due_date %}
     <span class="due-badge {% if task.due_date < today %}overdue{% endif %}" contenteditable="true">

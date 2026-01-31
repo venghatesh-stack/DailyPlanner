@@ -342,14 +342,18 @@
   background: #dc2626;   /* red progress if overdue */
 }
 /* ===== Priority icon ===== */
-
 .priority-icon {
-  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
   font-size: 15px;
   line-height: 1;
+  cursor: pointer;
   user-select: none;
-  transition: transform 0.15s ease, opacity 0.15s ease;
 }
+
 
 .priority-icon:hover {
   transform: scale(1.15);
