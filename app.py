@@ -1194,7 +1194,7 @@ def update_project_task_status():
 
     update(
         "project_tasks",
-        params={"id": f"eq.{data['task_id']}"},
+        params={"task_id": f"eq.{data['task_id']}"},
         json={"status": data["status"]},
     )
 
@@ -1299,7 +1299,7 @@ def update_task_duration():
     rows = get(
         "project_tasks",
         params={
-            "taskid": f"eq.{task_id}",
+            "task_id": f"eq.{task_id}",
             "select": "start_date",
         },
     )
@@ -1315,7 +1315,7 @@ def update_task_duration():
     # 3️⃣ Persist everything
     update(
         "project_tasks",
-        params={"taskid": f"eq.{task_id}"},
+        params={"task_id": f"eq.{task_id}"},
         json={
             "duration_days": duration_days,
             "due_date": due_date.isoformat(),
@@ -1352,7 +1352,7 @@ def eliminate_task():
 
     update(
         "project_tasks",
-        params={"taskid": f"eq.{task_id}"},
+        params={"task_id": f"eq.{task_id}"},
         json={
             "is_eliminated": True,
             "elimination_reason": reason,

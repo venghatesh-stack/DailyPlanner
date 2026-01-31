@@ -587,7 +587,7 @@ def autosave_task(plan_date, task_id, quadrant, text=None, is_done=False, projec
         if source_id and not recurring_instance_id:
             update(
                 "project_tasks",
-                params={"id": f"eq.{source_id}"},
+                params={"task_id": f"eq.{source_id}"},
                 json={"status": "done"},
             )
 

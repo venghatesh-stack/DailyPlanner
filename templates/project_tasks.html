@@ -444,6 +444,10 @@ function updateDueTime(taskId, time) {
 </script>
 <script>
 function updatePlanning(taskId) {
+  if (!taskId) {
+    console.error("updatePlanning called without taskId");
+    return;
+  }
   console.log("updatePlanning fired for", taskId);
 
   const taskEl = document.getElementById(`task-${taskId}`);

@@ -11,7 +11,7 @@ def load_timeline_tasks(user_id):
         params={
             "user_id": f"eq.{user_id}",
             # ⬇️ fetch ALL, filter in Python (Supabase-safe)
-            "select": "id,task_text,status,due_date,project_id,created_at",
+            "select": "task_id,task_text,status,due_date,project_id,created_at",
             "order": "created_at.asc",
         },
     ) or []
