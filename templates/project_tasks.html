@@ -38,10 +38,27 @@
         <button type="submit">Add</button>
       </form>
     </div>
-    <label style="font-size:13px;">
-      <input type="checkbox" id="hideClosed" checked onchange="toggleClosed()" />
-      Hide closed
-    </label>
+    <div class="task-filters">
+      <label class="filter">
+        <input
+          type="checkbox"
+          id="hideClosed"
+          checked
+          onchange="applyTaskFilters()"
+        />
+        Hide closed
+      </label>
+
+      <label class="filter">
+        <input
+          type="checkbox"
+          id="showOverdueOnly"
+          onchange="applyTaskFilters()"
+        />
+        Overdue only
+      </label>
+    </div>
+
     {# ================= PROJECT HEALTH (ONCE PER PROJECT) ================= #}
   <div id="project-health" class="project-health">
     <div class="health-score">
@@ -214,32 +231,42 @@ function updateStatus(taskId, status) {
   });
 
   // ✅ re-apply visibility rules
-  toggleClosed();
+  applyTaskFilters();
 }
 
 </script>
-
-
 <script>
-function toggleClosed() {
-  const hide = document.getElementById("hideClosed").checked;
+function applyTaskFilters() {
+  const hideClosed = document.getElementById("hideClosed")?.checked;
 
   document.querySelectorAll(".task").forEach(task => {
-    const status = task.dataset.status;
+    const isClosed = task.dataset.status === "done";
+    task.style.display = (hideClosed && isClosed) ? "none" : "";
+  });
+}
 
-    if (hide && status === "done") {
-      task.style.display = "none";
+applyTaskFilters();
+
+</script>
+<script>
+function toggleOverdue() {
+  const onlyOverdue = document.getElementById("showOverdueOnly").checked;
+
+  document.querySelectorAll(".task").forEach(task => {
+    const badge = task.querySelector(".due-badge.overdue");
+
+    if (onlyOverdue) {
+      task.style.display = badge ? "" : "none";
     } else {
       task.style.display = "";
     }
   });
 
-  calculateProjectHealth(); // ✅ keep health in sync
+  // Respect Hide Closed after filter
+  applyTaskFilters();
 }
-
-
-  toggleClosed();
 </script>
+
 <script>
 function unsendFromEisenhower(taskId) {
   if (!confirm("Remove this task from Eisenhower?")) return;
@@ -297,6 +324,9 @@ function updateDueDate(taskId, date) {
       task_id: taskId,
       due_date: date
     })
+  }).then(() => {
+    formatDueBadges();
+    calculateProjectHealth();
   }).catch(err => {
     console.error("Failed to update due date", err);
   });

@@ -292,11 +292,7 @@
   white-space: nowrap;
 }
 
-.due-badge.overdue {
-  background: #fee2e2;
-  color: #991b1b;
-  font-weight: 700;
-}
+
 
 /* Keep task row tight */
 .task-text {
@@ -308,4 +304,18 @@
 .start-date {
   width: 100%;
   box-sizing: border-box;
+}
+/* ===== Overdue pulse ===== */
+
+@keyframes overduePulse {
+  0%   { box-shadow: 0 0 0 0 rgba(220,38,38,0.4); }
+  70%  { box-shadow: 0 0 0 6px rgba(220,38,38,0); }
+  100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); }
+}
+
+.due-badge.overdue {
+  background: #fee2e2;
+  color: #991b1b;
+  font-weight: 700;
+  animation: overduePulse 2.5s ease-out infinite;
 }
