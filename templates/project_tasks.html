@@ -446,6 +446,36 @@ document.addEventListener("input", function (e) {
 });
 </script>
 <script>
+
+function formatDueBadges() {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  document.querySelectorAll(".due-badge").forEach(badge => {
+    const dueStr = badge.dataset.due;
+    if (!dueStr) return;
+
+    const due = new Date(dueStr);
+    due.setHours(0,0,0,0);
+
+    const diffDays = Math.round((due - today) / 86400000);
+
+    let label = dueStr;
+
+    if (diffDays === 0) label = "Today";
+    else if (diffDays === 1) label = "Tomorrow";
+    else if (diffDays > 1) label = `In ${diffDays} days`;
+    else label = `${Math.abs(diffDays)} days overdue`;
+
+    badge.innerHTML = `📅 ${label}`;
+
+    if (diffDays < 0) badge.classList.add("overdue");
+  });
+}
+
+document.addEventListener("DOMContentLoaded", formatDueBadges);
+
+
 function calculateProjectHealth() {
   const tasks = document.querySelectorAll(".task");
   if (!tasks.length) return;
