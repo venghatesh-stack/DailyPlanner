@@ -157,8 +157,10 @@
 </script>
 
 <script>
-  document.addEventListener("click", async (e) => {
+ document.addEventListener("click", async (e) => {
   if (!e.target.classList.contains("save-task-btn")) return;
+
+  e.stopPropagation();
 
   const taskEl = e.target.closest(".task");
   if (!taskEl) {
@@ -173,7 +175,7 @@
   }
 
   const payload = {
-    notes: taskEl.querySelector("textarea")?.value || null
+    notes: taskEl.querySelector(".task-notes")?.value || null
   };
 
   e.target.disabled = true;
