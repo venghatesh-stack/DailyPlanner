@@ -65,7 +65,7 @@
                max="999"
                step="0.5"
                value="{{ task.planned_hours or 0 }}"
-               onchange="updatePlanned('{{ task.task_id }}', this.value); updateProgress('{{ task.id }}')">
+               onchange="updatePlanned('{{ task.task_id }}', this.value); updateProgress('{{ task.task_id }}')">
       </div>
 
       <div class="field">
@@ -75,7 +75,7 @@
                max="999"
                step="0.5"
                value="{{ task.actual_hours or 0 }}"
-               onchange="updateActual('{{ task.task_id }}', this.value); updateProgress('{{ task.id }}')">
+               onchange="updateActual('{{ task.task_id }}', this.value); updateProgress('{{ task.task_id }}')">
       </div>
 
 

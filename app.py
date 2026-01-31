@@ -1264,28 +1264,48 @@ def update_project_task_date():
     return jsonify({"status": "ok"})
 @app.route("/projects/tasks/<task_id>/update", methods=["POST"])
 def update_task(task_id):
-    data = request.json
+    data = request.json or {}
+
+    # Build update payload safely (PATCH semantics)
+    updates = {}
+
+    allowed_fields = [
+        "task_text",
+        "start_date",
+        "due_date",
+        "due_time",
+        "notes",
+        "status",
+        "planned_hours",
+        "actual_hours",
+        "priority",
+        "elimination_reason",
+        "duration_days",
+    ]
+
+    for field in allowed_fields:
+        if field in data:
+            updates[field] = data[field]
+
+    # 🔒 Safety: never allow task_text to be null
+    if "task_text" in updates and updates["task_text"] is None:
+        return jsonify({
+            "error": "task_text cannot be null"
+        }), 400
+
+    # 🛑 No-op protection
+    if not updates:
+        return jsonify({"status": "noop"})
 
     update(
         "project_tasks",
         params={"task_id": f"eq.{task_id}"},
-        json={
-            "task_text": data.get("task_text"),
-            "start_date": data.get("start_date"),
-            "due_date": data.get("due_date"),
-            "due_time": data.get("due_time"),
-            "notes": data.get("notes"),
-            "status": data.get("status"),
-            "planned_hours": data.get("planned_hours"),
-            "actual_hours": data.get("actual_hours"),
-            "priority": data.get("priority"),
-            "elimination_reason": data.get("elimination_reason"),
-            "duration_days": data.get("duration_days"),
-        }
+        json=updates
     )
 
-
     return jsonify({"status": "ok"})
+
+
 
 @app.route("/projects/tasks/update-duration", methods=["POST"])
 @login_required
