@@ -1271,10 +1271,16 @@ def update_task(task_id):
         params={"task_id": f"eq.{task_id}"},
         json={
             "title": data.get("title"),
-            "start_time": data.get("start_time"),
-            "end_time": data.get("end_time"),
+            "start_date": data.get("start_date"),
+            "due_date": data.get("due_date"),
+            "due_time": data.get("due_time"),
             "notes": data.get("notes"),
-            "status": bool(data.get("completed")),
+            "status": data.get("status"),
+            "planned_hours": data.get("planned_hours"),
+            "actual_hours": data.get("actual_hours"),
+            "priority": data.get("priority"),
+            "elimination_reason": data.get("elimination_reason"),
+            "duration_days": data.get("duration_days"),
         }
     )
 
@@ -1477,6 +1483,20 @@ def group_tasks_smart(tasks):
         groups[key].sort(key=_sort_key)
 
     return groups
+@app.route("/projects/tasks/update-priority", methods=["POST"])
+@login_required
+def update_priority():
+    data = request.get_json()
+    task_id = data["task_id"]
+    priority = data["priority"]
+
+    update(
+        "project_tasks",
+        params={"task_id": f"eq.{task_id}"},
+        json={"priority": priority}
+    )
+
+    return {"status": "ok"}
 
 
 # ==========================================================

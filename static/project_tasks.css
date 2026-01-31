@@ -333,3 +333,34 @@
 .task:has(.due-badge.overdue) .task-main::after {
   background: #dc2626;   /* red progress if overdue */
 }
+/* ===== Priority icon ===== */
+
+.priority-icon {
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  user-select: none;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.priority-icon:hover {
+  transform: scale(1.15);
+}
+
+/* Icons per priority */
+.priority-icon[data-priority="high"]::before {
+  content: "🔴";
+}
+
+.priority-icon[data-priority="medium"]::before {
+  content: "🟡";
+}
+
+.priority-icon[data-priority="low"]::before {
+  content: "🟢";
+}
+
+/* Subtle fade if task is done */
+.task[data-status="done"] .priority-icon {
+  opacity: 0.4;
+}

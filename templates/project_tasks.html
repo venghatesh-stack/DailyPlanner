@@ -625,6 +625,32 @@ function calculateProjectHealth() {
 /* Run once on load */
 document.addEventListener("DOMContentLoaded", calculateProjectHealth);
 </script>
+<script>
+function cyclePriority(event, taskId) {
+  event.stopPropagation(); // prevent expand/collapse
 
+  const icon = event.target;
+  const current = icon.dataset.priority;
+
+  const order = ["high", "medium", "low"];
+  const next = order[(order.indexOf(current) + 1) % order.length];
+
+  // Optimistic UI update
+  icon.dataset.priority = next;
+
+  fetch("/projects/tasks/update-priority", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      task_id: taskId,
+      priority: next
+    })
+  }).catch(() => {
+    // rollback on failure
+    icon.dataset.priority = current;
+    alert("Failed to update priority");
+  });
+}
+</script>
 </body>
 </html>

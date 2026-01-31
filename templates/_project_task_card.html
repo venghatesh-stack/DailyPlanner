@@ -13,6 +13,11 @@
          {% if task.status == "done" %}checked{% endif %}
          onclick="event.stopPropagation()"
          onchange="updateStatus('{{ task.id }}', this.checked ? 'done' : 'open')">
+  <span class="priority-icon"
+        data-priority="{{ task.priority }}"
+        onclick="cyclePriority(event, '{{ task.task_id }}')"
+        title="Change priority">
+  </span>
 
   <div class="task-text">
     {{ task.text }}
