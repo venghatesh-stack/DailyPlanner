@@ -1266,14 +1266,18 @@ def update_project_task_date():
 def update_task(task_id):
     data = request.json
 
-    update("tasks", {
-        "title": data.get("title"),
-        "start_time": data.get("start_time"),
-        "end_time": data.get("end_time"),
-        "project": data.get("project"),
-        "notes": data.get("notes"),
-        "completed": data.get("completed")
-    }, {"id": task_id})
+    update(
+        "tasks",
+        params={"id": f"eq.{task_id}"},
+        json={
+            "title": data.get("title"),
+            "start_time": data.get("start_time"),
+            "end_time": data.get("end_time"),
+            "notes": data.get("notes"),
+            "completed": bool(data.get("completed")),
+        }
+    )
+
 
     return jsonify({"status": "ok"})
 
