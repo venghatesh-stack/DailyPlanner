@@ -447,9 +447,7 @@ document.addEventListener("input", function (e) {
 </script>
 <script>
 function calculateProjectHealth() {
-  const tasks = Array.from(document.querySelectorAll(".task"))
-  .filter(task => task.style.display !== "none");
-
+  const tasks = document.querySelectorAll(".task");
   if (!tasks.length) return;
 
   let total = 0;
@@ -463,13 +461,16 @@ function calculateProjectHealth() {
   const today = new Date().toISOString().slice(0, 10);
 
   tasks.forEach(task => {
+    const status = task.dataset.status;
+    if (!status) return;
+
+    // 🔹 Count all tasks regardless of visibility
     total++;
 
-    const status = task.dataset.status;
     if (status === "done") done++;
     if (status === "in_progress") inProgress++;
 
-    const due = task.querySelector(".due-date")?.textContent;
+    const due = task.querySelector(".due-date")?.textContent?.trim();
     if (due && due < today && status !== "done") overdue++;
 
     const planned = parseFloat(
@@ -485,7 +486,7 @@ function calculateProjectHealth() {
 
   /* ---- Metrics ---- */
 
-  const completionRate = total ? (done / total) * 100 : 0;
+  const completionRate = total > 0 ? (done / total) * 100 : 0;
 
   const accuracy =
     plannedTotal > 0
@@ -495,7 +496,7 @@ function calculateProjectHealth() {
   const overduePenalty =
     total > 0 ? Math.min(100, (overdue / total) * 100) : 0;
 
-  /* ---- Weighted Health Score ---- */
+  /* ---- Health Score ---- */
 
   const score =
     completionRate * 0.35 +
@@ -503,29 +504,20 @@ function calculateProjectHealth() {
     (100 - overduePenalty) * 0.25 +
     Math.min(100, (inProgress / total) * 100) * 0.15;
 
-  /* ---- Update UI ---- */
+  /* ---- UI ---- */
 
-  document.getElementById("health-score").textContent =
-    Math.round(score);
-
-  document.getElementById("metric-complete").textContent =
-    Math.round(completionRate) + "%";
-
+  document.getElementById("health-score").textContent = Math.round(score);
+  document.getElementById("metric-complete").textContent = Math.round(completionRate) + "%";
   document.getElementById("metric-overdue").textContent = overdue;
-
-  document.getElementById("metric-accuracy").textContent =
-    Math.round(accuracy) + "%";
-
+  document.getElementById("metric-accuracy").textContent = Math.round(accuracy) + "%";
   document.getElementById("metric-progress").textContent = inProgress;
 
-  /* Color coding */
   const scoreEl = document.getElementById("health-score");
   scoreEl.style.color =
     score >= 75 ? "#16a34a" :
     score >= 50 ? "#f59e0b" :
     "#dc2626";
 }
-
 /* Run once on load */
 document.addEventListener("DOMContentLoaded", calculateProjectHealth);
 </script>
