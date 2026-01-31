@@ -1267,7 +1267,7 @@ def update_task(task_id):
     data = request.json
 
     update(
-        "tasks",
+        "daily_tasks",
         params={"id": f"eq.{task_id}"},
         json={
             "title": data.get("title"),
