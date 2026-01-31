@@ -77,10 +77,7 @@
    OVERDUE
 ====================================================== */
 
-.due-date.overdue {
-  color: #dc2626;
-  font-weight: 700;
-}
+
 
 /* ======================================================
    EXPAND / COLLAPSE
@@ -282,4 +279,33 @@
   color: #6b7280;
   margin-top: 2px;
 }
+/* ===== Due date badge ===== */
 
+.due-badge {
+  margin-left: 10px;
+  padding: 2px 8px;
+  font-size: 12px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.due-badge.overdue {
+  background: #fee2e2;
+  color: #991b1b;
+  font-weight: 700;
+}
+
+/* Keep task row tight */
+.task-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.start-date {
+  width: 100%;
+  box-sizing: border-box;
+}

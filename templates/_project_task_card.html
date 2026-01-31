@@ -5,8 +5,8 @@
      data-id="{{ task.id }}"
      data-status="{{ task.status }}">
 
-  <!-- 🔹 SUMMARY ROW (always visible) -->
- <div class="task-row task-main"
+<!-- 🔹 SUMMARY ROW (always visible) -->
+<div class="task-row task-main"
      onclick="toggleTask('{{ task.id }}')">
 
   <input type="checkbox"
@@ -16,9 +16,16 @@
 
   <div class="task-text">
     {{ task.text }}
+
+    {% if task.due_date %}
+      <span class="due-badge {% if task.due_date < today %}overdue{% endif %}">
+        📅 {{ task.due_date }}
+      </span>
+    {% endif %}
   </div>
-  
+
 </div>
+
 
 
   <!-- 🔽 EXPANDED SECTION -->
@@ -65,13 +72,6 @@
                onchange="updateActual('{{ task.id }}', this.value); updateProgress('{{ task.id }}')">
       </div>
 
-      <div class="field">
-        <label>Due</label>
-        <span class="due-date {% if task.due_date and task.due_date < today %}overdue{% endif %}">
-            {{ task.due_date }}
-        </span>
-
-      </div>
 
       <div class="field">
         <select onchange="updateDueTime('{{ task.id }}', this.value)">
