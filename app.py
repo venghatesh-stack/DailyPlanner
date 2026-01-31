@@ -1540,6 +1540,38 @@ def create_project():
         return redirect("/projects")
 
     return render_template("project_new.html")
+def insert_many(table, rows, prefer="return=representation"):
+    """
+    Insert multiple rows into a Supabase table.
+    rows: list[dict]
+    """
+    return post(table, rows, prefer=prefer)
+
+
+
+@app.route("/projects/tasks/bulk-add", methods=["POST"])
+def bulk_add_tasks():
+    data = request.json
+    project_id = data["project_id"]
+    tasks = data["tasks"]
+
+    today = date.today().isoformat()
+
+    rows = []
+    for text in tasks:
+        rows.append({
+            "project_id": project_id,
+            "task_text": text,
+            "start_date": today,
+            "priority": "high",
+            "duration_days": 0,
+            "status": "open",
+            "user_id": session["user_id"]
+        })
+
+    insert_many("project_tasks", rows)
+
+    return jsonify({"status": "ok", "count": len(rows)})
 
 # ==========================================================
 # ENTRY POINT

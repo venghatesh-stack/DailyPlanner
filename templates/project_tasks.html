@@ -58,6 +58,23 @@
         Overdue only
       </label>
     </div>
+<!-- 📝 Temporary Project Notes Scratchpad -->
+<div class="project-notes">
+  <textarea
+    id="projectNotes"
+    placeholder="• Capture thoughts here…
+• Press Enter to continue bullets"
+    rows="6"></textarea>
+
+  <div style="margin-top:8px; text-align:right;">
+    <button
+      id="addTasksFromNotes"
+      class="save-task-btn">
+      ➕ Add as Tasks
+    </button>
+  </div>
+</div>
+
 
     {# ================= PROJECT HEALTH (ONCE PER PROJECT) ================= #}
   <div id="project-health" class="project-health">
@@ -717,5 +734,86 @@ function cyclePriority(event, taskId) {
   });
 }
 </script>
+<script>
+const notes = document.getElementById("projectNotes");
+
+notes.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter") return;
+
+  e.preventDefault();
+
+  const start = notes.selectionStart;
+  const end = notes.selectionEnd;
+  const value = notes.value;
+
+  // Determine if current line already has a bullet
+  const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+  const currentLine = value.slice(lineStart, start);
+
+  const bullet = currentLine.trim().startsWith("-") ? "\n- " : "\n- ";
+
+  notes.value =
+    value.slice(0, start) +
+    bullet +
+    value.slice(end);
+
+  const cursorPos = start + bullet.length;
+  notes.selectionStart = notes.selectionEnd = cursorPos;
+});
+</script>
+<script>
+function extractTasksFromNotes(text) {
+  return text
+    .split("\n")
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .map(line => line.replace(/^[-•]\s*/, "")); // strip bullets
+}
+</script>
+<script>
+document.getElementById("addTasksFromNotes")
+  .addEventListener("click", async () => {
+
+  const textarea = document.getElementById("projectNotes");
+  const rawText = textarea.value;
+
+  const tasks = extractTasksFromNotes(rawText);
+
+  if (!tasks.length) {
+    alert("No tasks to add");
+    return;
+  }
+
+  const btn = document.getElementById("addTasksFromNotes");
+  btn.disabled = true;
+  btn.textContent = "Adding…";
+
+  try {
+    const res = await fetch("/projects/tasks/bulk-add", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        project_id: "{{ project.id }}",
+        tasks
+      })
+    });
+
+    if (!res.ok) throw new Error("Failed to add tasks");
+
+    // Clear scratchpad
+    textarea.value = "";
+
+    // Reload to reflect new tasks
+    location.reload();
+
+  } catch (err) {
+    console.error(err);
+    alert("Failed to create tasks");
+    btn.disabled = false;
+    btn.textContent = "➕ Add as Tasks";
+  }
+});
+</script>
+
 </body>
 </html>

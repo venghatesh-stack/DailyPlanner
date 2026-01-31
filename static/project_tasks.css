@@ -376,3 +376,24 @@
 .task[data-status="done"] .priority-icon {
   opacity: 0.4;
 }
+.project-notes {
+  margin-bottom: 16px;
+}
+
+.project-notes textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  background: #f9fafb;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.project-notes textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  background: #ffffff;
+}
