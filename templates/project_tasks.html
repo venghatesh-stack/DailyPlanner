@@ -238,12 +238,21 @@ function updateStatus(taskId, status) {
 <script>
 function applyTaskFilters() {
   const hideClosed = document.getElementById("hideClosed")?.checked;
+  const overdueOnly = document.getElementById("showOverdueOnly")?.checked;
 
   document.querySelectorAll(".task").forEach(task => {
     const isClosed = task.dataset.status === "done";
-    task.style.display = (hideClosed && isClosed) ? "none" : "";
+    const isOverdue = task.querySelector(".due-badge.overdue");
+
+    let visible = true;
+
+    if (hideClosed && isClosed) visible = false;
+    if (overdueOnly && !isOverdue) visible = false;
+
+    task.style.display = visible ? "" : "none";
   });
 }
+
 
 applyTaskFilters();
 
@@ -341,9 +350,44 @@ function updateDelegation(taskId, value) {
     })
   });
 }
+function updateDueBadges() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  document.querySelectorAll(".due-badge").forEach(badge => {
+    const dueStr = badge.dataset.due;
+    if (!dueStr) return;
+
+    const due = new Date(dueStr);
+    due.setHours(0, 0, 0, 0);
+
+    const diff = Math.round((due - today) / 86400000);
+
+    badge.classList.remove("today", "soon", "overdue");
+
+    if (diff === 0) {
+      badge.textContent = "⏰ Today";
+      badge.classList.add("today");
+    } else if (diff === 1) {
+      badge.textContent = "⏰ Tomorrow";
+      badge.classList.add("soon");
+    } else if (diff > 1) {
+      badge.textContent = `⏰ In ${diff} days`;
+      badge.classList.add("soon");
+    } else {
+      badge.textContent = `⚠ ${Math.abs(diff)} days overdue`;
+      badge.classList.add("overdue");
+    }
+  });
+}
+
+document.addEventListener("DOMContentLoaded", updateDueBadges);
 
 
 </script>
+
+
+
 <script>
 function eliminateTask(taskId) {
   const reason = prompt("Why are you eliminating this task? (optional)");

@@ -18,10 +18,10 @@
     {{ task.text }}
 
     {% if task.due_date %}
-      <span class="due-badge {% if task.due_date < today %}overdue{% endif %}">
-        📅 {{ task.due_date }}
-      </span>
+       <span class="due-badge" data-due="{{ task.due_date }}"></span>
     {% endif %}
+
+
   </div>
 
 </div>
