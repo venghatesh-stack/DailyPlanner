@@ -214,8 +214,21 @@
       hour: "2-digit",
       minute: "2-digit",
     };
-    document.getElementById("current-datetime").textContent =
-      now.toLocaleString(undefined, options);
+ // Date: 30 Jan 2026
+  document.getElementById("live-date").textContent =
+    now.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    });
+
+  // Time: big blue
+  document.getElementById("live-time").textContent =
+    now.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    }) + " IST";
   }
 
   updateDateTime();
