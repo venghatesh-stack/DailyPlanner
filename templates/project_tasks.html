@@ -42,6 +42,20 @@
       <input type="checkbox" id="hideClosed" checked onchange="toggleClosed()" />
       Hide closed
     </label>
+    {# ================= PROJECT HEALTH (ONCE PER PROJECT) ================= #}
+  <div id="project-health" class="project-health">
+    <div class="health-score">
+      <div class="score-value" id="health-score">—</div>
+      <div class="score-label">Project Health</div>
+    </div>
+
+    <div class="health-metrics">
+      <div><strong id="metric-complete">0%</strong><span>Complete</span></div>
+      <div><strong id="metric-overdue">0</strong><span>Overdue</span></div>
+      <div><strong id="metric-accuracy">0%</strong><span>Accuracy</span></div>
+      <div><strong id="metric-progress">0</strong><span>In Progress</span></div>
+    </div>
+  </div>
 
 
    <!-- Grouped Task List -->
