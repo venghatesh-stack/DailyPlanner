@@ -81,6 +81,13 @@ def update(table, params, json):
     params example: {"id": "eq.123"}
     json example: {"is_done": True}
     """
+    # 🛑 Guard: params must already be operator-based
+    for k, v in params.items():
+        if not isinstance(v, str) or "." not in v:
+            raise ValueError(
+                f"Invalid filter for Supabase: {k}={v}. "
+                "Filters must include operators like eq., gt., lt."
+            )
     url = f"{SUPABASE_URL}/rest/v1/{table}"
     # 🔍 Log intent
     logger.debug("SUPABASE UPDATE → %s | params=%s", url, params)
