@@ -1039,7 +1039,7 @@ def project_tasks(project_id):
 
     rows = get(
         "projects",
-        params={"id": f"eq.{project_id}", "user_id": f"eq.{user_id}"},
+        params={"project_id": f"eq.{project_id}", "user_id": f"eq.{user_id}"},
     )
     if not rows:
         return "Project not found", 404
