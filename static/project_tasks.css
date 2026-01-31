@@ -272,3 +272,8 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 12px;
+}
