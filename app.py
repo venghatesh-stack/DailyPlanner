@@ -430,7 +430,7 @@ def toggle_todo_done():
             if source_id and not recurring_instance_id:
                 update(
                     "project_tasks",
-                    params={"id": f"eq.{source_id}"},
+                    params={"task_id": f"eq.{source_id}"},
                     json={"status": "done"},
                 )
 
@@ -1158,7 +1158,7 @@ def send_task_to_eisenhower():
     rows = get(
         "project_tasks",
         params={
-            "id": f"eq.{task_id}",
+            "task_id": f"eq.{task_id}",
             "user_id": f"eq.{user_id}",
             "select": "task_text",
         },
@@ -1257,7 +1257,7 @@ def update_project_task_date():
 
     update(
         "project_tasks",
-        params={"id": f"eq.{task_id}"},
+        params={"task_id": f"eq.{task_id}"},
         json={"due_date": due_date},
     )
     logger.info(f"👉 task_id={task_id}, new_date={due_date}")
@@ -1267,14 +1267,14 @@ def update_task(task_id):
     data = request.json
 
     update(
-        "daily_tasks",
-        params={"id": f"eq.{task_id}"},
+        "project_tasks",
+        params={"task_id": f"eq.{task_id}"},
         json={
             "title": data.get("title"),
             "start_time": data.get("start_time"),
             "end_time": data.get("end_time"),
             "notes": data.get("notes"),
-            "completed": bool(data.get("completed")),
+            "status": bool(data.get("completed")),
         }
     )
 
@@ -1293,7 +1293,7 @@ def update_task_duration():
     rows = get(
         "project_tasks",
         params={
-            "id": f"eq.{task_id}",
+            "taskid": f"eq.{task_id}",
             "select": "start_date",
         },
     )
@@ -1309,7 +1309,7 @@ def update_task_duration():
     # 3️⃣ Persist everything
     update(
         "project_tasks",
-        params={"id": f"eq.{task_id}"},
+        params={"taskid": f"eq.{task_id}"},
         json={
             "duration_days": duration_days,
             "due_date": due_date.isoformat(),
@@ -1328,7 +1328,7 @@ def update_delegation():
 
     update(
         "project_tasks",
-        params={"id": f"eq.{data['id']}"},
+        params={"task_id": f"eq.{data['id']}"},
         json={
             "delegated_to": data.get("delegated_to")
         }
@@ -1346,7 +1346,7 @@ def eliminate_task():
 
     update(
         "project_tasks",
-        params={"id": f"eq.{task_id}"},
+        params={"taskid": f"eq.{task_id}"},
         json={
             "is_eliminated": True,
             "elimination_reason": reason,
@@ -1362,7 +1362,7 @@ def update_due_time():
 
     update(
         "project_tasks",
-        params={"id": f"eq.{data['id']}"},
+        params={"task_id": f"eq.{data['id']}"},
         json={
             "due_time": data.get("due_time")
         }
@@ -1382,7 +1382,7 @@ def update_task_planning():
 
     update(
         "project_tasks",
-        params={"id": f"eq.{task_id}"},
+        params={"task_id": f"eq.{task_id}"},
         json={
             "start_date": str(start),
             "duration_days": days,
@@ -1414,7 +1414,7 @@ def update_planned():
     data = request.get_json()
     update(
         "project_tasks",
-        params={"id": f"eq.{data['task_id']}"},
+        params={"task_id": f"eq.{data['task_id']}"},
         json={"planned_hours": data["planned_hours"]}
     )
     return "", 204
@@ -1426,7 +1426,7 @@ def update_actual():
     data = request.get_json()
     update(
         "project_tasks",
-        params={"id": f"eq.{data['task_id']}"},
+        params={"task_id": f"eq.{data['task_id']}"},
         json={"actual_hours": data["actual_hours"]}
     )
     return "", 204
@@ -1434,7 +1434,7 @@ def update_actual():
 
 def group_tasks_smart(tasks):
     today = date.today()
-    tomorrow = today + timedelta(days=1)
+    tomorrow = today + timedelta(days=1)            
 
     # Week ends on Sunday
     end_of_week = today + timedelta(days=(6 - today.weekday()))
