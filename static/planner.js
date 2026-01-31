@@ -360,7 +360,7 @@ function renderTaskCard(task) {
     <div class="task-main">
       <input type="checkbox" class="task-check" />
       <div class="task-content">
-        <div class="task-title">${task.text}</div>
+        <div class="task-title">${task.task_text}</div>
         ${duration ? `<div class="task-meta">${duration}</div>` : ""}
       </div>
     </div>
