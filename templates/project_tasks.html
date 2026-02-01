@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>...</title>
+  <title>{{ project.name }}</title>
 
-  <!-- ✅ Global stylesheet -->
+  <!-- Global stylesheet -->
   <link rel="stylesheet" href="{{ url_for('static', filename='project_tasks.css') }}">
-
 </head>
 
 <body>
-      <!-- Top Navigation -->
+
+  <!-- Top Navigation -->
   {% include "_top_nav.html" %}
 
   <div class="container">
@@ -30,993 +30,115 @@
           autocomplete="off"
           required
         />
-         <input
+
+        <input
           type="date"
           name="start_date"
           value="{{ selected_date }}"
         >
+
         <button type="submit">Add</button>
       </form>
     </div>
+
+    <!-- Filters -->
     <div class="task-filters">
       <label class="filter">
-        <input
-          type="checkbox"
-          id="hideClosed"
-          checked
-          onchange="applyTaskFilters()"
-        />
+        <input type="checkbox" id="hideClosed" checked>
         Hide closed
       </label>
 
       <label class="filter">
-        <input
-          type="checkbox"
-          id="showOverdueOnly"
-          onchange="applyTaskFilters()"
-        />
+        <input type="checkbox" id="showOverdueOnly">
         Overdue only
       </label>
     </div>
-<div class="voice-box">
-  <button type="button"
-          class="voice-btn"
-          onclick="event.stopPropagation();toggleVoice();">
-    🎙 Dictate tasks
-  </button>
-  <div id="voiceStatus" class="voice-status">
-    Tap mic and start speaking
-  </div>
-</div>
 
-<!-- 📝 Temporary Project Notes Scratchpad -->
-<div class="project-notes">
-  <textarea
-    id="projectNotes"
-    placeholder="• Capture thoughts here…
-• Press Enter to continue bullets or Speak"
-    rows="6"></textarea>
+    <!-- Voice Dictation -->
+    <div class="voice-box">
+      <button type="button" class="voice-btn">
+        🎙 Dictate tasks
+      </button>
+      <div id="voiceStatus" class="voice-status">
+        Tap mic and start speaking
+      </div>
+    </div>
 
-  <div style="margin-top:8px; text-align:right;">
-    <button
-      id="addTasksFromNotes"
-      class="save-task-btn">
-      ➕ Add as Tasks
-    </button>
-  </div>
-</div>
+    <!-- Project Notes -->
+    <div class="project-notes">
+      <textarea
+        id="projectNotes"
+        data-project-id="{{ project.project_id }}"
+        placeholder="• Capture thoughts here…"
+        rows="6"></textarea>
 
+      <div style="margin-top:8px; text-align:right;">
+        <button
+          id="addTasksFromNotes"
+          class="save-task-btn">
+          ➕ Add as Tasks
+        </button>
+      </div>
+    </div>
 
-    {# ================= PROJECT HEALTH (ONCE PER PROJECT) ================= #}
-  <div id="project-health" class="project-health">
-    <div class="health-score">
-      <div class="score-value" id="health-score">—</div>
-      <div class="score-label">
-        Health · {{ project.name }}
+    <!-- Project Health -->
+    <div id="project-health" class="project-health">
+      <div class="health-score">
+        <div class="score-value" id="health-score">—</div>
+        <div class="score-label">Health · {{ project.name }}</div>
       </div>
 
+      <div class="health-metrics">
+        <div><strong id="metric-complete">0%</strong><span>Complete</span></div>
+        <div><strong id="metric-overdue">0</strong><span>Overdue</span></div>
+        <div><strong id="metric-accuracy">0%</strong><span>Accuracy</span></div>
+        <div><strong id="metric-progress">0</strong><span>In Progress</span></div>
+      </div>
     </div>
 
-    <div class="health-metrics">
-      <div><strong id="metric-complete">0%</strong><span>Complete</span></div>
-      <div><strong id="metric-overdue">0</strong><span>Overdue</span></div>
-      <div><strong id="metric-accuracy">0%</strong><span>Accuracy</span></div>
-      <div><strong id="metric-progress">0</strong><span>In Progress</span></div>
-    </div>
+    <!-- Sort -->
+    <select
+      id="sortSelect"
+      data-project-id="{{ project.project_id }}">
+      <option value="smart">Smart</option>
+      <option value="due">Due</option>
+      <option value="priority">Priority</option>
+      <option value="created">Created</option>
+    </select>
+
+    <!-- Task Groups -->
+    {% for group, tasks in grouped_tasks.items() %}
+      <div class="task-group">
+
+        <h3 class="group-title">
+          {{ group }}
+          <span class="count">{{ tasks|length }}</span>
+        </h3>
+
+        {% if tasks %}
+          {% for task in tasks %}
+            {% include "_project_task_card.html" %}
+          {% endfor %}
+        {% else %}
+          <div class="empty">No tasks</div>
+        {% endif %}
+
+      </div>
+    {% endfor %}
+
   </div>
 
-<select id="sortSelect">
-  <option value="smart">Smart</option>
-  <option value="due">Due</option>
-  <option value="priority">Priority</option>
-  <option value="created">Created</option>
-</select>
+  <!-- ✅ ONE JS ENTRY POINT -->
+  <script
+    src="{{ url_for('static', filename='project_tasks.js') }}"
+    defer>
+  </script>
 
-
-
-
-
-   <!-- Grouped Task List -->
-    {% for group, tasks in grouped_tasks.items() %}
-        <div class="task-group">
-
-          <h3 class="group-title">
-            {{ group }}
-            <span class="count">{{ tasks|length }}</span>
-         
-          {% if tasks %}
-            {% for task in tasks %}
-              {% include "_project_task_card.html" %}
-            
-            {% endfor %}
-          {% else %}
-            <div class="empty">No tasks</div>
-          {% endif %}
-
-        </div>
-      {% endfor %}
-
-</div>
-<script>  
-document.getElementById("sortSelect").addEventListener("change", async e => {
-  await fetch(`/projects/{{ project.project_id }}/set-sort`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ sort: e.target.value })
-  });
-  location.reload();
-});
-
-</script>
-<script>
-let draggedId = null;
-
-function dragStart(e) {
-  draggedId = e.target.closest(".task").dataset.id;
-}
-
-function dragOver(e) {
-  e.preventDefault();
-}
-
-function dropTask(e) {
-  e.preventDefault();
-
-  const targetTask = e.target.closest(".task");
-  if (!targetTask) return;
-
-  const targetId = targetTask.dataset.id;
-
-  if (!draggedId || draggedId === targetId) return;
-
-  fetch("/projects/tasks/reorder", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      dragged_id: draggedId,
-      target_id: targetId
-    })
-  })
-  .then(r => {
-    if (!r.ok) throw new Error("Reorder failed");
-    location.reload();
-  })
-  .catch(err => console.error("Reorder error:", err));
-}
-</script>
-
-<script>
-function togglePin(btn) {
-  const taskEl = btn.closest(".task");
-  const taskId = taskEl.dataset.id;
-  const isPinned = taskEl.dataset.pinned === "1";
-
-  fetch("/projects/tasks/pin", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      task_id: taskId,
-      is_pinned: !isPinned
-    })
-  })
-  .then(r => {
-    if (!r.ok) throw new Error("Pin failed");
-
-    // 🔁 update DOM state immediately
-    taskEl.dataset.pinned = isPinned ? "0" : "1";
-
-    // optional visual feedback
-    btn.classList.toggle("pinned", !isPinned);
-  })
-  .catch(err => console.error("Pin error:", err));
-}
-
-</script>
+  <!-- Voice (kept separate on purpose) -->
+  <script src="{{ url_for('static', filename='voice.js') }}"></script>
   <script>
-  function sendTask(taskId) {
-    const quadrantSelect = document.getElementById(`q-${taskId}`);
-    const dateInput = document.getElementById(`d-${taskId}`);
-    const btn = document.getElementById(`send-${taskId}`);
-    if (btn.disabled) return; // 🔒 guard
-
-    const quadrant = quadrantSelect.value;
-    const date = dateInput.value;
-
-    if (!date) {
-      alert("Please choose a date");
-      return;
-    }
-
-    fetch("/projects/tasks/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        task_id: taskId,
-        quadrant: quadrant,
-        plan_date: date
-      })
-    })
-    .then(r => r.json())
-    .then(res => {
-      if (res.status === "ok") {
-        // ✅ Mark visually as sent
-        btn.innerHTML = `🧠 Sent · <a href="/todo?year=${date.slice(0,4)}&month=${date.slice(5,7)}&day=${date.slice(8,10)}">View</a>`;
-
-        btn.disabled = true;
-
-        quadrantSelect.disabled = true;
-        dateInput.disabled = true;
-
-        const textEl = document.getElementById(`text-${taskId}`);
-        if (!textEl.querySelector(".badge")) {
-          const badge = document.createElement("span");
-          badge.className = "badge";
-          badge.textContent = "🧠 In Eisenhower";
-          textEl.appendChild(badge);
-        }
-
-
-      } else if (res.status === "already-sent") {
-        alert("Task already sent for this date.");
-      } else {
-        alert(res.error || "Could not send task.");
-      }
-    });
-  }
-
-</script>
-
-<script>
-document.addEventListener("click", async (e) => {
-  if (!e.target.classList.contains("save-task-btn")) return;
-
-  const taskEl = e.target.closest(".task");
-  if (!taskEl) return;
-
-  const taskId = taskEl.dataset.id;
-  if (!taskId) {
-    console.error("Task ID missing", taskEl);
-    return;
-  }
-
-  const payload = serializeTask(taskEl);
-
-  if (!payload.task_text) {
-    alert("Task text cannot be empty");
-    return;
-  }
-
-  e.target.disabled = true;
-  e.target.textContent = "Saving…";
-
-  try {
-    const res = await fetch(`/projects/tasks/${taskId}/update`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) throw new Error("Save failed");
-
-    e.target.textContent = "Saved ✓";
-    setTimeout(() => {
-      e.target.textContent = "💾 Save";
-      e.target.disabled = false;
-    }, 1000);
-
-  } catch (err) {
-    console.error(err);
-    e.target.textContent = "Retry";
-    e.target.disabled = false;
-  }
-});
-
-
-
-  function updateDateTime() {
-    const now = new Date();
-    const options = {
-      weekday: "short",
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    };
- // Date: 30 Jan 2026
-  document.getElementById("live-date").textContent =
-    now.toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric"
-    });
-
-  // Time: big blue
-  document.getElementById("live-time").textContent =
-    now.toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit"
-    }) + " IST";
-  }
-
-  updateDateTime();
-  setInterval(updateDateTime, 60000); // update every minute
-</script>
-<script>
-function updateStatus(taskId, status) {
-  // 🛑 Hard guard
-  if (!taskId) {
-    console.error("updateStatus called without taskId");
-    return;
-  }
-
-  const taskEl = document.getElementById(`task-${taskId}`);
-  if (!taskEl) {
-    console.error("Task element not found:", taskId);
-    return;
-  }
-
-  const previousStatus = taskEl.dataset.status;
-
-  // ✅ Optimistic UI update
-  taskEl.dataset.status = status;
-
-  fetch("/projects/tasks/status", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ task_id: taskId, status })
-  })
-  .then(r => {
-    if (!r.ok) throw new Error("Status update failed");
-    calculateProjectHealth();
-    applyTaskFilters();
-  })
-  .catch(err => {
-    // 🔄 Rollback on failure
-    console.error(err);
-    taskEl.dataset.status = previousStatus;
-    alert("Failed to update task status");
-  });
-}
-
-
-</script>
-<script>
-function applyTaskFilters() {
-  const hideClosed = document.getElementById("hideClosed")?.checked;
-  const overdueOnly = document.getElementById("showOverdueOnly")?.checked;
-
-  document.querySelectorAll(".task").forEach(task => {
-    const isClosed = task.dataset.status === "done";
-    const isOverdue = task.querySelector(".due-badge.overdue");
-
-    let visible = true;
-
-    if (hideClosed && isClosed) visible = false;
-    if (overdueOnly && !isOverdue) visible = false;
-
-    task.style.display = visible ? "" : "none";
-  });
-}
-
-
-applyTaskFilters();
-
-</script>
-<script>
-function toggleOverdue() {
-  const onlyOverdue = document.getElementById("showOverdueOnly").checked;
-
-  document.querySelectorAll(".task").forEach(task => {
-    const badge = task.querySelector(".due-badge.overdue");
-
-    if (onlyOverdue) {
-      task.style.display = badge ? "" : "none";
-    } else {
-      task.style.display = "";
-    }
-  });
-
-  // Respect Hide Closed after filter
-  applyTaskFilters();
-}
-</script>
-
-<script>
-function unsendFromEisenhower(taskId) {
-  if (!confirm("Remove this task from Eisenhower?")) return;
-
-  fetch("/projects/tasks/unsend", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      task_id: taskId,
-      scope: "today_future"
-    })
-  })
-  .then(r => r.json())
-  .then(res => {
-    if (res.status !== "ok") {
-      alert(res.error || "Failed to remove task");
-      return;
-    }
-
-    // 🔄 UI reset (NO reload)
-
-    const taskEl = document.getElementById(`task-${taskId}`);
-    if (!taskEl) return;
-
-    // 1️⃣ Enable Send button
-    const sendBtn = document.getElementById(`send-${taskId}`);
-    if (sendBtn) {
-      sendBtn.disabled = false;
-      sendBtn.innerText = "Send →";
-    }
-
-    // 2️⃣ Enable quadrant + date
-    const q = document.getElementById(`q-${taskId}`);
-    const d = document.getElementById(`d-${taskId}`);
-    if (q) q.disabled = false;
-    if (d) d.disabled = false;
-
-    // 3️⃣ Remove badge
-    const badge = taskEl.querySelector(".badge");
-    if (badge) badge.remove();
-
-    // 4️⃣ Remove "Remove from Eisenhower" button
-    const unsendBtn = taskEl.querySelector(".unsend-btn");
-    if (unsendBtn) unsendBtn.remove();
-
-  });
-}
-</script>
-<script>
-function updateDueDate(taskId, date) {
-  fetch("/projects/tasks/update-date", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      task_id: taskId,
-      due_date: date
-    })
-  }).then(() => {
-    formatDueBadges();
-    calculateProjectHealth();
-  }).catch(err => {
-    console.error("Failed to update due date", err);
-  });
-}
-function updateDelegation(taskId, value) {
-  fetch("/projects/tasks/update-delegation", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      id: taskId,
-      delegated_to: value || null
-    })
-  });
-}
-function updateDueBadges() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  document.querySelectorAll(".due-badge").forEach(badge => {
-    const dueStr = badge.dataset.due;
-    if (!dueStr) return;
-
-    const due = new Date(dueStr);
-    due.setHours(0, 0, 0, 0);
-
-    const diff = Math.round((due - today) / 86400000);
-
-    badge.classList.remove("today", "soon", "overdue");
-
-    if (diff === 0) {
-      badge.textContent = "⏰ Today";
-      badge.classList.add("today");
-    } else if (diff === 1) {
-      badge.textContent = "⏰ Tomorrow";
-      badge.classList.add("soon");
-    } else if (diff > 1) {
-      badge.textContent = `⏰ In ${diff} days`;
-      badge.classList.add("soon");
-    } else {
-      badge.textContent = `⚠ ${Math.abs(diff)} days overdue`;
-      badge.classList.add("overdue");
-    }
-  });
-}
-
-document.addEventListener("DOMContentLoaded", updateDueBadges);
-
-
-</script>
-
-
-
-<script>
-function eliminateTask(taskId) {
-  const reason = prompt("Why are you eliminating this task? (optional)");
-
-  fetch("/projects/tasks/eliminate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      id: taskId,
-      reason: reason
-    })
-  }).then(() => {
-    // Reload page to reflect removal
-    location.reload();
-  });
-}
-</script>
-<script>
-function updateDueTime(taskId, time) {
-  fetch("/projects/tasks/update-time", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      id: taskId,
-      due_time: time || null
-    })
-  });
-}
-</script>
-<script>
-function updatePlanning(taskId) {
-  if (!taskId) {
-    console.error("updatePlanning called without taskId");
-    return;
-  }
-
-  const taskEl = document.getElementById(`task-${taskId}`);
-  if (!taskEl) {
-    console.warn("Task element not found");
-    return;
-  }
-
-  const startInput = taskEl.querySelector(".start-date");
-  const durationInput = taskEl.querySelector(".duration-days");
-
-  if (!startInput || !durationInput) {
-    console.warn("Missing planning inputs");
-    return;
-  }
-
-  const payload = {
-    task_id: taskId,
-    start_date: startInput.value,
-    duration_days: durationInput.value
-  };
-
-  fetch("/projects/tasks/update-planning", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  })
-  .then(r => r.json())
-  .then(res => {
-    const dueEl = taskEl.querySelector(".due-date");
-
-    if (dueEl && res.due_date) {
-      dueEl.textContent = res.due_date;
-    }
-
-    // 🔁 Soft reload to re-group tasks
-    const container = document.querySelector(".container");
-    if (container) {
-      container.style.opacity = "0.7";
-      container.style.pointerEvents = "none";
-    }
-
-    setTimeout(() => {
-      location.reload();
-    }, 120);
-  })
-  .catch(err => {
-    console.error("updatePlanning failed", err);
-  });
-}
-
-</script>
-
-<script>
-function toggleTask(taskId) {
-  const el = document.getElementById(`task-${taskId}`);
-  if (!el) {
-    console.warn("toggleTask: task not found", taskId);
-    return;
-  }
-  el.classList.toggle("open");
-}
-
-function updateProgress(taskId) {
-  const task = document.getElementById(`task-${taskId}`);
-  if (!task) return;
-
-  const planned = parseFloat(task.querySelector('input[onchange*="updatePlanned"]')?.value || 0);
-  const actual  = parseFloat(task.querySelector('input[onchange*="updateActual"]')?.value || 0);
-
-  const percent = planned > 0 ? Math.min(100, (actual / planned) * 100) : 0;
-  task.style.setProperty("--progress", `${percent}%`);
-}
-</script>
-
-<script>
-function updatePlanned(id, hours) {
-  fetch("/projects/tasks/update-planned", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      task_id: id,
-      planned_hours: hours
-    })
-  }).then(() => {
-    calculateProjectHealth();   // ✅ refresh health immediately
-  });
-}
-
-
-function updateActual(id, hours) {
-  fetch("/projects/tasks/update-actual", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      task_id: id,
-      actual_hours: hours
-    })
-  }).then(() => {
-    calculateProjectHealth();   // ✅ refresh health immediately
-  });
-}
-
-</script>
-<script>
-document.addEventListener("input", function (e) {
-  if (!e.target.classList.contains("auto-grow")) return;
-
-  e.target.style.height = "auto";
-  e.target.style.height = e.target.scrollHeight + "px";
-});
-</script>
-<script>
-
-function formatDueBadges() {
-  const today = new Date();
-  today.setHours(0,0,0,0);
-
-  document.querySelectorAll(".due-badge").forEach(badge => {
-    const dueStr = badge.dataset.due;
-    if (!dueStr) return;
-
-    const due = new Date(dueStr);
-    due.setHours(0,0,0,0);
-
-    const diffDays = Math.round((due - today) / 86400000);
-
-    let label = dueStr;
-
-    if (diffDays === 0) label = "Today";
-    else if (diffDays === 1) label = "Tomorrow";
-    else if (diffDays > 1) label = `In ${diffDays} days`;
-    else label = `${Math.abs(diffDays)} days overdue`;
-
-    badge.innerHTML = `📅 ${label}`;
-
-    if (diffDays < 0) badge.classList.add("overdue");
-  });
-}
-
-document.addEventListener("DOMContentLoaded", formatDueBadges);
-
-
-function calculateProjectHealth() {
-  const tasks = document.querySelectorAll(".task");
-  if (!tasks.length) return;
-
-  let total = 0;
-  let done = 0;
-  let inProgress = 0;
-  let overdue = 0;
-
-  let plannedTotal = 0;
-  let actualTotal = 0;
-
-  const today = new Date().toISOString().slice(0, 10);
-
-  tasks.forEach(task => {
-    const status = task.dataset.status;
-    if (!status) return;
-
-    // 🔹 Count all tasks regardless of visibility
-    total++;
-
-    if (status === "done") done++;
-    if (status === "in_progress") inProgress++;
-
-    const due = task.querySelector(".due-date")?.textContent?.trim();
-    if (due && due < today && status !== "done") overdue++;
-
-    const planned = parseFloat(
-      task.querySelector('input[onchange*="updatePlanned"]')?.value || 0
-    );
-    const actual = parseFloat(
-      task.querySelector('input[onchange*="updateActual"]')?.value || 0
-    );
-
-    plannedTotal += planned;
-    actualTotal += actual;
-  });
-
-  /* ---- Metrics ---- */
-
-  const completionRate = total > 0 ? (done / total) * 100 : 0;
-
-  const accuracy =
-    plannedTotal > 0
-      ? Math.max(0, 100 - Math.abs(actualTotal - plannedTotal) / plannedTotal * 100)
-      : 100;
-
-  const overduePenalty =
-    total > 0 ? Math.min(100, (overdue / total) * 100) : 0;
-
-  /* ---- Health Score ---- */
-
-  const score =
-    completionRate * 0.35 +
-    accuracy * 0.25 +
-    (100 - overduePenalty) * 0.25 +
-    Math.min(100, (inProgress / total) * 100) * 0.15;
-
-  /* ---- UI ---- */
-
-  document.getElementById("health-score").textContent = Math.round(score);
-  document.getElementById("metric-complete").textContent = Math.round(completionRate) + "%";
-  document.getElementById("metric-overdue").textContent = overdue;
-  document.getElementById("metric-accuracy").textContent = Math.round(accuracy) + "%";
-  document.getElementById("metric-progress").textContent = inProgress;
-
-  const scoreEl = document.getElementById("health-score");
-  scoreEl.style.color =
-    score >= 75 ? "#16a34a" :
-    score >= 50 ? "#f59e0b" :
-    "#dc2626";
-}
-/* Run once on load */
-document.addEventListener("DOMContentLoaded", calculateProjectHealth);
-</script>
-<script> 
-function serializeTask(taskEl) {
-  return {
-    task_text: taskEl.querySelector(".task-title")?.textContent.trim() || null,
-    priority: taskEl.querySelector(".priority-icon")?.dataset.priority || null,
-
-    status: taskEl.dataset.status || null,
-
-    start_date: taskEl.querySelector(".start-date")?.value || null,
-    duration_days: taskEl.querySelector(".duration-days")?.value || 0,
-
-    planned_hours: taskEl.querySelector('input[onchange*="updatePlanned"]')?.value || 0,
-    actual_hours: taskEl.querySelector('input[onchange*="updateActual"]')?.value || 0,
-
-    due_time: taskEl.querySelector('select[onchange*="updateDueTime"]')?.value || null,
-
-    delegated_to: taskEl.querySelector('input[maxlength="25"]')?.value || null,
-
-    elimination_reason: taskEl.querySelector("textarea")?.value || null
-  };
-}
-</script>
-<script>
-function cyclePriority(event, taskId) {
-  event.stopPropagation(); // prevent expand/collapse
-
-  const icon = event.target;
-  const current = icon.dataset.priority;
-
-  const order = ["high", "medium", "low"];
-  const next = order[(order.indexOf(current) + 1) % order.length];
-
-  // Optimistic UI update
-  icon.dataset.priority = next;
-
-  fetch("/projects/tasks/update-priority", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      task_id: taskId,
-      priority: next
-    })
-  }).catch(() => {
-    // rollback on failure
-    icon.dataset.priority = current;
-    alert("Failed to update priority");
-  });
-}
-</script>
-<script>
-const notes = document.getElementById("projectNotes");
-
-notes.addEventListener("keydown", (e) => {
-  if (e.key !== "Enter") return;
-
-  e.preventDefault();
-
-  const start = notes.selectionStart;
-  const end = notes.selectionEnd;
-  const value = notes.value;
-
-  // Determine if current line already has a bullet
-  const lineStart = value.lastIndexOf("\n", start - 1) + 1;
-  const currentLine = value.slice(lineStart, start);
-
-  const bullet = currentLine.trim().startsWith("-") ? "\n- " : "\n- ";
-
-  notes.value =
-    value.slice(0, start) +
-    bullet +
-    value.slice(end);
-
-  const cursorPos = start + bullet.length;
-  notes.selectionStart = notes.selectionEnd = cursorPos;
-});
-</script>
-<script>
-function extractTasksFromNotes(text) {
-  return text
-    .split("\n")
-    .map(line => line.trim())
-    .filter(line => line.length > 0)
-    .map(line => line.replace(/^[-•]\s*/, "")); // strip bullets
-}
-</script>
-<script>
-document.getElementById("addTasksFromNotes")
-  .addEventListener("click", async () => {
-
-  const textarea = document.getElementById("projectNotes");
-  const rawText = textarea.value;
-
-  const tasks = extractTasksFromNotes(rawText);
-
-  if (!tasks.length) {
-    alert("No tasks to add");
-    return;
-  }
-
-  const btn = document.getElementById("addTasksFromNotes");
-  btn.disabled = true;
-  btn.textContent = "Adding…";
-
-  try {
-    const res = await fetch("/projects/tasks/bulk-add", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        project_id: "{{ project.project_id }}",
-        tasks
-      })
-    });
-
-    if (!res.ok) throw new Error("Failed to add tasks");
-
-    // Clear scratchpad
-    textarea.value = "";
-
-    // Reload to reflect new tasks
-    location.reload();
-
-  } catch (err) {
-    console.error(err);
-    alert("Failed to create tasks");
-    btn.disabled = false;
-    btn.textContent = "➕ Add as Tasks";
-  }
-});
-</script>
-<script src="{{ url_for('static', filename='voice.js') }}"></script>
-<script>
-  initVoiceDictation("projectNotes", "voiceStatus");
-</script>
-<script>
-let currentTaskId = null;
-
-function openEisenhower(taskId) {
-  currentTaskId = taskId;
-  document.getElementById("eisenhowerModal").classList.remove("hidden");
-}
-
-function closeEisenhower() {
-  document.getElementById("eisenhowerModal").classList.add("hidden");
-  currentTaskId = null;
-}
-
-function confirmSend() {
-  if (!currentTaskId) return;
-
-  const date = document.getElementById("eh-date").value;
-  const quadrant = document.getElementById("eh-quadrant").value;
-
-  if (!date) {
-    alert("Please choose a date");
-    return;
-  }
-
-  const sendBtn = document.getElementById(`send-${currentTaskId}`);
-  if (sendBtn.disabled) return; // 🔒 frontend guard
-
-  // 🚀 Optimistic UI
-  sendBtn.disabled = true;
-  sendBtn.textContent = "🧠 Sent";
-
-  fetch("/projects/tasks/send-to-eisenhower", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
-      task_id: currentTaskId,
-      plan_date: date,
-      quadrant
-    })
-  })
-  .then(r => {
-    if (r.status === 409) {
-      alert("Task already sent to Eisenhower");
-      return;
-    }
-    if (!r.ok) throw new Error("Send failed");
-
-    // 🏷️ Badge
-    const taskEl = document.getElementById(`task-${currentTaskId}`);
-    const textEl = taskEl.querySelector(".task-title");
-
-    if (!textEl.querySelector(".badge")) {
-      const badge = document.createElement("span");
-      badge.className = "badge";
-      badge.textContent = "🧠 In Eisenhower";
-      textEl.appendChild(badge);
-    }
-
-    closeEisenhower();
-  })
-  .catch(err => {
-    console.error(err);
-    sendBtn.disabled = false;
-    sendBtn.textContent = "🧠 Send";
-    alert("Failed to send task");
-  });
-}
-
-</script>
-<script>
-function enableEdit(el, taskId) {
-  el.contentEditable = "true";
-  el.focus();
-
-  // move cursor to end
-  document.execCommand("selectAll", false, null);
-  document.getSelection().collapseToEnd();
-
-  el.onblur = () => saveEdit(el, taskId);
-  el.onkeydown = (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      el.blur();
-    }
-  };
-}
-
-function saveEdit(el, taskId) {
-  el.contentEditable = "false";
-
-  fetch(`/projects/tasks/${taskId}/update-text`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ task_text: el.textContent.trim() })
-  });
-}
-</script>
+    initVoiceDictation("projectNotes", "voiceStatus");
+  </script>
 
 </body>
 </html>

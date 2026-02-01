@@ -1,16 +1,16 @@
-<div id="task-{{ task.task_id }}"
-     class="task"
-     data-id="{{ task.task_id }}"
-     data-status="{{ task.status }}"
-     data-pinned="{{ 1 if task.is_pinned else 0 }}"
-     ondragover="dragOver(event)"
-     ondrop="dropTask(event)"
-     onclick="toggleTask('{{ task.task_id }}')">
-<div class="task task-row" id="task-{{ task.task_id }}">
+<div
+  id="task-{{ task.task_id }}"
+  class="task"
+  data-id="{{ task.task_id }}"
+  data-status="{{ task.status }}"
+  data-pinned="{{ 1 if task.is_pinned else 0 }}"
+  ondragover="dragOver(event)"
+  ondrop="dropTask(event)"
+>
 
+  <!-- 🔹 SUMMARY ROW -->
   <div class="task-row task-main"
        onclick="toggleTask('{{ task.task_id }}')">
-  <!-- 🔹 SUMMARY ROW -->
 
     <!-- ☰ Drag handle -->
     <span class="drag-handle"
@@ -36,22 +36,18 @@
     </span>
 
     <!-- 📌 Pin -->
-    <button
-      type="button"
-      onmousedown="event.stopPropagation()"
-      onclick="event.stopPropagation(); togglePin(this)"
-      title="Pin task">
+    <button type="button"
+            onclick="event.stopPropagation(); togglePin(this)"
+            title="Pin task">
       📌
     </button>
-
 
     <!-- 📝 Text -->
     <div class="task-text">
       <span class="task-title"
-      ondblclick="enableEdit(this, '{{ task.task_id }}')">
-  {{ task.task_text }}
-</span>
-
+            ondblclick="enableEdit(this, '{{ task.task_id }}')">
+        {{ task.task_text }}
+      </span>
 
       {% if task.missed_eisenhower %}
         <span class="badge missed">
@@ -60,47 +56,46 @@
       {% endif %}
     </div>
 
+    {% if task.due_date %}
+      <span class="due-badge {% if task.due_date < today %}overdue{% endif %}"
+            data-due="{{ task.due_date }}">
+        📅 {{ task.due_date }}
+      </span>
+    {% endif %}
 
-      {% if task.due_date %}
-        <span class="due-badge {% if task.due_date < today %}overdue{% endif %}">
-          📅 {{ task.due_date }}
-        </span>
+    <div class="flex-spacer"></div>
+
+    <button
+      id="send-{{ task.task_id }}"
+      type="button"
+      {% if task.eisenhower_sent %}disabled{% endif %}
+      onclick="event.stopPropagation(); openEisenhower('{{ task.task_id }}')">
+      {% if task.eisenhower_sent %}
+        🧠 Sent
+      {% else %}
+        🧠 Send
       {% endif %}
-       <!-- 🔹 FLEX PUSH -->
-        <div class="flex-spacer"></div>
-        <button
-        id="send-{{ task.task_id }}"
-        type="button"
-        {% if task.eisenhower_sent %}disabled{% endif %}
-        onclick="event.stopPropagation(); openEisenhower('{{ task.task_id }}')">
-        {% if task.eisenhower_sent %}
-          🧠 Sent
-        {% else %}
-          🧠 Send
-        {% endif %}
-      </button>
-    </div>
+    </button>
   </div>
-  <!-- 🔽 EXPANDED SECTION -->
+
+  <!-- 🔽 EXPANDED DETAILS -->
   <div class="task-details">
 
-    <!-- ROW 1: PLANNING / STATUS -->
+    <!-- Planning -->
     <div class="task-row task-details-row planning-row">
-       <div class="field">
-    <label>Start</label>
-  <input type="date"
-       class="start-date"
-       value="{{ task.start_date or '' }}"
-       oninput="updatePlanning('{{task.task_id }}')">
 
+      <div class="field">
+        <label>Start</label>
+        <input type="date"
+               class="start-date"
+               value="{{ task.start_date or '' }}"
+               oninput="updatePlanning('{{ task.task_id }}')">
+      </div>
 
-    </div>
       <div class="field">
         <label>Duration</label>
         <input type="number"
                class="duration-days"
-               min="0"
-               max="999"
                value="{{ task.duration_days or 0 }}"
                oninput="updatePlanning('{{ task.task_id }}')">
       </div>
@@ -108,30 +103,23 @@
       <div class="field">
         <label>Planned</label>
         <input type="number"
-               min="0"
-               max="999"
-               step="0.5"
                value="{{ task.planned_hours or 0 }}"
-               onchange="updatePlanned('{{ task.task_id }}', this.value); updateProgress('{{ task.task_id }}')">
+               onchange="updatePlanned('{{ task.task_id }}', this.value)">
       </div>
 
       <div class="field">
         <label>Actual</label>
         <input type="number"
-               min="0"
-               max="999"
-               step="0.5"
                value="{{ task.actual_hours or 0 }}"
-               onchange="updateActual('{{ task.task_id }}', this.value); updateProgress('{{ task.task_id }}')">
+               onchange="updateActual('{{ task.task_id }}', this.value)">
       </div>
-
 
       <div class="field">
         <select onchange="updateDueTime('{{ task.task_id }}', this.value)">
           {% for h in range(0,24) %}
-            <option value="{{ "%02d:00"|format(h) }}"
-              {% if task.due_time == "%02d:00"|format(h) %}selected{% endif %}>
-              {{ "%02d:00"|format(h) }}
+            <option value="{{ '%02d:00'|format(h) }}"
+              {% if task.due_time == '%02d:00'|format(h) %}selected{% endif %}>
+              {{ '%02d:00'|format(h) }}
             </option>
           {% endfor %}
         </select>
@@ -146,7 +134,7 @@
       </div>
     </div>
 
-    <!-- ROW 2: ACTIONS -->
+    <!-- Actions -->
     <div class="task-row task-details-row action-row">
 
       <div class="field wide">
@@ -157,45 +145,14 @@
                onchange="updateDelegation('{{ task.task_id }}', this.value)">
       </div>
 
-      <div class="field wide">
-        <label>Elimination reason</label>
-        <textarea rows="1"
-                  maxlength="25"
-                  oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
-                  onchange="updateElimination('{{ task.task_id }}', this.value)">{{ task.elimination_reason or '' }}</textarea>
-      </div>
       <div class="task-actions">
-            <button class="save-task-btn">💾 Save</button>
+        <button class="save-task-btn">💾 Save</button>
+        <button class="icon-btn danger"
+                onclick="eliminateTask('{{ task.task_id }}')">
+          🗑 Delete
+        </button>
       </div>
-      <button class="icon-btn danger"
-              onclick="eliminateTask('{{ task.task_id }}')">
-        🗑 Delete
-      </button>
     </div>
 
-  </div>
-</div>
-</div>
-</div>
-<!-- 🧠 Eisenhower Modal -->
-<div id="eisenhowerModal" class="modal hidden">
-  <div class="modal-content">
-    <h3>🧠 Send to Eisenhower</h3>
-
-    <label>Date</label>
-    <input type="date" id="eh-date">
-
-    <label>Quadrant</label>
-    <select id="eh-quadrant">
-      <option value="do">🔥 Do</option>
-      <option value="schedule">📅 Schedule</option>
-      <option value="delegate">🤝 Delegate</option>
-      <option value="eliminate">🗑 Eliminate</option>
-    </select>
-
-    <div class="modal-actions">
-      <button onclick="closeEisenhower()">Cancel</button>
-      <button class="primary" onclick="confirmSend()">Send</button>
-    </div>
   </div>
 </div>
