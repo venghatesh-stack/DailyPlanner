@@ -313,3 +313,26 @@ window.updatePlanning = function (taskId) {
     })
     .catch(console.error);
 };
+window.eliminateTask = function (taskId) {
+  if (!taskId) return;
+
+  const reason = prompt("Why are you eliminating this task? (optional)");
+
+  fetch("/projects/tasks/eliminate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: taskId,
+      reason: reason || null
+    })
+  })
+    .then(r => {
+      if (!r.ok) throw new Error("Eliminate failed");
+      // Hard refresh to re-group tasks safely
+      location.reload();
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Failed to delete task");
+    });
+};
