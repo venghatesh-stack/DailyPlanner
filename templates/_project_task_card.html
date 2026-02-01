@@ -4,11 +4,10 @@
      data-status="{{ task.status }}"
      data-pinned="{{ 1 if task.is_pinned else 0 }}"
      ondragover="dragOver(event)"
-     ondrop="dropTask(event)">
+     ondrop="dropTask(event)"
+     onclick="toggleTask('{{ task.task_id }}')">
 
   <!-- 🔹 SUMMARY ROW -->
-  <div class="task-row task-main"
-       onclick="toggleTask('{{ task.task_id }}')">
 
     <!-- ☰ Drag handle -->
     <span class="drag-handle"
