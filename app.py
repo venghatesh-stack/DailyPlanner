@@ -1707,31 +1707,34 @@ def reorder_tasks():
     )
 
     return jsonify({"status": "ok"})
-
 @app.route("/todo/move", methods=["POST"])
 @login_required
 def move_eisenhower_task():
     data = request.get_json()
-    todo_id = data["id"]
+    task_id = data["id"]
     quadrant = data["quadrant"]
 
-    # 1️⃣ Update Eisenhower instance
+    # 1️⃣ Update Eisenhower task
     update(
         "todo_matrix",
-        params={"id": f"eq.{todo_id}"},
+        params={"id": f"eq.{task_id}"},
         json={"quadrant": quadrant}
     )
 
-    # 2️⃣ Sync back ONLY if linked
+    # 2️⃣ Sync back to project task IF linked
     rows = get(
         "todo_matrix",
-        params={"id": f"eq.{todo_id}", "select": "source_task_id"},
+        params={
+            "id": f"eq.{task_id}",
+            "select": "source_task_id"
+        }
     )
 
     if rows and rows[0].get("source_task_id"):
         update(
             "project_tasks",
-            params={"task_id": f"eq.{rows[0]['source_task_id']}"}
+            params={"task_id": f"eq.{rows[0]['source_task_id']}"},
+            json={"quadrant": quadrant}
         )
 
     return jsonify({"status": "ok"})
