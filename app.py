@@ -1731,8 +1731,7 @@ def move_eisenhower_task():
     if rows and rows[0].get("source_task_id"):
         update(
             "project_tasks",
-            params={"task_id": f"eq.{rows[0]['source_task_id']}"},
-            json={"quadrant": quadrant}
+            params={"task_id": f"eq.{rows[0]['source_task_id']}"}
         )
 
     return jsonify({"status": "ok"})
