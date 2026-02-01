@@ -989,6 +989,34 @@ function confirmSend() {
 }
 
 </script>
+<script>
+function enableEdit(el, taskId) {
+  el.contentEditable = "true";
+  el.focus();
+
+  // move cursor to end
+  document.execCommand("selectAll", false, null);
+  document.getSelection().collapseToEnd();
+
+  el.onblur = () => saveEdit(el, taskId);
+  el.onkeydown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      el.blur();
+    }
+  };
+}
+
+function saveEdit(el, taskId) {
+  el.contentEditable = "false";
+
+  fetch(`/projects/tasks/${taskId}/update-text`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ task_text: el.textContent.trim() })
+  });
+}
+</script>
 
 </body>
 </html>
