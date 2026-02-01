@@ -1056,10 +1056,6 @@ def set_project_sort(project_id):
 @login_required
 def project_tasks(project_id):
     user_id = session["user_id"]
-
-   
-
-
     rows = get(
         "projects",
         params={"project_id": f"eq.{project_id}", "user_id": f"eq.{user_id}"},
@@ -1093,6 +1089,7 @@ def project_tasks(project_id):
             "project_name": project["name"],
             "urgency": None,
             "priority_rank": PRIORITY_MAP.get(t.get("priority"), 2),
+            "is_pinned": t.get("is_pinned", False), # default to False
         }
         for t in raw_tasks
     ]
