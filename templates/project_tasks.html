@@ -793,7 +793,7 @@ document.getElementById("addTasksFromNotes")
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        project_id: "{{ project.project.id }}",
+        project_id: "{{ project.project_id }}",
         tasks
       })
     });
