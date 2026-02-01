@@ -1748,8 +1748,42 @@ def move_eisenhower_task():
     )
 
     return jsonify({"status": "ok"})
+def get_latest_scribble(user_id):
+    rows = get(
+        "scribbles",
+        params={
+            "user_id": f"eq.{user_id}",
+            "order": "updated_at.desc",
+            "limit": 1
+        }
+    )
+    return rows[0] if rows else None
 
-# ==========================================================
+@app.route("/notes/scribble", methods=["GET"])
+@login_required
+def scribble():
+    user_id=session["user_id"]
+    note = get_latest_scribble(user_id)
+    return render_template("notes/scribble.html", note=note)
+
+
+@app.route("/notes/scribble/save", methods=["POST"])
+@login_required
+def save_scribble():
+    data = request.get_json()
+    user_id=session["user_id"]
+    post(
+        "scribbles",
+        json={
+            "user_id": f".eq.{user_id}",
+            "title": data.get("title"),
+            "content": data.get("content")
+        }
+    )
+
+    return jsonify({"status": "ok"})
+
+=====================================================
 # ENTRY POINT
 # ==========================================================
 if __name__ == "__main__":
