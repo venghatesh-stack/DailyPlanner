@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Scribble Notes</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='scribble.css') }}">
+</head>
+
+<body>
+{% include "_top_nav.html" %}
+
+<div class="container">
+  <div class="header">
+    <h2>📝 Scribble Notes</h2>
+    <a href="/notes/scribble/new" class="primary-btn">＋ New note</a>
+  </div>
+
+  {% if notes %}
+    <ul class="note-list">
+      {% for note in notes %}
+        <li>
+          <a href="/notes/scribble/{{ note.id }}">
+            <strong>{{ note.title or "Untitled note" }}</strong>
+            <div class="preview">
+              {{ note.content[:120] }}{% if note.content|length > 120 %}…{% endif %}
+            </div>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty">No notes yet.</p>
+  {% endif %}
+</div>
+
+</body>
+</html>

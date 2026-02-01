@@ -1,5 +1,5 @@
 ## Eisenhower Matrix + Daily Planner integrated. Calender control working
-from flask import Flask, request, redirect, url_for, render_template_string, session,jsonify,render_template
+from flask import Flask, request, redirect, url_for, render_template_string, session,jsonify,render_template,abort
 import os
 from datetime import date, datetime, timedelta
 import calendar
@@ -21,7 +21,7 @@ from services.eisenhower_service import (
     enable_travel_mode,
 )
 
-from collections import defaultdict,OrderedDict
+from collections import OrderedDict
 from services.untimed_service import remove_untimed_task  
 from services.timeline_service import load_timeline_tasks
 from templates.planner import PLANNER_TEMPLATE
@@ -1748,6 +1748,29 @@ def move_eisenhower_task():
     )
 
     return jsonify({"status": "ok"})
+
+def get_one(table, params=None):
+    """
+    Fetch a single row.
+    Returns dict or None.
+    """
+    params = params.copy() if params else {}
+    params["limit"] = 1
+
+    rows = get(table, params=params)
+
+    if not rows:
+        return None
+
+    return rows[0]
+def get_all(table, params=None):
+    """
+    Fetch multiple rows.
+    Returns list (possibly empty).
+    """
+    params = params or {}
+    return get(table, params=params) or []
+
 def get_latest_scribble(user_id):
     rows = get(
         "scribble_notes",
@@ -1761,28 +1784,62 @@ def get_latest_scribble(user_id):
 
 @app.route("/notes/scribble", methods=["GET"])
 @login_required
-def scribble():
-    user_id=session["user_id"]
-    note = get_latest_scribble(user_id)
-    return render_template("scribble.html", note=note)
+def scribble_list():
+    notes = get_all("scribble_notes", order="updated_at desc")
+    return render_template("scribble_list.html", notes=notes)
 
-
+@app.route("/notes/scribble/new")
+def scribble_new():
+    return render_template("scribble_edit.html", note=None)
+@app.route("/notes/scribble/<note_id>")
+def scribble_edit(note_id):
+    note = get_one("scribble_notes", id=note_id)
+    if not note:
+        abort(404)
+    return render_template("scribble_edit.html", note=note)
+    
+   
 @app.route("/notes/scribble/save", methods=["POST"])
 @login_required
 def save_scribble():
-    data = request.get_json()
-    user_id=session["user_id"]
-    post(
-        "scribble_notes",
-        {
-            "user_id": f".eq.{user_id}",
-            "title": data.get("title"),
-            "content": data.get("content")
-        },
-    )
+    data = request.get_json() or {}
+    user_id = session["user_id"]
+
+    note_id = data.get("id")
+    title = (data.get("title") or "").strip()
+    content = (data.get("content") or "").strip()
+
+    if note_id:
+        # 🔁 UPDATE existing note
+        update(
+            "scribble_notes",
+            params={
+                "id": f"eq.{note_id}",
+                "user_id": f"eq.{user_id}"
+            },
+            json={
+                "title": title,
+                "content": content
+            }
+        )
+    else:
+        # ➕ CREATE new note
+        res = post(
+            "scribble_notes",
+            {
+                "user_id": user_id,
+                "title": title,
+                "content": content
+            }
+        )
+        note_id = res[0]["id"] if res else None
+
+    return jsonify({
+        "status": "ok",
+        "id": note_id
+    })
 
 
-    return jsonify({"status": "ok"})
 
 #=====================================================
 # ENTRY POINT

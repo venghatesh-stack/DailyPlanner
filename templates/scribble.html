@@ -1,91 +1,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Scribble Notes</title>
-
-  <style>
-    body {
-      font-family: system-ui;
-      background:#f6f7f9;
-      padding:16px;
-    }
-
-    .container {
-      max-width:900px;
-      margin:auto;
-      background:#fff;
-      padding:20px;
-      border-radius:14px;
-    }
-
-    .note-title {
-      width:100%;
-      font-size:16px;
-      padding:10px;
-      border-radius:8px;
-      border:1px solid #e5e7eb;
-      margin-bottom:10px;
-    }
-
-    textarea {
-      width:100%;
-      min-height:60vh;
-      font-size:15px;
-      line-height:1.6;
-      padding:12px;
-      border-radius:10px;
-      border:1px solid #e5e7eb;
-      resize:vertical;
-      font-family: system-ui;
-    }
-
-    .actions {
-      margin-top:12px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-    }
-
-    .hint {
-      font-size:13px;
-      color:#6b7280;
-    }
-
-    button {
-      padding:8px 14px;
-      border-radius:8px;
-      border:none;
-      background:#2563eb;
-      color:white;
-      font-weight:600;
-      cursor:pointer;
-    }
-  </style>
+  <title>Scribble</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='scribble.css') }}">
 </head>
 
 <body>
 {% include "_top_nav.html" %}
 
 <div class="container">
-  <h2>📝 Scribble Notes</h2>
 
   <input
     class="note-title"
-    name="title"
-    placeholder="Give this note a friendly name (optional)…"
+    placeholder="Note title…"
     value="{{ note.title if note else '' }}"
   >
 
   <textarea
-    name="content"
-    placeholder="Write freely. Bullets, ideas, rough thoughts…">{{ note.content if note else '' }}</textarea>
+    class="note-content"
+    placeholder="Write freely…">{{ note.content if note else '' }}</textarea>
 
   <div class="actions">
-    <div class="hint">
-      Plain text for now — formatting can be added later without losing data.
-    </div>
-
+    <span class="hint">Auto-saves when you click Save</span>
     <button onclick="saveNote()">💾 Save</button>
   </div>
 </div>
@@ -94,14 +30,20 @@
 function saveNote() {
   fetch("/notes/scribble/save", {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      id: {{ note.id|tojson if note else 'null' }},
       title: document.querySelector(".note-title").value,
-      content: document.querySelector("textarea").value
+      content: document.querySelector(".note-content").value
     })
   })
   .then(r => r.json())
-  .then(() => alert("Saved ✓"))
+  .then(res => {
+    if (res.id) {
+      // redirect to edit URL if it was new
+      window.location.href = "/notes/scribble/" + res.id;
+    }
+  })
   .catch(() => alert("Save failed"));
 }
 </script>
