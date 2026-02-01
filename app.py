@@ -198,8 +198,11 @@ def empty_quadrant():
     return defaultdict(lambda: defaultdict(list))
 
 
-def build_eisenhower_view(project_tasks, plan_date,project_map):
-
+def build_eisenhower_view(tasks, plan_date):
+    """
+    Build Eisenhower matrix ONLY from todo_matrix tasks.
+    No inference. No due-date logic. No urgency computation.
+    """
 
     todo = {
         "do": empty_quadrant(),
@@ -207,61 +210,26 @@ def build_eisenhower_view(project_tasks, plan_date,project_map):
         "delegate": empty_quadrant(),
         "eliminate": empty_quadrant(),
     }
-  
-    for t in project_tasks:
-        urgency = None
 
-        # 🔴🟠 Compute urgency ONLY for today AND only if not done
-        if t.get("due_date") == plan_date and t.get("status") != "done":
-            urgency = compute_urgency(
-                t.get("due_date"),
-                t.get("due_time")
-            )
-
-        print(
-            t["text"],
-            "due:", t.get("due_date"),
-            t.get("due_time"),
-            "urgency:", urgency
-        )
+    for t in tasks:
+        quadrant = t.get("quadrant")
+        if quadrant not in todo:
+            continue  # safety guard
 
         task = {
             "id": t["id"],
-            "text": t["text"],           # ✅ FIX
-            "status": t["status"],       # ✅ keep status
-            "done": t["done"],           # ✅ already computed
+            "text": t["text"],
+            "is_done": t.get("is_done", False),
             "project_id": t.get("project_id"),
             "project_name": t.get("project_name"),
-            "recurring": t.get("recurring"),
-            "recurrence": t.get("recurrence"),
-            "delegated_to": t.get("delegated_to"),
-            "elimination_reason": t.get("elimination_reason"),
-            "due_date": t.get("due_date"),
-            "due_time": t.get("due_time"),
-            "urgency": urgency,
+            "source_task_id": t.get("source_task_id"),
         }
 
-          # 🗑 Eliminate
-        if t.get("is_eliminated"):
-            todo["eliminate"]["eliminated"]["tasks"].append(task)
-            continue
-
-        # 🤝 Delegate
-        if t.get("delegated_to"):
-            todo["delegate"]["delegated"]["tasks"].append(task)
-            continue
-
-        # 🔥 Do Now
-        if t.get("due_date") and t["due_date"] == plan_date:
-            todo["do"]["today"]["tasks"].append(task)
-            continue
-
-        # 📅 Schedule
-        if t.get("due_date") and t["due_date"] > plan_date:
-
-            todo["schedule"]["future"]["tasks"].append(task)
+        # Each quadrant has a single bucket
+        todo[quadrant]["tasks"].append(task)
 
     return todo
+
 def parse_date(d):
     if isinstance(d, str):
         return datetime.fromisoformat(d).date()
@@ -320,7 +288,7 @@ def compute_urgency(due_date, due_time):
 
 def normalize_task(t, project_name=None):
     return {
-        "id": t["id"],
+        "task_id": t["task_id"],
         "text": t.get("task_text") or t.get("text"),
         "status": t.get("status"),
         "done": t.get("status") == "done",
@@ -342,43 +310,47 @@ def normalize_task(t, project_name=None):
 def todo():
     from datetime import date
     import calendar
-    
+
+    # 📅 Selected day (default = today)
     year = int(request.args.get("year", date.today().year))
     month = int(request.args.get("month", date.today().month))
     day = int(request.args.get("day", date.today().day))
 
     plan_date = date(year, month, day)
 
-    # 1. Fetch tasks
-    projects = get("projects")
+    # 1️⃣ Fetch ONLY Eisenhower tasks for this date
+    raw_tasks = get(
+        "todo_matrix",
+        params={
+            "plan_date": f"eq.{plan_date.isoformat()}"
+        }
+    )
 
+    # 2️⃣ Fetch projects (for labels / linking only)
+    projects = get("projects")
     project_map = {
-        p["project_id"]: p["project_id"]
+        p["project_id"]: p["name"]
         for p in projects
     }
-    raw_tasks = get("project_tasks")
 
-    tasks = [
-        normalize_task(t, project_name=project_map.get(t.get("project_id")))
-        for t in raw_tasks
-    ]
+    # 3️⃣ Normalize Eisenhower tasks
+    tasks = []
+    for t in raw_tasks:
+        tasks.append({
+            "id": t["id"],
+            "text": t["text"],
+            "quadrant": t["quadrant"],          # already explicit
+            "is_done": t.get("is_done", False),
+            "project_id": t.get("project_id"),
+            "project_name": project_map.get(t.get("project_id")),
+            "source_task_id": t.get("source_task_id"),
+        })
 
-
-    for t in tasks:
-        t["due_date"] = parse_date(t["due_date"])
-
-        tasks = [
-            t for t in tasks
-            if t.get("due_date")
-            and t["due_date"].year == year
-            and t["due_date"].month == month
-        ]
-
-   
-    # 2. Build Eisenhower (urgency is computed there)
-    todo = build_eisenhower_view(tasks, plan_date,project_map)
+    # 4️⃣ Build Eisenhower view (NO due-date logic here)
+    todo = build_eisenhower_view(tasks, plan_date)
     quadrant_counts = compute_quadrant_counts(todo)
-    # 3. Render
+
+    # 5️⃣ Render
     days = calendar.monthrange(year, month)[1]
 
     return render_template_string(
@@ -392,6 +364,7 @@ def todo():
         toast=session.pop("toast", None),
         quadrant_counts=quadrant_counts,
     )
+
 
 
 @app.route("/todo/toggle-done", methods=["POST"])
