@@ -1194,44 +1194,39 @@ def add_project_task(project_id):
     return redirect(url_for("project_tasks", project_id=project_id))
 
 
-
 @app.route("/projects/tasks/send-to-eisenhower", methods=["POST"])
 @login_required
 def send_project_task_to_eisenhower():
-    data = request.get_json() or {}
+    data = request.get_json()
 
-    task_id = data.get("task_id")
+    task_id = data["task_id"]
+    plan_date = data["plan_date"]
     quadrant = data.get("quadrant", "do")
 
-    if not task_id:
-        return jsonify({"error": "Missing task_id"}), 400
-
-    # ✅ OPTION A: default to today
-    plan_date = date.today().isoformat()
-
-    # 1️⃣ Fetch project task
-    task = get(
+    rows = get(
         "project_tasks",
         params={"task_id": f"eq.{task_id}"}
     )
 
-    if not task:
+    if not rows:
         return jsonify({"error": "Task not found"}), 404
 
-    # 2️⃣ Insert into Eisenhower
-    post(
+    task = rows[0]  # ✅ FIX
+
+    insert(
         "todo_matrix",
         {
             "text": task["task_text"],
-            "plan_date": plan_date,          # ✅ ALWAYS PRESENT
+            "plan_date": plan_date,
             "quadrant": quadrant,
             "project_id": task["project_id"],
-            "source_task_id": task_id,       # 🔑 link back
-            "is_done": False
+            "source_task_id": task_id,
+            "is_done": False,
         }
     )
 
     return jsonify({"status": "ok"})
+
 
 
 @app.route("/projects/tasks/status", methods=["POST"])
