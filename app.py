@@ -909,6 +909,8 @@ def todo_autosave():
                 json={"project_id": data["project_id"]},
             )
         return jsonify({"id": task_id})
+    if "id" not in data or "plan_date" not in data:
+     return jsonify({"ignored": True})
 
     # 🔹 FULL TASK AUTOSAVE
     result = autosave_task(
