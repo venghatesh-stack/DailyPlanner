@@ -7,6 +7,7 @@ TODO_TEMPLATE = """
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
 body {
   font-family: system-ui;
   background:#f6f7f9;
