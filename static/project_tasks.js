@@ -241,3 +241,75 @@ document.addEventListener("DOMContentLoaded", () => {
   applyTaskFilters();
   calculateProjectHealth();
 });
+window.enableEdit = function (el, taskId) {
+  if (!el || !taskId) return;
+
+  el.contentEditable = "true";
+  el.focus();
+
+  // Move cursor to end
+  document.execCommand("selectAll", false, null);
+  document.getSelection().collapseToEnd();
+
+  el.onblur = () => saveEdit(el, taskId);
+
+  el.onkeydown = e => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      el.blur();
+    }
+  };
+};
+
+function saveEdit(el, taskId) {
+  el.contentEditable = "false";
+
+  fetch(`/projects/tasks/${taskId}/update-text`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ task_text: el.textContent.trim() })
+  }).catch(console.error);
+}
+window.updateDelegation = function (taskId, value) {
+  if (!taskId) return;
+
+  fetch("/projects/tasks/update-delegation", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: taskId,
+      delegated_to: value || null
+    })
+  }).catch(console.error);
+};
+window.updatePlanning = function (taskId) {
+  if (!taskId) return;
+
+  const taskEl = document.getElementById(`task-${taskId}`);
+  if (!taskEl) return;
+
+  const startInput = taskEl.querySelector(".start-date");
+  const durationInput = taskEl.querySelector(".duration-days");
+
+  if (!startInput || !durationInput) return;
+
+  fetch("/projects/tasks/update-planning", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      task_id: taskId,
+      start_date: startInput.value,
+      duration_days: durationInput.value
+    })
+  })
+    .then(r => r.json())
+    .then(res => {
+      // Optional soft refresh if due date changed
+      if (res?.due_date) {
+        const dueBadge = taskEl.querySelector(".due-badge");
+        if (dueBadge) dueBadge.textContent = `📅 ${res.due_date}`;
+      }
+      calculateProjectHealth();
+    })
+    .catch(console.error);
+};
