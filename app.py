@@ -1197,11 +1197,14 @@ def add_project_task(project_id):
 @app.route("/projects/tasks/send-to-eisenhower", methods=["POST"])
 @login_required
 def send_project_task_to_eisenhower():
-    data = request.get_json()
+    data = request.get_json() or {}
 
-    task_id = data["task_id"]
-    plan_date = data["plan_date"]
-    quadrant = data.get("quadrant", "do")
+    task_id = data.get("task_id")
+    plan_date = data.get("plan_date")
+    quadrant = (data.get("quadrant") or "do").lower()
+
+    if not task_id or not plan_date:
+        return jsonify({"error": "Missing task_id or plan_date"}), 400
 
     rows = get(
         "project_tasks",
@@ -1211,21 +1214,33 @@ def send_project_task_to_eisenhower():
     if not rows:
         return jsonify({"error": "Task not found"}), 404
 
-    task = rows[0]  # ✅ FIX
+    task = rows[0]
+    existing = get(
+    "todo_matrix",
+    params={
+        "source_task_id": f"eq.{task_id}",
+        "plan_date": f"eq.{plan_date}",
+    }
+)
+
+    if existing:
+     return jsonify({"status": "already-sent"})
 
     post(
         "todo_matrix",
         {
-            "text": task["task_text"],
-            "plan_date": plan_date,
-            "quadrant": quadrant,
-            "project_id": task["project_id"],
+            "task_text": task["task_text"],   # ✅ FIXED
+            "plan_date": plan_date,           # ✅ REQUIRED
+            "quadrant": quadrant,              # ✅ CHECK constraint
+            "project_id": task.get("project_id"),
+            "user_id": session["user_id"],     # ✅ IMPORTANT
             "source_task_id": task_id,
             "is_done": False,
         }
     )
 
     return jsonify({"status": "ok"})
+
 
 
 
