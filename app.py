@@ -35,6 +35,7 @@ from config import (
     DEFAULT_STATUS, 
     HABIT_ICONS,
     HABIT_LIST,
+    PRIORITY_MAP,
 )
 
 from utils.slots import current_slot,slot_label
@@ -1032,11 +1033,27 @@ def todo_set_project():
     )
 
     return jsonify({"status": "ok"})
+
 @app.route("/projects/<project_id>/tasks")
 @login_required
 def project_tasks(project_id):
     user_id = session["user_id"]
 
+    # 🔹 read sort options
+    sort = request.args.get("sort", "created")
+    direction = request.args.get("dir", "asc")
+
+    # 🔹 whitelist allowed sorts
+    ORDER_MAP = {
+        "created": "created_at",
+        "due": "due_date",
+        "priority": "priority_rank",  # see note below
+    }
+
+    order_col = ORDER_MAP.get(sort, "created_at")
+    order = f"{order_col}.{direction}"
+
+    # 🔹 fetch project
     rows = get(
         "projects",
         params={"project_id": f"eq.{project_id}", "user_id": f"eq.{user_id}"},
@@ -1046,15 +1063,16 @@ def project_tasks(project_id):
 
     project = rows[0]
 
+    # 🔹 fetch tasks with dynamic ordering
     raw_tasks = get(
         "project_tasks",
         params={
             "project_id": f"eq.{project_id}",
-            "order": "created_at.asc",
+            "order": order,
         },
     )
 
-    # ✅ NORMALIZE FOR SHARED UI
+    # 🔹 normalize for shared UI
     tasks = [
         {
             "task_id": t["task_id"],
@@ -1062,7 +1080,6 @@ def project_tasks(project_id):
             "status": t.get("status"),
             "done": t.get("status") == "done",
 
-            # 🔑 ADD THESE
             "start_date": t.get("start_date"),
             "duration_days": t.get("duration_days"),
 
@@ -1070,19 +1087,25 @@ def project_tasks(project_id):
             "due_time": t.get("due_time"),
             "delegated_to": t.get("delegated_to"),
             "elimination_reason": t.get("elimination_reason"),
+
             "project_name": project["name"],
             "urgency": None,
+            "priority_rank": PRIORITY_MAP.get(t.get("priority"), 2)
         }
         for t in raw_tasks
     ]
 
     grouped_tasks = group_tasks_smart(tasks)
+
     return render_template(
         "project_tasks.html",
         project=project,
         grouped_tasks=grouped_tasks,
-        today=date.today().isoformat(), 
+        today=date.today().isoformat(),
+        sort=sort,
+        dir=direction,
     )
+
 
 def compute_due_date(start_date, duration_days):
     return start_date + timedelta(days=duration_days)
