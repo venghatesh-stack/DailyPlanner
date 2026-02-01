@@ -257,12 +257,12 @@ summary::-webkit-details-marker { display:none; }
             {% if t.status== 'done' %}done{% endif %}
             {% if t.urgency %}urgency-{{ t.urgency }}{% endif %}
         "
-        data-id="{{ t.id }}">
+        data-id="{{ t.task_id }}">
 
           <!-- HEADER (always visible) -->
           <div class="task-header" onclick="toggleTask(this)">
               <input type="checkbox"
-              data-id="{{ t.id }}"
+              data-id="{{ t.task_id }}"
               {% if t.status == "done" %}checked{% endif %}
               onclick="event.stopPropagation()"
               onchange="toggleDone(this)">
@@ -278,6 +278,13 @@ summary::-webkit-details-marker { display:none; }
               </span>
             {% endif %}
           </div>
+          <select onchange="moveQuadrant('{{ t.task_id }}', this.value)">
+            <option value="do" {% if q == 'do' %}selected{% endif %}>Do</option>
+            <option value="schedule" {% if q == 'schedule' %}selected{% endif %}>Schedule</option>
+            <option value="delegate" {% if q == 'delegate' %}selected{% endif %}>Delegate</option>
+            <option value="eliminate" {% if q == 'eliminate' %}selected{% endif %}>Eliminate</option>
+          </select>
+
 
           <!-- DETAILS (hidden by default) -->
           <div class="task-details">
@@ -346,7 +353,15 @@ function toggleTask(el) {
   card.classList.toggle("expanded");
 }
 </script>
-
+<script>
+function moveQuadrant(taskId, quadrant) {
+  fetch("/todo/move", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ id: taskId, quadrant })
+  }).catch(console.error);
+}
+</script>
 </body>
 </html>
 """

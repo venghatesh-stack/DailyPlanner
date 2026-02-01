@@ -53,11 +53,12 @@
         </span>
       {% endif %}
     </div>
-    <button
-      class="send-eisenhower-btn"
-      onclick="sendToEisenhower('{{ task.task_id }}')">
-      🧠 Send to Today
+   <button
+      type="button"
+      onclick="event.stopPropagation(); openEisenhowerModal('{{ task.task_id }}')">
+      🧠 Send
     </button>
+
 
   </div>
 
@@ -156,5 +157,33 @@
       </button>
     </div>
 
+  </div>
+</div>
+<!-- 🧠 Send to Eisenhower Modal -->
+<div id="eisenhowerModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>🧠 Send to Eisenhower</h3>
+
+    <label>Date</label>
+    <select id="ehDate">
+      <option value="today">Today</option>
+      <option value="tomorrow">Tomorrow</option>
+      <option value="custom">Pick a date…</option>
+    </select>
+
+    <input type="date" id="ehCustomDate" class="hidden" />
+
+    <label>Quadrant</label>
+    <select id="ehQuadrant">
+      <option value="do">🔥 Do</option>
+      <option value="schedule">📅 Schedule</option>
+      <option value="delegate">🤝 Delegate</option>
+      <option value="eliminate">🗑 Eliminate</option>
+    </select>
+
+    <div class="modal-actions">
+      <button onclick="closeEisenhowerModal()">Cancel</button>
+      <button class="primary" onclick="confirmSendToEisenhower()">Send</button>
+    </div>
   </div>
 </div>

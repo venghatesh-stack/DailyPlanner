@@ -287,6 +287,8 @@ function togglePin(btn) {
 
 
 </script>
+
+
 <script>
 document.addEventListener("click", async (e) => {
   if (!e.target.classList.contains("save-task-btn")) return;
@@ -940,6 +942,61 @@ document.getElementById("addTasksFromNotes")
 <script src="{{ url_for('static', filename='voice.js') }}"></script>
 <script>
   initVoiceDictation("projectNotes", "voiceStatus");
+</script>
+<script>
+let currentTaskId = null;
+
+function openEisenhowerModal(taskId) {
+  currentTaskId = taskId;
+  document.getElementById("eisenhowerModal").classList.remove("hidden");
+}
+
+function closeEisenhowerModal() {
+  document.getElementById("eisenhowerModal").classList.add("hidden");
+}
+
+document.getElementById("ehDate").addEventListener("change", e => {
+  document.getElementById("ehCustomDate")
+    .classList.toggle("hidden", e.target.value !== "custom");
+});
+
+function confirmSendToEisenhower() {
+  let dateChoice = document.getElementById("ehDate").value;
+  let quadrant = document.getElementById("ehQuadrant").value;
+
+  let planDate;
+  const today = new Date();
+
+  if (dateChoice === "today") {
+    planDate = today.toISOString().slice(0,10);
+  } else if (dateChoice === "tomorrow") {
+    today.setDate(today.getDate() + 1);
+    planDate = today.toISOString().slice(0,10);
+  } else {
+    planDate = document.getElementById("ehCustomDate").value;
+  }
+
+  if (!planDate) {
+    alert("Please choose a date");
+    return;
+  }
+
+  fetch("/projects/tasks/send-to-eisenhower", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      task_id: currentTaskId,
+      plan_date: planDate,
+      quadrant
+    })
+  })
+  .then(r => {
+    if (!r.ok) throw new Error("Send failed");
+    closeEisenhowerModal();
+    location.reload(); // simple + safe
+  })
+  .catch(err => alert(err.message));
+}
 </script>
 
 </body>

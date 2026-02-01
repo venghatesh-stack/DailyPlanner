@@ -1696,6 +1696,20 @@ def reorder_tasks():
 
     return jsonify({"status": "ok"})
 
+@app.route("/todo/move", methods=["POST"])
+@login_required
+def move_eisenhower_task():
+    data = request.get_json()
+    task_id = data["id"]
+    quadrant = data["quadrant"]
+
+    update(
+        "todo_matrix",
+        params={"id": f"eq.{task_id}"},
+        json={"quadrant": quadrant}
+    )
+
+    return jsonify({"status": "ok"})
 
 # ==========================================================
 # ENTRY POINT
