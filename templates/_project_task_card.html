@@ -35,12 +35,16 @@
           title="Change priority">
     </span>
 
-    <!-- 📌 Pin -->
-    <button type="button"
-            onclick="event.stopPropagation(); togglePin(this)"
-            title="Pin task">
-      📌
-    </button>
+    <button
+    type="button"
+    class="icon-btn edit-btn"
+    title="Edit task"
+    onclick="event.stopPropagation(); enableEdit(
+      this.closest('.task').querySelector('.task-title'),
+      '{{ task.task_id }}'
+    )">
+    ✏️
+  </button>
 
     <!-- 📝 Text -->
     <div class="task-text">
@@ -67,15 +71,13 @@
 
     <button
       id="send-{{ task.task_id }}"
+      class="icon-btn eisenhower-btn {% if task.eisenhower_sent %}sent{% endif %}"
       type="button"
-      {% if task.eisenhower_sent %}disabled{% endif %}
+      title="{% if task.eisenhower_sent %}In Eisenhower{% else %}Send to Eisenhower{% endif %}"
       onclick="event.stopPropagation(); openEisenhower('{{ task.task_id }}')">
-      {% if task.eisenhower_sent %}
-        🧠 Sent
-      {% else %}
-        🧠 Send
-      {% endif %}
+      🧠
     </button>
+
   </div>
 
   <!-- 🔽 EXPANDED DETAILS -->

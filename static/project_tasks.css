@@ -479,3 +479,57 @@
   border: 1px solid #fed7aa;
   white-space: nowrap;
 }
+.edit-btn {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.edit-btn:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+@media (pointer: coarse) {
+  .edit-btn {
+    font-size: 18px;   /* bigger tap target */
+    opacity: 0.8;
+  }
+}
+.task:hover .edit-btn {
+  opacity: 1;
+}
+.eisenhower-btn {
+  background: transparent;
+  border: none;
+  font-size: 17px;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.eisenhower-btn:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* Sent state */
+.eisenhower-btn.sent {
+  opacity: 1;
+  filter: grayscale(100%);
+}
+
+/* Optional checkmark overlay */
+.eisenhower-btn.sent::after {
+  content: "✓";
+  font-size: 11px;
+  margin-left: 2px;
+  color: #16a34a;
+}
+@media (pointer: coarse) {
+  .eisenhower-btn {
+    font-size: 19px;
+    padding: 4px;
+  }
+}
