@@ -1764,7 +1764,7 @@ def get_latest_scribble(user_id):
 def scribble():
     user_id=session["user_id"]
     note = get_latest_scribble(user_id)
-    return render_template("notes/scribble.html", note=note)
+    return render_template("scribble.html", note=note)
 
 
 @app.route("/notes/scribble/save", methods=["POST"])
