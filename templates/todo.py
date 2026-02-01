@@ -86,7 +86,7 @@ summary::-webkit-details-marker { display:none; }
   font-size:16px;
 }
 
-.task.done .task-text {
+.task.done .task-title {
   text-decoration:line-through;
 }
 
@@ -173,7 +173,7 @@ summary::-webkit-details-marker { display:none; }
 .task.done .urgency-pill {
   display: none;
 }
-.task.done .task-text { text-decoration: line-through; }
+.task.done .task-title { text-decoration: line-through; }
 
 </style>
 </head>
