@@ -248,71 +248,45 @@ summary::-webkit-details-marker { display:none; }
       </span>
     {% endif %}
   </summary>
+  {% for t in todo[q]["tasks"] %}
+  <div class="task
+      {% if t.is_done %}done{% endif %}
+  "
+  data-id="{{ t.id }}">
+
+    <!-- HEADER -->
+    <div class="task-header" onclick="toggleTask(this)">
+      <input type="checkbox"
+             data-id="{{ t.id }}"
+             {% if t.is_done %}checked{% endif %}
+             onclick="event.stopPropagation()"
+             onchange="toggleDone(this)">
+
+      <div class="task-title">
+        {{ t.task_text }}
+      </div>
+    </div>
+
+    <!-- Move quadrant -->
+    <select onchange="moveQuadrant('{{ t.id }}', this.value)">
+      <option value="do" {% if q == 'do' %}selected{% endif %}>Do</option>
+      <option value="schedule" {% if q == 'schedule' %}selected{% endif %}>Schedule</option>
+      <option value="delegate" {% if q == 'delegate' %}selected{% endif %}>Delegate</option>
+      <option value="eliminate" {% if q == 'eliminate' %}selected{% endif %}>Eliminate</option>
+    </select>
+
+    <!-- DETAILS -->
+    <div class="task-details">
+      {% if t.project_name %}
+        <div class="meta">📁 {{ t.project_name }}</div>
+      {% endif %}
+    </div>
+
+  </div>
+{% endfor %}
 
 
-  {% for category, subs in todo[q].items() %}
-    {% for tasks in subs.values() %}
-      {% for t in tasks %}
-        <div class="task
-            {% if t.status== 'done' %}done{% endif %}
-            {% if t.urgency %}urgency-{{ t.urgency }}{% endif %}
-        "
-        data-id="{{ t.task_id }}">
-
-          <!-- HEADER (always visible) -->
-          <div class="task-header" onclick="toggleTask(this)">
-              <input type="checkbox"
-              data-id="{{ t.task_id }}"
-              {% if t.status == "done" %}checked{% endif %}
-              onclick="event.stopPropagation()"
-              onchange="toggleDone(this)">
-
-
-            <div class="task-title">
-              {{ t.text }}
-            </div>
-
-            {% if t.urgency %}
-              <span class="urgency-pill {{ t.urgency }}">
-                {{ "Overdue" if t.urgency == "overdue" else "Due soon" }}
-              </span>
-            {% endif %}
-          </div>
-          <select onchange="moveQuadrant('{{ t.task_id }}', this.value)">
-            <option value="do" {% if q == 'do' %}selected{% endif %}>Do</option>
-            <option value="schedule" {% if q == 'schedule' %}selected{% endif %}>Schedule</option>
-            <option value="delegate" {% if q == 'delegate' %}selected{% endif %}>Delegate</option>
-            <option value="eliminate" {% if q == 'eliminate' %}selected{% endif %}>Eliminate</option>
-          </select>
-
-
-          <!-- DETAILS (hidden by default) -->
-          <div class="task-details">
-            {% if t.due_date %}
-              <div class="meta">📅 {{ t.due_date }}
-                {% if t.due_time %} ⏰ {{ t.due_time }}{% endif %}
-              </div>
-            {% endif %}
-
-            {% if t.project_name %}
-              <div class="meta">📁 {{ t.project_name }}</div>
-            {% endif %}
-
-            {% if t.delegated_to %}
-              <div class="meta">👤 {{ t.delegated_to }}</div>
-            {% endif %}
-
-            {% if t.elimination_reason %}
-              <div class="meta muted">Reason: {{ t.elimination_reason }}</div>
-            {% endif %}
-          </div>
-
-        </div>
-
-      {% endfor %}
-    {% endfor %}
-  {% endfor %}
-
+  
 </details>
 {% endfor %}
 
