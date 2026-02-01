@@ -1548,20 +1548,29 @@ def insert_many(table, rows, prefer="return=representation"):
     return post(table, rows, prefer=prefer)
 
 
-
 @app.route("/projects/tasks/bulk-add", methods=["POST"])
 def bulk_add_tasks():
-    data = request.json
-    project_id = data["project_id"]
-    tasks = data["tasks"]
+    data = request.json or {}
+
+    project_id = data.get("project_id")
+    tasks = data.get("tasks", [])
+
+    if not project_id:
+        return jsonify({"error": "project_id missing"}), 400
+
+    if not tasks:
+        return jsonify({"error": "no tasks provided"}), 400
 
     today = date.today().isoformat()
 
     rows = []
     for text in tasks:
+        if not text.strip():
+            continue
+
         rows.append({
-            "project_id": project_id,
-            "task_text": text,
+            "project_id": project_id,          # ✅ guaranteed non-empty
+            "task_text": text.strip(),
             "start_date": today,
             "priority": "high",
             "duration_days": 0,
@@ -1569,9 +1578,15 @@ def bulk_add_tasks():
             "user_id": session["user_id"]
         })
 
+    if not rows:
+        return jsonify({"error": "no valid tasks"}), 400
+
     insert_many("project_tasks", rows)
 
-    return jsonify({"status": "ok", "count": len(rows)})
+    return jsonify({
+        "status": "ok",
+        "count": len(rows)
+    })
 
 # ==========================================================
 # ENTRY POINT
