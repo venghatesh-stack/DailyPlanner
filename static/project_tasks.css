@@ -445,3 +445,16 @@
   justify-content: flex-end;
   gap: 8px;
 }
+.badge {
+  margin-left: 6px;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #eef2ff;
+  color: #3730a3;
+}
+.badge.high-priority {
+  background: #fee2e2;
+  color: #991b1b;
+  font-weight: 700;
+}

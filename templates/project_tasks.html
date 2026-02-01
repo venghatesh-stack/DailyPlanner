@@ -265,29 +265,6 @@ function togglePin(btn) {
   }
 
 </script>
-<script>
-  function sendToEisenhower(taskId) {
-  fetch("/projects/tasks/send-to-eisenhower", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      task_id: taskId,
-      quadrant: "do"
-    })
-  })
-  .then(r => {
-    if (!r.ok) throw new Error("Send failed");
-    alert("Sent to Today’s Eisenhower");
-  })
-  .catch(err => {
-    console.error(err);
-    alert("Failed to send task");
-  });
-}
-
-
-</script>
-
 
 <script>
 document.addEventListener("click", async (e) => {
@@ -946,57 +923,71 @@ document.getElementById("addTasksFromNotes")
 <script>
 let currentTaskId = null;
 
-function openEisenhowerModal(taskId) {
+function openEisenhower(taskId) {
   currentTaskId = taskId;
   document.getElementById("eisenhowerModal").classList.remove("hidden");
 }
 
-function closeEisenhowerModal() {
+function closeEisenhower() {
   document.getElementById("eisenhowerModal").classList.add("hidden");
+  currentTaskId = null;
 }
 
-document.getElementById("ehDate").addEventListener("change", e => {
-  document.getElementById("ehCustomDate")
-    .classList.toggle("hidden", e.target.value !== "custom");
-});
+function confirmSend() {
+  if (!currentTaskId) return;
 
-function confirmSendToEisenhower() {
-  let dateChoice = document.getElementById("ehDate").value;
-  let quadrant = document.getElementById("ehQuadrant").value;
+  const date = document.getElementById("eh-date").value;
+  const quadrant = document.getElementById("eh-quadrant").value;
 
-  let planDate;
-  const today = new Date();
-
-  if (dateChoice === "today") {
-    planDate = today.toISOString().slice(0,10);
-  } else if (dateChoice === "tomorrow") {
-    today.setDate(today.getDate() + 1);
-    planDate = today.toISOString().slice(0,10);
-  } else {
-    planDate = document.getElementById("ehCustomDate").value;
-  }
-
-  if (!planDate) {
+  if (!date) {
     alert("Please choose a date");
     return;
   }
+
+  const sendBtn = document.getElementById(`send-${currentTaskId}`);
+  if (sendBtn.disabled) return; // 🔒 frontend guard
+
+  // 🚀 Optimistic UI
+  sendBtn.disabled = true;
+  sendBtn.textContent = "🧠 Sent";
 
   fetch("/projects/tasks/send-to-eisenhower", {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({
       task_id: currentTaskId,
-      plan_date: planDate,
+      plan_date: date,
       quadrant
     })
   })
   .then(r => {
+    if (r.status === 409) {
+      alert("Task already sent to Eisenhower");
+      return;
+    }
     if (!r.ok) throw new Error("Send failed");
-    closeEisenhowerModal();
-    location.reload(); // simple + safe
+
+    // 🏷️ Badge
+    const taskEl = document.getElementById(`task-${currentTaskId}`);
+    const textEl = taskEl.querySelector(".task-title");
+
+    if (!textEl.querySelector(".badge")) {
+      const badge = document.createElement("span");
+      badge.className = "badge";
+      badge.textContent = "🧠 In Eisenhower";
+      textEl.appendChild(badge);
+    }
+
+    closeEisenhower();
   })
-  .catch(err => alert(err.message));
+  .catch(err => {
+    console.error(err);
+    sendBtn.disabled = false;
+    sendBtn.textContent = "🧠 Send";
+    alert("Failed to send task");
+  });
 }
+
 </script>
 
 </body>

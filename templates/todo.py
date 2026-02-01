@@ -14,6 +14,28 @@ body {
   padding:16px;
   padding-bottom: calc(80px + env(safe-area-inset-bottom));
 }
+/* Top nav icon row */
+.top-nav {
+  display: flex;
+  justify-content: center;   /* ⬅ center horizontally */
+  align-items: center;
+  gap: 14px;                 /* ⬅ spacing between icons */
+  margin: 8px 0 14px;
+}
+
+/* Icon links */
+.top-nav a {
+  font-size: 18px;           /* ⬅ smaller icons */
+  text-decoration: none;
+  line-height: 1;
+  opacity: 0.85;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.top-nav a:hover {
+  transform: scale(1.1);
+  opacity: 1;
+}
 
 .container {
   max-width:1100px;
