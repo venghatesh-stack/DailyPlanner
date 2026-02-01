@@ -36,6 +36,7 @@
     <!-- 📌 Pin -->
     <button
       type="button"
+      onmousedown="event.stopPropagation()"
       onclick="event.stopPropagation(); togglePin(this)"
       title="Pin task">
       📌
