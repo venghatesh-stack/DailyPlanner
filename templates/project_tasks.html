@@ -178,11 +178,6 @@ function togglePin(btn) {
   const taskEl = btn.closest(".task");
   const taskId = taskEl.dataset.id;
   const isPinned = taskEl.dataset.pinned === "1";
-  console.log({
-  taskId,
-  isPinned,
-  pinnedAttr: taskEl.dataset.pinned
-});
 
   fetch("/projects/tasks/pin", {
     method: "POST",
@@ -191,13 +186,17 @@ function togglePin(btn) {
       task_id: taskId,
       is_pinned: !isPinned
     })
-  }).then(() => location.reload());
-  console.log({
-  taskId,
-  isPinned,
-  pinnedAttr: taskEl.dataset.pinned
-});
+  })
+  .then(r => {
+    if (!r.ok) throw new Error("Pin failed");
 
+    // 🔁 update DOM state immediately
+    taskEl.dataset.pinned = isPinned ? "0" : "1";
+
+    // optional visual feedback
+    btn.classList.toggle("pinned", !isPinned);
+  })
+  .catch(err => console.error("Pin error:", err));
 }
 
 </script>
