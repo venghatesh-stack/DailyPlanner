@@ -92,7 +92,7 @@
 
 <script>
 function saveNote() {
-  fetch("/scribble/save", {
+  fetch("/notes/scribble/save", {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({

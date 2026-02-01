@@ -1759,7 +1759,7 @@ def get_latest_scribble(user_id):
     )
     return rows[0] if rows else None
 
-@app.route("/scribble", methods=["GET"])
+@app.route("/notes/scribble", methods=["GET"])
 @login_required
 def scribble():
     user_id=session["user_id"]
@@ -1767,7 +1767,7 @@ def scribble():
     return render_template("scribble.html", note=note)
 
 
-@app.route("/scribble/save", methods=["POST"])
+@app.route("/notes/scribble/save", methods=["POST"])
 @login_required
 def save_scribble():
     data = request.get_json()
