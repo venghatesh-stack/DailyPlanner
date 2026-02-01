@@ -96,6 +96,12 @@
   transition: max-height 0.35s ease;
   border-top: 1px solid #eef2f7;
 }
+.task.open .task-title {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
 
 .task.open .task-details {
   max-height: 2000px; /* pragmatic */
@@ -531,5 +537,13 @@
   .eisenhower-btn {
     font-size: 19px;
     padding: 4px;
+  }
+}
+@media (pointer: coarse) {
+  .task-title {
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
