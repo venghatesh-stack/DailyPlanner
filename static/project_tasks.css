@@ -46,11 +46,16 @@
 }
 
 .task-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;              /* critical for ellipsis */
   font-size: 14px;
   font-weight: 500;
-  flex: 1;
   line-height: 1.3;
 }
+
 
 /* ======================================================
    STATUS ACCENTS
@@ -210,9 +215,7 @@
     margin-top: 6px;
   }
 
-  .task-text {
-    gap: 6px;
-  }
+ 
 
   .due-badge {
     margin-left: 0;
@@ -311,12 +314,7 @@
 
 
 /* Keep task row tight */
-.task-text {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
+
 .start-date {
   width: 100%;
   box-sizing: border-box;
