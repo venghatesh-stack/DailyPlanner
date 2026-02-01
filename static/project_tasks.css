@@ -112,7 +112,10 @@
   outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
-
+.save-task-btn:disabled {
+  opacity: 0.7;
+  transform: scale(0.98);
+}
 /* ======================================================
    DETAILS GRID
 ====================================================== */
@@ -180,6 +183,7 @@
   color: #ffffff;
   font-weight: 600;
   cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.15s ease;
 }
 
 .icon-btn.danger {

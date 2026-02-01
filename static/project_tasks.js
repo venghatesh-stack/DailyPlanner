@@ -336,3 +336,65 @@ window.eliminateTask = function (taskId) {
       alert("Failed to delete task");
     });
 };
+function serializeTask(taskEl) {
+  return {
+    task_text: taskEl.querySelector(".task-title")?.textContent.trim() || null,
+    priority: taskEl.querySelector(".priority-icon")?.dataset.priority || null,
+    status: taskEl.dataset.status || null,
+    start_date: taskEl.querySelector(".start-date")?.value || null,
+    duration_days: taskEl.querySelector(".duration-days")?.value || 0,
+    planned_hours: taskEl.querySelector('[onchange*="updatePlanned"]')?.value || 0,
+    actual_hours: taskEl.querySelector('[onchange*="updateActual"]')?.value || 0,
+    due_time: taskEl.querySelector('select[onchange*="updateDueTime"]')?.value || null,
+    delegated_to: taskEl.querySelector('input[maxlength="25"]')?.value || null
+  };
+}
+
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".save-task-btn");
+  if (!btn) return;
+
+  const taskEl = btn.closest(".task");
+  if (!taskEl) return;
+
+  const taskId = taskEl.dataset.id;
+  if (!taskId) {
+    console.error("Save clicked but taskId missing");
+    return;
+  }
+
+  const payload = serializeTask(taskEl);
+
+  if (!payload.task_text) {
+    alert("Task text cannot be empty");
+    return;
+  }
+
+  // 🔒 Lock button
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.textContent = "Saving…";
+
+  try {
+    const res = await fetch(`/projects/tasks/${taskId}/update`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) throw new Error("Save failed");
+
+    // ✅ Success feedback
+    btn.textContent = "Saved ✓";
+
+    setTimeout(() => {
+      btn.textContent = originalText || "💾 Save";
+      btn.disabled = false;
+    }, 1000);
+
+  } catch (err) {
+    console.error(err);
+    btn.textContent = "Retry";
+    btn.disabled = false;
+  }
+});
