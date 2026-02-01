@@ -1750,7 +1750,7 @@ def move_eisenhower_task():
     return jsonify({"status": "ok"})
 def get_latest_scribble(user_id):
     rows = get(
-        "scribbles",
+        "scribble_notes",
         params={
             "user_id": f"eq.{user_id}",
             "order": "updated_at.desc",
