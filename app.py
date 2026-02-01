@@ -1708,7 +1708,11 @@ def move_eisenhower_task():
         params={"id": f"eq.{task_id}"},
         json={"quadrant": quadrant}
     )
-
+    update(
+        "project_tasks",                     # ✅ NOT todo_matrix
+        params={"task_id": f"eq.{task_id}"},
+        json={"quadrant": quadrant}
+    )
     return jsonify({"status": "ok"})
 
 # ==========================================================
