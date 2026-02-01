@@ -23,7 +23,7 @@
 
     <!-- Add Task -->
     <div class="add-box">
-      <form method="post" action="/projects/{{ project.id }}/tasks/add">
+      <form method="post" action="/projects/{{ project.project_id }}/tasks/add">
         <input
           name="task_text"
           placeholder="Add a clear, actionable task…"
@@ -558,11 +558,8 @@ function updatePlanning(taskId) {
     console.error("updatePlanning called without taskId");
     return;
   }
-  console.log("updatePlanning fired for", taskId);
 
   const taskEl = document.getElementById(`task-${taskId}`);
-  console.log("taskEl", taskEl);
-
   if (!taskEl) {
     console.warn("Task element not found");
     return;
@@ -570,9 +567,6 @@ function updatePlanning(taskId) {
 
   const startInput = taskEl.querySelector(".start-date");
   const durationInput = taskEl.querySelector(".duration-days");
-
-  console.log("startInput", startInput);
-  console.log("durationInput", durationInput);
 
   if (!startInput || !durationInput) {
     console.warn("Missing planning inputs");
@@ -585,8 +579,6 @@ function updatePlanning(taskId) {
     duration_days: durationInput.value
   };
 
-  console.log("payload", payload);
-
   fetch("/projects/tasks/update-planning", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -595,11 +587,27 @@ function updatePlanning(taskId) {
   .then(r => r.json())
   .then(res => {
     const dueEl = taskEl.querySelector(".due-date");
+
     if (dueEl && res.due_date) {
       dueEl.textContent = res.due_date;
     }
+
+    // 🔁 Soft reload to re-group tasks
+    const container = document.querySelector(".container");
+    if (container) {
+      container.style.opacity = "0.7";
+      container.style.pointerEvents = "none";
+    }
+
+    setTimeout(() => {
+      location.reload();
+    }, 120);
+  })
+  .catch(err => {
+    console.error("updatePlanning failed", err);
   });
 }
+
 </script>
 
 <script>
