@@ -1773,7 +1773,7 @@ def save_scribble():
     data = request.get_json()
     user_id=session["user_id"]
     post(
-        "scribbles",
+        "scribble_notes",
         json={
             "user_id": f".eq.{user_id}",
             "title": data.get("title"),
