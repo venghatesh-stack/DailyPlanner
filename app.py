@@ -1213,7 +1213,7 @@ def send_project_task_to_eisenhower():
 
     task = rows[0]  # ✅ FIX
 
-    insert(
+    post(
         "todo_matrix",
         {
             "text": task["task_text"],
