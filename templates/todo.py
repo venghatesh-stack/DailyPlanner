@@ -296,6 +296,14 @@ summary::-webkit-details-marker { display:none; }
       <option value="delegate" {% if q == 'delegate' %}selected{% endif %}>Delegate</option>
       <option value="eliminate" {% if q == 'eliminate' %}selected{% endif %}>Eliminate</option>
     </select>
+    <div class="task-meta">
+      {% if t.plan_date == today %}
+        🧠 Today
+      {% else %}
+        🗓 Planned for {{ t.plan_date }}
+      {% endif %}
+    </div>
+
 
     <!-- DETAILS -->
     <div class="task-details">

@@ -47,6 +47,14 @@
     <div class="task-text">
       <span class="task-title">{{ task.task_text }}</span>
 
+      {% if task.missed_eisenhower %}
+        <span class="badge missed">
+          ⏰ Missed on {{ task.eisenhower_plan_date }}
+        </span>
+      {% endif %}
+    </div>
+
+
       {% if task.due_date %}
         <span class="due-badge {% if task.due_date < today %}overdue{% endif %}">
           📅 {{ task.due_date }}

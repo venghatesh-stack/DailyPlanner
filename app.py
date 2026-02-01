@@ -297,15 +297,44 @@ def normalize_task(t, project_name=None):
         "recurring": bool(t.get("recurrence")),
         "recurrence": t.get("recurrence"),
     }
+def expire_old_eisenhower_tasks(user_id):
+    today = date.today().isoformat()
 
+    rows = get(
+        "todo_matrix",
+        params={
+            "user_id": f"eq.{user_id}",
+            "is_done": "eq.false",
+            "plan_date": f"lt.{today}",
+            "select": "id, source_task_id"
+        }
+    )
+
+    for r in rows:
+        # 1️⃣ Remove / expire Eisenhower entry
+        update(
+            "todo_matrix",
+            params={"id": f"eq.{r['id']}"},
+            json={"is_deleted": True}
+        )
+
+        # 2️⃣ Restore project task status (if linked)
+        if r.get("source_task_id"):
+            update(
+                "project_tasks",
+                params={"task_id": f"eq.{r['source_task_id']}"},
+                json={
+                    "status": "open",
+                    "due_state": "elapsed"  # or however you tag overdue
+                }
+            )
 # ==========================================================
 # ROUTES – EISENHOWER MATRIX
 # ==========================================================
 @app.route("/todo", methods=["GET"])
 @login_required
 def todo():
-    from datetime import date
-    import calendar
+    expire_old_eisenhower_tasks(session["user_id"])
 
     # 📅 Selected day (default = today)
     year = int(request.args.get("year", date.today().year))
