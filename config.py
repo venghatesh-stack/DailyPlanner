@@ -182,8 +182,8 @@ PRIORITY_MAP = {
     "low": 3
 }
 SORT_PRESETS = {
-    "created": "created_at.asc",
-    "due": "due_date.asc,created_at.asc",
-    "priority": "priority_rank.asc,created_at.asc",
-    "smart": "due_date.asc,priority_rank.asc,created_at.asc",
+    "created": "order_index.asc,created_at.asc",
+    "due": "due_date.asc,order_index.asc",
+    "priority": "priority_rank.asc,order_index.asc",
+    "smart": "due_date.asc,priority_rank.asc,order_index.asc",
 }

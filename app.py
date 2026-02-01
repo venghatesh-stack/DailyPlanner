@@ -1111,11 +1111,27 @@ def _sort_key(task):
         return date.fromisoformat(d)
 
     return d
-
+def get_max_order_index(project_id):
+    rows = get(
+        "project_tasks",
+        params={
+            "project_id": f"eq.{project_id}",
+            "select": "order_index",
+            "order": "order_index.desc",
+            "limit": 1
+        }
+    )
+    return rows[0]["order_index"] if rows else None
 @app.route("/projects/<project_id>/tasks/add", methods=["POST"])
 @login_required
 def add_project_task(project_id):
-    text = request.form["task_text"]
+    text = request.form["task_text"].strip()
+
+    if not text:
+        return redirect(url_for("project_tasks", project_id=project_id))
+
+    max_order = get_max_order_index(project_id)
+    order_index = max_order + 1   # ✅ append to end
 
     post(
         "project_tasks",
@@ -1123,9 +1139,10 @@ def add_project_task(project_id):
             "project_id": project_id,
             "task_text": text,
             "status": "backlog",
+            "order_index": order_index,   # ✅ THIS LINE
         },
     )
-  
+
     return redirect(url_for("project_tasks", project_id=project_id))
 
 @app.route("/projects/tasks/send", methods=["POST"])
@@ -1570,7 +1587,7 @@ def bulk_add_tasks():
     today = date.today().isoformat()
 
     rows = []
-    for text in tasks:
+    for idx,text in enumerate(tasks):
         if not text.strip():
             continue
 
@@ -1578,7 +1595,9 @@ def bulk_add_tasks():
             "project_id": project_id,          # ✅ guaranteed non-empty
             "task_text": text.strip(),
             "start_date": today,
-            "priority": "high",
+            "priority": "medium",
+            "priority_rank": PRIORITY_MAP["medium"],
+            "order_index": idx,          # ✅ THIS LINE
             "duration_days": 0,
             "status": "open",
             "user_id": session["user_id"]
