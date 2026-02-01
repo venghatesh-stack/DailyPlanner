@@ -891,28 +891,19 @@ def untimed_slot_preview():
         })
 
     return preview, 200
-
 @app.route("/todo/autosave", methods=["POST"])
 @login_required
 def todo_autosave():
     data = request.get_json(force=True)
     logger.info("AUTOSAVE DATA: %s", data)
 
+    # 🛑 HARD GUARD — ignore anything not from Eisenhower
+    if "id" not in data or "plan_date" not in data or "quadrant" not in data:
+        return jsonify({"ignored": True})
+
     task_id = data["id"]
 
-    # 🔹 METADATA-ONLY SAVE (project change, etc.)
-    if "quadrant" not in data:
-        if "project_id" in data:
-            update(
-                "todo_matrix",
-                params={"id": f"eq.{task_id}"},
-                json={"project_id": data["project_id"]},
-            )
-        return jsonify({"id": task_id})
-    if "id" not in data or "plan_date" not in data:
-     return jsonify({"ignored": True})
-
-    # 🔹 FULL TASK AUTOSAVE
+    # 🔹 FULL EISENHOWER AUTOSAVE
     result = autosave_task(
         plan_date=data["plan_date"],
         task_id=task_id,
@@ -921,7 +912,7 @@ def todo_autosave():
         is_done=data.get("is_done", False),
     )
 
-    # 🔒 Never lose project_id
+    # 🔒 Preserve project_id if present
     if "project_id" in data:
         update(
             "todo_matrix",
@@ -929,7 +920,25 @@ def todo_autosave():
             json={"project_id": data["project_id"]},
         )
 
+    # 🔁 Sync completion back to project task (if linked)
+    if "is_done" in data:
+        row = get(
+            "todo_matrix",
+            params={"id": f"eq.{task_id}"},
+            single=True
+        )
+
+        if row and row.get("source_task_id"):
+            update(
+                "project_tasks",
+                params={"task_id": f"eq.{row['source_task_id']}"},
+                json={
+                    "status": "done" if data["is_done"] else "open"
+                }
+            )
+
     return jsonify(result)
+
 
 
 
@@ -952,6 +961,55 @@ def get_slot():
         },
     )
     return jsonify({"text": row[0]["plan"] if row else ""})
+
+@app.route("/projects/tasks/send-to-eisenhower", methods=["POST"])
+@login_required
+def send_project_task_to_eisenhower():
+    data = request.get_json() or {}
+
+    task_id = data.get("task_id")
+    plan_date = data.get("plan_date")
+    quadrant = data.get("quadrant", "do")
+
+    if not task_id or not plan_date:
+        return jsonify({"error": "Missing data"}), 400
+
+    # 1️⃣ Fetch project task
+    rows = get(
+        "project_tasks",
+        params={"task_id": f"eq.{task_id}"}
+    )
+
+    if not rows:
+        return jsonify({"error": "Task not found"}), 404
+
+    task = rows[0]
+    existing = get(
+    "todo_matrix",
+    params={
+        "source_task_id": f"eq.{task_id}",
+        "plan_date": f"eq.{plan_date}"
+    }
+)
+
+    if existing:
+        return jsonify({"status": "already-sent"})
+    # 2️⃣ CREATE todo_matrix row (via post)
+    post(
+        "todo_matrix",
+        {
+            "text": task["task_text"],
+            "plan_date": plan_date,
+            "quadrant": quadrant,
+            "project_id": task["project_id"],
+            "source_task_id": task_id,   # 🔑 back-reference
+            "is_done": False
+        }
+    )
+
+    return jsonify({"status": "ok"})
+
+
 @app.route("/slot/update", methods=["POST"])
 @login_required
 def update_slot():
