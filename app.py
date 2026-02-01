@@ -324,8 +324,7 @@ def expire_old_eisenhower_tasks(user_id):
                 "project_tasks",
                 params={"task_id": f"eq.{r['source_task_id']}"},
                 json={
-                    "status": "open",
-                    "due_state": "elapsed"  # or however you tag overdue
+                    "status": "open"
                 }
             )
 # ==========================================================
