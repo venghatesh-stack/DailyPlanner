@@ -135,14 +135,12 @@ document.getElementById("sortSelect").addEventListener("change", async e => {
   });
   location.reload();
 });
+
 </script>
-<script>
 let draggedId = null;
 
 function dragStart(e) {
-  const taskEl = e.target.closest(".task");
-  if (!taskEl) return;
-  draggedId = taskEl.dataset.id;
+  draggedId = e.target.closest(".task").dataset.id;
 }
 
 function dragOver(e) {
@@ -151,10 +149,12 @@ function dragOver(e) {
 
 function dropTask(e) {
   e.preventDefault();
+
   const targetTask = e.target.closest(".task");
   if (!targetTask) return;
 
   const targetId = targetTask.dataset.id;
+
   if (!draggedId || draggedId === targetId) return;
 
   fetch("/projects/tasks/reorder", {
@@ -164,7 +164,12 @@ function dropTask(e) {
       dragged_id: draggedId,
       target_id: targetId
     })
-  }).then(() => location.reload());
+  })
+  .then(r => {
+    if (!r.ok) throw new Error("Reorder failed");
+    location.reload();
+  })
+  .catch(err => console.error("Reorder error:", err));
 }
 </script>
 

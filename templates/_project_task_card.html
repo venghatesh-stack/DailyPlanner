@@ -2,7 +2,9 @@
      class="task"
      data-id="{{ task.task_id }}"
      data-status="{{ task.status }}"
-     data-pinned="{{ 1 if task.is_pinned else 0 }}">
+     data-pinned="{{ 1 if task.is_pinned else 0 }}"
+     ondragover="dragOver(event)"
+     ondrop="dropTask(event)">
 
   <!-- 🔹 SUMMARY ROW -->
   <div class="task-row task-main"
@@ -14,8 +16,6 @@
           onmousedown="event.stopPropagation()"
           onclick="event.stopPropagation()"
           ondragstart="dragStart(event)"
-          ondragover="dragOver(event)"
-          ondrop="dropTask(event)"
           title="Drag to reorder">
       ☰
     </span>
