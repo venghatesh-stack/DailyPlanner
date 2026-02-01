@@ -1714,28 +1714,11 @@ def move_eisenhower_task():
     task_id = data["id"]
     quadrant = data["quadrant"]
 
-    # 1️⃣ Update Eisenhower task
     update(
         "todo_matrix",
         params={"id": f"eq.{task_id}"},
         json={"quadrant": quadrant}
     )
-
-    # 2️⃣ Sync back to project task IF linked
-    rows = get(
-        "todo_matrix",
-        params={
-            "id": f"eq.{task_id}",
-            "select": "source_task_id"
-        }
-    )
-
-    if rows and rows[0].get("source_task_id"):
-        update(
-            "project_tasks",
-            params={"task_id": f"eq.{rows[0]['source_task_id']}"},
-            json={"quadrant": quadrant}
-        )
 
     return jsonify({"status": "ok"})
 
