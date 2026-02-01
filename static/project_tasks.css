@@ -397,3 +397,18 @@
   border-color: #2563eb;
   background: #ffffff;
 }
+.voice-btn {
+  font-size: 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+.voice-status {
+  font-size: 13px;
+  color: #666;
+  margin-top: 4px;
+}
+.voice-status.recording {
+  color: #dc2626;
+  font-weight: 600;
+}

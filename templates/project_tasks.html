@@ -58,12 +58,23 @@
         Overdue only
       </label>
     </div>
+<div class="voice-box">
+  <button type="button"
+          class="voice-btn"
+          onclick="event.stopPropagation();toggleVoice();">
+    🎙 Dictate tasks
+  </button>
+  <div id="voiceStatus" class="voice-status">
+    Tap mic and start speaking
+  </div>
+</div>
+
 <!-- 📝 Temporary Project Notes Scratchpad -->
 <div class="project-notes">
   <textarea
     id="projectNotes"
     placeholder="• Capture thoughts here…
-• Press Enter to continue bullets"
+• Press Enter to continue bullets or Speak"
     rows="6"></textarea>
 
   <div style="margin-top:8px; text-align:right;">
@@ -922,6 +933,10 @@ document.getElementById("addTasksFromNotes")
     btn.textContent = "➕ Add as Tasks";
   }
 });
+</script>
+<script src="{{ url_for('static', filename='voice.js') }}"></script>
+<script>
+  initVoiceDictation("projectNotes", "voiceStatus");
 </script>
 
 </body>
