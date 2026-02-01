@@ -1767,7 +1767,7 @@ def scribble():
     return render_template("scribble.html", note=note)
 
 
-@app.route("/notes/scribble/save", methods=["POST"])
+@app.route("/scribble/save", methods=["POST"])
 @login_required
 def save_scribble():
     data = request.get_json()
