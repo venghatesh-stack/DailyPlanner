@@ -21,9 +21,7 @@ data-id="{{ task.id }}">
         {{ "Overdue" if task.urgency == "overdue" else "Due soon" }}
       </span>
     {% endif %}
-  </div>
-
-  <!-- DETAILS -->
+    <!-- DETAILS -->
   <div class="task-details">
     {% if task.due_date %}
       <div class="meta">📅 {{ task.due_date }}
@@ -54,4 +52,6 @@ data-id="{{ task.id }}">
       </div>
     {% endif %}
   </div>
+  </div>
+
 </div>
