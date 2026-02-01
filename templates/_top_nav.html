@@ -31,8 +31,8 @@
     <a href="/summary?view=weekly" title="Weekly Summary">📆</a>
 
     {% if project is defined %}
-      <a href="/projects/{{ project.id }}/gantt" title="Gantt">📊</a>
-      <a href="/projects/{{ project.id }}/tasks" title="Project Planner">🧠</a>
+      <a href="/projects/{{ project.project_id }}/gantt" title="Gantt">📊</a>
+      <a href="/projects/{{ project.project_id }}/tasks" title="Project Planner">🧠</a>
     {% endif %}
 
   </div>
