@@ -1772,14 +1772,15 @@ def scribble():
 def save_scribble():
     data = request.get_json()
     user_id=session["user_id"]
-    update(
+    post(
         "scribble_notes",
-        json={
+        {
             "user_id": f".eq.{user_id}",
             "title": data.get("title"),
             "content": data.get("content")
-        }
+        },
     )
+
 
     return jsonify({"status": "ok"})
 
