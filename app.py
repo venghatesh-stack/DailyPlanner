@@ -1212,8 +1212,7 @@ def send_project_task_to_eisenhower():
     # 1️⃣ Fetch project task
     task = get(
         "project_tasks",
-        params={"task_id": f"eq.{task_id}"},
-        single=True
+        params={"task_id": f"eq.{task_id}"}
     )
 
     if not task:
