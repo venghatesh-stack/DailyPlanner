@@ -353,7 +353,7 @@ def todo():
     projects = get("projects")
 
     project_map = {
-        p["id"]: p["name"]
+        p["project_id"]: p["project_id"]
         for p in projects
     }
     raw_tasks = get("project_tasks")
