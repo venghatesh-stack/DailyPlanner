@@ -7,9 +7,6 @@ TODO_TEMPLATE = """
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet"
-        href="{{ url_for('static', filename='old_slot_ui.css') }}">
-<style>
 body {
   font-family: system-ui;
   background:#f6f7f9;
