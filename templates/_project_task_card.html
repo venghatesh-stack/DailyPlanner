@@ -60,26 +60,21 @@
           📅 {{ task.due_date }}
         </span>
       {% endif %}
+       <!-- 🔹 FLEX PUSH -->
+        <div class="flex-spacer"></div>
+        <button
+        id="send-{{ task.task_id }}"
+        type="button"
+        {% if task.eisenhower_sent %}disabled{% endif %}
+        onclick="event.stopPropagation(); openEisenhower('{{ task.task_id }}')">
+        {% if task.eisenhower_sent %}
+          🧠 Sent
+        {% else %}
+          🧠 Send
+        {% endif %}
+      </button>
     </div>
-  <button
-  id="send-{{ task.task_id }}"
-  type="button"
-  {% if task.eisenhower_sent %}disabled{% endif %}
-  onclick="event.stopPropagation(); openEisenhower('{{ task.task_id }}')">
-  {% if task.eisenhower_sent %}
-    🧠 Sent
-  {% else %}
-    🧠 Send
-  {% endif %}
-</button>
-
-
-
   </div>
-
-
-
-
   <!-- 🔽 EXPANDED SECTION -->
   <div class="task-details">
 
