@@ -182,8 +182,25 @@ PRIORITY_MAP = {
     "low": 3
 }
 SORT_PRESETS = {
-    "created": "order_index.asc,created_at.asc",
-    "due": "due_date.asc,order_index.asc",
-    "priority": "priority_rank.asc,order_index.asc",
-    "smart": "due_date.asc,priority_rank.asc,order_index.asc",
+    "smart": (
+        "is_pinned.desc,"
+        "due_date.asc,"
+        "priority_rank.asc,"
+        "order_index.asc"
+    ),
+    "due": (
+        "is_pinned.desc,"
+        "due_date.asc,"
+        "order_index.asc"
+    ),
+    "priority": (
+        "is_pinned.desc,"
+        "priority_rank.asc,"
+        "order_index.asc"
+    ),
+    "created": (
+        "is_pinned.desc,"
+        "order_index.asc,"
+        "created_at.asc"
+    ),
 }

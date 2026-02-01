@@ -1034,14 +1034,31 @@ def todo_set_project():
     )
 
     return jsonify({"status": "ok"})
+@app.route("/projects/<project_id>/set-sort", methods=["POST"])
+@login_required
+def set_project_sort(project_id):
+    data = request.get_json() or {}
+    sort = data.get("sort")
+
+    if not sort:
+        return jsonify({"error": "Missing sort"}), 400
+
+    update(
+        "projects",
+        params={"project_id": f"eq.{project_id}"},
+        json={"default_sort": sort}
+    )
+
+    return jsonify({"status": "ok"})
+
 
 @app.route("/projects/<project_id>/tasks")
 @login_required
 def project_tasks(project_id):
     user_id = session["user_id"]
 
-    sort = request.args.get("sort", "smart")
-    order = SORT_PRESETS.get(sort, SORT_PRESETS["smart"])
+   
+
 
     rows = get(
         "projects",
@@ -1051,7 +1068,8 @@ def project_tasks(project_id):
         return "Project not found", 404
 
     project = rows[0]
-
+    sort = request.args.get("sort") or project.get("default_sort", "smart")
+    order = SORT_PRESETS.get(sort, SORT_PRESETS["smart"])
     raw_tasks = get(
         "project_tasks",
         params={
@@ -1612,6 +1630,67 @@ def bulk_add_tasks():
         "status": "ok",
         "count": len(rows)
     })
+@app.route("/projects/tasks/pin", methods=["POST"])
+@login_required
+def toggle_pin():
+    data = request.get_json() or {}
+
+    task_id = data.get("task_id")
+    is_pinned = data.get("is_pinned")
+
+    if not task_id:
+        return jsonify({"error": "Missing task_id"}), 400
+
+    update(
+        "project_tasks",
+        params={"task_id": f"eq.{task_id}"},
+        json={"is_pinned": bool(is_pinned)}
+    )
+
+    return jsonify({"status": "ok"})
+@app.route("/projects/tasks/reorder", methods=["POST"])
+@login_required
+def reorder_tasks():
+    data = request.get_json() or {}
+
+    dragged = data.get("dragged_id")
+    target = data.get("target_id")
+
+    if not dragged or not target:
+        return jsonify({"error": "Missing task ids"}), 400
+
+    rows = get(
+        "project_tasks",
+        params={
+            "task_id": f"in.({dragged},{target})",
+            "select": "task_id,order_index,due_date,priority_rank,is_pinned"
+        }
+    )
+
+    if len(rows) != 2:
+        return jsonify({"error": "Tasks not found"}), 404
+
+    a, b = rows
+    if (
+    a.get("due_date") != b.get("due_date")
+    or a.get("priority_rank") != b.get("priority_rank")
+    or a.get("is_pinned") != b.get("is_pinned")
+    ):
+        return jsonify({"error": "Tasks must have the same due date, priority, and pin status to reorder"}), 400
+    # 🔄 swap order_index
+    update(
+        "project_tasks",
+        params={"task_id": f"eq.{a['task_id']}"},
+        json={"order_index": b["order_index"]}
+    )
+    update(
+        "project_tasks",
+        params={"task_id": f"eq.{b['task_id']}"},
+        json={"order_index": a["order_index"]}
+    )
+
+    return jsonify({"status": "ok"})
+
 
 # ==========================================================
 # ENTRY POINT

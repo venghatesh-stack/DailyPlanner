@@ -1,36 +1,59 @@
-
-
 <div id="task-{{ task.task_id }}"
      class="task"
      data-id="{{ task.task_id }}"
-     data-status="{{ task.status }}">
+     data-status="{{ task.status }}"
+     data-pinned="{{ 1 if task.is_pinned else 0 }}">
 
-<!-- 🔹 SUMMARY ROW (always visible) -->
-<div class="task-row task-main"
-     onclick="toggleTask('{{ task.task_id }}')">
+  <!-- 🔹 SUMMARY ROW -->
+  <div class="task-row task-main"
+       onclick="toggleTask('{{ task.task_id }}')">
 
-  <input type="checkbox"
-         {% if task.status == "done" %}checked{% endif %}
-         onclick="event.stopPropagation()"
-         onchange="updateStatus('{{ task.task_id }}', this.checked ? 'done' : 'open')">
-  <span class="priority-icon"
-        data-priority="{{ task.priority or 'medium' }}"
-        onclick="cyclePriority(event, '{{ task.task_id }}')"
-        title="Change priority" >
-  </span>
-
-<div class="task-text">
-  <span class="task-title">{{ task.task_text}}</span>
-
-  {% if task.due_date %}
-    <span class="due-badge {% if task.due_date < today %}overdue{% endif %}" contenteditable="true">
-      📅 {{ task.due_date }}
+    <!-- ☰ Drag handle -->
+    <span class="drag-handle"
+          draggable="true"
+          onmousedown="event.stopPropagation()"
+          onclick="event.stopPropagation()"
+          ondragstart="dragStart(event)"
+          ondragover="dragOver(event)"
+          ondrop="dropTask(event)"
+          title="Drag to reorder">
+      ☰
     </span>
-  {% endif %}
-</div>
+
+    <!-- ✅ Checkbox -->
+    <input type="checkbox"
+           {% if task.status == "done" %}checked{% endif %}
+           onclick="event.stopPropagation()"
+           onchange="updateStatus('{{ task.task_id }}', this.checked ? 'done' : 'open')">
+
+    <!-- 🔺 Priority -->
+    <span class="priority-icon"
+          data-priority="{{ task.priority or 'medium' }}"
+          onclick="event.stopPropagation(); cyclePriority(event, '{{ task.task_id }}')"
+          title="Change priority">
+    </span>
+
+    <!-- 📌 Pin -->
+    <button
+      type="button"
+      onclick="event.stopPropagation(); togglePin(this)"
+      title="Pin task">
+      📌
+    </button>
 
 
-</div>
+    <!-- 📝 Text -->
+    <div class="task-text">
+      <span class="task-title">{{ task.task_text }}</span>
+
+      {% if task.due_date %}
+        <span class="due-badge {% if task.due_date < today %}overdue{% endif %}">
+          📅 {{ task.due_date }}
+        </span>
+      {% endif %}
+    </div>
+  </div>
+
 
 
 

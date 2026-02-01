@@ -94,12 +94,15 @@
     </div>
   </div>
 
-<select onchange="location.search='?sort=' + this.value">
-  <option value="smart" {{ "selected" if sort == "smart" }}>Smart</option>
-  <option value="due" {{ "selected" if sort == "due" }}>Due date</option>
-  <option value="priority" {{ "selected" if sort == "priority" }}>Priority</option>
-  <option value="created" {{ "selected" if sort == "created" }}>Created</option>
+<select id="sortSelect">
+  <option value="smart">Smart</option>
+  <option value="due">Due</option>
+  <option value="priority">Priority</option>
+  <option value="created">Created</option>
 </select>
+
+
+
 
 
    <!-- Grouped Task List -->
@@ -109,11 +112,11 @@
           <h3 class="group-title">
             {{ group }}
             <span class="count">{{ tasks|length }}</span>
-          </h3>
-
+         
           {% if tasks %}
             {% for task in tasks %}
               {% include "_project_task_card.html" %}
+            
             {% endfor %}
           {% else %}
             <div class="empty">No tasks</div>
@@ -123,9 +126,60 @@
       {% endfor %}
 
 </div>
+<script>  
+document.getElementById("sortSelect").addEventListener("change", async e => {
+  await fetch(`/projects/{{ project.project_id }}/set-sort`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ sort: e.target.value })
+  });
+  location.reload();
+});
+</script>
+<script>
+let draggedId = null;
 
+function dragStart(e) {
+  draggedId = e.currentTarget.dataset.id;
+}
 
+function dragOver(e) {
+  e.preventDefault();
+}
 
+function dropTask(e) {
+  e.preventDefault();
+  const targetId = e.currentTarget.dataset.id;
+  if (draggedId === targetId) return;
+
+  fetch("/projects/tasks/reorder", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      dragged_id: draggedId,
+      target_id: targetId
+    })
+  }).then(() => location.reload());
+}
+</script>
+
+<script>
+function togglePin(btn) {
+  const taskEl = btn.closest(".task");
+  const taskId = taskEl.dataset.id;
+  const isPinned = taskEl.dataset.pinned === "1";
+
+  fetch("/projects/tasks/pin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      task_id: taskId,
+      is_pinned: !isPinned
+    })
+  }).then(() => location.reload());
+}
+
+</script>
   <script>
   function sendTask(taskId) {
     const quadrantSelect = document.getElementById(`q-${taskId}`);
