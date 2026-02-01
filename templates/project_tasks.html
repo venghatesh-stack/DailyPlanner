@@ -140,7 +140,9 @@ document.getElementById("sortSelect").addEventListener("change", async e => {
 let draggedId = null;
 
 function dragStart(e) {
-  draggedId = e.currentTarget.dataset.id;
+  const taskEl = e.target.closest(".task");
+  if (!taskEl) return;
+  draggedId = taskEl.dataset.id;
 }
 
 function dragOver(e) {
@@ -149,12 +151,15 @@ function dragOver(e) {
 
 function dropTask(e) {
   e.preventDefault();
-  const targetId = e.currentTarget.dataset.id;
-  if (draggedId === targetId) return;
+  const targetTask = e.target.closest(".task");
+  if (!targetTask) return;
+
+  const targetId = targetTask.dataset.id;
+  if (!draggedId || draggedId === targetId) return;
 
   fetch("/projects/tasks/reorder", {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       dragged_id: draggedId,
       target_id: targetId
@@ -168,6 +173,11 @@ function togglePin(btn) {
   const taskEl = btn.closest(".task");
   const taskId = taskEl.dataset.id;
   const isPinned = taskEl.dataset.pinned === "1";
+  console.log({
+  taskId,
+  isPinned,
+  pinnedAttr: taskEl.dataset.pinned
+});
 
   fetch("/projects/tasks/pin", {
     method: "POST",
@@ -177,6 +187,12 @@ function togglePin(btn) {
       is_pinned: !isPinned
     })
   }).then(() => location.reload());
+  console.log({
+  taskId,
+  isPinned,
+  pinnedAttr: taskEl.dataset.pinned
+});
+
 }
 
 </script>

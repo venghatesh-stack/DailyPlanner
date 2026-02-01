@@ -1554,10 +1554,14 @@ def update_priority():
     update(
         "project_tasks",
         params={"task_id": f"eq.{task_id}"},
-        json={"priority": priority}
+        json={
+            "priority": priority,
+            "priority_rank": PRIORITY_MAP.get(priority, 2)
+        }
     )
 
     return {"status": "ok"}
+
 
 @app.route("/projects/new", methods=["GET", "POST"])
 @login_required
