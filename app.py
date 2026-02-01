@@ -1220,70 +1220,47 @@ def add_project_task(project_id):
 
     return redirect(url_for("project_tasks", project_id=project_id))
 
-@app.route("/projects/tasks/send", methods=["POST"])
+from datetime import date
+
+@app.route("/projects/tasks/send-to-eisenhower", methods=["POST"])
 @login_required
-def send_task_to_eisenhower():
+def send_project_task_to_eisenhower():
     data = request.get_json() or {}
 
-    task_id   = data.get("task_id")
-    quadrant  = data.get("quadrant")
-    plan_date = data.get("plan_date")
+    task_id = data.get("task_id")
+    quadrant = data.get("quadrant", "do")
 
-    if not task_id or not plan_date or not quadrant:
-        return jsonify({"error": "Missing required fields"}), 400
+    if not task_id:
+        return jsonify({"error": "Missing task_id"}), 400
 
-    user_id = session["user_id"]
+    # ✅ OPTION A: default to today
+    plan_date = date.today().isoformat()
 
-    # --------------------------------------------------
-    # STEP 1: Prevent duplicate sends (IDEMPOTENT)
-    # --------------------------------------------------
-    existing = get(
-        "todo_matrix",
-        params={
-            "source_task_id": f"eq.{task_id}",
-            "plan_date": f"eq.{plan_date}",
-            "is_deleted": "eq.false",
-            "select": "id",
-        },
-    ) or []
-
-    if existing:
-        return jsonify({"status": "already-sent"})
-
-    # --------------------------------------------------
-    # STEP 2: Fetch project task text (source of truth)
-    # --------------------------------------------------
-    rows = get(
+    # 1️⃣ Fetch project task
+    task = get(
         "project_tasks",
-        params={
-            "task_id": f"eq.{task_id}",
-            "user_id": f"eq.{user_id}",
-            "select": "task_text",
-        },
+        params={"task_id": f"eq.{task_id}"},
+        single=True
     )
 
-    if not rows:
-        return jsonify({"error": "Project task not found"}), 404
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
 
-    task_text = rows[0]["task_text"]
-
-    # --------------------------------------------------
-    # STEP 3: Insert into Eisenhower matrix
-    # --------------------------------------------------
+    # 2️⃣ Insert into Eisenhower
     post(
         "todo_matrix",
-        [{
-            "plan_date": plan_date,
+        {
+            "text": task["task_text"],
+            "plan_date": plan_date,          # ✅ ALWAYS PRESENT
             "quadrant": quadrant,
-            "task_text": task_text,
-            "is_done": False,
-            "is_deleted": False,
-            "position": 999,
-            "source_task_id": task_id,   # 🔑 link back
-        }],
+            "project_id": task["project_id"],
+            "source_task_id": task_id,       # 🔑 link back
+            "is_done": False
+        }
     )
 
     return jsonify({"status": "ok"})
+
 
 @app.route("/projects/tasks/status", methods=["POST"])
 @login_required
