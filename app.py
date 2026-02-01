@@ -195,7 +195,8 @@ def planner():
     )
 
 def empty_quadrant():
-    return defaultdict(lambda: defaultdict(list))
+    return {"tasks": []}
+
 
 
 def build_eisenhower_view(tasks, plan_date):
@@ -218,7 +219,7 @@ def build_eisenhower_view(tasks, plan_date):
 
         task = {
             "id": t["id"],
-            "text": t["text"],
+            "task_text": t["task_text"],
             "is_done": t.get("is_done", False),
             "project_id": t.get("project_id"),
             "project_name": t.get("project_name"),
@@ -238,16 +239,10 @@ def parse_date(d):
 def compute_quadrant_counts(todo):
     counts = {}
 
-    for q, categories in todo.items():
-        total = 0
-        done = 0
-
-        for subs in categories.values():
-            for tasks in subs.values():
-                for t in tasks:
-                    total += 1
-                    if t.get("done"):
-                        done += 1
+    for q, data in todo.items():
+        tasks = data["tasks"]
+        total = len(tasks)
+        done = sum(1 for t in tasks if t.get("is_done"))
 
         counts[q] = {
             "total": total,
@@ -255,6 +250,7 @@ def compute_quadrant_counts(todo):
         }
 
     return counts
+
 
 
 def compute_urgency(due_date, due_time):
@@ -322,7 +318,8 @@ def todo():
     raw_tasks = get(
         "todo_matrix",
         params={
-            "plan_date": f"eq.{plan_date.isoformat()}"
+            "plan_date": f"eq.{plan_date.isoformat()}",
+            "is_deleted": "eq.false"
         }
     )
 
@@ -338,7 +335,7 @@ def todo():
     for t in raw_tasks:
         tasks.append({
             "id": t["id"],
-            "text": t["text"],
+            "task_text": t["task_text"],
             "quadrant": t["quadrant"],          # already explicit
             "is_done": t.get("is_done", False),
             "project_id": t.get("project_id"),
@@ -1715,19 +1712,29 @@ def reorder_tasks():
 @login_required
 def move_eisenhower_task():
     data = request.get_json()
-    task_id = data["id"]
+    todo_id = data["id"]
     quadrant = data["quadrant"]
 
+    # 1️⃣ Update Eisenhower instance
     update(
         "todo_matrix",
-        params={"id": f"eq.{task_id}"},
+        params={"id": f"eq.{todo_id}"},
         json={"quadrant": quadrant}
     )
-    update(
-        "project_tasks",                     # ✅ NOT todo_matrix
-        params={"task_id": f"eq.{task_id}"},
-        json={"quadrant": quadrant}
+
+    # 2️⃣ Sync back ONLY if linked
+    rows = get(
+        "todo_matrix",
+        params={"id": f"eq.{todo_id}", "select": "source_task_id"},
     )
+
+    if rows and rows[0].get("source_task_id"):
+        update(
+            "project_tasks",
+            params={"task_id": f"eq.{rows[0]['source_task_id']}"},
+            json={"quadrant": quadrant}
+        )
+
     return jsonify({"status": "ok"})
 
 # ==========================================================
