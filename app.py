@@ -962,9 +962,9 @@ def get_slot():
     )
     return jsonify({"text": row[0]["plan"] if row else ""})
 
-@app.route("/projects/tasks/send-to-eisenhower", methods=["POST"])
+@app.route("/projects/tasks/send-to-eisenhower11", methods=["POST"])
 @login_required
-def send_project_task_to_eisenhower():
+def send_project_task_to_eisenhower11():
     data = request.get_json() or {}
 
     task_id = data.get("task_id")
@@ -1220,7 +1220,7 @@ def add_project_task(project_id):
 
     return redirect(url_for("project_tasks", project_id=project_id))
 
-from datetime import date
+
 
 @app.route("/projects/tasks/send-to-eisenhower", methods=["POST"])
 @login_required
