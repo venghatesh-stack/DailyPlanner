@@ -95,10 +95,12 @@
   </div>
 
 <select onchange="location.search='?sort=' + this.value">
-  <option value="created" {{ "selected" if sort == "created" }}>Created</option>
+  <option value="smart" {{ "selected" if sort == "smart" }}>Smart</option>
   <option value="due" {{ "selected" if sort == "due" }}>Due date</option>
   <option value="priority" {{ "selected" if sort == "priority" }}>Priority</option>
+  <option value="created" {{ "selected" if sort == "created" }}>Created</option>
 </select>
+
 
    <!-- Grouped Task List -->
     {% for group, tasks in grouped_tasks.items() %}

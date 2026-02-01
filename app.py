@@ -36,6 +36,7 @@ from config import (
     HABIT_ICONS,
     HABIT_LIST,
     PRIORITY_MAP,
+    SORT_PRESETS,
 )
 
 from utils.slots import current_slot,slot_label
@@ -1039,21 +1040,9 @@ def todo_set_project():
 def project_tasks(project_id):
     user_id = session["user_id"]
 
-    # 🔹 read sort options
-    sort = request.args.get("sort", "created")
-    direction = request.args.get("dir", "asc")
+    sort = request.args.get("sort", "smart")
+    order = SORT_PRESETS.get(sort, SORT_PRESETS["smart"])
 
-    # 🔹 whitelist allowed sorts
-    ORDER_MAP = {
-        "created": "created_at",
-        "due": "due_date",
-        "priority": "priority_rank",  # see note below
-    }
-
-    order_col = ORDER_MAP.get(sort, "created_at")
-    order = f"{order_col}.{direction}"
-
-    # 🔹 fetch project
     rows = get(
         "projects",
         params={"project_id": f"eq.{project_id}", "user_id": f"eq.{user_id}"},
@@ -1063,7 +1052,6 @@ def project_tasks(project_id):
 
     project = rows[0]
 
-    # 🔹 fetch tasks with dynamic ordering
     raw_tasks = get(
         "project_tasks",
         params={
@@ -1072,25 +1060,21 @@ def project_tasks(project_id):
         },
     )
 
-    # 🔹 normalize for shared UI
     tasks = [
         {
             "task_id": t["task_id"],
             "task_text": t["task_text"],
             "status": t.get("status"),
             "done": t.get("status") == "done",
-
             "start_date": t.get("start_date"),
             "duration_days": t.get("duration_days"),
-
             "due_date": t.get("due_date"),
             "due_time": t.get("due_time"),
             "delegated_to": t.get("delegated_to"),
             "elimination_reason": t.get("elimination_reason"),
-
             "project_name": project["name"],
             "urgency": None,
-            "priority_rank": PRIORITY_MAP.get(t.get("priority"), 2)
+            "priority_rank": PRIORITY_MAP.get(t.get("priority"), 2),
         }
         for t in raw_tasks
     ]
@@ -1103,7 +1087,6 @@ def project_tasks(project_id):
         grouped_tasks=grouped_tasks,
         today=date.today().isoformat(),
         sort=sort,
-        dir=direction,
     )
 
 
