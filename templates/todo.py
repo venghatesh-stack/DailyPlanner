@@ -233,7 +233,7 @@ summary::-webkit-details-marker { display:none; }
   ('eliminate','🗑 Eliminate')
 ] %}
 
-<details class="quad" open>
+<details class="quad" data-quadrant="{{ q }}" open>
   <summary>
     {{ label }}
     {% set c = quadrant_counts[q] %}
@@ -252,7 +252,9 @@ summary::-webkit-details-marker { display:none; }
   <div class="task
       {% if t.is_done %}done{% endif %}
   "
-  data-id="{{ t.id }}">
+  data-id="{{ t.id }}"
+  data-quadrant="{{ q }}">
+
 
     <!-- HEADER -->
     <div class="task-header" onclick="toggleTask(this)">
@@ -296,28 +298,24 @@ summary::-webkit-details-marker { display:none; }
 <script>
 function toggleDone(checkbox) {
   const taskId = checkbox.dataset.id;
-  if (!taskId) return;
-
-  const task = checkbox.closest(".task");
   const isDone = checkbox.checked;
 
-  // UI update (instant feedback)
-  if (task) {
-    task.classList.toggle("done", isDone);
-  }
+  const task = checkbox.closest(".task");
+  task.classList.toggle("done", isDone);
 
-  fetch("/projects/tasks/status", {
+  fetch("/todo/toggle-done", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      task_id: taskId,
-      status: isDone ? "done" : "open"
+      id: taskId,
+      is_done: isDone
     })
   }).catch(err => {
-    console.error("Failed to update task status", err);
+    console.error("Failed to toggle Eisenhower task", err);
   });
 }
 </script>
+
 
 <script>
 function toggleTask(el) {
@@ -328,14 +326,28 @@ function toggleTask(el) {
 }
 </script>
 <script>
-function moveQuadrant(taskId, quadrant) {
+function moveQuadrant(taskId, newQuadrant) {
   fetch("/todo/move", {
     method: "POST",
     headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ id: taskId, quadrant })
-  }).catch(console.error);
+    body: JSON.stringify({ id: taskId, quadrant: newQuadrant })
+  })
+  .then(() => {
+    const task = document.querySelector(`.task[data-id="${taskId}"]`);
+    if (!task) return;
+
+    const targetQuad = document.querySelector(
+      `.quad[data-quadrant="${newQuadrant}"]`
+    );
+    if (!targetQuad) return;
+
+    targetQuad.appendChild(task);
+    task.dataset.quadrant = newQuadrant;
+  })
+  .catch(console.error);
 }
 </script>
+
 </body>
 </html>
 """
