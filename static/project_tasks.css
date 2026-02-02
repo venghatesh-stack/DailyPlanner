@@ -714,6 +714,9 @@
   gap: 6px;
   font-size: 14px;
 }
+.task-filters input[type="checkbox"] {
+  transform: translateY(-1px);
+}
 
 
 
