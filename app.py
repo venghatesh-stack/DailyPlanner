@@ -1113,11 +1113,14 @@ def set_project_sort(project_id):
 
     return jsonify({"status": "ok"})
 
-
 @app.route("/projects/<project_id>/tasks")
 @login_required
 def project_tasks(project_id):
     user_id = session["user_id"]
+
+    # ---------------------------------
+    # Load project
+    # ---------------------------------
     rows = get(
         "projects",
         params={"project_id": f"eq.{project_id}", "user_id": f"eq.{user_id}"},
@@ -1126,35 +1129,62 @@ def project_tasks(project_id):
         return "Project not found", 404
 
     project = rows[0]
+
+    # ---------------------------------
+    # Read filters from URL
+    # ---------------------------------
+    hide_completed = request.args.get("hide_completed", "0") == "1"
+    overdue_only   = request.args.get("overdue_only", "0") == "1"
+
     sort = request.args.get("sort") or project.get("default_sort", "smart")
     order = SORT_PRESETS.get(sort, SORT_PRESETS["smart"])
+
+    # ---------------------------------
+    # Fetch tasks (no filtering in SQL)
+    # ---------------------------------
     raw_tasks = get(
         "project_tasks",
         params={
             "project_id": f"eq.{project_id}",
             "order": order,
         },
-    )
+    ) or []
 
-    tasks = [
-        {
+    today = date.today()
+
+    tasks = []
+    for t in raw_tasks:
+        status = t.get("status")
+        due    = t.get("due_date")
+
+        # ❌ Hide completed
+        if hide_completed and status == "done":
+            continue
+
+        # ❌ Overdue only
+        if overdue_only:
+            if not due:
+                continue
+            due_date = date.fromisoformat(due)
+            if due_date >= today or status == "done":
+                continue
+
+        tasks.append({
             "task_id": t["task_id"],
             "task_text": t["task_text"],
-            "status": t.get("status"),
-            "done": t.get("status") == "done",
+            "status": status,
+            "done": status == "done",
             "start_date": t.get("start_date"),
             "duration_days": t.get("duration_days"),
-            "due_date": t.get("due_date"),
+            "due_date": due,
             "due_time": t.get("due_time"),
             "delegated_to": t.get("delegated_to"),
             "elimination_reason": t.get("elimination_reason"),
             "project_name": project["name"],
             "urgency": None,
             "priority_rank": PRIORITY_MAP.get(t.get("priority"), 2),
-            "is_pinned": t.get("is_pinned", False), # default to False
-        }
-        for t in raw_tasks
-    ]
+            "is_pinned": t.get("is_pinned", False),
+        })
 
     grouped_tasks = group_tasks_smart(tasks)
 
@@ -1162,9 +1192,12 @@ def project_tasks(project_id):
         "project_tasks.html",
         project=project,
         grouped_tasks=grouped_tasks,
-        today=date.today().isoformat(),
+        today=today.isoformat(),
         sort=sort,
+        hide_completed=hide_completed,
+        overdue_only=overdue_only,
     )
+
 
 
 def compute_due_date(start_date, duration_days):

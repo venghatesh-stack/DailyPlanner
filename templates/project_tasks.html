@@ -41,22 +41,29 @@
       </form>
     </div>
 
-    <!-- Filters -->
+<div class="task-filters">
+  <label class="filter">
     <input
       type="checkbox"
       id="hideClosed"
+      {% if hide_completed %}checked{% endif %}
       onchange="toggleHideCompleted(this.checked)"
-      {% if hide_completed %}checked{% endif %}>
-        Hide closed
+    >
+    Hide closed
+  </label>
 
- <label class="filter">
+  <label class="filter">
     <input
       type="checkbox"
-      {% if request.args.get("overdue_only", "0") == "1" %}checked{% endif %}
-      onchange="toggleFilter('overdue_only', this.checked)">
+      id="showOverdueOnly"
+      {% if overdue_only %}checked{% endif %}
+      onchange="toggleFilter('overdue_only', this.checked)"
+    >
     Overdue only
   </label>
-    </div>
+</div>
+
+  </div>
 <!-- Voice Dictation -->
 <div class="voice-box">
   <button
