@@ -2,6 +2,7 @@
   id="task-{{ task.task_id }}"
   class="task"
   data-id="{{ task.task_id }}"
+  data-date="{{ task.occurrence_date }}"
   data-status="{{ task.status }}"
   data-pinned="{{ 1 if task.is_pinned else 0 }}"
   ondragover="dragOver(event)"
@@ -23,10 +24,15 @@
     </span>
 
     <!-- ✅ Checkbox -->
-    <input type="checkbox"
-           {% if task.status == "done" %}checked{% endif %}
-           onclick="event.stopPropagation()"
-           onchange="updateStatus('{{ task.task_id }}', this.checked ? 'done' : 'open')">
+  <input type="checkbox"
+       {% if task.status == "done" %}checked{% endif %}
+       onclick="event.stopPropagation()"
+       onchange="updateStatus(
+         '{{ task.task_id }}',
+         this.checked ? 'done' : 'open',
+         this.closest('.task').dataset.date
+       )">
+
 
     <!-- 🔺 Priority -->
     <span class="priority-icon"
@@ -41,7 +47,8 @@
     title="Edit task"
     onclick="event.stopPropagation(); enableEdit(
       this.closest('.task').querySelector('.task-title'),
-      '{{ task.task_id }}'
+      '{{ task.task_id }}',
+  this.closest('.task').dataset.date
     )">
     ✏️
   </button>
@@ -85,6 +92,31 @@
 
     <!-- Planning -->
     <div class="task-row task-details-row planning-row">
+      <div class="field">
+          <label>Repeat</label>
+         <select
+          onchange="updateRecurrence('{{ task.task_id }}', this.value)">
+          <option value="none" {% if not task.is_recurring %}selected{% endif %}>None</option>
+          <option value="daily" {% if task.recurrence_type=='daily' %}selected{% endif %}>Daily</option>
+          <option value="weekly" {% if task.recurrence_type=='weekly' %}selected{% endif %}>Weekly</option>
+          <option value="monthly" {% if task.recurrence_type=='monthly' %}selected{% endif %}>Monthly</option>
+        </select>
+      </div>
+      <div class="field recurrence-days"
+          {% if task.recurrence_type != 'weekly' %}style="display:none"{% endif %}>
+
+        <label>On</label>
+
+        {% for i, day in [(0,'Mon'),(1,'Tue'),(2,'Wed'),(3,'Thu'),(4,'Fri'),(5,'Sat'),(6,'Sun')] %}
+          <label class="day-chip">
+            <input type="checkbox"
+                  value="{{ i }}"
+                  {% if task.recurrence_days and i in task.recurrence_days %}checked{% endif %}
+                  onchange="updateRecurrenceDays('{{ task.task_id }}')">
+            {{ day }}
+          </label>
+        {% endfor %}
+      </div>
 
       <div class="field">
         <label>Start</label>
@@ -99,7 +131,7 @@
         <input type="number"
                class="duration-days"
                value="{{ task.duration_days or 0 }}"
-               oninput="updatePlanning('{{ task.task_id }}')">
+               oninput="updatePlanning('{{ task.task_id }}', '{{ task.occurrence_date }}')">
       </div>
 
       <div class="field">
@@ -128,7 +160,12 @@
       </div>
 
       <div class="field">
-        <select onchange="updateStatus('{{ task.task_id }}', this.value)">
+        <select onchange="updateStatus(
+              '{{ task.task_id }}',
+              this.value,
+              this.closest('.task').dataset.date
+            )">
+
           <option value="open" {% if task.status=='open' %}selected{% endif %}>Open</option>
           <option value="in_progress" {% if task.status=='in_progress' %}selected{% endif %}>In Progress</option>
           <option value="done" {% if task.status=='done' %}selected{% endif %}>Done</option>

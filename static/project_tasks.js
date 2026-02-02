@@ -87,7 +87,7 @@ window.togglePin = btn => {
 /* -------------------------
    Status Update
 ------------------------- */
-window.updateStatus = (taskId, status) => {
+window.updateStatus = (taskId, status,date=null) => {
   const task = $(`task-${taskId}`);
   if (!task) return;
 
@@ -97,7 +97,7 @@ window.updateStatus = (taskId, status) => {
   fetch("/projects/tasks/status", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ task_id: taskId, status })
+    body: JSON.stringify({ task_id: taskId, status:status,date:date })
   })
     .then(r => {
       if (!r.ok) throw Error();
@@ -398,3 +398,28 @@ document.addEventListener("click", async (e) => {
     btn.disabled = false;
   }
 });
+function updateRecurrence(taskId, type) {
+  fetch(`/projects/tasks/${taskId}/update`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      is_recurring: type !== "none",
+      recurrence_type: type
+    })
+  });
+
+  // optional: toggle weekly day UI
+}
+function updateRecurrenceDays(taskId) {
+  const box = document.querySelector(`#task-${taskId}`);
+  const days = [...box.querySelectorAll('.recurrence-days input:checked')]
+    .map(cb => parseInt(cb.value));
+
+  fetch(`/projects/tasks/${taskId}/update`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      recurrence_days: days
+    })
+  });
+}

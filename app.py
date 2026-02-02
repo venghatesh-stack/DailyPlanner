@@ -20,7 +20,12 @@ from services.eisenhower_service import (
     copy_open_tasks_from_previous_day,  
     enable_travel_mode,
 )
-
+from services.task_actions import (
+    complete_task_occurrence,
+    skip_task_occurrence,
+    update_task_occurrence,
+    update_task
+)
 from collections import OrderedDict
 from services.untimed_service import remove_untimed_task  
 from services.timeline_service import load_timeline_tasks
@@ -1266,19 +1271,39 @@ def send_project_task_to_eisenhower():
 
 
 
-
 @app.route("/projects/tasks/status", methods=["POST"])
 @login_required
 def update_project_task_status():
     data = request.get_json(force=True)
 
-    update(
-        "project_tasks",
-        params={"task_id": f"eq.{data['task_id']}"},
-        json={"status": data["status"]},
-    )
+    task_id   = data["task_id"]
+    status    = data["status"]
+    task_date = data.get("date")   # 👈 THIS is the key
+
+    if task_date:
+        # 🔁 This is a RECURRING OCCURRENCE update
+        if status == "done":
+            complete_task_occurrence(
+                user_id=session["user_id"],
+                task_id=task_id,
+                task_date=task_date
+            )
+        else:
+            skip_task_occurrence(
+                user_id=session["user_id"],
+                task_id=task_id,
+                task_date=task_date
+            )
+    else:
+        # 🧱 This is a NORMAL (non-recurring) task
+        update(
+            "project_tasks",
+            params={"task_id": f"eq.{task_id}"},
+            json={"status": status},
+        )
 
     return jsonify({"status": "ok"})
+
 @app.route("/projects/tasks/unsend", methods=["POST"])
 @login_required
 def unsend_task_from_eisenhower():
