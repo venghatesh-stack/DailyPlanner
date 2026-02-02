@@ -1321,6 +1321,7 @@ def update_project_task_status():
                         params={"task_id": f"eq.{task_id}"},
                         json={
                             "start_date": next_date.isoformat(),
+                            "due_date": next_date.isoformat(),  # ✅ FIX
                             "status": "open"
                         }
                     )
