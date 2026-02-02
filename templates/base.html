@@ -1,0 +1,30 @@
+<!-- ===============================
+     TASK ACTION BOTTOM SHEET
+================================= -->
+<div id="task-action-sheet" class="bottom-sheet hidden">
+  <div class="sheet-content">
+
+    <div class="sheet-title" id="sheet-title"></div>
+
+    <button onclick="sheetCompleteToday()">✓ Mark done today</button>
+
+    <button onclick="sheetEditToday()">✏️ Edit only today</button>
+
+    <button onclick="sheetEditAll()">✏️ Edit all future</button>
+
+    <hr>
+
+    <label class="sheet-toggle">
+      <input
+        type="checkbox"
+        id="autoAdvanceToggle"
+        onchange="sheetToggleAutoAdvance(this.checked)">
+      Auto-schedule next occurrence
+    </label>
+
+    <hr>
+
+    <button class="danger" onclick="closeTaskSheet()">Cancel</button>
+
+  </div>
+</div>

@@ -7,6 +7,7 @@
   data-pinned="{{ 1 if task.is_pinned else 0 }}"
   ondragover="dragOver(event)"
   ondrop="dropTask(event)"
+  data-auto-advance="{{ task.auto_advance }}"
 >
 
   <!-- 🔹 SUMMARY ROW -->
@@ -59,6 +60,12 @@
             ondblclick="enableEdit(this, '{{ task.task_id }}')">
         {{ task.task_text }}
       </span>
+      {% if task.is_recurring %}
+        <span class="recurrence-badge"
+              title="{{ task.recurrence_type|capitalize }}">
+          {{ task.recurrence_badge }}
+        </span>
+      {% endif %}
 
       {% if task.missed_eisenhower %}
         <span class="badge missed">
@@ -96,9 +103,9 @@
           <label>Repeat</label>
          <select
           onchange="updateRecurrence('{{ task.task_id }}', this.value)">
-          <option value="none" {% if not task.is_recurring %}selected{% endif %}>None</option>
-          <option value="daily" {% if task.recurrence_type=='daily' %}selected{% endif %}>Daily</option>
-          <option value="weekly" {% if task.recurrence_type=='weekly' %}selected{% endif %}>Weekly</option>
+          <option value="none" {% if not task.is_recurring %}selected{% endif %}>Never</option>
+          <option value="daily" {% if task.recurrence_type=='daily' %}selected{% endif %}>Every Day</option>
+          <option value="weekly" {% if task.recurrence_type=='weekly' %}selected{% endif %}>Specific Days</option>
           <option value="monthly" {% if task.recurrence_type=='monthly' %}selected{% endif %}>Monthly</option>
         </select>
       </div>
@@ -117,9 +124,6 @@
           </label>
         {% endfor %}
       </div>
-      <button onclick="editToday('{{ task.task_id }}')">
-        Edit only today
-      </button>
 
       <div class="field">
         <label>Start</label>

@@ -551,3 +551,95 @@
     text-overflow: ellipsis;
   }
 }
+/* ===============================
+   BOTTOM SHEET
+================================= */
+
+.bottom-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -6px 24px rgba(0,0,0,0.25);
+  z-index: 9999;
+}
+
+.bottom-sheet.hidden {
+  display: none;
+}
+
+.sheet-content {
+  padding: 16px;
+}
+
+.sheet-title {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+
+.sheet-content button {
+  width: 100%;
+  padding: 12px;
+  margin: 6px 0;
+  font-size: 16px;
+  border-radius: 8px;
+  border: none;
+  background: #f4f4f4;
+}
+
+.sheet-content button.danger {
+  background: #ffecec;
+  color: #b00020;
+}
+
+.sheet-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+.recurrence-badge {
+  margin-left: 6px;
+  padding: 2px 6px;
+  font-size: 11px;
+  border-radius: 10px;
+  background: #f1f3f5;
+  color: #555;
+  white-space: nowrap;
+}
+.day-row {
+  display: flex;
+  gap: 6px;
+}
+
+.day-chip {
+  padding: 6px 10px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  background: #fff;
+  font-size: 13px;
+}
+
+.day-chip.active {
+  background: #333;
+  color: #fff;
+  border-color: #333;
+}
+.day-chip:hover {
+  cursor: pointer;
+  transform: scale(1.05);
+}
+.recurrence-badge.daily {
+  background: #eef6ff;
+}
+
+.recurrence-badge.weekly {
+  background: #f1f3f5;
+}
+
+.recurrence-badge.monthly {
+  background: #fdf3e6;
+}

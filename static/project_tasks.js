@@ -436,3 +436,123 @@ function editToday(taskId) {
     })
   });
 }
+function toggleAutoAdvance(taskId, enabled) {
+  fetch(`/projects/tasks/${taskId}/update`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      auto_advance: enabled
+    })
+  });
+}
+function attachLongPress(el, onLongPress) {
+  let timer = null;
+  let moved = false;
+
+  // Desktop mouse
+  el.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return; // left click only
+    moved = false;
+
+    timer = setTimeout(() => {
+      if (!moved) onLongPress(e);
+    }, 500);
+  });
+
+  el.addEventListener("mousemove", () => {
+    moved = true;
+    clearTimeout(timer);
+  });
+
+  el.addEventListener("mouseup", () => clearTimeout(timer));
+  el.addEventListener("mouseleave", () => clearTimeout(timer));
+
+  // Mobile touch
+  el.addEventListener("touchstart", () => {
+    timer = setTimeout(onLongPress, 500);
+  });
+
+  el.addEventListener("touchend", () => clearTimeout(timer));
+
+  // Right-click fallback (desktop)
+  el.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    onLongPress(e);
+  });
+}
+document.querySelectorAll(".task").forEach(el => {
+  attachLongPress(el, () => {
+    openTaskSheet({
+      taskId: el.dataset.id,
+      date: el.dataset.date,
+      text: el.querySelector(".task-title").innerText,
+      autoAdvance: el.dataset.autoAdvance === "true"
+    });
+  });
+});
+let currentSheetTask = {};
+
+function openTaskSheet(task) {
+  currentSheetTask = task;
+
+  document.getElementById("sheet-title").innerText = task.text;
+  document.getElementById("autoAdvanceToggle").checked = !!task.autoAdvance;
+
+  document.getElementById("task-action-sheet").classList.remove("hidden");
+}
+
+function closeTaskSheet() {
+  document.getElementById("task-action-sheet").classList.add("hidden");
+  currentSheetTask = {};
+}
+function sheetCompleteToday() {
+  fetch("/projects/tasks/status", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      task_id: currentSheetTask.taskId,
+      status: "done",
+      date: currentSheetTask.date
+    })
+  });
+  closeTaskSheet();
+}
+function sheetEditToday() {
+  const title = prompt("Edit task for today only", currentSheetTask.text);
+  if (!title) return;
+
+  fetch("/tasks/occurrence/update", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      task_id: currentSheetTask.taskId,
+      date: currentSheetTask.date,
+      title: title
+    })
+  });
+
+  closeTaskSheet();
+}
+function sheetEditAll() {
+  const title = prompt("Edit task for all future occurrences", currentSheetTask.text);
+  if (!title) return;
+
+  fetch(`/projects/tasks/${currentSheetTask.taskId}/update`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      task_text: title
+    })
+  });
+
+  closeTaskSheet();
+}
+function sheetToggleAutoAdvance(enabled) {
+  fetch(`/projects/tasks/${currentSheetTask.taskId}/update`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      auto_advance: enabled
+    })
+  });
+}

@@ -24,7 +24,8 @@ from services.task_service import (
     complete_task_occurrence,
     skip_task_occurrence,
     update_task_occurrence,
-    update_task
+    update_task,
+    compute_next_occurrence
 )
 from collections import OrderedDict
 from services.untimed_service import remove_untimed_task  
@@ -1271,6 +1272,7 @@ def send_project_task_to_eisenhower():
 
 
 
+
 @app.route("/projects/tasks/status", methods=["POST"])
 @login_required
 def update_project_task_status():
@@ -1278,29 +1280,61 @@ def update_project_task_status():
 
     task_id   = data["task_id"]
     status    = data["status"]
-    task_date = data.get("date")   # 👈 THIS is the key
+    task_date = data.get("date")
+    user_id   = session["user_id"]
 
-    if task_date:
-        # 🔁 This is a RECURRING OCCURRENCE update
+    # Load base task (rule)
+    rows = get(
+        "project_tasks",
+        params={
+            "task_id": f"eq.{task_id}",
+            "user_id": f"eq.{user_id}"
+        }
+    )
+
+    if not rows:
+        return jsonify({"error": "Task not found"}), 404
+
+    task = rows[0]
+
+    # ------------------------------------------------
+    # CASE 1: recurring + per-day completion
+    # ------------------------------------------------
+    if task_date and task.get("is_recurring"):
         if status == "done":
             complete_task_occurrence(
-                user_id=session["user_id"],
+                user_id=user_id,
                 task_id=task_id,
                 task_date=task_date
             )
-        else:
-            skip_task_occurrence(
-                user_id=session["user_id"],
-                task_id=task_id,
-                task_date=task_date
-            )
-    else:
-        # 🧱 This is a NORMAL (non-recurring) task
-        update(
-            "project_tasks",
-            params={"task_id": f"eq.{task_id}"},
-            json={"status": status},
-        )
+
+            # 🔁 AUTO-ADVANCE (if enabled)
+            if task.get("auto_advance", True):
+                next_date = compute_next_occurrence(
+                    task,
+                    date.fromisoformat(task_date)
+                )
+
+                if next_date:
+                    update(
+                        "project_tasks",
+                        params={"task_id": f"eq.{task_id}"},
+                        json={
+                            "start_date": next_date.isoformat(),
+                            "status": "open"
+                        }
+                    )
+
+        return jsonify({"status": "ok"})
+
+    # ------------------------------------------------
+    # CASE 2: normal (non-recurring) task
+    # ------------------------------------------------
+    update(
+        "project_tasks",
+        params={"task_id": f"eq.{task_id}"},
+        json={"status": status}
+    )
 
     return jsonify({"status": "ok"})
 
