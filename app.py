@@ -20,7 +20,7 @@ from services.eisenhower_service import (
     copy_open_tasks_from_previous_day,  
     enable_travel_mode,
 )
-from services.task_actions import (
+from services.task_service import (
     complete_task_occurrence,
     skip_task_occurrence,
     update_task_occurrence,
@@ -1863,6 +1863,20 @@ def save_scribble():
         "status": "ok",
         "id": note_id
     })
+@app.route("/tasks/occurrence/update", methods=["POST"])
+@login_required
+def update_task_occurrence_route():
+    data = request.get_json()
+
+    update_task_occurrence(
+        user_id=session["user_id"],
+        task_id=data["task_id"],
+        task_date=data["date"],
+        title=data.get("title"),
+        status=data.get("status")
+    )
+
+    return "", 204
 
 
 

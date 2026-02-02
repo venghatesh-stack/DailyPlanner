@@ -423,3 +423,16 @@ function updateRecurrenceDays(taskId) {
     })
   });
 }
+function editToday(taskId) {
+  const title = prompt("New title for today");
+
+  fetch("/tasks/occurrence/update", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      task_id: taskId,
+      date: getSelectedDate(),
+      title: title
+    })
+  });
+}
