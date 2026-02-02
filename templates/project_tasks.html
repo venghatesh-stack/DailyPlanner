@@ -53,16 +53,20 @@
         Overdue only
       </label>
     </div>
+<!-- Voice Dictation -->
+<div class="voice-box">
+  <button
+    type="button"
+    class="voice-btn"
+    onclick="toggleVoice('projectNotes', 'voiceStatus')">
+    🎙 Dictate tasks
+  </button>
 
-    <!-- Voice Dictation -->
-    <div class="voice-box">
-      <button type="button" class="voice-btn">
-        🎙 Dictate tasks
-      </button>
-      <div id="voiceStatus" class="voice-status">
-        Tap mic and start speaking
-      </div>
-    </div>
+  <div id="voiceStatus" class="voice-status">
+    Tap mic and start speaking
+  </div>
+</div>
+
 
     <!-- Project Notes -->
     <div class="project-notes">

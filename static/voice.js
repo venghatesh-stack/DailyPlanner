@@ -1,12 +1,12 @@
-
 // ===============================
 // 🎙 Voice Dictation for Projects
 // ===============================
 
 let recognition;
 let isRecording = false;
-
+console.log("🎙 Dictation init running");
 function initVoiceDictation(textareaId, statusElId) {
+  console.log("🎯 textarea:", textarea);
   const textarea = document.getElementById(textareaId);
   const statusEl = document.getElementById(statusElId);
 
@@ -49,15 +49,22 @@ function initVoiceDictation(textareaId, statusElId) {
   };
 }
 
-function toggleVoice() {
-  if (!recognition) return;
-
+function toggleVoice(textareaId, statusElId) {
   if (isRecording) {
     recognition.stop();
-  } else {
+    return;
+  }
+
+  // 🔁 Create NEW instance every time (important)
+  initVoiceDictation(textareaId, statusElId);
+
+  try {
     recognition.start();
+  } catch (e) {
+    console.error("Failed to start recognition:", e);
   }
 }
+
 
 // -------------------------------
 // 🧠 Natural date parsing
