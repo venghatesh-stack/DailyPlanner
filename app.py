@@ -1376,14 +1376,18 @@ def unsend_task_from_eisenhower():
 def task_timeline():
     user_id = session["user_id"]
 
-    today_tasks, future_tasks = load_timeline_tasks(user_id)
+
+    today_tasks, future_tasks = load_timeline_tasks(
+        user_id,
+    )
 
     return render_template(
         "task_timeline.html",
         today_tasks=today_tasks,
         future_tasks=future_tasks,
-        today=date.today()
+        today=date.today(),
     )
+
 
 @app.route("/projects/tasks/update-date", methods=["POST"])
 @login_required

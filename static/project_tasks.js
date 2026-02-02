@@ -101,8 +101,7 @@ window.updateStatus = (taskId, status,date=null) => {
   })
     .then(r => {
       if (!r.ok) throw Error();
-      calculateProjectHealth();
-      applyTaskFilters();
+       location.reload();   // ✅ backend decides visibility
     })
     .catch(() => {
       task.dataset.status = prev;
@@ -113,21 +112,18 @@ window.updateStatus = (taskId, status,date=null) => {
 /* -------------------------
    Filters
 ------------------------- */
-window.applyTaskFilters = () => {
-  const hideClosed = $("hideClosed")?.checked;
-  const overdueOnly = $("showOverdueOnly")?.checked;
+function toggleHideCompleted(checked) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("hide_completed", checked ? "1" : "0");
+  window.location.href = url.toString();
+}
 
-  document.querySelectorAll(".task").forEach(task => {
-    const closed = task.dataset.status === "done";
-    const overdue = task.querySelector(".due-badge.overdue");
+function toggleFilter(key, checked) {
+  const url = new URL(window.location.href);
+  url.searchParams.set(key, checked ? "1" : "0");
+  window.location.href = url.toString();
+}
 
-    let show = true;
-    if (hideClosed && closed) show = false;
-    if (overdueOnly && !overdue) show = false;
-
-    task.style.display = show ? "" : "none";
-  });
-};
 
 /* -------------------------
    Due Badge Formatting
@@ -238,7 +234,6 @@ document.addEventListener("DOMContentLoaded", () => {
 ------------------------- */
 document.addEventListener("DOMContentLoaded", () => {
   formatDueBadges();
-  applyTaskFilters();
   calculateProjectHealth();
 });
 window.enableEdit = function (el, taskId) {

@@ -42,16 +42,20 @@
     </div>
 
     <!-- Filters -->
-    <div class="task-filters">
-      <label class="filter">
-        <input type="checkbox" id="hideClosed" checked>
+    <input
+      type="checkbox"
+      id="hideClosed"
+      onchange="toggleHideCompleted(this.checked)"
+      {% if hide_completed %}checked{% endif %}>
         Hide closed
-      </label>
 
-      <label class="filter">
-        <input type="checkbox" id="showOverdueOnly">
-        Overdue only
-      </label>
+ <label class="filter">
+    <input
+      type="checkbox"
+      {% if request.args.get("overdue_only", "0") == "1" %}checked{% endif %}
+      onchange="toggleFilter('overdue_only', this.checked)">
+    Overdue only
+  </label>
     </div>
 <!-- Voice Dictation -->
 <div class="voice-box">
