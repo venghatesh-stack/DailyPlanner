@@ -6,10 +6,9 @@ let recognition;
 let isRecording = false;
 console.log("🎙 Dictation init running");
 function initVoiceDictation(textareaId, statusElId) {
-  console.log("🎯 textarea:", textarea);
   const textarea = document.getElementById(textareaId);
   const statusEl = document.getElementById(statusElId);
-
+  console.log("🎯 textarea:", textarea);
   if (!("webkitSpeechRecognition" in window)) {
     statusEl.textContent = "🎙 Voice not supported in this browser";
     return;
