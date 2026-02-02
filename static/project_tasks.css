@@ -643,3 +643,24 @@
 .recurrence-badge.monthly {
   background: #fdf3e6;
 }
+/* -----------------------------
+   Center top navigation icons
+------------------------------ */
+.top-icons {
+  display: flex;
+  justify-content: center;   /* 👈 centers horizontally */
+  align-items: center;
+  gap: 12px;                 /* spacing between icons */
+  margin: 8px 0 12px;
+  flex-wrap: wrap;           /* mobile-safe */
+}
+
+.top-icons a,
+.top-icons span {
+  font-size: 18px;
+}
+@media (max-width: 480px) {
+  .top-icons {
+    gap: 8px;
+  }
+}
