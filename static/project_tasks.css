@@ -643,27 +643,50 @@
 .recurrence-badge.monthly {
   background: #fdf3e6;
 }
-/* -----------------------------
-   Center top navigation icons
------------------------------- */
-.top-icons {
+/* ===============================
+   Center control blocks
+=============================== */
+
+.add-box,
+.task-filters,
+.voice-box {
   display: flex;
-  justify-content: center;   /* 👈 centers horizontally */
-  align-items: center;
-  gap: 12px;                 /* spacing between icons */
-  margin: 8px 0 12px;
-  flex-wrap: wrap;           /* mobile-safe */
+  justify-content: center;   /* center as a group */
+  width: 100%;
 }
 
-.top-icons a,
-.top-icons span {
-  font-size: 18px;
+/* Inner content stays left-aligned */
+.add-box form,
+.task-filters,
+.voice-box {
+  max-width: 720px;          /* visually balanced */
 }
-@media (max-width: 480px) {
-  .top-icons {
-    gap: 8px;
-  }
+
+/* Add task row spacing */
+.add-box form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
+
+/* Filters alignment */
+.task-filters {
+  margin-top: 6px;
+}
+
+/* Dictation button */
+.voice-box {
+  margin: 10px 0;
+  flex-direction: column;
+  align-items: center;
+}
+.add-box,
+.task-filters,
+.voice-box {
+  margin-left: auto;
+  margin-right: auto;
+}
+
 
 /* ===============================
    Center top navigation icons
