@@ -664,3 +664,44 @@
     gap: 8px;
   }
 }
+
+/* ===============================
+   Center top navigation icons
+   =============================== */
+
+.top-context .nav-icons {
+  display: flex;
+  justify-content: center;   /* 👈 center icons */
+  align-items: center;
+  gap: 14px;
+  width: 100%;               /* 👈 critical */
+  margin: 8px auto 12px;     /* spacing */
+  text-align: center;
+}
+
+/* Make icons visually balanced */
+.top-context .nav-icons a,
+.top-context .nav-icons button {
+  font-size: 18px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* Mobile tightening */
+@media (max-width: 480px) {
+  .top-context .nav-icons {
+    gap: 10px;
+  }
+}
+.top-context {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+
+
+
