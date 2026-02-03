@@ -65,50 +65,55 @@
       saveTimer = setTimeout(saveNote, 800);
     }
 
-    titleEl.addEventListener("input", markDirty);
-    contentEl.addEventListener("input", markDirty);
+ titleEl.addEventListener("input", () => {
+  if (noteId === null) return; // ❌ don't autosave on new note
+  markDirty();
+});
 
-    async function saveNote() {
-      if (!dirty) return;
+contentEl.addEventListener("input", () => {
+  if (noteId === null) return; // ❌ don't autosave on new note
+  markDirty();
+});
 
-      const payload = {
-        id: noteId,
-        title: titleEl.value,
-        content: contentEl.value
-      };
+async function saveNote() {
+  // 🚫 Prevent autosave creating new notes repeatedly
+  if (noteId === null && !titleEl.value.trim() && !contentEl.value.trim()) {
+    return;
+  }
 
-      statusEl.textContent = "Saving…";
+  const payload = {
+    id: noteId,
+    title: titleEl.value,
+    content: contentEl.value
+  };
 
-      try {
-        const res = await fetch("/notes/scribble/save", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
+  statusEl.textContent = "Saving…";
 
-        if (!res.ok) throw new Error("Save failed");
+  try {
+    const res = await fetch("/notes/scribble/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
 
-        const data = await res.json();
+    if (!res.ok) throw new Error("Save failed");
 
-        // If this was a new note, update URL without reload
-        if (!noteId && data.id) {
-          history.replaceState(null, "", `/notes/scribble/${data.id}`);
-        }
+    const data = await res.json();
 
-        dirty = false;
-        statusEl.textContent = "Saved ✓";
-      } catch (e) {
-        console.error(e);
-        statusEl.textContent = "Error saving";
-      }
+    // ✅ FIRST SAVE ONLY: lock the note ID
+    if (noteId === null && data.id) {
+      noteId = data.id;
+      history.replaceState(null, "", `/notes/scribble/${data.id}`);
     }
 
-    // Safety: save before leaving page
-    window.addEventListener("beforeunload", (e) => {
-      if (!dirty) return;
-      e.preventDefault();
-      e.returnValue = "";
-    });
+    dirty = false;
+    statusEl.textContent = "Saved ✓";
+  } catch (e) {
+    console.error(e);
+    statusEl.textContent = "Error saving";
+  }
+}
+
   </script>
 
 </body>
