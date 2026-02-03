@@ -1886,7 +1886,7 @@ def get_latest_scribble(user_id):
 @app.route("/notes/scribble", methods=["GET"])
 @login_required
 def scribble_list():
-    notes = get_all("scribble_notes", order="updated_at desc")
+    notes = get_all("scribble_notes", order="updated_at.desc")
     return render_template("scribble_list.html", notes=notes)
 
 @app.route("/notes/scribble/new")
