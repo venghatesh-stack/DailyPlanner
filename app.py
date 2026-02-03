@@ -1880,8 +1880,25 @@ def get_latest_scribble(user_id):
 @app.route("/notes/scribble", methods=["GET"])
 @login_required
 def scribble_list():
-    notes = get_all("scribble_notes", order="updated_at.desc")
-    return render_template("scribble_list.html", notes=notes)
+    q = (request.args.get("q") or "").strip()
+
+    params = {
+        "user_id": f"eq.{session['user_id']}",
+        "order": "updated_at.desc",
+    }
+
+    if q:
+        # search in title OR content (case-insensitive)
+        params["or"] = f"(title.ilike.*{q}*,content.ilike.*{q}*)"
+
+    notes = get("scribble_notes", params=params) or []
+
+    return render_template(
+        "scribble_list.html",
+        notes=notes,
+        q=q,
+    )
+
 
 @app.route("/notes/scribble/new")
 def scribble_new():
