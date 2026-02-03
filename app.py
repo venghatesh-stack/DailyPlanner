@@ -1860,14 +1860,18 @@ def get_one(table, params=None):
         return None
 
     return rows[0]
-def get_all(table, params=None):
+def get_all(table, params=None, order=None):
     """
     Fetch multiple rows.
     Returns list (possibly empty).
     """
     params = params or {}
-    return get(table, params=params) or []
 
+    if order:
+        params = dict(params)  # avoid mutating caller dict
+        params["order"] = order
+
+    return get(table, params=params) or []
 def get_latest_scribble(user_id):
     rows = get(
         "scribble_notes",
