@@ -1847,19 +1847,13 @@ def move_eisenhower_task():
     return jsonify({"status": "ok"})
 
 def get_one(table, params=None):
-    """
-    Fetch a single row.
-    Returns dict or None.
-    """
-    params = params.copy() if params else {}
+    params = params or {}
+    params = dict(params)
     params["limit"] = 1
 
     rows = get(table, params=params)
+    return rows[0] if rows else None
 
-    if not rows:
-        return None
-
-    return rows[0]
 def get_all(table, params=None, order=None):
     """
     Fetch multiple rows.
@@ -1894,7 +1888,8 @@ def scribble_new():
     return render_template("scribble_edit.html", note=None)
 @app.route("/notes/scribble/<note_id>")
 def scribble_edit(note_id):
-    note = get_one("scribble_notes", id=note_id)
+    note = get_one("scribble_notes", params={"id": f"eq.{note_id}"})
+    
     if not note:
         abort(404)
     return render_template("scribble_edit.html", note=note)

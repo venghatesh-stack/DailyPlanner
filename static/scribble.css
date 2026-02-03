@@ -1,0 +1,164 @@
+/* ======================================================
+   Scribble Notes – Minimal, Clean Styling
+   ====================================================== */
+
+:root {
+  --bg: #ffffff;
+  --panel: #f9fafb;
+  --border: #e5e7eb;
+  --text: #111827;
+  --muted: #6b7280;
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
+}
+
+/* Reset-ish */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 24px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+/* Page container (optional if you wrap later) */
+.scribble-page {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Header */
+h1 {
+  font-size: 1.6rem;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+h1::before {
+  content: "📝";
+  font-size: 1.4rem;
+}
+
+/* New note link */
+a.new-note {
+  display: inline-block;
+  margin-bottom: 18px;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a.new-note:hover {
+  text-decoration: underline;
+}
+
+/* Notes list */
+ul.scribble-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+ul.scribble-list li {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  background: var(--panel);
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+ul.scribble-list li:hover {
+  background: var(--accent-soft);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+}
+
+/* Note title */
+ul.scribble-list li a {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+}
+
+ul.scribble-list li a:hover {
+  color: var(--accent);
+}
+
+/* Note preview / snippet */
+.note-preview {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Editor */
+.scribble-editor {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.scribble-editor input[type="text"] {
+  width: 100%;
+  font-size: 1.1rem;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.scribble-editor textarea {
+  width: 100%;
+  min-height: 60vh;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+}
+
+/* Buttons */
+button {
+  margin-top: 14px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--accent);
+  color: white;
+}
+
+button:hover {
+  opacity: 0.95;
+}
+
+/* Small meta text */
+.meta {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+/* Mobile tweaks */
+@media (max-width: 640px) {
+  body {
+    padding: 16px;
+  }
+
+  h1 {
+    font-size: 1.4rem;
+  }
+}
