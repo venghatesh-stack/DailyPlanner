@@ -259,7 +259,7 @@ window.enableEdit = function (el, taskId) {
 function saveEdit(el, taskId) {
   el.contentEditable = "false";
 
-  fetch(`/projects/tasks/${taskId}/update-text`, {
+  fetch(`/projects/tasks/${taskId}/update`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ task_text: el.textContent.trim() })
