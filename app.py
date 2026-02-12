@@ -1146,6 +1146,7 @@ def project_tasks(project_id):
         "project_tasks",
         params={
             "project_id": f"eq.{project_id}",
+            "is_eliminated": "eq.false",   # ✅ ADD THIS
             "order": order,
         },
     ) or []
