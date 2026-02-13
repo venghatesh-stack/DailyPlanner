@@ -1,18 +1,13 @@
 <!-- ======================================================
-     GLOBAL TOP NAV / CONTEXT HEADER (PLANNER ICON SYSTEM)
-     ====================================================== -->
+     GLOBAL TOP NAV / CONTEXT HEADER (PLANNER ICON SYSTEM v2)
+====================================================== -->
 
-<!-- Feather Icons -->
 <script src="https://unpkg.com/feather-icons"></script>
 
 <style>
-.top-context {
-  margin-bottom: 12px;
-}
+.top-context { margin-bottom: 12px; }
 
-/* ======================
-   DATE / TIME
-====================== */
+/* DATE / TIME */
 
 .date-row {
   display: flex;
@@ -28,16 +23,13 @@
   color: #2563eb;
 }
 
-/* ======================
-   ICON NAV WITH LABELS
-====================== */
+/* NAV ICON GRID */
 
 .nav-icons {
   display: flex;
   gap: 18px;
-  align-items: flex-start;
-  margin-bottom: 10px;
   flex-wrap: wrap;
+  margin-bottom: 10px;
 }
 
 .nav-icons a {
@@ -48,10 +40,10 @@
   color: #374151;
   font-size: 12px;
   font-weight: 500;
-  width: 68px;
+  width: 72px;
   padding: 6px 4px;
   border-radius: 12px;
-  transition: all 0.15s ease;
+  transition: all .15s ease;
 }
 
 .nav-icons a:hover {
@@ -67,9 +59,7 @@
   margin-bottom: 4px;
 }
 
-/* ======================
-   TEXT LINKS
-====================== */
+/* TEXT LINKS */
 
 .nav-links {
   display: flex;
@@ -86,13 +76,9 @@
   align-items: center;
 }
 
-.nav-links a:hover {
-  text-decoration: underline;
-}
+.nav-links a:hover { text-decoration: underline; }
 
-/* ======================
-   SECTION TITLE
-====================== */
+/* SECTION TITLE */
 
 .section-title {
   font-size: 15px;
@@ -105,15 +91,13 @@
 
 <div class="top-context">
 
-  <!-- Date + Time -->
+  <!-- DATE + TIME -->
   <div class="date-row">
     <span id="live-date"></span>
     <span class="time" id="live-time"></span>
   </div>
 
-  <!-- ======================
-       NAVIGATION
-  ======================= -->
+  <!-- NAVIGATION -->
 
   <div class="nav-icons">
 
@@ -127,30 +111,32 @@
       <span>Matrix</span>
     </a>
 
-    <!-- ✅ Better than folder -->
     <a href="/projects" title="Projects">
       <i data-feather="briefcase"></i>
       <span>Projects</span>
     </a>
 
-    <!-- timeline / flow -->
-    <a href="/projects/timeline" title="Timeline">
-      <i data-feather="activity"></i>
+    <!-- PROJECT TIMELINE -->
+    <a href="/projects/timeline" title="Project Timeline">
+      <i data-feather="git-branch"></i>
       <span>Timeline</span>
     </a>
+
+    <!-- DAILY SLOT TIMELINE -->
     <a href="/timeline/day" title="Daily Slot Timeline">
-        🕒
+      <i data-feather="clock"></i>
+      <span>Slots</span>
     </a>
 
-    <!-- daily = day calendar -->
+    <!-- DAILY SUMMARY -->
     <a href="/summary?view=daily" title="Daily Summary">
       <i data-feather="calendar"></i>
       <span>Daily</span>
     </a>
 
-    <!-- ✅ clearer than bar-chart -->
+    <!-- WEEKLY SUMMARY -->
     <a href="/summary?view=weekly" title="Weekly Review">
-      <i data-feather="clipboard"></i>
+      <i data-feather="bar-chart-2"></i>
       <span>Weekly</span>
     </a>
 
@@ -161,7 +147,6 @@
         <span>Gantt</span>
       </a>
 
-      <!-- planner board style -->
       <a href="/projects/{{ project.project_id }}/tasks" title="Project Planner">
         <i data-feather="trello"></i>
         <span>Planner</span>
@@ -171,9 +156,7 @@
 
   </div>
 
-  <!-- ======================
-       KNOWLEDGE LINKS
-  ======================= -->
+  <!-- KNOWLEDGE LINKS -->
 
   <div class="nav-links">
 
@@ -189,7 +172,6 @@
 
   </div>
 
-  <!-- Section Title -->
   <div class="section-title">
     {{ section_title }}
   </div>
@@ -198,36 +180,20 @@
 
 
 <script>
-/* ======================
-   IST CLOCK
-====================== */
-
 function updateDateTime() {
   const now = new Date(
-    new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+    new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"})
   );
 
-  document.getElementById("live-date").textContent =
-    now.toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric"
-    });
+  live-date.textContent =
+    now.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
 
-  document.getElementById("live-time").textContent =
-    now.toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit"
-    }) + " IST";
+  live-time.textContent =
+    now.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",second:"2-digit"}) + " IST";
 }
 
 updateDateTime();
 setInterval(updateDateTime, 1000);
-
-/* ======================
-   ACTIVATE ICONS
-====================== */
 
 feather.replace();
 </script>
