@@ -5,72 +5,65 @@ from supabase_client import get
 # services/timeline_service.py
 from  datetime import date 
 # services/timeline_service.py
-from datetime import date
-from supabase_client import get
-from datetime import date
-from flask import request
-from supabase_client import get
 
-def load_timeline_tasks(user_id):
-    today = date.today()
+# ==========================================================
+# TIMELINE — PROJECT TASK LOADER
+# ==========================================================
 
-    hide_completed = request.args.get("hide_completed", "1") == "1"
-    overdue_only   = request.args.get("overdue_only", "0") == "1"
+def load_timeline_tasks(user_id, project_id=None):
+    """
+    Load project tasks for timeline rendering.
+    Supports optional project filter.
+    """
 
-    rows = get(
-        "project_tasks",
+    # -----------------------------
+    # Load projects → name map
+    # -----------------------------
+    projects = get(
+        "projects",
         params={
             "user_id": f"eq.{user_id}",
-            "select": """
-                task_id,
-                task_text,
-                status,
-                due_date,
-                start_date,
-                project_id,
-                created_at,
-                is_recurring,
-                recurrence_type,
-                recurrence_days
-            """,
-            "order": "created_at.asc",
-        },
+            "select": "project_id,name"
+        }
     ) or []
 
-    today_tasks = []
-    future_tasks = {}
+    project_map = {
+        p["project_id"]: p["name"]
+        for p in projects
+    }
 
-    for r in rows:
-        # 1️⃣ Hide completed
-        if hide_completed and r.get("status") == "done":
+    # -----------------------------
+    # Build task query
+    # -----------------------------
+    params = {
+        "user_id": f"eq.{user_id}",
+        "is_eliminated": "eq.false",
+        "select": "task_id,task_text,project_id,start_date,due_date,status",
+        "order": "due_date.asc"
+    }
+
+    if project_id:
+        params["project_id"] = f"eq.{project_id}"
+
+    rows = get("project_tasks", params=params) or []
+
+    tasks = []
+
+    for t in rows:
+        if not (t.get("due_date") or t.get("start_date")):
             continue
 
-        due = r.get("due_date")
-        if not due:
-            continue
+        tasks.append({
+            "task_id": t["task_id"],
+            "task_text": t["task_text"],
+            "project_id": t.get("project_id"),
+            "project_name": project_map.get(t.get("project_id")),
+            "start_date": t.get("start_date"),
+            "due_date": t.get("due_date"),
+            "status": t.get("status"),
+        })
 
-        due_date = date.fromisoformat(due)
-
-        # 2️⃣ Overdue-only filter
-        if overdue_only and due_date >= today:
-            continue
-
-        # 3️⃣ Attach recurrence badge
-        r["recurrence_badge"] = build_recurrence_badge(r)
-
-        # 4️⃣ Grouping
-        if due_date == today:
-            today_tasks.append(r)
-        elif due_date > today:
-            future_tasks.setdefault(due, []).append(r)
-
-    # Sorting
-    today_tasks.sort(key=lambda x: x["created_at"])
-    for d in future_tasks:
-        future_tasks[d].sort(key=lambda x: x["created_at"])
-
-    return today_tasks, future_tasks
-
+    return tasks
 
 
 def build_recurrence_badge(task):

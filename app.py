@@ -1493,7 +1493,7 @@ def task_timeline():
     )
 
     return render_template(
-        "task_timeline.html",
+        "project_timeline.html",
         timeline_blocks=timeline_blocks,
         zoom=zoom,
         projects=projects,
