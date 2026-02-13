@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="{{ url_for('static', filename='timeline_ui.css') }}">
+<script src="{{ url_for('static', filename='timeline_ui.js') }}"></script>
+
+</head>
+
+<body>
+
+<div class="container">
+
+{% include "_top_nav.html" %}
+
+<!-- ======================
+     HEADER
+====================== -->
+
+<div class="timeline-header">
+
+  <div class="left">
+    <h2>🕒 Project Schedule Timeline</h2>
+  </div>
+
+  <div class="controls">
+
+    <!-- Zoom Toggle -->
+    <div class="zoom-toggle">
+      <button onclick="setZoom('day')" class="{{ 'active' if zoom=='day' else '' }}">Day</button>
+      <button onclick="setZoom('week')" class="{{ 'active' if zoom=='week' else '' }}">Week</button>
+    </div>
+
+    <!-- Project Filter -->
+    <select onchange="filterProject(this.value)">
+      <option value="">All Projects</option>
+      {% for p in projects %}
+        <option value="{{ p.project_id }}"
+          {{ 'selected' if p.project_id == request.args.get('project') else '' }}>
+          {{ p.name }}
+        </option>
+      {% endfor %}
+    </select>
+
+  </div>
+
+</div>
+
+
+<!-- ======================
+     TIMELINE
+====================== -->
+
+<div class="timeline">
+
+{% if timeline_blocks %}
+
+  {% for block in timeline_blocks %}
+
+    <!-- ✅ DROP TARGET BLOCK -->
+    <div class="time-block"
+         data-date="{{ block.date if block.date else '' }}"
+         ondragover="dragOver(event)"
+         ondragleave="dragLeave(event)"
+         ondrop="dropTask(event)">
+
+      <div class="time-node">
+        <div class="dot"></div>
+        <div class="time-label">
+          {{ block.label }}
+        </div>
+      </div>
+
+      <div class="time-content">
+
+        {% if block.tasks %}
+
+          {% for t in block.tasks %}
+            <div class="timeline-card"
+                 draggable="true"
+                 data-task="{{ t.task_id }}"
+                 data-project="{{ t.project_id }}"
+                 ondragstart="dragStart(event)">
+
+              <div class="card-title">
+                {{ t.task_text }}
+              </div>
+
+              <div class="card-meta">
+                {{ t.project_name or "—" }} • {{ t.status }}
+              </div>
+
+            </div>
+          {% endfor %}
+
+        {% else %}
+          <div class="empty-slot">
+            No tasks
+          </div>
+        {% endif %}
+
+      </div>
+    </div>
+
+  {% endfor %}
+
+{% else %}
+
+  <div class="empty-timeline">
+    No scheduled project tasks found
+  </div>
+
+{% endif %}
+
+</div>
+
+<a href="/">⬅ Back</a>
+
+</div>
+</body>
+</html>

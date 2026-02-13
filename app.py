@@ -1430,21 +1430,73 @@ def unsend_task_from_eisenhower():
     )
 
     return jsonify({"status": "ok"})
+def build_timeline_blocks(tasks, zoom="day"):
+    blocks = {}
+
+    for t in tasks:
+        d = t.get("due_date") or t.get("start_date")
+        if not d:
+            continue
+
+        if isinstance(d, str):
+            d = date.fromisoformat(d)
+
+        if zoom == "week":
+            label = f"Week {d.isocalendar()[1]} — {d.strftime('%b %Y')}"
+            key = f"{d.isocalendar()[0]}-{d.isocalendar()[1]}"
+        else:
+            label = d.strftime("%d %b %Y")
+            key = d.isoformat()
+
+        blocks.setdefault(key, {
+            "label": label,
+            "date": d.isoformat(),
+            "tasks": []
+        })["tasks"].append(t)
+
+    return sorted(blocks.values(), key=lambda x: x["date"])
+
+@app.route("/api/timeline/reschedule", methods=["POST"])
+@login_required
+def timeline_reschedule():
+    data = request.get_json()
+
+    task_id = data["task_id"]
+    new_date = data["new_date"]
+
+    update(
+        "project_tasks",
+        params={"task_id": f"eq.{task_id}"},
+        json={"due_date": new_date}
+    )
+
+    return jsonify({"status": "ok"})
+
 @app.route("/tasks/timeline")
 @login_required
 def task_timeline():
     user_id = session["user_id"]
 
+    zoom = request.args.get("zoom", "day")          # day | week
+    project_id = request.args.get("project")        # optional filter
 
-    today_tasks, future_tasks = load_timeline_tasks(
-        user_id,
+    tasks = load_timeline_tasks(user_id, project_id=project_id)
+
+    timeline_blocks = build_timeline_blocks(tasks, zoom)
+
+    projects = get(
+        "projects",
+        params={
+            "user_id": f"eq.{user_id}",
+            "is_archived": "eq.false"
+        }
     )
 
     return render_template(
         "task_timeline.html",
-        today_tasks=today_tasks,
-        future_tasks=future_tasks,
-        today=date.today(),
+        timeline_blocks=timeline_blocks,
+        zoom=zoom,
+        projects=projects,
     )
 
 

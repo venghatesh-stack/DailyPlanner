@@ -152,3 +152,70 @@ def materialize_recurring_slots(plan_date, user_id):
             payload,
             prefer="resolution=ignore-duplicates",
         )
+# ==========================================================
+# TIMELINE — PROJECT TASKS
+# ==========================================================
+
+def normalize_timeline_task(t, project_name=None):
+    return {
+        "task_id": t["task_id"],
+        "task_text": t["task_text"],
+        "project_id": t.get("project_id"),
+        "project_name": project_name,
+        "due_date": t.get("due_date"),
+        "start_date": t.get("start_date"),
+        "status": t.get("status"),
+    }
+
+
+def load_timeline_tasks(user_id, project_id=None):
+    """
+    Load project tasks for timeline rendering.
+    Supports optional project filter.
+    """
+
+    # -----------------------------
+    # Load projects for name map
+    # -----------------------------
+    projects = get(
+        "projects",
+        params={
+            "user_id": f"eq.{user_id}",
+            "select": "project_id,name"
+        }
+    ) or []
+
+    project_map = {
+        p["project_id"]: p["name"]
+        for p in projects
+    }
+
+    # -----------------------------
+    # Build task query
+    # -----------------------------
+    params = {
+        "user_id": f"eq.{user_id}",
+        "is_eliminated": "eq.false",
+        "select": "task_id,task_text,project_id,start_date,due_date,status",
+        "order": "due_date.asc"
+    }
+
+    if project_id:
+        params["project_id"] = f"eq.{project_id}"
+
+    rows = get("project_tasks", params=params) or []
+
+    tasks = []
+
+    for t in rows:
+        if not (t.get("due_date") or t.get("start_date")):
+            continue  # timeline requires date anchor
+
+        tasks.append(
+            normalize_timeline_task(
+                t,
+                project_map.get(t.get("project_id"))
+            )
+        )
+
+    return tasks
