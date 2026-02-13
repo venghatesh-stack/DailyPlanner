@@ -178,22 +178,30 @@
 
 </div>
 
-
 <script>
 function updateDateTime() {
   const now = new Date(
     new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"})
   );
 
-  live-date.textContent =
-    now.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+  document.getElementById("live-date").textContent =
+    now.toLocaleDateString("en-GB", {
+      day:"2-digit",
+      month:"short",
+      year:"numeric"
+    });
 
-  live-time.textContent =
-    now.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",second:"2-digit"}) + " IST";
+  document.getElementById("live-time").textContent =
+    now.toLocaleTimeString("en-IN", {
+      hour:"2-digit",
+      minute:"2-digit",
+      second:"2-digit"
+    }) + " IST";
 }
 
 updateDateTime();
 setInterval(updateDateTime, 1000);
 
+/* IMPORTANT — this must run */
 feather.replace();
 </script>
