@@ -1,44 +1,150 @@
 <!-- ======================================================
-     GLOBAL TOP NAV / CONTEXT HEADER (COMPACT ICONS ONLY)
+     GLOBAL TOP NAV / CONTEXT HEADER (SVG ICONS UPGRADE)
      ====================================================== -->
+
+<!-- Feather Icons (load once — safe if included multiple times) -->
+<script src="https://unpkg.com/feather-icons"></script>
+
+<style>
+.top-context {
+  margin-bottom: 10px;
+}
+
+.date-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 14px;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.date-row .time {
+  font-weight: 600;
+  color: #2563eb;
+}
+
+.nav-icons {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.nav-icons a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: #374151;
+  text-decoration: none;
+  background: #f3f4f6;
+  transition: all 0.15s ease;
+}
+
+.nav-icons a:hover {
+  background: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+.nav-icons svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+}
+
+.nav-links {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: #374151;
+}
+
+.nav-links a:hover {
+  text-decoration: underline;
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+}
+</style>
+
 
 <div class="top-context">
 
   <!-- Date + Time -->
   <div class="date-row">
     <span class="date" id="live-date"></span>
-
     <span class="time" id="live-time"></span>
   </div>
 
   <!-- Navigation Icons -->
   <div class="nav-icons">
 
-    <a href="/" title="Daily Planner">🏠</a>
-
-    <a href="/todo" title="Eisenhower Matrix">🎯</a>
-
-    <a href="/projects" title="Projects">📁</a>
-
-    <a href="/projects/timeline" title="Project Timeline">🗓</a>
-
-    <a href="/summary?view=daily"
-    title="Daily Summary">
-    📅
+    <!-- Home / Planner -->
+    <a href="/" title="Daily Planner">
+      <i data-feather="home"></i>
     </a>
 
+    <!-- Eisenhower Matrix -->
+    <a href="/todo" title="Eisenhower Matrix">
+      <i data-feather="target"></i>
+    </a>
 
+    <!-- Projects -->
+    <a href="/projects" title="Projects">
+      <i data-feather="folder"></i>
+    </a>
 
-    <a href="/summary?view=weekly" title="Weekly Summary">📆</a>
+    <!-- Timeline -->
+    <a href="/projects/timeline" title="Project Timeline">
+      <i data-feather="calendar"></i>
+    </a>
+
+    <!-- Daily Summary -->
+    <a href="/summary?view=daily" title="Daily Summary">
+      <i data-feather="calendar"></i>
+    </a>
+
+    <!-- Weekly Summary -->
+    <a href="/summary?view=weekly" title="Weekly Summary">
+      <i data-feather="bar-chart-2"></i>
+    </a>
 
     {% if project is defined %}
-      <a href="/projects/{{ project.project_id }}/gantt" title="Gantt">📊</a>
-      <a href="/projects/{{ project.project_id }}/tasks" title="Project Planner">🧠</a>
+      <!-- Gantt -->
+      <a href="/projects/{{ project.project_id }}/gantt" title="Gantt">
+        <i data-feather="bar-chart"></i>
+      </a>
+
+      <!-- Project Planner -->
+      <a href="/projects/{{ project.project_id }}/tasks" title="Project Planner">
+        <i data-feather="cpu"></i>
+      </a>
     {% endif %}
 
   </div>
-  <a href="/notes/scribble">📝 Notes</a>
-  <a href="/notes/references">🔗 References</a>
+
+  <!-- Text Links -->
+  <div class="nav-links">
+    <a href="/notes/scribble">
+      <i data-feather="edit-3"></i> Notes
+    </a>
+
+    <a href="/notes/references">
+      <i data-feather="link"></i> References
+    </a>
+  </div>
+
   <!-- Section Title -->
   <div class="section-title">
     {{ section_title }}
@@ -46,13 +152,16 @@
 
 </div>
 
+
 <script>
+/* ======================
+   IST CLOCK
+====================== */
 function updateDateTime() {
   const now = new Date(
     new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
   );
 
-  // Date: 30 Jan 2026
   document.getElementById("live-date").textContent =
     now.toLocaleDateString("en-GB", {
       day: "2-digit",
@@ -60,7 +169,6 @@ function updateDateTime() {
       year: "numeric"
     });
 
-  // Time: big blue
   document.getElementById("live-time").textContent =
     now.toLocaleTimeString("en-IN", {
       hour: "2-digit",
@@ -71,4 +179,9 @@ function updateDateTime() {
 
 updateDateTime();
 setInterval(updateDateTime, 1000);
+
+/* ======================
+   Activate Feather Icons
+====================== */
+feather.replace();
 </script>
