@@ -1472,7 +1472,7 @@ def timeline_reschedule():
 
     return jsonify({"status": "ok"})
 
-@app.route("/tasks/timeline")
+@app.route("/projects/timeline")
 @login_required
 def task_timeline():
     user_id = session["user_id"]
