@@ -571,40 +571,65 @@ def travel_mode():
 
 
 
+
 @app.route("/summary")
 @login_required
 def summary():
     view = request.args.get("view", "daily")
 
+    # -------------------------
+    # DAILY DATE PARAM
+    # -------------------------
     date_str = request.args.get("date")
     if date_str:
         plan_date = date.fromisoformat(date_str)
     else:
         plan_date = datetime.now(IST).date()
 
+    # =========================
+    # WEEKLY VIEW
+    # =========================
     if view == "weekly":
-       # Monday → Sunday
-        start = plan_date - timedelta(days=plan_date.weekday())
+
+        week_str = request.args.get("week")  # format: 2026-W07
+
+        if week_str:
+            try:
+                year, week = week_str.split("-W")
+                start = date.fromisocalendar(int(year), int(week), 1)
+            except ValueError:
+                start = plan_date - timedelta(days=plan_date.weekday())
+        else:
+            # fallback — current week
+            start = plan_date - timedelta(days=plan_date.weekday())
+
         end = start + timedelta(days=6)
 
         data = get_weekly_summary(start, end)
         insights = generate_weekly_insight(data)
+
         return render_template_string(
             SUMMARY_TEMPLATE,
             view="weekly",
             data=data,
             start=start,
-            end=plan_date,
+            end=end,  # ✅ FIXED (was plan_date)
             insights=insights,
+            selected_week=start.strftime("%G-W%V"),  # for picker value
         )
 
+    # =========================
+    # DAILY VIEW
+    # =========================
     data = get_daily_summary(plan_date)
+
     return render_template_string(
         SUMMARY_TEMPLATE,
         view="daily",
         data=data,
         date=plan_date,
     )
+
 @app.route("/untimed/promote", methods=["POST"])
 @login_required
 def promoteuntimed():

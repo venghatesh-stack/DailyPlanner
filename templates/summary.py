@@ -129,6 +129,23 @@ SUMMARY_TEMPLATE = """
 {% else %}
 
 {% include "_top_nav.html" %}
+<form method="get" style="margin-bottom:16px;">
+  <input type="hidden" name="view" value="weekly">
+
+  <label style="font-size:14px;font-weight:600;">📆 Select Week</label><br>
+
+  <input type="week"
+         name="week"
+         value="{{ selected_week }}"
+         onchange="this.form.submit()"
+         style="
+           margin-top:6px;
+           padding:8px 10px;
+           border-radius:10px;
+           border:1px solid #e5e7eb;
+           font-size:14px;
+         ">
+</form>
 
 <h2 class="summary-title">
   📆 Weekly Review
