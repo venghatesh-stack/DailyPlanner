@@ -1498,7 +1498,51 @@ def task_timeline():
         zoom=zoom,
         projects=projects,
     )
+def load_slot_timeline(plan_date):
+    return get(
+        "daily_slots",
+        params={
+            "plan_date": f"eq.{plan_date.isoformat()}",
+            "select": "slot,plan,status",
+            "order": "slot.asc"
+        }
+    ) or []
 
+
+def build_slot_blocks(rows):
+    slot_map = {r["slot"]: r for r in rows}
+    blocks = []
+
+    for slot in range(1, TOTAL_SLOTS + 1):
+        r = slot_map.get(slot)
+
+        blocks.append({
+            "slot": slot,
+            "label": slot_label(slot),
+            "text": r["plan"] if r else "",
+            "status": r["status"] if r else None
+        })
+
+    return blocks
+
+@app.route("/timeline/day")
+@login_required
+def timeline_day():
+    d = request.args.get("date")
+
+    if d:
+        plan_date = date.fromisoformat(d)
+    else:
+        plan_date = datetime.now(IST).date()
+
+    rows = load_slot_timeline(plan_date)
+    blocks = build_slot_blocks(rows)
+
+    return render_template(
+        "timeline_day.html",
+        blocks=blocks,
+        plan_date=plan_date
+    )
 
 @app.route("/projects/tasks/update-date", methods=["POST"])
 @login_required

@@ -1,0 +1,14 @@
+{% include "_top_nav.html" %}
+
+<h2>🕒 Daily Slot Timeline — {{ plan_date }}</h2>
+
+<div class="slot-timeline">
+
+{% for b in blocks %}
+  <div class="slot-row">
+    <div class="slot-time">{{ b.label }}</div>
+    <div class="slot-card">{{ b.text or "—" }}</div>
+  </div>
+{% endfor %}
+
+</div>
