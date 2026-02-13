@@ -78,9 +78,7 @@ function syncReflection(el) {
 /* =========================================================
    EVENT EDITING
 ========================================================= */
-<button onclick="document.getElementById('modal').style.display='none'">
-  Cancel
-</button>
+
 
 
 function saveEvent(startSlot, endSlot) {
@@ -354,6 +352,49 @@ function renderTaskCard(task) {
   `;
 
   return div;
+}
+/* =========================================================
+   EVENT EDITING
+========================================================= */
+
+function editEvent(startSlot, endSlot) {
+  const modal = document.getElementById("modal");
+  const content = document.getElementById("modal-content");
+
+  fetch(`/slot/get?date=${PLAN_DATE}&slot=${startSlot}`)
+    .then(r => r.json())
+    .then(data => {
+      content.innerHTML = `
+        <h3>✏️ Edit Event</h3>
+        <textarea id="editText" style="width:100%;min-height:140px;">
+${(data.text || "").replace(/</g, "&lt;")}
+        </textarea>
+        <br><br>
+        <button onclick="document.getElementById('modal').style.display='none'">
+          Cancel
+        </button>
+        <button onclick="saveEvent(${startSlot}, ${endSlot})">
+          Save
+        </button>
+      `;
+      modal.style.display = "flex";
+    })
+    .catch(err => {
+      console.error("Edit fetch failed:", err);
+    });
+}
+
+function saveEvent(startSlot, endSlot) {
+  fetch("/slot/update", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      plan_date: PLAN_DATE,
+      start_slot: startSlot,
+      end_slot: endSlot,
+      text: document.getElementById("editText").value
+    })
+  }).then(() => location.reload());
 }
 
 function renderDailySummaryTable() {
