@@ -78,23 +78,10 @@ function syncReflection(el) {
 /* =========================================================
    EVENT EDITING
 ========================================================= */
-function editEvent(startSlot, endSlot) {
-  const modal = document.getElementById("modal");
-  const content = document.getElementById("modal-content");
+<button onclick="document.getElementById('modal').style.display='none'">
+  Cancel
+</button>
 
-  fetch(`/slot/get?date=${PLAN_DATE}&slot=${startSlot}`)
-    .then(r => r.json())
-    .then(data => {
-      content.innerHTML = `
-        <h3>✏️ Edit Event</h3>
-        <textarea id="editText" style="width:100%;min-height:140px;">${data.text}</textarea>
-        <br><br>
-        <button onclick="modal.style.display='none'">Cancel</button>
-        <button onclick="saveEvent(${startSlot},${endSlot})">Save</button>
-      `;
-      modal.style.display = "flex";
-    });
-}
 
 function saveEvent(startSlot, endSlot) {
   fetch("/slot/update", {
