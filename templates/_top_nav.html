@@ -1,14 +1,18 @@
 <!-- ======================================================
-     GLOBAL TOP NAV / CONTEXT HEADER (SVG ICONS UPGRADE)
+     GLOBAL TOP NAV / CONTEXT HEADER (PLANNER ICON SYSTEM)
      ====================================================== -->
 
-<!-- Feather Icons (load once — safe if included multiple times) -->
+<!-- Feather Icons -->
 <script src="https://unpkg.com/feather-icons"></script>
 
 <style>
 .top-context {
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
+
+/* ======================
+   DATE / TIME
+====================== */
 
 .date-row {
   display: flex;
@@ -16,7 +20,7 @@
   align-items: center;
   font-size: 14px;
   color: #374151;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .date-row .time {
@@ -24,57 +28,77 @@
   color: #2563eb;
 }
 
+/* ======================
+   ICON NAV WITH LABELS
+====================== */
+
 .nav-icons {
   display: flex;
-  gap: 14px;
-  align-items: center;
-  margin-bottom: 8px;
+  gap: 18px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
 .nav-icons a {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  color: #374151;
   text-decoration: none;
-  background: #f3f4f6;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 500;
+  width: 68px;
+  padding: 6px 4px;
+  border-radius: 12px;
   transition: all 0.15s ease;
 }
 
 .nav-icons a:hover {
-  background: #e5e7eb;
+  background: #f3f4f6;
+  color: #2563eb;
   transform: translateY(-1px);
 }
 
 .nav-icons svg {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   stroke-width: 2;
+  margin-bottom: 4px;
 }
+
+/* ======================
+   TEXT LINKS
+====================== */
 
 .nav-links {
   display: flex;
-  gap: 14px;
-  margin-bottom: 6px;
+  gap: 16px;
+  margin: 6px 0;
   font-size: 14px;
 }
 
 .nav-links a {
   text-decoration: none;
   color: #374151;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
 }
 
 .nav-links a:hover {
   text-decoration: underline;
 }
 
+/* ======================
+   SECTION TITLE
+====================== */
+
 .section-title {
   font-size: 15px;
   font-weight: 600;
   color: #111827;
+  margin-top: 4px;
 }
 </style>
 
@@ -83,66 +107,83 @@
 
   <!-- Date + Time -->
   <div class="date-row">
-    <span class="date" id="live-date"></span>
+    <span id="live-date"></span>
     <span class="time" id="live-time"></span>
   </div>
 
-  <!-- Navigation Icons -->
+  <!-- ======================
+       NAVIGATION
+  ======================= -->
+
   <div class="nav-icons">
 
-    <!-- Home / Planner -->
-    <a href="/" title="Daily Planner">
+    <a href="/" title="Planner">
       <i data-feather="home"></i>
+      <span>Planner</span>
     </a>
 
-    <!-- Eisenhower Matrix -->
-    <a href="/todo" title="Eisenhower Matrix">
+    <a href="/todo" title="Matrix">
       <i data-feather="target"></i>
+      <span>Matrix</span>
     </a>
 
-    <!-- Projects -->
+    <!-- ✅ Better than folder -->
     <a href="/projects" title="Projects">
-      <i data-feather="folder"></i>
+      <i data-feather="briefcase"></i>
+      <span>Projects</span>
     </a>
 
-    <!-- Timeline -->
-    <a href="/projects/timeline" title="Project Timeline">
+    <!-- timeline / flow -->
+    <a href="/projects/timeline" title="Timeline">
       <i data-feather="activity"></i>
+      <span>Timeline</span>
     </a>
 
-    <!-- Daily Summary -->
+    <!-- daily = day calendar -->
     <a href="/summary?view=daily" title="Daily Summary">
       <i data-feather="calendar"></i>
+      <span>Daily</span>
     </a>
 
-    <!-- Weekly Summary -->
-    <a href="/summary?view=weekly" title="Weekly Summary">
-      <i data-feather="bar-chart-2"></i>
+    <!-- ✅ clearer than bar-chart -->
+    <a href="/summary?view=weekly" title="Weekly Review">
+      <i data-feather="clipboard"></i>
+      <span>Weekly</span>
     </a>
 
     {% if project is defined %}
-      <!-- Gantt -->
+
       <a href="/projects/{{ project.project_id }}/gantt" title="Gantt">
         <i data-feather="bar-chart"></i>
+        <span>Gantt</span>
       </a>
 
-      <!-- Project Planner -->
+      <!-- planner board style -->
       <a href="/projects/{{ project.project_id }}/tasks" title="Project Planner">
         <i data-feather="trello"></i>
+        <span>Planner</span>
       </a>
+
     {% endif %}
 
   </div>
 
-  <!-- Text Links -->
+  <!-- ======================
+       KNOWLEDGE LINKS
+  ======================= -->
+
   <div class="nav-links">
+
     <a href="/notes/scribble">
-      <i data-feather="edit-3"></i> Notes
+      <i data-feather="edit-3"></i>
+      Notes
     </a>
 
     <a href="/notes/references">
-      <i data-feather="link"></i> References
+      <i data-feather="link"></i>
+      References
     </a>
+
   </div>
 
   <!-- Section Title -->
@@ -157,6 +198,7 @@
 /* ======================
    IST CLOCK
 ====================== */
+
 function updateDateTime() {
   const now = new Date(
     new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
@@ -181,7 +223,8 @@ updateDateTime();
 setInterval(updateDateTime, 1000);
 
 /* ======================
-   Activate Feather Icons
+   ACTIVATE ICONS
 ====================== */
+
 feather.replace();
 </script>
