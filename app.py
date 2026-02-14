@@ -2088,23 +2088,34 @@ def update_task_occurrence_route():
 
     return "", 204
 
-def has_conflict(user_id, plan_date, start_time, end_time, exclude_id=None):
-    filters = {
-        "user_id": f"eq.{user_id}",
-        "plan_date": f"eq.{plan_date}",
-        "is_deleted": "eq.false",
-    }
+def get_conflicts(user_id, plan_date, start_time, end_time, exclude_id=None):
+    existing = get(
+        "daily_events",
+        params={
+            "user_id": f"eq.{user_id}",
+            "plan_date": f"eq.{plan_date}",
+            "is_deleted": "eq.false"
+        }
+    ) or []
 
-    existing = get("daily_events", params=filters) or []
+    conflicts = []
 
-    for ev in existing:
-        if exclude_id and ev["id"] == exclude_id:
+    for e in existing:
+        if exclude_id and str(e["id"]) == str(exclude_id):
             continue
 
-        if not (end_time <= ev["start_time"] or start_time >= ev["end_time"]):
-            return True
+        if not (
+            end_time <= e["start_time"] or
+            start_time >= e["end_time"]
+        ):
+            conflicts.append({
+                "start_time": str(e["start_time"]),
+                "end_time": str(e["end_time"]),
+                "title": e["title"]
+            })
 
-    return False
+    return conflicts
+
 @app.route("/planner-v2")
 def planner_v2():
     return render_template("planner_v2.html")
@@ -2126,17 +2137,27 @@ def list_events():
     return jsonify(events)
 @app.route("/api/v2/events", methods=["POST"])
 def create_event():
+    from flask import jsonify
+
     user_id = "VenghateshS"
     data = request.json
+    force = data.get("force", False)
 
     if data["end_time"] <= data["start_time"]:
-        return {"error": "Invalid time range"}, 400
+        return jsonify({"error": "Invalid time range"}), 400
 
-    if has_conflict(user_id, data["plan_date"], data["start_time"], data["end_time"]):
+    conflicts = get_conflicts(
+        user_id,
+        data["plan_date"],
+        data["start_time"],
+        data["end_time"]
+    )
+
+    if conflicts and not force:
         return jsonify({
             "conflict": True,
-            "conflicting_events": existing_events
-        })
+            "conflicting_events": conflicts
+        }), 409
 
     post("daily_events", {
         "user_id": user_id,
@@ -2147,23 +2168,28 @@ def create_event():
         "description": data.get("description", "")
     })
 
-    return {"ok": True}
+    return jsonify({"success": True})
 @app.route("/api/v2/events/<event_id>", methods=["PUT"])
 def update_event(event_id):
+    from flask import jsonify
+
     user_id = "VenghateshS"
     data = request.json
+    force = data.get("force", False)
 
-    if has_conflict(
+    conflicts = get_conflicts(
         user_id,
         data["plan_date"],
         data["start_time"],
         data["end_time"],
         exclude_id=event_id
-    ):
+    )
+
+    if conflicts and not force:
         return jsonify({
             "conflict": True,
-            "conflicting_events": existing_events
-        })
+            "conflicting_events": conflicts
+        }), 409
 
     update(
         "daily_events",
@@ -2176,7 +2202,8 @@ def update_event(event_id):
         }
     )
 
-    return {"ok": True}
+    return jsonify({"success": True})
+
 @app.route("/api/v2/events/<event_id>", methods=["DELETE"])
 def delete_event(event_id):
     update(
