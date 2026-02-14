@@ -190,3 +190,10 @@ body {
 #day-summary {
   margin-bottom: 30px;
 }
+.hour-line {
+  pointer-events: none;
+}
+
+.hour-label {
+  pointer-events: none;
+}
