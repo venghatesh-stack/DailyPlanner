@@ -126,7 +126,7 @@ function computeLayout(events) {
       start,
       end,
       top: (start / 60) * HOUR_HEIGHT,
-      height: baseHeight
+      baseheight: baseHeight
     };
   });
 
@@ -313,6 +313,8 @@ async function saveEvent() {
 document.addEventListener("DOMContentLoaded", () => {
   updateDateHeader();
   loadEvents();
+  document.getElementById("new-event-btn")
+  .addEventListener("click", openCreateModal);
 
   const timeline = document.getElementById("timeline");
 
