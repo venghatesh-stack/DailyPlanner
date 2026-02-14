@@ -23,7 +23,9 @@ async function loadEvents() {
   const res = await fetch(`/api/v2/events?date=${currentDate}`);
   events = await res.json();
   render();
+  renderSummary();   // 🔥 add this
 }
+
 
 function render() {
   const root = document.getElementById("timeline");
@@ -41,7 +43,15 @@ function render() {
     const div = document.createElement("div");
     div.className = "event";
     div.style.top = ev.top + "px";
+    div.style.minHeight = ev.minHeight + "px";
     div.style.height = ev.height + "px";
+
+    requestAnimationFrame(() => {
+      if (div.scrollHeight > div.offsetHeight) {
+        div.style.height = div.scrollHeight + "px";
+      }
+    });
+
     div.style.left = ev.left + "%";
     div.style.width = ev.width + "%";
     div.innerHTML = `
@@ -67,7 +77,8 @@ function computeLayout(events) {
       start,
       end,
       top: (start/60)*HOUR_HEIGHT,
-      height: ((end-start)/60)*HOUR_HEIGHT
+      height: ((end-start)/60)*HOUR_HEIGHT,
+      minHeight: 40
     };
   });
 
@@ -168,3 +179,22 @@ async function deleteEvent() {
   await loadEvents();
 }
 
+function renderSummary() {
+  const tbody = document.querySelector("#summary-table tbody");
+  tbody.innerHTML = "";
+
+  const sorted = [...events].sort(
+    (a,b)=> minutes(a.start_time) - minutes(b.start_time)
+  );
+
+  sorted.forEach(ev => {
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td>${ev.start_time} – ${ev.end_time}</td>
+      <td>${ev.title}</td>
+    `;
+
+    tbody.appendChild(row);
+  });
+}
