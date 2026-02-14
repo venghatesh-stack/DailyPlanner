@@ -2212,6 +2212,49 @@ def delete_event(event_id):
         json={"is_deleted": True}
     )
     return {"ok": True}
+@app.route("/api/v2/project-tasks")
+def get_project_tasks():
+    user_id = "VenghateshS"
+    date = request.args.get("date")
+
+    if not date:
+        return jsonify([])
+
+    tasks = get(
+        "project_tasks",
+        params={
+            "user_id": f"eq.{user_id}",
+            "is_deleted": "eq.false",
+            "or": f"(plan_date.eq.{date},plan_date.is.null)"
+        }
+    )
+
+    return jsonify(tasks)
+
+@app.route("/api/v2/project-tasks/<task_id>/schedule", methods=["POST"])
+def schedule_project_task(task_id):
+    data = request.json
+
+    update(
+        "project_tasks",
+        params={"id": f"eq.{task_id}"},
+        json={
+            "plan_date": data["plan_date"],
+            "start_time": data["start_time"],
+            "end_time": data["end_time"]
+        }
+    )
+
+    return {"ok": True}
+@app.route("/api/v2/tasks/<task_id>/complete", methods=["POST"])
+def complete_task(task_id):
+    update(
+        "project_tasks",
+        params={"id": f"eq.{task_id}"},
+        json={"is_completed": True}
+    )
+
+    return {"ok": True}
 
 # ENTRY POINT
 # ==========================================================
