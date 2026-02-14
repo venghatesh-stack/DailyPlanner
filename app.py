@@ -2133,7 +2133,10 @@ def create_event():
         return {"error": "Invalid time range"}, 400
 
     if has_conflict(user_id, data["plan_date"], data["start_time"], data["end_time"]):
-        return {"error": "Time conflict"}, 409
+        return jsonify({
+            "conflict": True,
+            "conflicting_events": existing_events
+        })
 
     post("daily_events", {
         "user_id": user_id,
@@ -2157,7 +2160,10 @@ def update_event(event_id):
         data["end_time"],
         exclude_id=event_id
     ):
-        return {"error": "Time conflict"}, 409
+        return jsonify({
+            "conflict": True,
+            "conflicting_events": existing_events
+        })
 
     update(
         "daily_events",

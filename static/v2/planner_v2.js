@@ -76,24 +76,36 @@ function computeLayout(events) {
       ...ev,
       start,
       end,
-      top: (start/60)*HOUR_HEIGHT,
-      height: ((end-start)/60)*HOUR_HEIGHT,
-      minHeight: 40
+      top: (start / 60) * HOUR_HEIGHT,
+      height: Math.max(((end - start) / 60) * HOUR_HEIGHT, 40)
     };
   });
 
-  enriched.sort((a,b)=>a.start-b.start);
+  enriched.sort((a, b) => a.start - b.start);
 
-  for (let i=0;i<enriched.length;i++) {
-    let overlaps = enriched.filter(e =>
-      !(e.end <= enriched[i].start || e.start >= enriched[i].end)
-    );
-    const index = overlaps.indexOf(enriched[i]);
-    const total = overlaps.length;
+  const groups = [];
 
-    enriched[i].width = 100/total;
-    enriched[i].left = index * (100/total);
-  }
+  enriched.forEach(ev => {
+    let placed = false;
+
+    for (let group of groups) {
+      if (group.some(e => !(ev.end <= e.start || ev.start >= e.end))) {
+        group.push(ev);
+        placed = true;
+        break;
+      }
+    }
+
+    if (!placed) groups.push([ev]);
+  });
+
+  groups.forEach(group => {
+    const width = 100 / group.length;
+    group.forEach((ev, index) => {
+      ev.width = width;
+      ev.left = width * index;
+    });
+  });
 
   return enriched;
 }
@@ -146,10 +158,36 @@ async function saveEvent() {
     }
 
     if (!res.ok) {
-      const errorText = await res.text();
-      alert(errorText || "Save failed");
+    const data = await res.json();
+
+    if (data.conflict) {
+      showConflictDialog(data.conflicting_events, payload);
       return;
     }
+
+    alert("Save failed");
+    return;
+  }
+function showConflictDialog(conflicts, payload) {
+  const modal = document.getElementById("modal");
+
+  const conflictHtml = conflicts.map(c =>
+    `<div style="margin:6px 0;">
+       ${c.start_time} – ${c.end_time} : ${c.title}
+     </div>`
+  ).join("");
+
+  document.querySelector(".modal-card").innerHTML = `
+    <h3>Time Conflict</h3>
+    <p>This overlaps with:</p>
+    ${conflictHtml}
+    <button onclick="forceSave(${JSON.stringify(payload)})">
+      Accept Anyway
+    </button>
+    <button onclick="closeModal()">Reject</button>
+  `;
+}
+
 
     // 🔥 RESET STATE BEFORE RENDER
     selected = null;
@@ -166,6 +204,19 @@ async function saveEvent() {
   }
 }
 
+async function forceSave(payload) {
+  payload.force = true;
+
+  await fetch(`/api/v2/events`, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(payload)
+  });
+
+  selected = null;
+  closeModal();
+  await loadEvents();
+}
 
 async function deleteEvent() {
   if (!selected) return;
@@ -177,6 +228,24 @@ async function deleteEvent() {
   selected = null;
   closeModal();
   await loadEvents();
+}
+function renderDate() {
+  const d = new Date(currentDate);
+  document.getElementById("current-date").innerText =
+    d.toLocaleDateString("en-IN", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    });
+}
+
+function changeDate(offset) {
+  const d = new Date(currentDate);
+  d.setDate(d.getDate() + offset);
+  currentDate = d.toISOString().split("T")[0];
+  renderDate();
+  loadEvents();
 }
 
 function renderSummary() {
