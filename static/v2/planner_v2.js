@@ -479,9 +479,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 loadEvents();
-setInterval(() => {
-  render();
-}, 60000);
 });
 
 timeline.addEventListener("dragover", e => {
@@ -554,3 +551,10 @@ timeline.addEventListener("dragleave", () => {
     snapLine = null;
   }
 });
+
+// ✅ update current time every minute
+setInterval(() => {
+  render();
+}, 60000);
+
+});   // ← closes DOMContentLoaded
