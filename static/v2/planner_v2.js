@@ -98,6 +98,16 @@ function render() {
 
     div.onclick = () => openModal(ev);
     root.appendChild(div);
+     // 🔥 Allow content to expand but prevent breaking layout
+  requestAnimationFrame(() => {
+    const expandedHeight = div.scrollHeight;
+
+    if (expandedHeight > ev.baseHeight) {
+      div.style.height = expandedHeight + "px";
+    } else {
+      div.style.height = ev.baseHeight + "px";
+    }
+  });
   });
 }
 
@@ -109,33 +119,18 @@ function computeLayout(events) {
     const start = minutes(ev.start_time);
     const end = minutes(ev.end_time);
 
+    const baseHeight = Math.max(((end - start) / 60) * HOUR_HEIGHT, 40);
+
     return {
       ...ev,
       start,
       end,
       top: (start / 60) * HOUR_HEIGHT,
-      baseHeight: Math.max(((end - start) / 60) * HOUR_HEIGHT, 40),
-      height: Math.max(((end - start) / 60) * HOUR_HEIGHT, 40)
+      height: baseHeight
     };
   });
 
   enriched.sort((a, b) => a.start - b.start);
-
-  /* ------------------------------------
-     1️⃣ STACK VERTICALLY (content priority)
-  ------------------------------------- */
-
-  let currentBottom = 0;
-
-  enriched.forEach(ev => {
-    ev.top = Math.max(ev.top, currentBottom);
-    // IMPORTANT: use baseHeight for stacking
-    currentBottom = ev.top + ev.baseHeight;
-  });
-
-  /* ------------------------------------
-     2️⃣ CONFLICT GROUPING (horizontal split)
-  ------------------------------------- */
 
   const groups = [];
 
@@ -167,6 +162,7 @@ function computeLayout(events) {
 
   return enriched;
 }
+
 
 function changeDate(offset) {
   const date = new Date(currentDate);
