@@ -27,15 +27,16 @@ async function loadEvents() {
   renderSummary();   // 🔥 add this
 }
 
-
 function render() {
   const root = document.getElementById("timeline");
   root.innerHTML = "";
 
-  for (let h=0; h<24; h++) {
+  for (let h = 0; h < 24; h++) {
     const top = h * HOUR_HEIGHT;
-    root.innerHTML += `<div class="hour-line" style="top:${top}px"></div>
-                       <div class="hour-label" style="top:${top}px">${h}:00</div>`;
+    root.innerHTML += `
+      <div class="hour-line" style="top:${top}px"></div>
+      <div class="hour-label" style="top:${top}px">${h}:00</div>
+    `;
   }
 
   const positioned = computeLayout(events);
@@ -43,41 +44,52 @@ function render() {
   positioned.forEach(ev => {
     const div = document.createElement("div");
     div.className = "event";
+
+    if (ev.isConflict) {
+      div.classList.add("conflict");
+    }
+
     div.style.top = ev.top + "px";
-    div.style.minHeight = ev.minHeight + "px";
     div.style.height = ev.height + "px";
-
-    requestAnimationFrame(() => {
-      if (div.scrollHeight > div.offsetHeight) {
-        div.style.height = div.scrollHeight + "px";
-      }
-    });
-
-   div.style.left = `calc(${ev.left}% + ${ev.gapOffset}px)`;
-   div.style.width = `calc(${ev.width}% - ${4}px)`;
+    div.style.left = `calc(${ev.left}% + ${ev.gapOffset}px)`;
+    div.style.width = `calc(${ev.width}% - 4px)`;
 
     div.innerHTML = `
-  <div class="event-time">
-    ${ev.start_time} – ${ev.end_time}
-  </div>
-  <div class="event-title">
-    ${ev.title}
-  </div>
-  `;
+      <div class="event-time">
+        ${ev.start_time} – ${ev.end_time}
+      </div>
+      <div class="event-title">
+        ${ev.title}
+      </div>
+    `;
 
     div.onclick = () => openModal(ev);
     root.appendChild(div);
   });
-  if (ev.isConflict) {
-  div.classList.add("conflict");
 }
 
+
+
+function calculateEndTime(start, duration) {
+  const total = minutes(start) + parseInt(duration);
+  return toTime(total);
 }
 
+function updateEndPreview() {
+  const start = document.getElementById("start-time").value;
+  const duration = document.getElementById("duration").value;
+
+  if (!start) return;
+
+  const end = calculateEndTime(start, duration);
+  document.getElementById("end-display").innerText =
+    `Ends at ${end}`;
+}
 function computeLayout(events) {
   const enriched = events.map(ev => {
     const start = minutes(ev.start_time);
     const end = minutes(ev.end_time);
+
     return {
       ...ev,
       start,
@@ -107,26 +119,19 @@ function computeLayout(events) {
 
   groups.forEach(group => {
     const width = 100 / group.length;
-    group.forEach((ev, index) => {
-     const gap = 4; // pixels between columns
+    const gap = 4;
 
-      ev.width = width - (gap / group.length);
+    group.forEach((ev, index) => {
+      ev.width = width;
       ev.left = width * index;
       ev.gapOffset = index * gap;
+      ev.isConflict = group.length > 1;
     });
   });
-  groups.forEach(group => {
-  const width = 100 / group.length;
-
-  group.forEach((ev, index) => {
-    ev.width = width;
-    ev.left = width * index;
-    ev.isConflict = group.length > 1;
-  });
-});
 
   return enriched;
 }
+
 
 function openCreateModal() {
   selected = null;
@@ -137,7 +142,10 @@ function openCreateModal() {
 function openModal(ev) {
   selected = ev;
   document.getElementById("start-time").value = ev.start_time;
-  document.getElementById("end-time").value = ev.end_time;
+  const duration = minutes(ev.end_time) - minutes(ev.start_time);
+  document.getElementById("duration").value = duration;
+  updateEndPreview();
+
   document.getElementById("event-title").value = ev.title;
   document.getElementById("event-desc").value = ev.description || "";
   document.getElementById("modal").classList.remove("hidden");
@@ -150,13 +158,16 @@ function closeModal() {
 }
 
 async function saveEvent() {
-  const payload = {
-    plan_date: currentDate,
-    start_time: document.getElementById("start-time").value,
-    end_time: document.getElementById("end-time").value,
-    title: document.getElementById("event-title").value,
-    description: document.getElementById("event-desc").value
-  };
+const start = document.getElementById("start-time").value;
+const duration = document.getElementById("duration").value;
+
+const payload = {
+  plan_date: currentDate,
+  start_time: start,
+  end_time: calculateEndTime(start, duration),
+  title: document.getElementById("event-title").value,
+  description: document.getElementById("event-desc").value
+};
 
   try {
     let res;
@@ -266,23 +277,42 @@ function changeDate(offset) {
   renderDate();
   loadEvents();
 }
-
 function renderSummary() {
   const tbody = document.querySelector("#summary-table tbody");
   tbody.innerHTML = "";
 
   const sorted = [...events].sort(
-    (a,b)=> minutes(a.start_time) - minutes(b.start_time)
+    (a, b) => minutes(a.start_time) - minutes(b.start_time)
   );
 
+  let totalMinutes = 0;
+
   sorted.forEach(ev => {
+    const duration = minutes(ev.end_time) - minutes(ev.start_time);
+    totalMinutes += duration;
+
     const row = document.createElement("tr");
 
     row.innerHTML = `
       <td>${ev.start_time} – ${ev.end_time}</td>
+      <td>${duration} mins</td>
       <td>${ev.title}</td>
     `;
 
     tbody.appendChild(row);
   });
+
+  const totalRow = document.createElement("tr");
+  totalRow.innerHTML = `
+    <td colspan="3" style="font-weight:600;">
+      Total Meeting Time: ${(totalMinutes / 60).toFixed(1)} hrs
+    </td>
+  `;
+
+  tbody.appendChild(totalRow);
 }
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("start-time")?.addEventListener("change", updateEndPreview);
+  document.getElementById("duration")?.addEventListener("change", updateEndPreview);
+});
+

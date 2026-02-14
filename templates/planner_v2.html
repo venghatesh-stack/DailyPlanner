@@ -33,8 +33,21 @@
 <div id="modal" class="hidden">
   <div class="modal-card">
     <h3 id="modal-title">Event</h3>
-    <input type="time" id="start-time">
-    <input type="time" id="end-time">
+   <label>Start</label>
+    <input type="time" id="start-time" step="300">
+
+    <label>Duration</label>
+    <select id="duration">
+    <option value="15">15 mins</option>
+    <option value="30" selected>30 mins</option>
+    <option value="45">45 mins</option>
+    <option value="60">1 hour</option>
+    <option value="90">1.5 hours</option>
+    <option value="120">2 hours</option>
+    </select>
+
+<div id="end-display" style="margin-top:6px; font-size:13px; opacity:.6;"></div>
+
     <input type="text" id="event-title" placeholder="Title">
     <textarea id="event-desc" placeholder="Description"></textarea>
     <div class="modal-actions">
