@@ -21,11 +21,19 @@ function toTime(mins) {
 }
 
 async function loadEvents() {
-  const res = await fetch(`/api/v2/events?date=${currentDate}`);
-  events = await res.json();
+  const eventRes = await fetch(`/api/v2/events?date=${currentDate}`);
+  const taskRes = await fetch(`/api/v2/project-tasks?date=${currentDate}`);
+
+  const eventData = await eventRes.json();
+  const taskData = await taskRes.json();
+
+  events = [...eventData, ...taskData];
+
   render();
-  renderSummary();   // 🔥 add this
+  renderSummary();
+  renderFloatingTasks(taskData);
 }
+
 
 function render() {
   const root = document.getElementById("timeline");
@@ -50,7 +58,9 @@ function render() {
     }
 
     div.style.top = ev.top + "px";
-    div.style.height = ev.height + "px";
+    div.style.minHeight = ev.height + "px";
+    div.style.height = "auto";
+
     div.style.left = `calc(${ev.left}% + ${ev.gapOffset}px)`;
     div.style.width = `calc(${ev.width}% - 4px)`;
 
@@ -316,3 +326,16 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("duration")?.addEventListener("change", updateEndPreview);
 });
 
+function renderFloatingTasks(tasks) {
+  const container = document.getElementById("floating-tasks");
+  container.innerHTML = "";
+
+  const noTimeTasks = tasks.filter(t => !t.start_time);
+
+  noTimeTasks.forEach(task => {
+    const div = document.createElement("div");
+    div.className = "floating-task";
+    div.innerText = task.title;
+    container.appendChild(div);
+  });
+}
