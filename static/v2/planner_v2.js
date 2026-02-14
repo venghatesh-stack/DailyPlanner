@@ -159,16 +159,28 @@ async function saveEvent() {
     }
 
     if (!res.ok) {
-    const data = await res.json();
+      const data = await res.json();
 
-    if (data.conflict) {
-      showConflictDialog(data.conflicting_events, payload);
+      if (data.conflict) {
+        showConflictDialog(data.conflicting_events, payload);
+        return;
+      }
+
+      alert("Save failed");
       return;
     }
 
-    alert("Save failed");
-    return;
+    selected = null;
+    closeModal();
+    await loadEvents();
+
+  } catch (err) {
+    console.error("Save error:", err);
+    alert("Unexpected error");
   }
+}
+
+
 function showConflictDialog(conflicts, payload) {
   pendingForcePayload = payload;
 
