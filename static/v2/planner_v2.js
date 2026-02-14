@@ -79,9 +79,11 @@ function render() {
     }
 
     div.style.top = ev.top + "px";
-    div.style.height = ev.height + "px";
+    div.style.minHeight = ev.baseHeight + "px";
+    div.style.height = "auto";
     div.style.left = `calc(${ev.left}% + ${ev.gapOffset}px)`;
     div.style.width = `calc(${ev.width}% - 4px)`;
+
 
     div.innerHTML = `
       <div class="event-time">${ev.start_time} – ${ev.end_time}</div>
@@ -102,7 +104,6 @@ function render() {
 /* =========================
    LAYOUT ENGINE
 ========================= */
-
 function computeLayout(events) {
   const enriched = events.map(ev => {
     const start = minutes(ev.start_time);
@@ -113,11 +114,28 @@ function computeLayout(events) {
       start,
       end,
       top: (start / 60) * HOUR_HEIGHT,
+      baseHeight: Math.max(((end - start) / 60) * HOUR_HEIGHT, 40),
       height: Math.max(((end - start) / 60) * HOUR_HEIGHT, 40)
     };
   });
 
   enriched.sort((a, b) => a.start - b.start);
+
+  /* ------------------------------------
+     1️⃣ STACK VERTICALLY (content priority)
+  ------------------------------------- */
+
+  let currentBottom = 0;
+
+  enriched.forEach(ev => {
+    ev.top = Math.max(ev.top, currentBottom);
+    // IMPORTANT: use baseHeight for stacking
+    currentBottom = ev.top + ev.baseHeight;
+  });
+
+  /* ------------------------------------
+     2️⃣ CONFLICT GROUPING (horizontal split)
+  ------------------------------------- */
 
   const groups = [];
 
@@ -149,6 +167,7 @@ function computeLayout(events) {
 
   return enriched;
 }
+
 
 /* =========================
    FLOATING TASKS

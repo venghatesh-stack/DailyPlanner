@@ -13,7 +13,7 @@ body {
 
 #timeline {
   position: relative;
-  height: 1440px;
+  min-height: 100vh;
   border-left: 2px solid #d1d5db;
   padding-left: 70px;
 }
@@ -43,7 +43,9 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  overflow: hidden;
+  overflow: visible;
+  height: auto;
+  min-height: 40px;
 }
 
 .event-time {
