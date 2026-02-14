@@ -187,3 +187,14 @@ body {
   cursor: grab;
   border: 1px solid #f59e0b;
 }
+#day-summary {
+  margin-bottom: 30px;
+}
+
+#timeline {
+  position: relative;
+  height: 1440px;
+  border-left: 2px solid #d1d5db;
+  padding-left: 70px;
+  margin-top: 10px;
+}
