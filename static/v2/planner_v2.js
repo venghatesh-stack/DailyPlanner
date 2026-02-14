@@ -106,36 +106,54 @@ async function saveEvent() {
     description: document.getElementById("event-desc").value
   };
 
-  if (selected) {
-    await fetch(`/api/v2/events/${selected.id}`, {
-      method:"PUT",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify(payload)
-    });
-  } else {
-    await fetch(`/api/v2/events`, {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify(payload)
-    });
-  }
+  try {
+    let res;
 
-  closeModal();
-  loadEvents();
+    if (selected) {
+      res = await fetch(`/api/v2/events/${selected.id}`, {
+        method: "PUT",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+      });
+    } else {
+      res = await fetch(`/api/v2/events`, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+      });
+    }
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      alert(errorText || "Save failed");
+      return;
+    }
+
+    // 🔥 RESET STATE BEFORE RENDER
+    selected = null;
+
+    // 🔥 CLOSE MODAL
+    closeModal();
+
+    // 🔥 RELOAD EVENTS
+    await loadEvents();
+
+  } catch (err) {
+    console.error("Save error:", err);
+    alert("Unexpected error");
+  }
 }
+
 
 async function deleteEvent() {
   if (!selected) return;
-  await fetch(`/api/v2/events/${selected.id}`, {method:"DELETE"});
+
+  await fetch(`/api/v2/events/${selected.id}`, {
+    method:"DELETE"
+  });
+
+  selected = null;
   closeModal();
-  loadEvents();
+  await loadEvents();
 }
 
-document.addEventListener("DOMContentLoaded", ()=>{
-  document.getElementById("date-picker").value = currentDate;
-  document.getElementById("date-picker").onchange = e=>{
-    currentDate = e.target.value;
-    loadEvents();
-  };
-  loadEvents();
-});
