@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='v2/planner_v2.css') }}">
+<script defer src="{{ url_for('static', filename='v2/planner_v2.js') }}"></script>
+</head>
+<body>
+
+<div class="top-bar">
+  <input type="date" id="date-picker">
+  <button onclick="openCreateModal()">+ New Event</button>
+</div>
+
+<div id="timeline"></div>
+
+<div id="modal" class="hidden">
+  <div class="modal-card">
+    <h3 id="modal-title">Event</h3>
+    <input type="time" id="start-time">
+    <input type="time" id="end-time">
+    <input type="text" id="event-title" placeholder="Title">
+    <textarea id="event-desc" placeholder="Description"></textarea>
+    <div class="modal-actions">
+      <button onclick="saveEvent()">Save</button>
+      <button onclick="deleteEvent()">Delete</button>
+      <button onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -2088,9 +2088,98 @@ def update_task_occurrence_route():
 
     return "", 204
 
+def has_conflict(user_id, plan_date, start_time, end_time, exclude_id=None):
+    filters = {
+        "user_id": f"eq.{user_id}",
+        "plan_date": f"eq.{plan_date}",
+        "is_deleted": "eq.false",
+    }
 
+    existing = get("daily_events", params=filters) or []
 
-#=====================================================
+    for ev in existing:
+        if exclude_id and ev["id"] == exclude_id:
+            continue
+
+        if not (end_time <= ev["start_time"] or start_time >= ev["end_time"]):
+            return True
+
+    return False
+@app.route("/planner-v2")
+def planner_v2():
+    return render_template("planner_v2.html")
+@app.route("/api/v2/events")
+def list_events():
+    user_id = "VenghateshS"
+    plan_date = request.args.get("date")
+
+    events = get(
+        "daily_events",
+        params={
+            "user_id": f"eq.{user_id}",
+            "plan_date": f"eq.{plan_date}",
+            "is_deleted": "eq.false",
+            "order": "start_time.asc"
+        }
+    ) or []
+
+    return jsonify(events)
+@app.route("/api/v2/events", methods=["POST"])
+def create_event():
+    user_id = "VenghateshS"
+    data = request.json
+
+    if data["end_time"] <= data["start_time"]:
+        return {"error": "Invalid time range"}, 400
+
+    if has_conflict(user_id, data["plan_date"], data["start_time"], data["end_time"]):
+        return {"error": "Time conflict"}, 409
+
+    post("daily_events", {
+        "user_id": user_id,
+        "plan_date": data["plan_date"],
+        "start_time": data["start_time"],
+        "end_time": data["end_time"],
+        "title": data["title"],
+        "description": data.get("description", "")
+    })
+
+    return {"ok": True}
+@app.route("/api/v2/events/<event_id>", methods=["PUT"])
+def update_event(event_id):
+    user_id = "VenghateshS"
+    data = request.json
+
+    if has_conflict(
+        user_id,
+        data["plan_date"],
+        data["start_time"],
+        data["end_time"],
+        exclude_id=event_id
+    ):
+        return {"error": "Time conflict"}, 409
+
+    update(
+        "daily_events",
+        params={"id": f"eq.{event_id}"},
+        json={
+            "start_time": data["start_time"],
+            "end_time": data["end_time"],
+            "title": data["title"],
+            "description": data.get("description", "")
+        }
+    )
+
+    return {"ok": True}
+@app.route("/api/v2/events/<event_id>", methods=["DELETE"])
+def delete_event(event_id):
+    update(
+        "daily_events",
+        params={"id": f"eq.{event_id}"},
+        json={"is_deleted": True}
+    )
+    return {"ok": True}
+
 # ENTRY POINT
 # ==========================================================
 if __name__ == "__main__":

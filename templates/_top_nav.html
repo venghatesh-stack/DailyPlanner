@@ -86,6 +86,15 @@
   color: #111827;
   margin-top: 4px;
 }
+.nav-icons a.active {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.nav-icons a.active svg {
+  stroke: #ffffff;
+}
+
 </style>
 
 
@@ -105,7 +114,18 @@
       <i data-feather="home"></i>
       <span>Planner</span>
     </a>
-
+      <!-- DAILY SLOT TIMELINE -->
+    <a href="/timeline/day" title="Daily Slot Timeline">
+      <i data-feather="clock"></i>
+      <span>Slots</span>
+    </a>
+    <!-- TIME-BASED PLANNER (V2) -->
+    <a href="/planner-v2"
+      title="Time-Based Planner"
+      class="{% if request.path == '/planner-v2' %}active{% endif %}">
+      <i data-feather="layout"></i>
+      <span>Time</span>
+    </a>
     <a href="/todo" title="Matrix">
       <i data-feather="target"></i>
       <span>Matrix</span>
@@ -122,11 +142,9 @@
       <span>Timeline</span>
     </a>
 
-    <!-- DAILY SLOT TIMELINE -->
-    <a href="/timeline/day" title="Daily Slot Timeline">
-      <i data-feather="clock"></i>
-      <span>Slots</span>
-    </a>
+  
+
+
 
     <!-- DAILY SUMMARY -->
     <a href="/summary?view=daily" title="Daily Summary">
