@@ -162,6 +162,23 @@ function computeLayout(events) {
 
   return enriched;
 }
+async function deleteEvent() {
+  if (!selected) return;
+
+  let url;
+  let method = "DELETE";
+
+  if (selected.type === "project") {
+    url = `/api/v2/project-tasks/${selected.task_id}`;
+  } else {
+    url = `/api/v2/events/${selected.id}`;
+  }
+
+  await fetch(url, { method });
+
+  closeModal();
+  loadEvents();
+}
 
 
 function changeDate(offset) {
