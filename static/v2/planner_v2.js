@@ -327,15 +327,67 @@ async function saveEvent() {
     url = `/api/v2/events`;
   }
 
-  await fetch(url, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
 
-  closeModal();
-  loadEvents();
+    // 🔥 HANDLE CONFLICT
+    if (!res.ok) {
+      const data = await res.json();
+
+      if (data.conflict) {
+        showConflictDialog(data.conflicting_events, payload);
+        return;
+      }
+
+      alert("Save failed");
+      return;
+    }
+
+    closeModal();
+    loadEvents();
+
+  } catch (err) {
+    console.error("Save error:", err);
+  }
 }
+function showConflictDialog(conflicts, payload) {
+
+  const conflictHtml = conflicts.map(c =>
+    `<div style="margin:6px 0;">
+       ${c.start_time} – ${c.end_time} : ${c.title}
+     </div>`
+  ).join("");
+
+  const modalCard = document.querySelector(".modal-card");
+
+  modalCard.innerHTML = `
+    <h3>Time Conflict</h3>
+    <p>This overlaps with:</p>
+    ${conflictHtml}
+    <div style="margin-top:12px;">
+      <button id="accept-conflict">Accept Anyway</button>
+      <button onclick="closeModal()">Cancel</button>
+    </div>
+  `;
+
+  document.getElementById("accept-conflict").onclick = async () => {
+    payload.force = true;
+
+    await fetch(`/api/v2/events`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    closeModal();
+    loadEvents();
+  };
+}
+
 
 /* =========================
    INIT
