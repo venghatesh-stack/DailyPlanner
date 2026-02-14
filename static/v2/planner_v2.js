@@ -82,6 +82,7 @@ function computeLayout(events) {
 function openCreateModal() {
   selected = null;
   document.getElementById("modal").classList.remove("hidden");
+  document.getElementById("modal").classList.add("show");
 }
 
 function openModal(ev) {
@@ -94,7 +95,9 @@ function openModal(ev) {
 }
 
 function closeModal() {
-  document.getElementById("modal").classList.add("hidden");
+   const modal = document.getElementById("modal");
+   modal.classList.remove("show");
+   modal.classList.add("hidden");
 }
 
 async function saveEvent() {
