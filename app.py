@@ -2224,7 +2224,7 @@ def get_project_tasks():
         "project_tasks",
         params={
             "user_id": f"eq.{user_id}",
-            "is_deleted": "eq.false",
+            "is_eliminated": "eq.false",
             "or": f"(plan_date.eq.{date},plan_date.is.null)"
         }
     )
