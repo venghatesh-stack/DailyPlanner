@@ -166,69 +166,65 @@ function computeLayout(events) {
     const start = minutes(ev.start_time);
     const end = minutes(ev.end_time);
 
-    const height = Math.max(((end - start) / 60) * HOUR_HEIGHT, 20);
-
     return {
       ...ev,
       start,
       end,
       top: (start / 60) * HOUR_HEIGHT,
-      height
+      height: ((end - start) / 60) * HOUR_HEIGHT
     };
   });
 
   enriched.sort((a, b) => a.start - b.start);
 
-  const columns = [];
+  const clusters = [];
 
   enriched.forEach(ev => {
     let placed = false;
 
-    for (let i = 0; i < columns.length; i++) {
-      const last = columns[i][columns[i].length - 1];
-
-      if (ev.start >= last.end) {
-        columns[i].push(ev);
-        ev.col = i;
+    for (let cluster of clusters) {
+      if (cluster.some(e => !(ev.end <= e.start || ev.start >= e.end))) {
+        cluster.push(ev);
         placed = true;
         break;
       }
     }
 
-    if (!placed) {
-      columns.push([ev]);
-      ev.col = columns.length - 1;
-    }
+    if (!placed) clusters.push([ev]);
   });
 
-  const totalCols = columns.length;
+  clusters.forEach(cluster => {
+    const columns = [];
 
-  enriched.forEach(ev => {
-    ev.width = 100 / totalCols;
-    ev.left = ev.col * ev.width;
+    cluster.forEach(ev => {
+      let placed = false;
+
+      for (let i = 0; i < columns.length; i++) {
+        const last = columns[i][columns[i].length - 1];
+        if (ev.start >= last.end) {
+          columns[i].push(ev);
+          ev.col = i;
+          placed = true;
+          break;
+        }
+      }
+
+      if (!placed) {
+        columns.push([ev]);
+        ev.col = columns.length - 1;
+      }
+    });
+
+    const totalCols = columns.length;
+
+    cluster.forEach(ev => {
+      ev.width = 100 / totalCols;
+      ev.left = ev.col * ev.width;
+    });
   });
 
   return enriched;
 }
-
-async function deleteEvent() {
-  if (!selected) return;
-
-  let url;
-  let method = "DELETE";
-
-  if (selected.type === "project") {
-    url = `/api/v2/project-tasks/${selected.task_id}`;
-  } else {
-    url = `/api/v2/events/${selected.id}`;
-  }
-
-  await fetch(url, { method });
-
-  closeModal();
-  loadEvents();
-}
-
 
 function changeDate(offset) {
   const date = new Date(currentDate);

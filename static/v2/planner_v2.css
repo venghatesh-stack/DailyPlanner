@@ -47,6 +47,7 @@ body {
   height: auto;
   min-height: 40px;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+  z-index: 1;
 }
 
 .event-time {
@@ -65,7 +66,7 @@ body {
 
 .event:hover {
   transform: scale(1.02);
-  z-index: 40;
+  z-index: 10;
   box-shadow: 0 6px 20px rgba(0,0,0,0.15);
 }
 
