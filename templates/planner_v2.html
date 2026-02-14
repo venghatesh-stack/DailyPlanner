@@ -6,8 +6,11 @@
 <script defer src="{{ url_for('static', filename='v2/planner_v2.js') }}"></script>
 </head>
 <body>
-
+ <!-- Top Navigation -->
+  {% include "_top_nav.html" %}
 <div class="top-bar">
+
+
   <div class="date-nav">
     <button onclick="changeDate(-1)">‹</button>
     <div id="current-date"></div>

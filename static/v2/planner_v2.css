@@ -124,6 +124,11 @@ body {
   border-radius: 8px;
   cursor: pointer;
 }
+.date-header {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 20px;
+}
 
 .primary-btn {
   background: #2563eb;
