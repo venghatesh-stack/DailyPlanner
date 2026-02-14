@@ -5,6 +5,7 @@ let events = [];
 let selected = null;
 let currentDate = new Date().toISOString().split("T")[0];
 let draggedTask = null;
+let snapLine = null;
 
 /* =========================
    TIME HELPERS
@@ -82,11 +83,11 @@ function renderSummary() {
 /* =========================
    RENDER TIMELINE
 ========================= */
-
 function render() {
   const root = document.getElementById("timeline");
   root.innerHTML = "";
 
+  // Hour lines
   for (let h = 0; h < 24; h++) {
     const top = h * HOUR_HEIGHT;
     root.innerHTML += `
@@ -95,51 +96,66 @@ function render() {
     `;
   }
 
+  renderCurrentTimeLine(root);
+
   const positioned = computeLayout(events);
 
   positioned.forEach(ev => {
     const div = document.createElement("div");
     div.className = "event";
-
-    if (ev.type === "project") {
-      div.classList.add("project-event");
-    }
-
-    if (ev.isConflict) {
-      div.classList.add("conflict");
-    }
-
     div.style.top = ev.top + "px";
-    div.style.minHeight = ev.baseHeight + "px";
-    div.style.height = "auto";
-    div.style.left = `calc(${ev.left}% + ${ev.gapOffset}px)`;
-    div.style.width = `calc(${ev.width}% - 4px)`;
+    div.style.height = ev.height + "px";
+    div.style.left = ev.left + "%";
+    div.style.width = ev.width + "%";
 
+    div.dataset.id = ev.id;
+
+    if (ev.type === "project") div.classList.add("project-event");
 
     div.innerHTML = `
       <div class="event-time">${ev.start_time} – ${ev.end_time}</div>
       <div class="event-title">
-        <input type="checkbox" onclick="toggleComplete(event,'${ev.task_id || ev.id}')"/>
         ${ev.task_text || ev.title}
       </div>
-      ${ev.projects?.name ? `<div class="project-badge">${ev.projects.name}</div>` : ""}
-
-      ${ev.priority ? `<div class="priority p-${ev.priority}"></div>` : ""}
     `;
 
+    // OPEN MODAL
     div.onclick = () => openModal(ev);
-    root.appendChild(div);
-     // 🔥 Allow content to expand but prevent breaking layout
-  requestAnimationFrame(() => {
-    const expandedHeight = div.scrollHeight;
 
-    if (expandedHeight > ev.baseHeight) {
-      div.style.height = expandedHeight + "px";
-    } else {
-      div.style.height = ev.baseHeight + "px";
-    }
+    // DRAG TO MOVE
+    div.draggable = true;
+    div.ondragstart = () => {
+      draggedTask = ev;
+    };
+
+    // RESIZE HANDLE
+    const resizeHandle = document.createElement("div");
+    resizeHandle.className = "resize-handle";
+    div.appendChild(resizeHandle);
+
+    resizeHandle.addEventListener("mousedown", e => {
+      e.stopPropagation();
+      startResize(e, ev);
+    });
+
+    root.appendChild(div);
   });
-  });
+}
+
+function renderCurrentTimeLine(root) {
+  const now = new Date();
+  const today = new Date().toISOString().split("T")[0];
+
+  if (currentDate !== today) return;
+
+  const minutesNow = now.getHours() * 60 + now.getMinutes();
+  const top = (minutesNow / 60) * HOUR_HEIGHT;
+
+  const line = document.createElement("div");
+  line.className = "current-time-line";
+  line.style.top = top + "px";
+
+  root.appendChild(line);
 }
 
 /* =========================
@@ -150,49 +166,51 @@ function computeLayout(events) {
     const start = minutes(ev.start_time);
     const end = minutes(ev.end_time);
 
-    const baseHeight = Math.max(((end - start) / 60) * HOUR_HEIGHT, 40);
+    const height = Math.max(((end - start) / 60) * HOUR_HEIGHT, 20);
 
     return {
       ...ev,
       start,
       end,
       top: (start / 60) * HOUR_HEIGHT,
-      baseHeight: baseHeight
+      height
     };
   });
 
   enriched.sort((a, b) => a.start - b.start);
 
-  const groups = [];
+  const columns = [];
 
   enriched.forEach(ev => {
     let placed = false;
 
-    for (let group of groups) {
-      if (group.some(e => !(ev.end <= e.start || ev.start >= e.end))) {
-        group.push(ev);
+    for (let i = 0; i < columns.length; i++) {
+      const last = columns[i][columns[i].length - 1];
+
+      if (ev.start >= last.end) {
+        columns[i].push(ev);
+        ev.col = i;
         placed = true;
         break;
       }
     }
 
-    if (!placed) groups.push([ev]);
+    if (!placed) {
+      columns.push([ev]);
+      ev.col = columns.length - 1;
+    }
   });
 
-  groups.forEach(group => {
-    const width = 100 / group.length;
-    const gap = 4;
+  const totalCols = columns.length;
 
-    group.forEach((ev, index) => {
-      ev.width = width;
-      ev.left = width * index;
-      ev.gapOffset = index * gap;
-      ev.isConflict = group.length > 1;
-    });
+  enriched.forEach(ev => {
+    ev.width = 100 / totalCols;
+    ev.left = ev.col * ev.width;
   });
 
   return enriched;
 }
+
 async function deleteEvent() {
   if (!selected) return;
 
@@ -405,21 +423,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const timeline = document.getElementById("timeline");
 
-  timeline.addEventListener("dragover", e => {
-    e.preventDefault();
-  });
+
 
   timeline.addEventListener("drop", async e => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!draggedTask) return;
+  if (!draggedTask) return;
 
-    const rect = timeline.getBoundingClientRect();
-    const y = e.clientY - rect.top;
+  const rect = timeline.getBoundingClientRect();
+  const y = e.clientY - rect.top;
 
-    const minutesFromTop = Math.floor((y / HOUR_HEIGHT) * 60);
-    const snapped = Math.round(minutesFromTop / SNAP) * SNAP;
+  const minutesFromTop = Math.floor((y / HOUR_HEIGHT) * 60);
+  const snapped = Math.round(minutesFromTop / SNAP) * SNAP;
 
+  // PROJECT TASK DROP
+  if (draggedTask.type === "project") {
     const start = toTime(snapped);
     const end = calculateEndTime(start, 30);
 
@@ -432,8 +450,107 @@ document.addEventListener("DOMContentLoaded", () => {
         end_time: end
       })
     });
+  }
 
-    draggedTask = null;
+  // EVENT MOVE
+  else {
+    const duration = draggedTask.end - draggedTask.start;
+
+    const newStart = toTime(snapped);
+    const newEnd = toTime(snapped + duration);
+
+    await fetch(`/api/v2/events/${draggedTask.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        plan_date: currentDate,
+        start_time: newStart,
+        end_time: newEnd,
+        title: draggedTask.title
+      })
+    });
+  }
+
+  draggedTask = null;
+
+  if (snapLine) {
+    snapLine.remove();
+    snapLine = null;
+  }
+
+loadEvents();
+setInterval(() => {
+  render();
+}, 60000);
+});
+
+timeline.addEventListener("dragover", e => {
+  e.preventDefault();
+
+  const rect = timeline.getBoundingClientRect();
+  const y = e.clientY - rect.top;
+
+  const minutesFromTop = Math.floor((y / HOUR_HEIGHT) * 60);
+  const snapped = Math.round(minutesFromTop / SNAP) * SNAP;
+  const top = (snapped / 60) * HOUR_HEIGHT;
+
+  if (!snapLine) {
+    snapLine = document.createElement("div");
+    snapLine.className = "snap-line";
+    timeline.appendChild(snapLine);
+  }
+
+  snapLine.style.top = top + "px";
+});
+function startResize(e, ev) {
+  const startY = e.clientY;
+  const originalEnd = ev.end;
+
+  function onMouseMove(moveEvent) {
+    const delta = moveEvent.clientY - startY;
+    const minutesDelta = (delta / HOUR_HEIGHT) * 60;
+    const snapped = Math.round(minutesDelta / SNAP) * SNAP;
+
+    const newEnd = originalEnd + snapped;
+    if (newEnd <= ev.start) return;
+    const el = document.querySelector(`[data-id='${ev.id}']`);
+    if (el) {
+      const newHeight = ((newEnd - ev.start) / 60) * HOUR_HEIGHT;
+      el.style.height = newHeight + "px";
+    }
+  }
+
+  async function onMouseUp(upEvent) {
+    document.removeEventListener("mousemove", onMouseMove);
+    document.removeEventListener("mouseup", onMouseUp);
+
+    const delta = upEvent.clientY - startY;
+    const minutesDelta = (delta / HOUR_HEIGHT) * 60;
+    const snapped = Math.round(minutesDelta / SNAP) * SNAP;
+
+    const newEnd = toTime(originalEnd + snapped);
+
+    await fetch(`/api/v2/events/${ev.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        plan_date: currentDate,
+        start_time: ev.start_time,
+        end_time: newEnd,
+        title: ev.title
+      })
+    });
+
     loadEvents();
-  });
+  }
+
+  document.addEventListener("mousemove", onMouseMove);
+  document.addEventListener("mouseup", onMouseUp);
+}
+
+timeline.addEventListener("dragleave", () => {
+  if (snapLine) {
+    snapLine.remove();
+    snapLine = null;
+  }
 });

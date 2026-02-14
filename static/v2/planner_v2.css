@@ -43,9 +43,10 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  overflow: visible;
+  overflow: hidden;
   height: auto;
   min-height: 40px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .event-time {
@@ -63,7 +64,9 @@ body {
 
 
 .event:hover {
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  transform: scale(1.02);
+  z-index: 40;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
 }
 
 .hidden {
@@ -196,4 +199,29 @@ body {
 
 .hour-label {
   pointer-events: none;
+}
+.current-time-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: red;
+  z-index: 50;
+}
+.snap-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #2563eb;
+  pointer-events: none;
+  z-index: 60;
+}
+.resize-handle {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: ns-resize;
 }
