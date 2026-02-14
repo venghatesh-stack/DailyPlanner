@@ -2247,7 +2247,7 @@ def schedule_project_task(task_id):
     )
 
     return {"ok": True}
-@app.route("/api/v2/tasks/<task_id>/complete", methods=["POST"])
+@app.route("/api/v2/project-tasks/<task_id>/complete", methods=["POST"])
 def complete_task(task_id):
     update(
         "project_tasks",

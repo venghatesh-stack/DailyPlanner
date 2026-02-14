@@ -86,10 +86,11 @@ function render() {
     div.innerHTML = `
       <div class="event-time">${ev.start_time} – ${ev.end_time}</div>
       <div class="event-title">
-        <input type="checkbox" onclick="toggleComplete(event,'${ev.id}')"/>
-        ${ev.title}
+        <input type="checkbox" onclick="toggleComplete(event,'${ev.task_id || ev.id}')"/>
+        ${ev.task_text || ev.title}
       </div>
-      ${ev.project_name ? `<div class="project-badge">${ev.project_name}</div>` : ""}
+      ${ev.projects?.name ? `<div class="project-badge">${ev.projects.name}</div>` : ""}
+
       ${ev.priority ? `<div class="priority p-${ev.priority}"></div>` : ""}
     `;
 
@@ -161,7 +162,7 @@ function renderFloatingTasks(tasks) {
     const div = document.createElement("div");
     div.className = "floating-task";
     div.draggable = true;
-    div.innerText = task.title;
+    div.innerText = task.task_text;
 
     div.dataset.task = JSON.stringify(task);
 
@@ -177,37 +178,6 @@ function renderFloatingTasks(tasks) {
    DRAG INTO CALENDAR
 ========================= */
 
-document.getElementById("timeline").addEventListener("dragover", e => {
-  e.preventDefault();
-});
-
-document.getElementById("timeline").addEventListener("drop", async e => {
-  e.preventDefault();
-
-  if (!draggedTask) return;
-
-  const rect = e.currentTarget.getBoundingClientRect();
-  const y = e.clientY - rect.top;
-
-  const minutesFromTop = Math.floor((y / HOUR_HEIGHT) * 60);
-  const snapped = Math.round(minutesFromTop / SNAP) * SNAP;
-
-  const start = toTime(snapped);
-  const end = calculateEndTime(start, 30);
-
-  await fetch(`/api/v2/project-tasks/${draggedTask.id}/schedule`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      plan_date: currentDate,
-      start_time: start,
-      end_time: end
-    })
-  });
-
-  draggedTask = null;
-  loadEvents();
-});
 
 /* =========================
    CHECKBOX
@@ -216,11 +186,20 @@ document.getElementById("timeline").addEventListener("drop", async e => {
 function toggleComplete(e, id) {
   e.stopPropagation();
 
-  fetch(`/api/v2/tasks/${id}/complete`, {
+  fetch(`/api/v2/project-tasks/${id}/complete`, {
     method: "POST"
   });
 
   loadEvents();
+}
+function openCreateModal() {
+  selected = null;
+
+  document.getElementById("start-time").value = "";
+  document.getElementById("duration").value = 30;
+  document.getElementById("event-title").value = "";
+
+  document.getElementById("modal").classList.remove("hidden");
 }
 
 /* =========================
@@ -235,7 +214,7 @@ function openModal(ev) {
   const duration = minutes(ev.end_time) - minutes(ev.start_time);
   document.getElementById("duration").value = duration;
 
-  document.getElementById("event-title").value = ev.title;
+  document.getElementById("event-title").value = ev.task_text || ev.title;
 
   document.getElementById("modal").classList.remove("hidden");
 }
@@ -243,7 +222,6 @@ function openModal(ev) {
 function closeModal() {
   document.getElementById("modal").classList.add("hidden");
 }
-
 async function saveEvent() {
   const start = document.getElementById("start-time").value;
   const duration = document.getElementById("duration").value;
@@ -255,12 +233,19 @@ async function saveEvent() {
     title: document.getElementById("event-title").value
   };
 
-  let url = `/api/v2/events`;
+  let url;
   let method = "POST";
 
   if (selected) {
-    url = `/api/v2/events/${selected.id}`;
-    method = "PUT";
+    if (selected.type === "project") {
+      url = `/api/v2/project-tasks/${selected.task_id}/schedule`;
+      method = "POST";
+    } else {
+      url = `/api/v2/events/${selected.id}`;
+      method = "PUT";
+    }
+  } else {
+    url = `/api/v2/events`;
   }
 
   await fetch(url, {
@@ -279,4 +264,38 @@ async function saveEvent() {
 
 document.addEventListener("DOMContentLoaded", () => {
   loadEvents();
+
+  const timeline = document.getElementById("timeline");
+
+  timeline.addEventListener("dragover", e => {
+    e.preventDefault();
+  });
+
+  timeline.addEventListener("drop", async e => {
+    e.preventDefault();
+
+    if (!draggedTask) return;
+
+    const rect = timeline.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+
+    const minutesFromTop = Math.floor((y / HOUR_HEIGHT) * 60);
+    const snapped = Math.round(minutesFromTop / SNAP) * SNAP;
+
+    const start = toTime(snapped);
+    const end = calculateEndTime(start, 30);
+
+    await fetch(`/api/v2/project-tasks/${draggedTask.task_id}/schedule`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        plan_date: currentDate,
+        start_time: start,
+        end_time: end
+      })
+    });
+
+    draggedTask = null;
+    loadEvents();
+  });
 });
