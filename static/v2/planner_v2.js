@@ -117,6 +117,7 @@ function render() {
       <div class="event-title">
         ${ev.task_text || ev.title}
       </div>
+       <div class="event-description">${ev.description || ""}</div>
     `;
 
     // OPEN MODAL

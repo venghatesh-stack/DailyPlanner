@@ -62,13 +62,26 @@ body {
   word-break: break-word;
 }
 
+.event-description {
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.18s ease;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.event:hover .event-description {
+  opacity: 1;
+  max-height: 200px;
+}
 
 
 .event:hover {
-  transform: scale(1.02);
-  z-index: 10;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  z-index: 100;
+  height: auto !important;
 }
+
 
 .hidden {
   display: none;
