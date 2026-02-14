@@ -53,8 +53,9 @@ function render() {
       }
     });
 
-    div.style.left = ev.left + "%";
-    div.style.width = ev.width + "%";
+   div.style.left = `calc(${ev.left}% + ${ev.gapOffset}px)`;
+   div.style.width = `calc(${ev.width}% - ${4}px)`;
+
     div.innerHTML = `
   <div class="event-time">
     ${ev.start_time} – ${ev.end_time}
@@ -67,6 +68,10 @@ function render() {
     div.onclick = () => openModal(ev);
     root.appendChild(div);
   });
+  if (ev.isConflict) {
+  div.classList.add("conflict");
+}
+
 }
 
 function computeLayout(events) {
@@ -103,10 +108,22 @@ function computeLayout(events) {
   groups.forEach(group => {
     const width = 100 / group.length;
     group.forEach((ev, index) => {
-      ev.width = width;
+     const gap = 4; // pixels between columns
+
+      ev.width = width - (gap / group.length);
       ev.left = width * index;
+      ev.gapOffset = index * gap;
     });
   });
+  groups.forEach(group => {
+  const width = 100 / group.length;
+
+  group.forEach((ev, index) => {
+    ev.width = width;
+    ev.left = width * index;
+    ev.isConflict = group.length > 1;
+  });
+});
 
   return enriched;
 }
