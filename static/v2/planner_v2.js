@@ -3,6 +3,7 @@ const SNAP = 5;
 let events = [];
 let selected = null;
 let currentDate = new Date().toISOString().split("T")[0];
+let pendingForcePayload = null;
 
 function snap(mins) {
   return Math.round(mins / SNAP) * SNAP;
@@ -169,7 +170,7 @@ async function saveEvent() {
     return;
   }
 function showConflictDialog(conflicts, payload) {
-  const modal = document.getElementById("modal");
+  pendingForcePayload = payload;
 
   const conflictHtml = conflicts.map(c =>
     `<div style="margin:6px 0;">
@@ -181,27 +182,15 @@ function showConflictDialog(conflicts, payload) {
     <h3>Time Conflict</h3>
     <p>This overlaps with:</p>
     ${conflictHtml}
-    <button onclick="forceSave(${JSON.stringify(payload)})">
-      Accept Anyway
-    </button>
-    <button onclick="closeModal()">Reject</button>
+    <div style="margin-top:10px;">
+      <button id="accept-conflict">Accept Anyway</button>
+      <button onclick="closeModal()">Reject</button>
+    </div>
   `;
-}
 
-
-    // 🔥 RESET STATE BEFORE RENDER
-    selected = null;
-
-    // 🔥 CLOSE MODAL
-    closeModal();
-
-    // 🔥 RELOAD EVENTS
-    await loadEvents();
-
-  } catch (err) {
-    console.error("Save error:", err);
-    alert("Unexpected error");
-  }
+  document.getElementById("accept-conflict").onclick = () => {
+    forceSave(pendingForcePayload);
+  };
 }
 
 async function forceSave(payload) {
@@ -217,6 +206,7 @@ async function forceSave(payload) {
   closeModal();
   await loadEvents();
 }
+
 
 async function deleteEvent() {
   if (!selected) return;
