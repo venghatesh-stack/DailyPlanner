@@ -157,7 +157,7 @@ function computeLayout(events) {
       start,
       end,
       top: (start / 60) * HOUR_HEIGHT,
-      baseheight: baseHeight
+      baseHeight: baseHeight
     };
   });
 
@@ -336,16 +336,20 @@ async function saveEvent() {
 
     // 🔥 HANDLE CONFLICT
     if (!res.ok) {
-      const data = await res.json();
+    let data = {};
+    try {
+      data = await res.json();
+    } catch {}
 
-      if (data.conflict) {
-        showConflictDialog(data.conflicting_events, payload);
-        return;
-      }
-
-      alert("Save failed");
+    if (data.conflict) {
+      showConflictDialog(data.conflicting_events, payload);
       return;
     }
+
+    alert("Save failed");
+    return;
+  }
+
 
     closeModal();
     loadEvents();
