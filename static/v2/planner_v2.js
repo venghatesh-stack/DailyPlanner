@@ -46,6 +46,37 @@ async function loadEvents() {
 
   render();
   renderFloatingTasks(floatingTasks);
+  renderSummary();   // ✅ ADD THIS LINE
+}
+function renderSummary() {
+  const tbody = document.querySelector("#summary-table tbody");
+  if (!tbody) return;
+
+  tbody.innerHTML = "";
+
+  if (!events.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="2" style="opacity:.6;">No events for this day</td>
+      </tr>
+    `;
+    return;
+  }
+
+  const sorted = [...events].sort(
+    (a, b) => minutes(a.start_time) - minutes(b.start_time)
+  );
+
+  sorted.forEach(ev => {
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td>${ev.start_time} – ${ev.end_time}</td>
+      <td>${ev.task_text || ev.title}</td>
+    `;
+
+    tbody.appendChild(row);
+  });
 }
 
 /* =========================
