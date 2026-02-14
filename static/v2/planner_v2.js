@@ -168,6 +168,22 @@ function computeLayout(events) {
   return enriched;
 }
 
+function changeDate(offset) {
+  const date = new Date(currentDate);
+  date.setDate(date.getDate() + offset);
+
+  currentDate = date.toISOString().split("T")[0];
+
+  updateDateHeader();
+  loadEvents();
+}
+function updateDateHeader() {
+  const el = document.getElementById("current-date");
+  if (!el) return;
+
+  const d = new Date(currentDate);
+  el.textContent = d.toDateString();
+}
 
 /* =========================
    FLOATING TASKS
@@ -282,6 +298,7 @@ async function saveEvent() {
 ========================= */
 
 document.addEventListener("DOMContentLoaded", () => {
+  updateDateHeader();
   loadEvents();
 
   const timeline = document.getElementById("timeline");
