@@ -2221,13 +2221,14 @@ def get_project_tasks():
         return jsonify([])
 
     tasks = get(
-        "project_tasks",
-        params={
-            "user_id": f"eq.{user_id}",
-            "is_eliminated": "eq.false",
-            "or": f"(plan_date.eq.{date},plan_date.is.null)"
-        }
-    )
+    "project_tasks",
+    params={
+        "user_id": f"eq.{user_id}",
+        "is_eliminated": "eq.false",
+        "select": "task_id,task_text,priority,project_id,projects(project_name)"
+    }
+)
+
 
     return jsonify(tasks)
 
