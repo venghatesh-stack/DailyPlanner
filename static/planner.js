@@ -367,7 +367,7 @@ function editEvent(startSlot, endSlot) {
       content.innerHTML = `
         <h3>✏️ Edit Event</h3>
         <textarea id="editText" style="width:100%;min-height:140px;">
-${(data.text || "").replace(/</g, "&lt;")}
+          ${(data.text || "").replace(/</g, "&lt;")}
         </textarea>
         <br><br>
         <button onclick="document.getElementById('modal').style.display='none'">
