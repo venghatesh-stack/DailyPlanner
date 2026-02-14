@@ -239,3 +239,17 @@ body {
   height: 6px;
   cursor: ns-resize;
 }
+.event-header {
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event-title-inline {
+  font-weight: 600;
+}

@@ -10,6 +10,10 @@ let snapLine = null;
 /* =========================
    TIME HELPERS
 ========================= */
+function formatTime(t) {
+  if (!t) return "";
+  return t.slice(0, 5); // removes seconds safely
+}
 
 function minutes(t) {
   const [h, m] = t.split(":").map(Number);
@@ -112,13 +116,21 @@ function render() {
 
     if (ev.type === "project") div.classList.add("project-event");
 
-    div.innerHTML = `
-      <div class="event-time">${ev.start_time} – ${ev.end_time}</div>
-      <div class="event-title">
-        ${ev.task_text || ev.title}
-      </div>
-       <div class="event-description">${ev.description || ""}</div>
-    `;
+ div.innerHTML = `
+  <div class="event-header">
+    <span class="event-time-text">
+      ${formatTime(ev.start_time)} – ${formatTime(ev.end_time)}
+    </span>
+    <span class="event-title-inline">
+      ${ev.task_text || ev.title}
+    </span>
+  </div>
+
+  <div class="event-description">
+    ${ev.description || ""}
+  </div>
+`;
+
 
     // OPEN MODAL
     div.onclick = () => openModal(ev);
