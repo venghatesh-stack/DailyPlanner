@@ -15,6 +15,7 @@ body {
   position: relative;
   height: 1440px;
   border-left: 2px solid #d1d5db;
+  padding-left: 70px;
 }
 
 .hour-line {
@@ -36,13 +37,30 @@ body {
   position: absolute;
   border-radius: 10px;
   padding: 8px;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   background: #e0ecff;
   border-left: 4px solid #2563eb;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  box-sizing: border-box;
   overflow: hidden;
-  transition: box-shadow .2s ease;
 }
+.event-time {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.event-title {
+  font-size: 13px;
+  font-weight: 500;
+  word-break: break-word;
+}
+
 
 .event:hover {
   box-shadow: 0 4px 16px rgba(0,0,0,0.1);

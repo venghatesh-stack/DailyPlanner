@@ -44,7 +44,15 @@ function render() {
     div.style.height = ev.height + "px";
     div.style.left = ev.left + "%";
     div.style.width = ev.width + "%";
-    div.innerText = ev.title;
+    div.innerHTML = `
+  <div class="event-time">
+    ${ev.start_time} – ${ev.end_time}
+  </div>
+  <div class="event-title">
+    ${ev.title}
+  </div>
+  `;
+
     div.onclick = () => openModal(ev);
     root.appendChild(div);
   });
