@@ -376,7 +376,11 @@ function renderFloatingTasks(tasks) {
     div.innerText = task.task_text;
 
     div.dataset.task = JSON.stringify(task);
-
+     // ✅ ADD CLICK HANDLER HERE
+    div.onclick = (e) => {
+      e.stopPropagation();   // prevents drag conflicts
+      openTaskCard(task.task_id);
+    };
     div.ondragstart = e => {
       draggedTask = { ...task, type: "project" };
     };
