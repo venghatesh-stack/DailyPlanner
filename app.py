@@ -1581,6 +1581,13 @@ def update_task(task_id):
         "priority",
         "elimination_reason",
         "duration_days",
+         # 🔥 ADD THESE
+        "is_recurring",
+        "recurrence_type",
+        "recurrence_days",
+        "recurrence_interval",
+        "recurrence_end",
+        "auto_advance",
     ]
 
     for field in allowed_fields:
