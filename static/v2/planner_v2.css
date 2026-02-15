@@ -195,10 +195,26 @@ body {
 #day-summary {
   margin-bottom: 30px;
 }
-.hour-line {
+.hour-line,
+.half-line,
+.micro-line {
+  position: absolute;
+  left: 0;
+  right: 0;
   height: 1px;
-  background: #cbd5e1;
   pointer-events: none;
+}
+
+.hour-line {
+  background: #cbd5e1;
+}
+
+.half-line {
+  border-top: 1px dashed #d1d5db;
+}
+
+.micro-line {
+  background: rgba(0,0,0,0.05);
 }
 
 
@@ -263,20 +279,7 @@ body {
   transform: translateY(-50%);
   pointer-events: none;
 }
-.half-line {
-  height: 1px;
-  background: #e5e7eb;
-  border-top: 1px dashed #d1d5db;
-}
 
-.micro-line {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: rgba(0,0,0,0.05);
-  pointer-events: none;
-}
 .timeline-grid {
   flex: 1;
   position: relative;

@@ -92,13 +92,7 @@ function render() {
   root.innerHTML = "";
 
   // Hour lines
-  for (let h = 0; h < 24; h++) {
-    const top = h * HOUR_HEIGHT;
-    root.innerHTML += `
-      <div class="hour-line" style="top:${top}px"></div>
-      <div class="hour-label" style="top:${top}px">${h}:00</div>
-    `;
-  }
+  renderTimeGrid();
 
   renderCurrentTimeLine(root);
 
@@ -571,23 +565,10 @@ setInterval(() => {
 });   // ← closes DOMContentLoaded
 function renderTimeGrid() {
   const timeline = document.getElementById("timeline");
-  const gutter = document.getElementById("time-gutter");
-
-  if (!timeline || !gutter) return;
-
-  timeline.innerHTML = "";
-  gutter.innerHTML = "";
+  if (!timeline) return;
 
   for (let hour = 0; hour < 24; hour++) {
-
     const hourTop = hour * HOUR_HEIGHT;
-
-    // Hour label
-    const label = document.createElement("div");
-    label.className = "hour-label";
-    label.style.top = hourTop + "px";
-    label.innerText = formatHour(hour);
-    gutter.appendChild(label);
 
     // Hour line
     const hourLine = document.createElement("div");
@@ -595,19 +576,26 @@ function renderTimeGrid() {
     hourLine.style.top = hourTop + "px";
     timeline.appendChild(hourLine);
 
-    // 15, 30, 45 minute lines
+    // Hour label (right side like your screenshot)
+    const label = document.createElement("div");
+    label.className = "hour-label";
+    label.style.top = hourTop + "px";
+    label.innerText = `${hour}:00`;
+    timeline.appendChild(label);
+
+    // 15 / 30 / 45
     for (let q = 1; q <= 3; q++) {
       const minuteTop = hourTop + (HOUR_HEIGHT / 4) * q;
 
       const line = document.createElement("div");
+      line.style.top = minuteTop + "px";
 
       if (q === 2) {
-        line.className = "half-line"; // 30 mins
+        line.className = "half-line";
       } else {
-        line.className = "micro-line"; // 15 & 45
+        line.className = "micro-line";
       }
 
-      line.style.top = minuteTop + "px";
       timeline.appendChild(line);
     }
   }
