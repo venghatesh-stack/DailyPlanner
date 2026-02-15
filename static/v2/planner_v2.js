@@ -172,7 +172,7 @@ function render() {
       if (ev.type === "project") {
         openTaskCard(ev.task_id);
       } else {
-        openEventModal(ev);
+        openModal(ev);
       }
     };
 
@@ -195,6 +195,7 @@ function render() {
 
     root.appendChild(div);
   });
+  console.log(ev.type, ev);
 }
 async function openTaskCard(taskId) {
 
