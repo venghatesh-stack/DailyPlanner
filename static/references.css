@@ -1,0 +1,90 @@
+.reference-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.reference-search {
+  background: white;
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+  margin-bottom: 18px;
+}
+
+.reference-search form {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.reference-search input,
+.reference-search select {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.reference-search button {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  font-weight: 600;
+}
+
+.reference-card {
+  background: white;
+  padding: 20px;
+  border-radius: 18px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reference-card input,
+.reference-card textarea,
+.reference-card select {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.reference-card button {
+  align-self: flex-start;
+  padding: 10px 18px;
+  border-radius: 12px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ref-item {
+  background: white;
+  padding: 18px;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+  margin-bottom: 16px;
+}
+
+.tag {
+  display: inline-block;
+  background: #eef2ff;
+  color: #3730a3;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  margin-right: 6px;
+  text-decoration: none;
+}
+
+.category {
+  font-size: 12px;
+  color: #6b7280;
+  margin-left: 8px;
+}

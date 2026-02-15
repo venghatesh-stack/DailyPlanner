@@ -2543,6 +2543,45 @@ def save_habit():
 
 def clean_number(val):
     return float(val) if val not in ("", None) else None
+@app.route("/references/add", methods=["POST"])
+@login_required
+def add_reference():
+    data = request.get_json()
+    user_id = session["user_id"]
+
+    tags = [t.strip().lower() for t in data.get("tags", "").split(",") if t.strip()]
+
+    post("reference_links", {
+        "user_id": user_id,
+        "title": data.get("title"),
+        "description": data.get("description"),
+        "url": data.get("url"),
+        "tags": tags,
+        "category": data.get("category")
+    })
+
+    return jsonify({"success": True})
+@app.route("/references")
+@login_required
+def list_references():
+    user_id = session["user_id"]
+    tag = request.args.get("tag")
+    category = request.args.get("category")
+
+    params = {
+        "user_id": f"eq.{user_id}",
+        "order": "created_at.desc"
+    }
+
+    if tag:
+        params["tags"] = f"cs.{ {tag.lower()} }"
+
+    if category:
+        params["category"] = f"eq.{category}"
+
+    refs = get("reference_links", params=params)
+
+    return render_template("reference.html", references=refs)
 
 # ENTRY POINT
 # ==========================================================

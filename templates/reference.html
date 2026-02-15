@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet"
+        href="{{ url_for('static', filename='references.css') }}">
+</head>
+<body>
+<div class="reference-container">
+  <div class="nav-icons">  {% include "_top_nav.html" %}  </div>
+  <!-- 🔍 SEARCH / FILTER -->
+  <div class="reference-search">
+    <form method="GET">
+      <input type="text"
+             name="tag"
+             placeholder="Search by tag"
+             value="{{ request.args.get('tag','') }}">
+
+      <select name="category">
+        <option value="">All Categories</option>
+        <option value="Technology"
+          {% if request.args.get('category') == 'Technology' %}selected{% endif %}>
+          Technology
+        </option>
+        <option value="Health"
+          {% if request.args.get('category') == 'Health' %}selected{% endif %}>
+          Health
+        </option>
+        <option value="Finance"
+          {% if request.args.get('category') == 'Finance' %}selected{% endif %}>
+          Finance
+        </option>
+        <option value="Learning"
+          {% if request.args.get('category') == 'Learning' %}selected{% endif %}>
+          Learning
+        </option>
+      </select>
+
+      <button type="submit">Search</button>
+    </form>
+  </div>
+
+
+  <!-- ➕ ADD NEW REFERENCE -->
+  <div class="reference-card">
+
+    <input type="text"
+           id="ref-title"
+           placeholder="Title (optional)" />
+
+    <textarea id="ref-description"
+              placeholder="Brief description..."></textarea>
+
+    <input type="url"
+           id="ref-url"
+           placeholder="https://example.com"
+           required />
+
+    <input type="text"
+           id="ref-tags"
+           placeholder="tags (comma separated)" />
+
+    <select id="ref-category">
+      <option value="">Select Category</option>
+      <option>Technology</option>
+      <option>Health</option>
+      <option>Finance</option>
+      <option>Learning</option>
+    </select>
+
+    <button id="saveRefBtn">Save</button>
+  </div>
+
+
+  <!-- 📚 RESULTS -->
+  <div class="reference-list">
+
+    {% if references %}
+      {% for ref in references %}
+        <div class="ref-item">
+
+          <h4>
+            <a href="{{ ref.url }}" target="_blank">
+              {{ ref.title or ref.url }}
+            </a>
+          </h4>
+
+          {% if ref.description %}
+            <p class="ref-desc">{{ ref.description }}</p>
+          {% endif %}
+
+          <div class="ref-meta">
+
+            {% if ref.tags %}
+              {% for tag in ref.tags %}
+                <a href="/references?tag={{ tag }}"
+                   class="tag">
+                  {{ tag }}
+                </a>
+              {% endfor %}
+            {% endif %}
+
+            {% if ref.category %}
+              <span class="category">
+                {{ ref.category }}
+              </span>
+            {% endif %}
+
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state">
+        No references found.
+      </div>
+    {% endif %}
+
+  </div>
+
+</div>
+<script src="{{ url_for('static', filename='references.js') }}" defer></script>
+</body>
+</html>  
