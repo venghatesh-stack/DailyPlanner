@@ -2296,6 +2296,8 @@ def update_project_task(task_id):
         if k in allowed_fields
     }
 
+    if "start_time" in update_payload and update_payload["start_time"] == "":
+     update_payload["start_time"] = None
 
     update(
     "project_tasks",
