@@ -393,8 +393,12 @@ document.addEventListener("click", async (e) => {
     btn.disabled = false;
   }
 });
-function updateRecurrence(taskId, type) {
-  fetch(`/projects/tasks/${taskId}/update`, {
+async function updateRecurrence(taskId, type) {
+  const taskEl = document.getElementById(`task-${taskId}`);
+  if (!taskEl) return;
+
+  // 1️⃣ Save to backend
+  await fetch(`/projects/tasks/${taskId}/update`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -403,8 +407,17 @@ function updateRecurrence(taskId, type) {
     })
   });
 
-  // optional: toggle weekly day UI
+  // 2️⃣ Toggle weekly day UI immediately
+  const weeklyBox = taskEl.querySelector(".recurrence-days");
+  if (!weeklyBox) return;
+
+  if (type === "weekly") {
+    weeklyBox.style.display = "flex";   // use flex to match your layout
+  } else {
+    weeklyBox.style.display = "none";
+  }
 }
+
 function updateRecurrenceDays(taskId) {
   const box = document.querySelector(`#task-${taskId}`);
   const days = [...box.querySelectorAll('.recurrence-days input:checked')]
