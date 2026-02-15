@@ -27,10 +27,17 @@ async function loadHealth(date) {
   }
 
   // 🔥 Update chart safely (no infinite push)
-  if (window.healthChart && data.habit_percent !== undefined) {
-    window.healthChart.data.datasets[2].data = [data.habit_percent];
-    window.healthChart.update();
-  }
+ if (
+  window.healthChart &&
+  window.healthChart.data &&
+  window.healthChart.data.datasets &&
+  window.healthChart.data.datasets.length > 2 &&
+  data.habit_percent !== undefined
+) {
+  window.healthChart.data.datasets[2].data.push(data.habit_percent);
+  window.healthChart.update();
+}
+
 }
 
 function updateHabitCircle(percent) {
