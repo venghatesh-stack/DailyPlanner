@@ -661,3 +661,23 @@ body {
     gap: 6px;
   }
 }
+.floating-group {
+  margin-bottom: 16px;
+}
+
+.group-header {
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.group-body.collapsed {
+  display: none;
+}
+
+.count {
+  font-size: 12px;
+  opacity: 0.6;
+  margin-left: 6px;
+}

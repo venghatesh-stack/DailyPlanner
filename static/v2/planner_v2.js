@@ -370,44 +370,116 @@ function renderFloatingTasks(tasks) {
   const container = document.getElementById("floating-tasks");
   container.innerHTML = "";
 
-  tasks.forEach(task => {
-    const div = document.createElement("div");
-    div.className = "floating-task";
-    div.draggable = true;
+  const today = new Date().toISOString().split("T")[0];
 
-    const due = task.due_date || currentDate;
-    const time = task.start_time ? task.start_time.slice(0,5) : null;
-    const priority = task.priority || "medium";
+  const priorityRank = { high: 1, medium: 2, low: 3 };
 
-    div.innerHTML = `
-      <div class="floating-title">
-        ${task.task_text}
-      </div>
+  // 📊 Sort by priority first, then due date
+  tasks.sort((a, b) => {
+    const pDiff =
+      (priorityRank[a.priority] || 2) -
+      (priorityRank[b.priority] || 2);
 
-      <div class="floating-meta">
-        <div class="meta-left">
-          <span class="floating-date">📅 ${due}</span>
-          ${time ? `<span class="floating-time">🕒 ${time}</span>` : ""}
-        </div>
+    if (pDiff !== 0) return pDiff;
 
-        <span class="floating-priority p-${priority}">
-          ${priority.toUpperCase()}
-        </span>
-      </div>
-    `;
-
-    div.onclick = (e) => {
-      e.stopPropagation();
-      openTaskCard(task.task_id);
-    };
-
-    div.ondragstart = () => {
-      draggedTask = { ...task, type: "project" };
-    };
-
-    container.appendChild(div);
+    return (a.due_date || "").localeCompare(b.due_date || "");
   });
+
+  // 🧠 Group by date
+  const grouped = {};
+
+  tasks.forEach(task => {
+    const key = task.due_date || "No Date";
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(task);
+  });
+
+  Object.keys(grouped)
+    .sort()
+    .forEach(dateKey => {
+
+      const groupWrapper = document.createElement("div");
+      groupWrapper.className = "floating-group";
+
+      const header = document.createElement("div");
+      header.className = "group-header";
+
+      const displayDate =
+        dateKey === today ? "🟡 Today" :
+        dateKey === "No Date" ? "No Date" :
+        `📅 ${dateKey}`;
+
+      header.innerHTML = `
+        ${displayDate}
+        <span class="count">(${grouped[dateKey].length})</span>
+      `;
+
+      const body = document.createElement("div");
+      body.className = "group-body";
+
+      // 🔽 Collapse toggle
+      header.onclick = () => {
+        body.classList.toggle("collapsed");
+      };
+
+      grouped[dateKey].forEach(task => {
+
+        const div = document.createElement("div");
+        div.className = "floating-task";
+        div.draggable = true;
+
+        const due = task.due_date || currentDate;
+        const time = task.start_time ? task.start_time.slice(0,5) : null;
+        const priority = task.priority || "medium";
+
+        // 🔴 Overdue detection
+        const isOverdue =
+          task.due_date &&
+          task.due_date < today;
+
+        if (isOverdue) {
+          div.classList.add("overdue");
+        }
+
+        div.innerHTML = `
+          <div class="floating-title">
+            ${task.task_text}
+          </div>
+
+          <div class="floating-meta">
+            <div class="meta-left">
+              ${
+                task.due_date === today
+                  ? `<span class="floating-date today-badge">🟡 Today</span>`
+                  : `<span class="floating-date">📅 ${due}</span>`
+              }
+              ${time ? `<span class="floating-time">🕒 ${time}</span>` : ""}
+            </div>
+
+            <span class="floating-priority p-${priority}">
+              ${priority.toUpperCase()}
+            </span>
+          </div>
+        `;
+
+        div.onclick = (e) => {
+          e.stopPropagation();
+          openTaskCard(task.task_id);
+        };
+
+        div.ondragstart = () => {
+          draggedTask = { ...task, type: "project" };
+        };
+
+        body.appendChild(div);
+      });
+
+      groupWrapper.appendChild(header);
+      groupWrapper.appendChild(body);
+      container.appendChild(groupWrapper);
+    });
 }
+
 
 
 /* =========================
