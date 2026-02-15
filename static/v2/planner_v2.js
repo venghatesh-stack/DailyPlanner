@@ -340,7 +340,8 @@ function openCreateModal() {
   document.getElementById("duration").value = 30;
   document.getElementById("event-title").value = "";
 
-  document.getElementById("modal").classList.remove("hidden");
+  document.getElementById("modal").classList.add("show");
+
 }
 
 /* =========================
@@ -357,11 +358,13 @@ function openModal(ev) {
 
   document.getElementById("event-title").value = ev.task_text || ev.title;
 
-  document.getElementById("modal").classList.remove("hidden");
+  document.getElementById("modal").classList.add("show");
+
+
 }
 
 function closeModal() {
-  document.getElementById("modal").classList.add("hidden");
+  document.getElementById("modal").classList.remove("show");
 }
 async function saveEvent() {
   const start = document.getElementById("start-time").value;

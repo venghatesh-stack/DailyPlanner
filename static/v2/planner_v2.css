@@ -63,9 +63,6 @@ body {
 }
 
 
-.hidden {
-  display: none;
-}
 
 #modal {
   position: fixed;
@@ -77,7 +74,7 @@ body {
   z-index: 1000;              /* 🔥 must be higher than .event */
 }
 
-#modal:not(.hidden) {
+#modal.show {
   display: flex;
 }
 
@@ -88,7 +85,9 @@ body {
   width: 340px;
   z-index: 1001;              /* above overlay */
 }
-
+#modal.show {
+  display: flex;
+}
 
 #summary-table {
   width: 100%;
