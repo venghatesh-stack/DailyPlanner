@@ -3,9 +3,30 @@ body {
   background: #f6f7f9;
 }
 
-.container {
-  max-width: 900px;
-  margin: auto;
+/* ICON NAV — THIS IS THE IMPORTANT PART */
+.nav-icons {
+  display: flex;
+  justify-content: center;   /* ⬅️ centers icons */
+  align-items: center;
+  gap: 14px;
+}
+
+/* Icon styling */
+.nav-icons a,
+.nav-icons button {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 10px;
+  line-height: 1;
+}
+
+/* Hover feedback */
+.nav-icons a:hover,
+.nav-icons button:hover {
+  background: #f3f4f6;
 }
 
 /* ======================
