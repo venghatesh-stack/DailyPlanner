@@ -57,6 +57,11 @@ function updateHabitCircle(percent) {
 }
 
 async function saveHealth() {
+   const btn = document.querySelector(".save-btn");
+
+  btn.classList.add("saving");
+  btn.innerText = "Saving...";
+
   const date = document.getElementById("health-date").value;
 
   await fetch("/api/v2/daily-health", {
@@ -71,7 +76,9 @@ async function saveHealth() {
       notes: document.getElementById("health-notes").value
     })
   });
-
+btn.classList.remove("saving");
+  btn.classList.add("saved");
+  btn.innerText = "Saved ✓";
   showSavedFeedback();
 }
 

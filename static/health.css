@@ -1,232 +1,225 @@
+/* ===============================
+   BASE
+================================= */
 body {
   font-family: Inter, system-ui;
-  background: #f7f9fc;
+  background: #f3f6fb;
   margin: 0;
-  padding: 20px;
-}
-
-/* ===============================
-   CONTAINERS
-================================= */
-
-.container {
-  max-width: 720px;
-  margin: auto;
+  padding: 16px;
+  -webkit-font-smoothing: antialiased;
 }
 
 .health-container {
-  max-width: 1000px;
+  max-width: 720px;
   margin: auto;
-  padding: 10px;
+  padding-bottom: 100px; /* space for sticky save */
 }
 
 /* ===============================
    HEADER
 ================================= */
-
 .health-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .health-header h2 {
   margin: 0;
+  font-size: 20px;
 }
 
 /* ===============================
    CARDS
 ================================= */
-
-.card,
 .health-card {
-  background: white;
-  padding: 24px;
-  border-radius: 20px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.06);
-  margin-bottom: 20px;
+  background: #ffffff;
+  padding: 18px;
+  border-radius: 18px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+  margin-bottom: 16px;
+  transition: transform 0.15s ease;
 }
 
-.card h3,
+.health-card:active {
+  transform: scale(0.99);
+}
+
 .health-card h3 {
-  margin-top: 0;
-  margin-bottom: 16px;
+  margin: 0 0 14px 0;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 /* ===============================
    INPUTS
 ================================= */
-
-input,
-select,
-textarea {
+input, select, textarea {
   width: 100%;
-  padding: 10px 12px;
-  border-radius: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
   border: 1px solid #e2e8f0;
-  margin-bottom: 16px;
-  font-size: 14px;
-  background: #fff;
+  margin-bottom: 14px;
+  font-size: 15px;
+  background: #f9fafc;
+  transition: border 0.2s ease;
 }
 
-input:focus,
-select:focus,
-textarea:focus {
+input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: #2563eb;
-  box-shadow: 0 0 0 2px rgba(37,99,235,0.1);
+  background: #ffffff;
 }
 
 textarea {
-  min-height: 120px;
+  min-height: 110px;
   resize: vertical;
 }
 
 /* ===============================
-   SAVE BUTTON (Improved)
+   ENERGY SELECT — nicer feel
 ================================= */
-
-.save-btn {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  color: white;
-  padding: 14px;
-  border-radius: 14px;
-  border: none;
-  cursor: pointer;
+#energy {
   font-weight: 600;
-  width: 100%;
-  transition: 0.2s ease;
-}
-
-.save-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-}
-
-/* ===============================
-   GRID LAYOUT (Dashboard)
-================================= */
-
-.health-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-}
-
-@media (max-width: 768px) {
-  .health-grid {
-    grid-template-columns: 1fr;
-  }
+  font-size: 16px;
 }
 
 /* ===============================
    DAILY HABITS
 ================================= */
-
 .daily-habits {
-  margin: 20px 0;
-  padding: 20px;
-  background: #f9fafb;
-  border-radius: 16px;
-  border: 1px solid #e5e7eb;
+  margin-top: 6px;
 }
 
-.daily-habits h3 {
-  font-size: 16px;
-  margin-bottom: 14px;
-}
-
-/* Better spacing layout */
 .habit-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
 }
 
-/* Chip style habits */
 .habit-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 14px;
-  background: white;
-  border-radius: 999px;
+  padding: 12px;
+  background: #f9fafc;
+  border-radius: 14px;
   border: 1px solid #e5e7eb;
-  cursor: pointer;
   font-size: 14px;
-  transition: 0.2s ease;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .habit-item:hover {
-  background: #f3f4f6;
+  background: #eef2ff;
 }
 
 .habit-item input {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 
 /* ===============================
-   HABIT SUMMARY SECTION
+   HABIT PROGRESS CIRCLE
 ================================= */
-
 .habit-summary {
   display: flex;
   align-items: center;
-  gap: 40px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
+  gap: 24px;
+  margin-bottom: 16px;
 }
 
-/* Donut container */
 .habit-circle {
   position: relative;
-  width: 130px;
-  height: 130px;
+  width: 110px;
+  height: 110px;
 }
 
-/* Percentage text inside donut */
 .circle-text {
   position: absolute;
   top: 42%;
   left: 0;
   width: 100%;
   text-align: center;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
-  color: #2563eb;
 }
 
-/* Streak badge */
+/* ===============================
+   STREAK
+================================= */
 .streak-badge {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: #dc2626;
 }
 
 /* ===============================
-   RESPONSIVE POLISH
+   NOTES AT BOTTOM
 ================================= */
+.health-notes {
+  margin-top: 8px;
+}
 
+/* ===============================
+   STICKY SAVE BUTTON (MOBILE FIRST)
+================================= */
+.save-wrapper {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ffffff;
+  padding: 14px 16px;
+  box-shadow: 0 -6px 20px rgba(0,0,0,0.08);
+  border-top: 1px solid #e5e7eb;
+}
+
+.save-btn {
+  width: 100%;
+  background: #2563eb;
+  color: white;
+  padding: 14px;
+  border-radius: 16px;
+  border: none;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.save-btn:active {
+  transform: scale(0.97);
+}
+
+.save-btn.saving {
+  background: #1d4ed8;
+  opacity: 0.8;
+}
+
+.save-btn.saved {
+  background: #16a34a;
+}
+
+/* ===============================
+   MOBILE IMPROVEMENTS
+================================= */
 @media (max-width: 768px) {
-
   body {
-    padding: 14px;
+    padding: 12px;
   }
 
-  .card,
   .health-card {
-    padding: 18px;
+    padding: 16px;
+  }
+
+  input, select, textarea {
+    font-size: 16px;
   }
 
   .habit-summary {
-    justify-content: center;
-    text-align: center;
+    flex-direction: column;
+    align-items: center;
   }
-
-  .habit-circle {
-    margin-bottom: 10px;
-  }
-
 }
