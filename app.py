@@ -2226,7 +2226,7 @@ def get_project_tasks():
             "user_id": f"eq.{user_id}",
             "is_eliminated": "eq.false",
             "status": "neq.done",
-            "or": f"(due_date.is.null,due_date.eq.{date})",
+            "or": f"(due_date.is.null,due_date.eq.{date},due_date.lt.{date})",
             "select": """
                 task_id,
                 task_text,
@@ -2249,7 +2249,7 @@ def schedule_project_task(task_id):
         "project_tasks",
         params={"id": f"eq.{task_id}"},
         json={
-            "plan_date": data["plan_date"],
+            "plan_date": data["due_date"],
             "start_time": data["start_time"],
             "end_time": data["end_time"]
         }
