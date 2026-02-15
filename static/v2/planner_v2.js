@@ -370,114 +370,95 @@ function renderFloatingTasks(tasks) {
   const container = document.getElementById("floating-tasks");
   container.innerHTML = "";
 
-  const today = new Date().toISOString().split("T")[0];
+  if (!tasks || !tasks.length) return;
 
-  const priorityRank = { high: 1, medium: 2, low: 3 };
+  // 🔥 SORT BY PRIORITY (high → medium → low)
+  const priorityOrder = { high: 1, medium: 2, low: 3 };
 
-  // 📊 Sort by priority first, then due date
   tasks.sort((a, b) => {
-    const pDiff =
-      (priorityRank[a.priority] || 2) -
-      (priorityRank[b.priority] || 2);
-
-    if (pDiff !== 0) return pDiff;
-
-    return (a.due_date || "").localeCompare(b.due_date || "");
+    const pa = priorityOrder[a.priority || "medium"];
+    const pb = priorityOrder[b.priority || "medium"];
+    return pa - pb;
   });
 
-  // 🧠 Group by date
+  // 🧠 GROUP BY DUE DATE
   const grouped = {};
 
   tasks.forEach(task => {
-    const key = task.due_date || "No Date";
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(task);
+    const date = task.due_date || "No Date";
+    if (!grouped[date]) grouped[date] = [];
+    grouped[date].push(task);
   });
 
-  Object.keys(grouped)
-    .sort()
-    .forEach(dateKey => {
+  Object.keys(grouped).forEach(dateKey => {
 
-      const groupWrapper = document.createElement("div");
-      groupWrapper.className = "floating-group";
+    // 🧠 Group Header
+    const groupHeader = document.createElement("div");
+    groupHeader.className = "floating-group-header";
 
-      const header = document.createElement("div");
-      header.className = "group-header";
+    const today = new Date().toISOString().split("T")[0];
+    let label = dateKey;
 
-      const displayDate =
-        dateKey === today ? "🟡 Today" :
-        dateKey === "No Date" ? "No Date" :
-        `📅 ${dateKey}`;
+    if (dateKey === today) {
+      label = "🟡 Today";
+    }
 
-      header.innerHTML = `
-        ${displayDate}
-        <span class="count">(${grouped[dateKey].length})</span>
+    groupHeader.innerHTML = `
+      <div class="group-title">${label}</div>
+    `;
+
+    container.appendChild(groupHeader);
+
+    grouped[dateKey].forEach(task => {
+
+      const div = document.createElement("div");
+      div.className = "floating-task";
+      div.draggable = true;
+
+      const due = task.due_date || "";
+      const time = task.start_time ? task.start_time.slice(0,5) : null;
+      const priority = task.priority || "medium";
+
+      // 🔥 OVERDUE CHECK
+      const todayStr = new Date().toISOString().split("T")[0];
+      if (due && due < todayStr) {
+        div.classList.add("overdue-floating");
+      }
+
+      // 📅 SCHEDULED CHECK
+      if (task.plan_date) {
+        div.classList.add("scheduled-floating");
+      }
+
+      div.innerHTML = `
+        <div class="floating-title">
+          ${task.task_text}
+          ${task.plan_date ? `<span class="scheduled-icon">📅</span>` : ""}
+        </div>
+
+        <div class="floating-meta">
+          <div class="meta-left">
+            ${time ? `<span class="floating-time">🕒 ${time}</span>` : ""}
+          </div>
+
+          <span class="floating-priority p-${priority}">
+            ${priority.toUpperCase()}
+          </span>
+        </div>
       `;
 
-      const body = document.createElement("div");
-      body.className = "group-body";
-
-      // 🔽 Collapse toggle
-      header.onclick = () => {
-        body.classList.toggle("collapsed");
+      div.onclick = (e) => {
+        e.stopPropagation();
+        openTaskCard(task.task_id);
       };
 
-      grouped[dateKey].forEach(task => {
+      div.ondragstart = () => {
+        draggedTask = { ...task, type: "project" };
+      };
 
-        const div = document.createElement("div");
-        div.className = "floating-task";
-        div.draggable = true;
-
-        const due = task.due_date || currentDate;
-        const time = task.start_time ? task.start_time.slice(0,5) : null;
-        const priority = task.priority || "medium";
-
-        // 🔴 Overdue detection
-        const isOverdue =
-          task.due_date &&
-          task.due_date < today;
-
-        if (isOverdue) {
-          div.classList.add("overdue");
-        }
-
-        div.innerHTML = `
-          <div class="floating-title">
-            ${task.task_text}
-          </div>
-
-          <div class="floating-meta">
-            <div class="meta-left">
-              ${
-                task.due_date === today
-                  ? `<span class="floating-date today-badge">🟡 Today</span>`
-                  : `<span class="floating-date">📅 ${due}</span>`
-              }
-              ${time ? `<span class="floating-time">🕒 ${time}</span>` : ""}
-            </div>
-
-            <span class="floating-priority p-${priority}">
-              ${priority.toUpperCase()}
-            </span>
-          </div>
-        `;
-
-        div.onclick = (e) => {
-          e.stopPropagation();
-          openTaskCard(task.task_id);
-        };
-
-        div.ondragstart = () => {
-          draggedTask = { ...task, type: "project" };
-        };
-
-        body.appendChild(div);
-      });
-
-      groupWrapper.appendChild(header);
-      groupWrapper.appendChild(body);
-      container.appendChild(groupWrapper);
+      container.appendChild(div);
     });
+  });
 }
 
 
