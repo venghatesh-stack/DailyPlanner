@@ -781,5 +781,16 @@
   font-size: 15px;
 }
 
+.scroll-number {
+  appearance: textfield;
+  text-align: center;
+  font-weight: 600;
+}
+
+.scroll-number::-webkit-outer-spin-button,
+.scroll-number::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
 
 

@@ -551,27 +551,30 @@ function sheetToggleAutoAdvance(enabled) {
     })
   });
 }
-function attachScrollNumber(id) {
-  const el = document.getElementById(id);
+function attachScrollNumbers() {
+  document.querySelectorAll(".scroll-number").forEach(el => {
 
-  el.addEventListener("wheel", (e) => {
-    e.preventDefault();
+    el.addEventListener("wheel", function (e) {
+      e.preventDefault();
 
-    let value = parseInt(el.value || 0);
+      let value = parseInt(this.value || 0);
 
-    if (e.deltaY < 0) {
-      value++;
-    } else {
-      value--;
-    }
+      if (e.deltaY < 0) {
+        value++;
+      } else {
+        value--;
+      }
 
-    if (value < 0) value = 0;
-    if (value > 100) value = 100;
+      if (value < 0) value = 0;
+      if (value > 100) value = 100;
 
-    el.value = value;
+      this.value = value;
+
+      // trigger change so your existing logic runs
+      this.dispatchEvent(new Event("change"));
+    });
+
   });
 }
 
-attachScrollNumber("task-planned-hours");
-attachScrollNumber("task-actual-hours");
-attachScrollNumber("task-duration");
+document.addEventListener("DOMContentLoaded", attachScrollNumbers);
