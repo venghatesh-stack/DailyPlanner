@@ -1,4 +1,4 @@
-const HOUR_HEIGHT = 60;
+const HOUR_HEIGHT = 100;
 const SNAP = 5;
 
 let events = [];
@@ -569,25 +569,50 @@ setInterval(() => {
 }, 60000);
 
 });   // ← closes DOMContentLoaded
-function renderTimeGutter() {
+function renderTimeGrid() {
+  const timeline = document.getElementById("timeline");
   const gutter = document.getElementById("time-gutter");
-  if (!gutter) return;
 
+  if (!timeline || !gutter) return;
+
+  timeline.innerHTML = "";
   gutter.innerHTML = "";
 
-  const slotHeight = parseInt(
-    getComputedStyle(document.documentElement)
-      .getPropertyValue("--slot-height")
-  );
-
   for (let hour = 0; hour < 24; hour++) {
+
+    const hourTop = hour * HOUR_HEIGHT;
+
+    // Hour label
     const label = document.createElement("div");
     label.className = "hour-label";
-    label.style.top = (hour * 2 * slotHeight) + "px";
+    label.style.top = hourTop + "px";
     label.innerText = formatHour(hour);
     gutter.appendChild(label);
+
+    // Hour line
+    const hourLine = document.createElement("div");
+    hourLine.className = "hour-line";
+    hourLine.style.top = hourTop + "px";
+    timeline.appendChild(hourLine);
+
+    // 15, 30, 45 minute lines
+    for (let q = 1; q <= 3; q++) {
+      const minuteTop = hourTop + (HOUR_HEIGHT / 4) * q;
+
+      const line = document.createElement("div");
+
+      if (q === 2) {
+        line.className = "half-line"; // 30 mins
+      } else {
+        line.className = "micro-line"; // 15 & 45
+      }
+
+      line.style.top = minuteTop + "px";
+      timeline.appendChild(line);
+    }
   }
 }
+
 
 function formatHour(hour) {
   const h = hour % 12 || 12;

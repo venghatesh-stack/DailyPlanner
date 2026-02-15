@@ -196,6 +196,8 @@ body {
   margin-bottom: 30px;
 }
 .hour-line {
+  height: 1px;
+  background: #cbd5e1;
   pointer-events: none;
 }
 
@@ -245,7 +247,7 @@ body {
 }
 
 .time-row {
-  height: var(--slot-height);
+  height: var(--hour-height);
   border-top: 1px solid #e5e7eb;
   position: relative;
 }
@@ -261,15 +263,26 @@ body {
   transform: translateY(-50%);
   pointer-events: none;
 }
+.half-line {
+  height: 1px;
+  background: #e5e7eb;
+  border-top: 1px dashed #d1d5db;
+}
 
-
-
+.micro-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(0,0,0,0.05);
+  pointer-events: none;
+}
 .timeline-grid {
   flex: 1;
   position: relative;
 }
 .timeline-grid .time-row {
-  height: var(--slot-height);
+  height: var(--hour-height);
   border-top: 1px solid #e5e7eb;
   position: relative;
 }
@@ -279,8 +292,9 @@ body {
 }
 
 :root {
-  --slot-height: 80px;   /* 30 mins */
+  --hour-height: 100px;   /* 1 hour */
 }
+
 .planner-wrapper {
   display: flex;
   position: relative;
