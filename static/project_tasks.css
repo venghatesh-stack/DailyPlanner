@@ -185,7 +185,15 @@
   cursor: pointer;
   transition: opacity 0.2s ease, transform 0.15s ease;
 }
+.icon-btn:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
 
+.recurrence-btn.active {
+  opacity: 1;
+  color: #2563eb;
+}
 .icon-btn.danger {
   background: transparent;
   border: none;
@@ -268,7 +276,7 @@
 .task-icons {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 .eisenhower-btn {
   align-self: flex-end;

@@ -54,6 +54,26 @@
     )">
     ✏️
   </button>
+  
+  <!-- 🔁 Recurrence Icon -->
+  <button
+    type="button"
+    class="icon-btn recurrence-btn {% if task.is_recurring %}active{% endif %}"
+    title="Recurrence"
+    onclick="event.stopPropagation(); toggleTask('{{ task.task_id }}')">
+    🔁
+  </button>
+
+  <!-- 🧠 Eisenhower -->
+  <button
+    id="send-{{ task.task_id }}"
+    class="icon-btn eisenhower-btn {% if task.eisenhower_sent %}sent{% endif %}"
+    type="button"
+    title="{% if task.eisenhower_sent %}In Eisenhower{% else %}Send to Eisenhower{% endif %}"
+    onclick="event.stopPropagation(); openEisenhower('{{ task.task_id }}')">
+    🧠
+  </button>
+
   </div>
     <!-- 📝 Text -->
     <div class="task-text">
@@ -84,14 +104,6 @@
 
     <div class="flex-spacer"></div>
 
-    <button
-      id="send-{{ task.task_id }}"
-      class="icon-btn eisenhower-btn {% if task.eisenhower_sent %}sent{% endif %}"
-      type="button"
-      title="{% if task.eisenhower_sent %}In Eisenhower{% else %}Send to Eisenhower{% endif %}"
-      onclick="event.stopPropagation(); openEisenhower('{{ task.task_id }}')">
-      🧠
-    </button>
 
   </div>
 
