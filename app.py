@@ -2320,37 +2320,19 @@ def complete_task(task_id):
     )
 
     return {"ok": True}
-
 @app.route("/api/v2/daily-health")
+@login_required
 def get_daily_health():
-    user_id = "VenghateshS"
-    date = request.args.get("date")
+    user_id = session["user_id"]
+    plan_date = request.args.get("date")
 
-    data = get(
-        "daily_health",
-        params={
-            "user_id": f"eq.{user_id}",
-            "plan_date": f"eq.{date}"
-        }
-    )
+    if not plan_date:
+        return jsonify({})
 
-    return jsonify(data[0] if data else {})
-@app.route("/api/v2/daily-health", methods=["POST"])
-def save_daily_health():
-    user_id = "VenghateshS"
-    data = request.json
-    plan_date = data.get("plan_date")
-
-    payload = {
-        "weight": data.get("weight"),
-        "sleep_hours": data.get("sleep_hours"),
-        "mood": data.get("mood"),
-        "energy_level": data.get("energy_level"),
-        "notes": data.get("notes")
-    }
-
-    # 🔎 Check if record exists
-    existing = get(
+    # ---------------------
+    # Load health
+    # ---------------------
+    health_rows = get(
         "daily_health",
         params={
             "user_id": f"eq.{user_id}",
@@ -2358,31 +2340,131 @@ def save_daily_health():
         }
     )
 
-    if existing:
-        # 🔄 UPDATE
-        update(
-            "daily_health",
-            params={
-                "user_id": f"eq.{user_id}",
-                "plan_date": f"eq.{plan_date}"
-            },
-            json=payload
-        )
-    else:
-        # ➕ INSERT
-        post(
-            "daily_health",
-            {
-                "user_id": user_id,
-                "plan_date": plan_date,
-                **payload
-            }
-        )
+    health = health_rows[0] if health_rows else {}
+
+    # ---------------------
+    # Load habits
+    # ---------------------
+    habit_rows = get(
+        "daily_habits",
+        params={
+            "user_id": f"eq.{user_id}",
+            "plan_date": f"eq.{plan_date}"
+        }
+    )
+
+    habits = habit_rows[0]["habits"] if habit_rows else {}
+
+    # ---------------------
+    # Habit %
+    # ---------------------
+    total = len(HABIT_LIST)
+    completed = sum(1 for h in HABIT_LIST if habits.get(h))
+    habit_percent = round((completed / total) * 100) if total else 0
+
+    # ---------------------
+    # Streak
+    # ---------------------
+    streak = compute_health_streak(user_id, date.fromisoformat(plan_date))
+
+    return jsonify({
+        **health,
+        "habits": habits,
+        "habit_percent": habit_percent,
+        "streak": streak
+    })
+
+@app.route("/api/v2/daily-health", methods=["POST"])
+@login_required
+def save_daily_health():
+    user_id = session["user_id"]
+    data = request.json
+    plan_date = data.get("plan_date")
+
+    if not plan_date:
+        return jsonify({"error": "plan_date required"}), 400
+
+    payload = {
+        "user_id": user_id,
+        "plan_date": plan_date,
+        "weight": data.get("weight"),
+        "sleep_hours": data.get("sleep_hours"),
+        "mood": data.get("mood"),
+        "energy_level": data.get("energy_level"),
+        "notes": data.get("notes")
+    }
+
+    # 🔥 UPSERT instead of check-then-update
+    post(
+        "daily_health",
+        payload,
+        prefer="resolution=merge-duplicates"
+    )
 
     return jsonify({"success": True})
+
 @app.route("/health")
+@login_required
 def health_dashboard():
-    return render_template("health_dashboard.html")
+    user_id = session["user_id"]
+    plan_date = request.args.get("date")
+
+    if plan_date:
+        plan_date = date.fromisoformat(plan_date)
+    else:
+        plan_date = datetime.now(IST).date()
+
+    plan_date_str = plan_date.isoformat()
+
+    # -----------------------
+    # Load daily health
+    # -----------------------
+    health_rows = get(
+        "daily_health",
+        params={
+            "user_id": f"eq.{user_id}",
+            "plan_date": f"eq.{plan_date_str}"
+        }
+    )
+
+    health = health_rows[0] if health_rows else {}
+
+    # -----------------------
+    # Load daily habits
+    # -----------------------
+    habit_rows = get(
+        "daily_habits",
+        params={
+            "user_id": f"eq.{user_id}",
+            "plan_date": f"eq.{plan_date_str}"
+        }
+    )
+
+    habits = habit_rows[0]["habits"] if habit_rows else {}
+
+    # -----------------------
+    # Habit completion %
+    # -----------------------
+    total = len(HABIT_LIST)
+    completed = sum(1 for h in HABIT_LIST if habits.get(h))
+    habit_percent = round((completed / total) * 100) if total else 0
+
+    # -----------------------
+    # Streak
+    # -----------------------
+    health_streak = compute_health_streak(user_id, plan_date)
+
+    return render_template(
+        "health_dashboard.html",
+        plan_date=plan_date,
+        health=health,
+        habits=habits,
+        habit_percent=habit_percent,
+        health_streak=health_streak,
+        habit_list=HABIT_LIST,
+        habit_icons=HABIT_ICONS
+    )
+
 
 @app.route("/api/save-habit", methods=["POST"])
 def save_habit():

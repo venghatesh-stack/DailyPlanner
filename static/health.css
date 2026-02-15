@@ -119,3 +119,31 @@ textarea {
   width: 16px;
   height: 16px;
 }
+.habit-summary {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  margin-bottom: 20px;
+}
+
+.habit-circle {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.circle-text {
+  position: absolute;
+  top: 40%;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.streak-badge {
+  font-size: 18px;
+  font-weight: 600;
+  color: #dc2626;
+}

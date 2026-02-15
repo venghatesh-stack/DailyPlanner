@@ -6,6 +6,27 @@
     <h2>💚 Health Dashboard</h2>
     <input type="date" id="health-date">
   </div>
+<div class="habit-summary">
+
+  <div class="habit-circle">
+    <svg width="120" height="120">
+      <circle cx="60" cy="60" r="50" stroke="#e5e7eb" stroke-width="10" fill="none"/>
+      <circle cx="60" cy="60" r="50"
+              stroke="#2563eb"
+              stroke-width="10"
+              fill="none"
+              stroke-dasharray="314"
+              stroke-dashoffset="{{ 314 - (habit_percent * 3.14) }}"
+              transform="rotate(-90 60 60)"/>
+    </svg>
+    <div class="circle-text">{{ habit_percent }}%</div>
+  </div>
+
+  <div class="streak-badge">
+    🔥 {{ health_streak }} day streak
+  </div>
+
+</div>
 
   <div class="health-grid">
 
@@ -29,6 +50,17 @@
 
       <label>Notes</label>
       <textarea id="health-notes"></textarea>
+      <h4>Daily Habits</h4>
+        <div class="habit-list">
+        {% for habit in habit_list %}
+            <label class="habit-item">
+            <input type="checkbox"
+                    data-habit="{{ habit }}"
+                    {% if habits.get(habit) %}checked{% endif %}>
+            <span>{{ habit_icons.get(habit) }} {{ habit.replace("_", " ").title() }}</span>
+            </label>
+        {% endfor %}
+        </div>
 
       <button onclick="saveHealth()">Save</button>
     </div>
