@@ -1218,6 +1218,8 @@ def project_tasks(project_id):
             "recurrence_interval": t.get("recurrence_interval"),
             "recurrence_end": t.get("recurrence_end"),
             "auto_advance": t.get("auto_advance", True),
+            "recurrence_badge": build_recurrence_badge(t),
+
         })
 
     grouped_tasks = group_tasks_smart(tasks)
@@ -1266,6 +1268,24 @@ def get_max_order_index(project_id):
         }
     )
     return rows[0]["order_index"] if rows else None
+
+def build_recurrence_badge(t):
+    if not t.get("is_recurring"):
+        return None
+
+    rtype = t.get("recurrence_type")
+
+    if rtype == "daily":
+        return "🔁 Daily"
+
+    if rtype == "weekly":
+        return "🔁 Weekly"
+
+    if rtype == "monthly":
+        return "🔁 Monthly"
+
+    return "🔁"
+
 @app.route("/projects/<project_id>/tasks/add", methods=["POST"])
 @login_required
 def add_project_task(project_id):
