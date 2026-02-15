@@ -2297,10 +2297,11 @@ def update_project_task(task_id):
 
 
     update(
-        "project_tasks",
-        task_id,
-        update_payload
-    )
+    "project_tasks",
+    params={"task_id": f"eq.{task_id}"},
+    json=update_payload
+)
+
 
     return jsonify({"success": True})
 
