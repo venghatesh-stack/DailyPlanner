@@ -74,6 +74,11 @@ function syncReflection(el) {
   const main = document.querySelector('textarea[name="reflection"]');
   if (main) main.value = el.value;
 }
+function getISTDate() {
+  return new Date().toLocaleDateString("en-CA", {
+    timeZone: "Asia/Kolkata"
+  });
+}
 
 /* =========================================================
    EVENT EDITING

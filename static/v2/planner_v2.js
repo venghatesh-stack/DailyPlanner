@@ -252,10 +252,14 @@ async function openTaskCard(taskId) {
 
 
 }
-
+function getISTNow() {
+  return new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+  );
+}
 function renderCurrentTimeLine(root) {
-  const now = new Date();
-  const today = new Date().toISOString().split("T")[0];
+  const now = getISTNow();
+  const today = getISTDate();
 
   if (currentDate !== today) return;
 
