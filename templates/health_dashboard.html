@@ -1,0 +1,46 @@
+{% include "_top_nav.html" %}
+
+<div class="health-container">
+
+  <div class="health-header">
+    <h2>💚 Health Dashboard</h2>
+    <input type="date" id="health-date">
+  </div>
+
+  <div class="health-grid">
+
+    <!-- Metrics Card -->
+    <div class="health-card">
+      <label>Weight (kg)</label>
+      <input type="number" id="weight" step="0.1">
+
+      <label>Sleep (hours)</label>
+      <input type="number" id="sleep" step="0.5">
+
+      <label>Mood</label>
+      <select id="mood">
+        <option>😊 Happy</option>
+        <option>😐 Neutral</option>
+        <option>😞 Low</option>
+      </select>
+
+      <label>Energy (1–10)</label>
+      <input type="range" id="energy" min="1" max="10">
+
+      <label>Notes</label>
+      <textarea id="health-notes"></textarea>
+
+      <button onclick="saveHealth()">Save</button>
+    </div>
+
+    <!-- Chart Card -->
+    <div class="health-card">
+      <canvas id="healthChart"></canvas>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='health.js') }}"></script>
