@@ -666,6 +666,25 @@ function showConflictDialog(conflicts, payload) {
   };
 }
 
+async function deleteEvent() {
+  if (!selected) return;
+
+  // 🔥 Only allow deleting real calendar events
+  if (selected.type !== "event") {
+    alert("Only calendar events can be deleted here.");
+    return;
+  }
+
+  const confirmed = confirm("Delete this event?");
+  if (!confirmed) return;
+
+  await fetch(`/api/v2/events/${selected.id}`, {
+    method: "DELETE"
+  });
+
+  closeModal();
+  loadEvents();
+}
 
 /* =========================
    INIT
