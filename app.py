@@ -2481,18 +2481,19 @@ def health_dashboard():
 
 
 @app.route("/api/save-habit", methods=["POST"])
+@login_required
 def save_habit():
     data = request.json
     user_id = session["user_id"]
 
     habit_key = data.get("habit")
     completed = data.get("completed")
-    plan_date = data.get("plan_date")  # 🔥 use selected date
+    plan_date = data.get("plan_date")
 
-    if not plan_date:
-        return jsonify({"error": "plan_date required"}), 400
+    if not habit_key or not plan_date:
+        return jsonify({"error": "Missing data"}), 400
 
-    # 1️⃣ Get existing row for that date
+    # 1️⃣ Get existing row
     rows = get(
         "daily_habits",
         {
@@ -2501,17 +2502,15 @@ def save_habit():
         }
     )
 
-    current_habits = {}
-
-    if rows:
-        current_habits = rows[0].get("habits") or {}
+    current_habits = rows[0].get("habits") if rows else {}
+    current_habits = current_habits or {}
 
     # 2️⃣ Update only changed habit
     current_habits[habit_key] = completed
 
-    # 3️⃣ UPSERT using merge-duplicates
+    # 3️⃣ Proper UPSERT
     post(
-        "daily_habits on_conflict=user_id,plan_date",
+        "daily_habits?on_conflict=user_id,plan_date",
         {
             "user_id": user_id,
             "plan_date": plan_date,
@@ -2521,6 +2520,7 @@ def save_habit():
     )
 
     return jsonify({"success": True})
+
 def clean_number(val):
     return float(val) if val not in ("", None) else None
 
