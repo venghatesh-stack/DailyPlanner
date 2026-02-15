@@ -243,7 +243,8 @@ async function openTaskCard(taskId) {
   document.getElementById("task-due-date").value = task.due_date || "";
   document.getElementById("task-start-time").value = task.start_time || "";
 
-  document.getElementById("task-card-modal").classList.remove("hidden");
+  document.getElementById("task-card-modal").classList.add("show");
+
 }
 
 function renderCurrentTimeLine(root) {
@@ -430,6 +431,9 @@ function openModal(ev) {
   document.getElementById("modal").classList.add("show");
 
 
+}
+function closeTaskCard() {
+  document.getElementById("task-card-modal").classList.remove("show");
 }
 
 function closeModal() {

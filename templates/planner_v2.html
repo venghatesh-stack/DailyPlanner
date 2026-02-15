@@ -65,6 +65,51 @@
     </div>
   </div>
 </div>
+<div id="task-card-modal" class="hidden">
+  <div class="modal-card">
+    <h3>Project Task</h3>
+
+    <label>Title</label>
+    <input type="text" id="task-title">
+
+    <label>Description</label>
+    <textarea id="task-description"></textarea>
+
+    <label>Status</label>
+    <select id="task-status">
+      <option value="open">Open</option>
+      <option value="in_progress">In Progress</option>
+      <option value="done">Done</option>
+    </select>
+
+    <label>Priority</label>
+    <select id="task-priority">
+      <option value="low">Low</option>
+      <option value="medium">Medium</option>
+      <option value="high">High</option>
+    </select>
+
+    <label>Planned Hours</label>
+    <input type="number" id="task-planned-hours">
+
+    <label>Actual Hours</label>
+    <input type="number" id="task-actual-hours">
+
+    <label>Duration (days)</label>
+    <input type="number" id="task-duration">
+
+    <label>Due Date</label>
+    <input type="date" id="task-due-date">
+
+    <label>Start Time</label>
+    <input type="time" id="task-start-time">
+
+    <div style="margin-top:15px;">
+      <button onclick="saveTaskCard()">Save</button>
+      <button onclick="closeTaskCard()">Cancel</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>

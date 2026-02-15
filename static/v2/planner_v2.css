@@ -10,6 +10,19 @@ body {
   justify-content: space-between;
   margin-bottom: 20px;
 }
+#task-card-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+#task-card-modal.show {
+  display: flex;
+}
 
 
 .event {
