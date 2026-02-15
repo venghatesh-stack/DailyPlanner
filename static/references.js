@@ -59,3 +59,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
   btn.addEventListener("click", saveReference);
 });
+function searchReferences() {
+  const query = document.getElementById("searchInput").value.trim();
+
+  if (!query) {
+    alert("Enter something to search");
+    return;
+  }
+
+  fetch(`/search_references?q=${encodeURIComponent(query)}`)
+    .then(response => response.json())
+    .then(data => {
+      const container = document.getElementById("searchResults");
+
+      if (!data.results || data.results.length === 0) {
+        container.innerHTML = "<p>No results found.</p>";
+        return;
+      }
+
+      container.innerHTML = data.results.map(ref => `
+        <div class="reference-item">
+          <strong>${ref.title}</strong>
+          <p>${ref.description || ""}</p>
+        </div>
+      `).join("");
+    })
+    .catch(error => {
+      console.error("Search error:", error);
+    });
+}

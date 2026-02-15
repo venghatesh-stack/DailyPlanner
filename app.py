@@ -2582,6 +2582,23 @@ def list_references():
     refs = get("reference_links", params=params)
 
     return render_template("reference.html", references=refs)
+@app.get("/search_references")
+def search_references():
+    user_id = session["user_id"]
+    query = request.args.get("q", "").strip()
+
+    if not query:
+        return jsonify({"results": []})
+
+    rows = get(
+        "reference_links",
+        {
+            "user_id": f"eq.{user_id}",
+            "tags": f"ilike.%{query}%"
+        }
+    )
+
+    return jsonify({"results": rows})
 
 # ENTRY POINT
 # ==========================================================
