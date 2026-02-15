@@ -193,8 +193,10 @@ function render() {
   if (e.target.classList.contains("resize-handle")) return;
 
   if (ev.type === "project") {
+    console.log("➡ Opening project card");
     openTaskCard(ev.task_id);
   } else {
+
     openModal(ev);
   }
 });
@@ -220,6 +222,10 @@ function render() {
     root.appendChild(div);
   });
 }
+document.addEventListener("click", (e) => {
+  console.log("GLOBAL CLICK:", e.target);
+});
+
 async function openTaskCard(taskId) {
 
   const res = await fetch(`/api/v2/project-tasks/${taskId}`);
