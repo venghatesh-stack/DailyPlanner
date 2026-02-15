@@ -273,7 +273,7 @@ body {
 }
 .hour-label {
   position: absolute;
-  right: 10px;
+  left: 10px;
   font-size: 12px;
   color: #6b7280;
   transform: translateY(-50%);

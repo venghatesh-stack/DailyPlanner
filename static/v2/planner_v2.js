@@ -565,25 +565,36 @@ setInterval(() => {
 });   // ← closes DOMContentLoaded
 function renderTimeGrid() {
   const timeline = document.getElementById("timeline");
-  if (!timeline) return;
+  const gutter = document.getElementById("time-gutter");
+
+  if (!timeline || !gutter) return;
+
+  timeline.innerHTML = "";
+  gutter.innerHTML = "";
 
   for (let hour = 0; hour < 24; hour++) {
     const hourTop = hour * HOUR_HEIGHT;
 
-    // Hour line
+    // ========================
+    // HOUR LINE (grid)
+    // ========================
     const hourLine = document.createElement("div");
     hourLine.className = "hour-line";
     hourLine.style.top = hourTop + "px";
     timeline.appendChild(hourLine);
 
-    // Hour label (right side like your screenshot)
+    // ========================
+    // HOUR LABEL (gutter)
+    // ========================
     const label = document.createElement("div");
     label.className = "hour-label";
     label.style.top = hourTop + "px";
     label.innerText = `${hour}:00`;
-    timeline.appendChild(label);
+    gutter.appendChild(label);
 
-    // 15 / 30 / 45
+    // ========================
+    // 15 / 30 / 45 lines
+    // ========================
     for (let q = 1; q <= 3; q++) {
       const minuteTop = hourTop + (HOUR_HEIGHT / 4) * q;
 
