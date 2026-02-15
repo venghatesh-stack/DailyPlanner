@@ -53,6 +53,14 @@ async function loadEvents() {
   renderFloatingTasks(floatingTasks);
   renderSummary();   // ✅ ADD THIS LINE
 }
+function hasConflict(ev, list) {
+  return list.some(other =>
+    other !== ev &&
+    !(minutes(ev.end_time) <= minutes(other.start_time) ||
+      minutes(ev.start_time) >= minutes(other.end_time))
+  );
+}
+
 function renderSummary() {
   const tbody = document.querySelector("#summary-table tbody");
   if (!tbody) return;
@@ -71,14 +79,19 @@ function renderSummary() {
   const sorted = [...events].sort(
     (a, b) => minutes(a.start_time) - minutes(b.start_time)
   );
-
+ 
   sorted.forEach(ev => {
     const row = document.createElement("tr");
-
+    const conflict = hasConflict(ev, sorted);
+    row.className = conflict ? "summary-conflict" : "";
+    
     row.innerHTML = `
-      <td>${ev.start_time} – ${ev.end_time}</td>
-      <td>${ev.task_text || ev.title}</td>
-    `;
+    <td>
+      ${formatTime(ev.start_time)} – ${formatTime(ev.end_time)}
+      ${conflict ? `<span class="conflict-pill">Conflict</span>` : ""}
+    </td>
+    <td>${ev.task_text || ev.title}</td>
+  `;
 
     tbody.appendChild(row);
   });
