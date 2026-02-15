@@ -20,10 +20,9 @@ PLANNER_TEMPLATE = """
 
 
 <body  data-plan-date="{{ plan_date }}">
-<div class="nav-icons">  {% include "_top_nav.html" %}  </div>
-<div id="clock"> </div>
-<div class="container">
 
+<div class="container">
+  <div class="nav-icons">  {% include "_top_nav.html" %}  </div>
   <!-- ================= TIMELINE HEADER ================= -->
   <div class="timeline-header">
 
