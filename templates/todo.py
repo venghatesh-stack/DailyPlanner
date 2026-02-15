@@ -199,7 +199,7 @@ summary::-webkit-details-marker { display:none; }
 </head>
 
 <body>
-{% include "_top_nav.html" %}
+<div class="top-nav">  {% include "_top_nav.html" %}  </div>
 
 <div class="container">
 
