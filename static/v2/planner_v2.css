@@ -47,6 +47,20 @@ body {
 #task-card-modal.show {
   display: flex;   /* 🔥 only visible when active */
 }
+.task-card input[type="number"] {
+  appearance: textfield;
+}
+
+.task-card input[type="number"]::-webkit-outer-spin-button,
+.task-card input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.task-card input[type="number"] {
+  text-align: center;
+  font-weight: 600;
+  font-size: 15px;
+}
 
 
 .task-card {

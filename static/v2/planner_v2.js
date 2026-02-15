@@ -470,6 +470,30 @@ async function saveTaskCard() {
   loadEvents();
 }
 
+function attachScrollNumber(id) {
+  const el = document.getElementById(id);
+
+  el.addEventListener("wheel", (e) => {
+    e.preventDefault();
+
+    let value = parseInt(el.value || 0);
+
+    if (e.deltaY < 0) {
+      value++;
+    } else {
+      value--;
+    }
+
+    if (value < 0) value = 0;
+    if (value > 100) value = 100;
+
+    el.value = value;
+  });
+}
+
+attachScrollNumber("task-planned-hours");
+attachScrollNumber("task-actual-hours");
+attachScrollNumber("task-duration");
 
 
 function closeModal() {

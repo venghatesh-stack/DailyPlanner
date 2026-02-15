@@ -91,13 +91,29 @@
     </select>
 
     <label>Planned Hours</label>
-    <input id="task-planned-hours" type="number">
+    <input id="task-planned-hours"
+       type="number"
+       min="0"
+       max="100"
+       step="0.5"
+       value="0">
+
 
     <label>Actual Hours</label>
-    <input id="task-actual-hours" type="number">
+    <input id="task-actual-hours"
+       type="number"
+       min="0"
+       max="100"
+       step="0.5"
+       value="0">
 
     <label>Duration (days)</label>
-    <input id="task-duration" type="number">
+   <input id="task-duration"
+       type="number"
+       min="0"
+       max="100"
+       step="1"
+       value="0">
 
     <label>Due Date</label>
     <input id="task-due-date" type="date">
