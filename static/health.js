@@ -9,39 +9,43 @@ async function loadHealth(date) {
   document.getElementById("health-notes").value = data.notes || "";
 
   // 🔥 Update habit checkboxes
-  if (data.habits) {
-    document.querySelectorAll('[data-habit]').forEach(cb => {
-      cb.checked = !!data.habits[cb.dataset.habit];
-    });
-  }
+  document.querySelectorAll('[data-habit]').forEach(cb => {
+    cb.checked = data.habits ? !!data.habits[cb.dataset.habit] : false;
+  });
 
   // 🔥 Update habit circle %
   if (data.habit_percent !== undefined) {
     updateHabitCircle(data.habit_percent);
+  } else {
+    updateHabitCircle(0);
   }
 
   // 🔥 Update streak badge
-  if (data.streak !== undefined) {
-    const badge = document.getElementById("streak-badge");
-    if (badge) badge.innerText = `🔥 ${data.streak} day streak`;
+  const badge = document.getElementById("streak-badge");
+  if (badge) {
+    badge.innerText = `🔥 ${data.streak || 0} day streak`;
   }
 
-  // 🔥 Update chart if exists
+  // 🔥 Update chart safely (no infinite push)
   if (window.healthChart && data.habit_percent !== undefined) {
-    window.healthChart.data.datasets[2].data.push(data.habit_percent);
+    window.healthChart.data.datasets[2].data = [data.habit_percent];
     window.healthChart.update();
   }
 }
+
 function updateHabitCircle(percent) {
   const circle = document.querySelector(".habit-circle circle:nth-child(2)");
   const text = document.querySelector(".circle-text");
 
   if (!circle) return;
 
-  const circumference = 314; // 2πr (r=50)
-  const offset = circumference - (percent * 3.14);
+  const radius = 50;
+  const circumference = 2 * Math.PI * radius;
 
-  circle.style.strokeDashoffset = offset;
+  circle.style.strokeDasharray = circumference;
+  circle.style.strokeDashoffset =
+    circumference - (percent / 100) * circumference;
+
   if (text) text.innerText = percent + "%";
 }
 
@@ -61,7 +65,7 @@ async function saveHealth() {
     })
   });
 
-  alert("Saved!");
+  showSavedFeedback();
 }
 
 function wireHabitListeners() {
@@ -80,24 +84,38 @@ function wireHabitListeners() {
         })
       });
 
-      // 🔥 Reload health to refresh % + streak + chart
       await loadHealth(date);
     });
   });
 }
+
+function showSavedFeedback() {
+  const btn = document.querySelector(".save-btn");
+  if (!btn) return;
+
+  btn.innerText = "✓ Saved";
+  btn.style.background = "#16a34a";
+
+  setTimeout(() => {
+    btn.innerText = "Save";
+    btn.style.background = "#2563eb";
+  }, 1500);
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
 
   const dateInput = document.getElementById("health-date");
+  if (!dateInput) return;
 
-  if (dateInput) {
-    const today = dateInput.value;
-    await loadHealth(today);
+  // ✅ Default to today
+  const today = new Date().toISOString().split("T")[0];
+  dateInput.value = today;
 
-    dateInput.addEventListener("change", async () => {
-      await loadHealth(dateInput.value);
-    });
-  }
+  await loadHealth(today);
+
+  dateInput.addEventListener("change", async () => {
+    await loadHealth(dateInput.value);
+  });
 
   wireHabitListeners();
 });
-
