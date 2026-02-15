@@ -75,7 +75,7 @@
 
 .task[data-status="done"] .task-text {
   text-decoration: line-through;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 
@@ -206,38 +206,75 @@
 ====================================================== */
 @media (max-width: 768px) {
 
-  .task-details-row {
-    grid-template-columns: 1fr;
-  }
-
-  .field.wide {
-    grid-column: span 1;
-  }
-
-  .task-actions {
-    position: sticky;
-    bottom: 0;
-    background: #ffffff;
-    padding: 10px 0;
-    border-top: 1px solid #e5e7eb;
-    z-index: 10;
-  }
-
-  .save-task-btn,
-  .icon-btn.danger {
-    width: 100%;
-  }
-
-  .icon-btn.danger {
-    margin-top: 6px;
-  }
-
- 
-
-  .due-badge {
-    margin-left: 0;
-  }
+/* Make task-main vertical */
+.task-main {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
 }
+
+/* Create icon row */
+.task-main {
+  position: relative;
+}
+
+/* Group icons visually */
+.task-main input[type="checkbox"],
+.task-main .priority-icon,
+.task-main .edit-btn,
+.task-main .eisenhower-btn {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+}
+
+/* Put icons in first row */
+.task-main > input[type="checkbox"],
+.task-main > .priority-icon,
+.task-main > .edit-btn,
+.task-main > .eisenhower-btn {
+  order: 1;
+}
+
+/* Force icons to behave like a row */
+.task-main {
+  flex-wrap: wrap;
+}
+
+/* Text row */
+.task-text {
+  order: 2;
+  width: 100%;
+  display: block;
+}
+
+/* Allow wrapping */
+.task-title {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+/* Badge below text */
+.due-badge {
+  order: 3;
+  margin-left: 0;
+  margin-top: 4px;
+}
+/* Icons row */
+.task-icons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.eisenhower-btn {
+  align-self: flex-end;
+}
+}
+
 
 /* ======================================================
    PROJECT HEALTH SCORE
@@ -543,14 +580,7 @@
     padding: 4px;
   }
 }
-@media (pointer: coarse) {
-  .task-title {
-    max-width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-}
+
 /* ===============================
    BOTTOM SHEET
 ================================= */
