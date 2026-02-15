@@ -60,6 +60,16 @@ function hasConflict(ev, list) {
       minutes(ev.start_time) >= minutes(other.end_time))
   );
 }
+function getConflicts(event, allEvents) {
+  return allEvents.filter(ev => {
+    if (ev === event) return false;
+
+    return (
+      minutes(ev.start_time) < minutes(event.end_time) &&
+      minutes(ev.end_time) > minutes(event.start_time)
+    );
+  });
+}
 
 function renderSummary() {
   const tbody = document.querySelector("#summary-table tbody");
@@ -79,23 +89,41 @@ function renderSummary() {
   const sorted = [...events].sort(
     (a, b) => minutes(a.start_time) - minutes(b.start_time)
   );
- 
+
   sorted.forEach(ev => {
     const row = document.createElement("tr");
-    const conflict = hasConflict(ev, sorted);
-    row.className = conflict ? "summary-conflict" : "";
-    
+    row.classList.add("summary-row");
+
+    const conflicts = getConflicts(ev, sorted);
+
+    if (conflicts.length) {
+      row.classList.add("summary-conflict");
+    }
+
     row.innerHTML = `
-    <td>
-      ${formatTime(ev.start_time)} – ${formatTime(ev.end_time)}
-      ${conflict ? `<span class="conflict-pill">Conflict</span>` : ""}
-    </td>
-    <td>${ev.task_text || ev.title}</td>
-  `;
+      <td>
+        ${formatTime(ev.start_time)} – ${formatTime(ev.end_time)}
+        ${conflicts.length ? `<span class="conflict-pill">Conflict</span>` : ""}
+      </td>
+      <td>
+        ${ev.task_text || ev.title}
+        ${
+          conflicts.length
+            ? `<div class="conflict-detail">
+                 ⚠ Conflicts with:
+                 ${conflicts
+                   .map(c => `${formatTime(c.start_time)} (${c.task_text || c.title})`)
+                   .join(", ")}
+               </div>`
+            : ""
+        }
+      </td>
+    `;
 
     tbody.appendChild(row);
   });
 }
+
 
 /* =========================
    RENDER TIMELINE

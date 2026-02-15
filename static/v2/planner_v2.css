@@ -231,6 +231,7 @@ body {
 }
 .summary-conflict {
   background: #fff1f2;
+  border-left: 6px solid #ef4444;
 }
 
 .conflict-pill {
@@ -238,11 +239,45 @@ body {
   color: white;
   font-size: 11px;
   padding: 3px 8px;
-  border-radius: 12px;
+  border-radius: 999px;
   margin-left: 8px;
   font-weight: 600;
 }
 
+.summary-row {
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.summary-row.conflict {
+  background: #fff1f1;
+  border-left: 6px solid #ef4444;
+}
+
+.summary-row.conflict td:first-child {
+  font-weight: 700;
+  color: #b91c1c;
+}
+
+.conflict-note {
+  font-size: 12px;
+  color: #b91c1c;
+  margin-top: 4px;
+}
+.conflict-detail {
+  font-size: 12px;
+  color: #b91c1c;
+  margin-top: 4px;
+}
+.conflict-badge {
+  background: #ef4444;
+  color: white;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  margin-left: 8px;
+  font-weight: 600;
+}
 
 .current-time-line {
   position: absolute;
