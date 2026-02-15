@@ -2225,7 +2225,7 @@ def get_project_tasks():
         params={
             "user_id": f"eq.{user_id}",
             "is_eliminated": "eq.false",
-            "status": "neq.closed",
+            "status": "neq.done",
             "or": f"(due_date.is.null,due_date.eq.{date})",
             "select": """
                 task_id,
