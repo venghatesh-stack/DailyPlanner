@@ -1,139 +1,63 @@
 /* ===============================
-   BASE
+   BASE — MOBILE FIRST
 ================================= */
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   font-family: Inter, system-ui;
   background: #f3f6fb;
   margin: 0;
-  padding: 16px;
-  -webkit-font-smoothing: antialiased;
+  padding: 12px;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 .health-container {
+  width: 100%;
   max-width: 720px;
-  margin: auto;
-  padding-bottom: 100px; /* space for sticky save */
+  margin: 0 auto;
 }
 
 /* ===============================
    HEADER
 ================================= */
+
 .health-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .health-header h2 {
   margin: 0;
-  font-size: 20px;
+  font-size: 18px;
 }
 
 /* ===============================
-   CARDS
+   HABIT SUMMARY
 ================================= */
-.health-card {
-  background: #ffffff;
-  padding: 18px;
-  border-radius: 18px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
-  margin-bottom: 16px;
-  transition: transform 0.15s ease;
-}
 
-.health-card:active {
-  transform: scale(0.99);
-}
-
-.health-card h3 {
-  margin: 0 0 14px 0;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-/* ===============================
-   INPUTS
-================================= */
-input, select, textarea {
-  width: 100%;
-  padding: 12px 14px;
-  border-radius: 14px;
-  border: 1px solid #e2e8f0;
-  margin-bottom: 14px;
-  font-size: 15px;
-  background: #f9fafc;
-  transition: border 0.2s ease;
-}
-
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: #2563eb;
-  background: #ffffff;
-}
-
-textarea {
-  min-height: 110px;
-  resize: vertical;
-}
-
-/* ===============================
-   ENERGY SELECT — nicer feel
-================================= */
-#energy {
-  font-weight: 600;
-  font-size: 16px;
-}
-
-/* ===============================
-   DAILY HABITS
-================================= */
-.daily-habits {
-  margin-top: 6px;
-}
-
-.habit-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 10px;
-}
-
-.habit-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px;
-  background: #f9fafc;
-  border-radius: 14px;
-  border: 1px solid #e5e7eb;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.habit-item:hover {
-  background: #eef2ff;
-}
-
-.habit-item input {
-  width: 18px;
-  height: 18px;
-}
-
-/* ===============================
-   HABIT PROGRESS CIRCLE
-================================= */
 .habit-summary {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 24px;
-  margin-bottom: 16px;
+  gap: 14px;
+  margin-bottom: 18px;
 }
 
 .habit-circle {
-  position: relative;
   width: 110px;
   height: 110px;
+  position: relative;
+}
+
+.habit-circle svg {
+  width: 100%;
+  height: 100%;
 }
 
 .circle-text {
@@ -142,107 +66,142 @@ textarea {
   left: 0;
   width: 100%;
   text-align: center;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
 }
 
-/* ===============================
-   STREAK
-================================= */
 .streak-badge {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: #dc2626;
 }
 
 /* ===============================
-   NOTES AT BOTTOM
+   GRID — MOBILE DEFAULT 1 COLUMN
 ================================= */
-.health-notes {
-  margin-top: 8px;
-}
 
-/* ===============================
-   STICKY SAVE BUTTON (MOBILE FIRST)
-================================= */
-.save-wrapper {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: #ffffff;
-  padding: 14px 16px;
-  box-shadow: 0 -6px 20px rgba(0,0,0,0.08);
-  border-top: 1px solid #e5e7eb;
-}
-
-.save-btn {
-  width: 100%;
-  background: #2563eb;
-  color: white;
-  padding: 14px;
-  border-radius: 16px;
-  border: none;
-  font-weight: 600;
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.save-btn:active {
-  transform: scale(0.97);
-}
-
-.save-btn.saving {
-  background: #1d4ed8;
-  opacity: 0.8;
-}
-
-.save-btn.saved {
-  background: #16a34a;
-}
-
-/* ===============================
-   MOBILE IMPROVEMENTS
-================================= */
-@media (max-width: 768px) {
-  body {
-    padding: 12px;
-  }
-
-  .health-card {
-    padding: 16px;
-  }
-
-  input, select, textarea {
-    font-size: 16px;
-  }
-
-  .habit-summary {
-    flex-direction: column;
-    align-items: center;
-  }
-}
-/* ===============================
-   GRID LAYOUT
-================================= */
 .health-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 16px;
 }
 
-/* Desktop layout */
-@media (min-width: 900px) {
-  .health-grid {
-    grid-template-columns: 1fr 1fr;
-    align-items: start;
-  }
+/* ===============================
+   CARDS
+================================= */
+
+.health-card {
+  background: #ffffff;
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  width: 100%;
 }
+
+/* ===============================
+   INPUTS
+================================= */
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 14px;
+  font-size: 16px;   /* prevent mobile zoom */
+  background: #f9fafc;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  background: #ffffff;
+}
+
+textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* ===============================
+   HABITS
+================================= */
+
+.habit-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.habit-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  background: #f9fafc;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  font-size: 14px;
+}
+
+.habit-item input {
+  width: 18px;
+  height: 18px;
+}
+
+/* ===============================
+   SAVE BUTTON
+================================= */
+
+.health-card button {
+  width: 100%;
+  background: #2563eb;
+  color: white;
+  padding: 14px;
+  border-radius: 14px;
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.health-card button:active {
+  transform: scale(0.97);
+}
+
+/* ===============================
+   CHART FIX
+================================= */
+
 canvas {
   width: 100% !important;
   height: auto !important;
 }
-input[type="range"] {
-  width: 100%;
+
+/* ===============================
+   DESKTOP ENHANCEMENT
+================================= */
+
+@media (min-width: 768px) {
+
+  body {
+    padding: 20px;
+  }
+
+  .health-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .habit-summary {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .habit-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
