@@ -24,7 +24,6 @@ from services.task_service import (
     complete_task_occurrence,
     skip_task_occurrence,
     update_task_occurrence,
-    update_task,
     compute_next_occurrence
 )
 from collections import OrderedDict
@@ -1595,6 +1594,8 @@ def update_task(task_id):
     # 🛑 No-op protection
     if not updates:
         return jsonify({"status": "noop"})
+    if "start_time" in updates and updates["start_time"] == "":
+        updates["start_time"] = None
 
     update(
         "project_tasks",
