@@ -223,3 +223,26 @@ textarea {
     align-items: center;
   }
 }
+/* ===============================
+   GRID LAYOUT
+================================= */
+.health-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+/* Desktop layout */
+@media (min-width: 900px) {
+  .health-grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+canvas {
+  width: 100% !important;
+  height: auto !important;
+}
+input[type="range"] {
+  width: 100%;
+}
