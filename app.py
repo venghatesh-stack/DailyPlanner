@@ -2318,6 +2318,6 @@ def complete_task(task_id):
 
 # ENTRY POINT
 # ==========================================================
-if __name__ == "__main__":
-    logger.info("Starting Daily Planner – stable + Eisenhower")
-    app.run(debug=True)
+#if __name__ == "__main__":
+ #   logger.info("Starting Daily Planner – stable + Eisenhower")
+    #app.run(debug=True)
