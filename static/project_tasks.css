@@ -871,12 +871,38 @@
     font-size: 16px;
   }
 }
+
+
+/* ==========================================
+   MOBILE FIX – STACK DETAIL FIELDS
+========================================== */
 @media (max-width: 768px) {
 
+  /* Stack detail fields vertically */
+  .task-details-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Ensure number control takes full width */
+  .inline-number {
+    width: 100%;
+  }
+
   .number-control {
-    display: inline-flex;  /* prevents full-width stretch */
-    flex-shrink: 0;        /* 👈 this is the key */
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* Allow input to grow */
+  .number-control input {
+    flex: 1;
+    min-width: 60px;
+  }
+
+  /* Prevent + / − from shrinking */
+  .number-control button {
+    flex-shrink: 0;
   }
 
 }
-

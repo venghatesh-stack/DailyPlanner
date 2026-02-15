@@ -219,6 +219,7 @@
       </div>
 
       <div class="field">
+        <label>duetime</label>
         <select onchange="updateDueTime('{{ task.task_id }}', this.value)">
           {% for h in range(0,24) %}
             <option value="{{ '%02d:00'|format(h) }}"
