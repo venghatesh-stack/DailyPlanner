@@ -1209,6 +1209,8 @@ def project_tasks(project_id):
             "urgency": None,
             "priority_rank": PRIORITY_MAP.get(t.get("priority"), 2),
             "is_pinned": t.get("is_pinned", False),
+             "planned_hours": t.get("planned_hours", 0),
+             "actual_hours": t.get("actual_hours", 0),
         })
 
     grouped_tasks = group_tasks_smart(tasks)

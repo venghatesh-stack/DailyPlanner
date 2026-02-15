@@ -366,7 +366,6 @@ function openProjectTaskModal(task) {
 /* =========================
    FLOATING TASKS
 ========================= */
-
 function renderFloatingTasks(tasks) {
   const container = document.getElementById("floating-tasks");
   container.innerHTML = "";
@@ -375,21 +374,41 @@ function renderFloatingTasks(tasks) {
     const div = document.createElement("div");
     div.className = "floating-task";
     div.draggable = true;
-    div.innerText = task.task_text;
 
-    div.dataset.task = JSON.stringify(task);
-     // ✅ ADD CLICK HANDLER HERE
+    const due = task.due_date || currentDate;
+    const time = task.start_time ? task.start_time.slice(0,5) : null;
+    const priority = task.priority || "medium";
+
+    div.innerHTML = `
+      <div class="floating-title">
+        ${task.task_text}
+      </div>
+
+      <div class="floating-meta">
+        <div class="meta-left">
+          <span class="floating-date">📅 ${due}</span>
+          ${time ? `<span class="floating-time">🕒 ${time}</span>` : ""}
+        </div>
+
+        <span class="floating-priority p-${priority}">
+          ${priority.toUpperCase()}
+        </span>
+      </div>
+    `;
+
     div.onclick = (e) => {
-      e.stopPropagation();   // prevents drag conflicts
+      e.stopPropagation();
       openTaskCard(task.task_id);
     };
-    div.ondragstart = e => {
+
+    div.ondragstart = () => {
       draggedTask = { ...task, type: "project" };
     };
 
     container.appendChild(div);
   });
 }
+
 
 /* =========================
    DRAG INTO CALENDAR
