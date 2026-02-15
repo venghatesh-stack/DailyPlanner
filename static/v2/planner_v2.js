@@ -41,8 +41,12 @@ async function loadEvents() {
   const eventData = await eventRes.json();
   const taskData = await taskRes.json();
 
+  // All project tasks stay in floating section
+  const floatingTasks = taskData;
+
+  // Only those with start_time go to calendar
   const timedTasks = taskData.filter(t => t.start_time);
-  const floatingTasks = taskData.filter(t => !t.start_time);
+
 
   events = [
     ...eventData.map(e => ({
