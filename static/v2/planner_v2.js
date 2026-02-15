@@ -168,7 +168,14 @@ function render() {
 
 
     // OPEN MODAL
-    div.onclick = () => openModal(ev);
+    div.onclick = () => {
+      if (ev.type === "project") {
+        openTaskCard(ev.task_id);
+      } else {
+        openEventModal(ev);
+      }
+    };
+
 
     // DRAG TO MOVE
     div.draggable = true;
@@ -188,6 +195,25 @@ function render() {
 
     root.appendChild(div);
   });
+}
+async function openTaskCard(taskId) {
+
+  const res = await fetch(`/api/v2/project-tasks/${taskId}`);
+  const task = await res.json();
+
+  // populate your full project task modal fields
+
+  document.getElementById("task-title").value = task.task_text;
+  document.getElementById("task-description").value = task.description || "";
+  document.getElementById("task-planned-hours").value = task.planned_hours || 0;
+  document.getElementById("task-actual-hours").value = task.actual_hours || 0;
+  document.getElementById("task-status").value = task.status;
+  document.getElementById("task-priority").value = task.priority;
+  document.getElementById("task-duration").value = task.duration_days || 0;
+  document.getElementById("task-due-date").value = task.due_date || "";
+  document.getElementById("task-start-time").value = task.start_time || "";
+
+  document.getElementById("task-card-modal").classList.remove("hidden");
 }
 
 function renderCurrentTimeLine(root) {
@@ -290,6 +316,19 @@ function updateDateHeader() {
   const d = new Date(currentDate);
   el.textContent = d.toDateString();
 }
+function openProjectTaskModal(task) {
+  selected = { ...task, type: "project" };
+
+  document.getElementById("modal-title").innerText = "Project Task";
+
+  document.getElementById("start-time").value = task.start_time || "";
+  document.getElementById("duration").value = 30;
+
+  document.getElementById("event-title").value = task.task_text || "";
+  document.getElementById("event-desc").value = task.description || "";
+
+  document.getElementById("modal").classList.remove("hidden");
+}
 
 /* =========================
    FLOATING TASKS
@@ -308,7 +347,7 @@ function renderFloatingTasks(tasks) {
     div.dataset.task = JSON.stringify(task);
 
     div.ondragstart = e => {
-      draggedTask = task;
+      draggedTask = { ...task, type: "project" };
     };
 
     container.appendChild(div);
@@ -382,8 +421,8 @@ async function saveEvent() {
 
   if (selected) {
     if (selected.type === "project") {
-      url = `/api/v2/project-tasks/${selected.task_id}/schedule`;
-      method = "POST";
+      url = `/api/v2/project-tasks/${selected.task_id}`;
+      method = "PUT";
     } else {
       url = `/api/v2/events/${selected.id}`;
       method = "PUT";

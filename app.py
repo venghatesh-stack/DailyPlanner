@@ -2256,6 +2256,55 @@ def schedule_project_task(task_id):
     )
 
     return {"ok": True}
+@app.route("/api/v2/project-tasks/<task_id>", methods=["GET"])
+def get_single_project_task(task_id):
+
+    task = get(
+        "project_tasks",
+        params={
+            "task_id": f"eq.{task_id}",
+            "select": "*"
+        }
+    )
+
+    return jsonify(task[0] if task else {})
+
+@app.route("/api/v2/project-tasks/<task_id>", methods=["PUT"])
+def update_project_task(task_id):
+    data = request.json
+
+    allowed_fields = {
+    "task_text",
+    "description",
+    "status",
+    "priority",
+    "planned_hours",
+    "actual_hours",
+    "duration_days",
+    "due_date",
+    "start_time",
+    "notes",
+    "recurrence",
+    "recurrence_type",
+    "recurrence_interval",
+    "recurrence_end"
+    }
+
+    update_payload = {
+        k: v for k, v in data.items()
+        if k in allowed_fields
+    }
+
+
+    update(
+        "project_tasks",
+        task_id,
+        update_payload
+    )
+
+    return jsonify({"success": True})
+
+
 @app.route("/api/v2/project-tasks/<task_id>/complete", methods=["POST"])
 def complete_task(task_id):
     update(
