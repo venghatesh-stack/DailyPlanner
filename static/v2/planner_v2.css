@@ -305,7 +305,9 @@ body {
   right: 0;
   height: 6px;
   cursor: ns-resize;
+  z-index: 2;
 }
+
 .event-header {
   font-size: 13px;
   font-weight: 500;

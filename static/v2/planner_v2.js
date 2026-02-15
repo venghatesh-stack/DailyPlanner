@@ -189,13 +189,16 @@ function render() {
 
 
     // OPEN MODAL
-    div.onclick = () => {
-      if (ev.type === "project") {
-        openTaskCard(ev.task_id);
-      } else {
-        openModal(ev);
-      }
-    };
+   div.addEventListener("click", (e) => {
+  if (e.target.classList.contains("resize-handle")) return;
+
+  if (ev.type === "project") {
+    openTaskCard(ev.task_id);
+  } else {
+    openModal(ev);
+  }
+});
+
 
 
     // DRAG TO MOVE
