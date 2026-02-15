@@ -122,7 +122,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!dateInput) return;
 
   // ✅ Default to today
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toLocaleDateString("en-CA", {
+    timeZone: "Asia/Kolkata"
+  });
   dateInput.value = today;
 
   await loadHealth(today);
