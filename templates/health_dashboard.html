@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="{{ url_for('static', filename='health.css') }}">
 <title>Health Dashboard</title>
-<div class="nav-icons">  {% include "_top_nav.html" %}  </div>
+</head>
+<body>
 <div class="health-container">
-
+<div class="nav-icons">  {% include "_top_nav.html" %}  </div>
   <div class="health-header">
     <h2>💚 Health Dashboard</h2>
     <input type="date" id="health-date">
@@ -81,4 +83,5 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ url_for('static', filename='health.js') }}" defer></script>
-</body> </html>
+</body> 
+</html>
