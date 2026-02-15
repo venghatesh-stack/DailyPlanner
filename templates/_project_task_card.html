@@ -135,37 +135,85 @@
 
       <div class="field">
         <label>Duration</label>
-        <input type="number"
-          class="duration-days scroll-number"
-          min="0"
-          max="100"
-          step="1"
-          value="{{ task.duration_days or 0 }}"
-          oninput="updatePlanning('{{ task.task_id }}', '{{ task.occurrence_date }}')">
+        <div class="number-control inline-number"
+              data-step="1">
+
+            <button type="button"
+                    onclick="adjustInlineNumber(this,-1,'duration','{{ task.task_id }}','{{ task.occurrence_date }}')">
+              −
+            </button>
+
+          <input type="number"
+                class="duration-days"
+                min="0"
+                max="100"
+                step="1"
+                value="{{ task.duration_days or 0 }}"
+                oninput="validateInlineNumber(this); updatePlanning('{{ task.task_id }}','{{ task.occurrence_date }}')">
+
+          <button type="button"
+                  onclick="adjustInlineNumber(this,1,'duration','{{ task.task_id }}','{{ task.occurrence_date }}')">
+            +
+          </button>
+
+        </div>
+
 
       </div>
 
       <div class="field">
         <label>Planned</label>
-    <input type="number"
-       class="scroll-number"
-       min="0"
-       max="100"
-       step="1"
-       value="{{ task.planned_hours or 0 }}"
-       onchange="updatePlanned('{{ task.task_id }}', this.value)">
+        <div class="number-control inline-number"
+     data-step="1">
+
+  <button type="button"
+          onclick="adjustInlineNumber(this,-1,'planned','{{ task.task_id }}')">
+    −
+  </button>
+
+  <input type="number"
+         min="0"
+         max="100"
+         step="1"
+         value="{{ task.planned_hours or 0 }}"
+         oninput="validateInlineNumber(this)"
+         onchange="updatePlanned('{{ task.task_id }}', this.value)">
+
+  <button type="button"
+          onclick="adjustInlineNumber(this,1,'planned','{{ task.task_id }}')">
+    +
+  </button>
+
+</div>
+
 
       </div>
 
       <div class="field">
         <label>Actual</label>
-     <input type="number"
-       class="scroll-number"
-       min="0"
-       max="100"
-       step="1"
-       value="{{ task.actual_hours or 0 }}"
-       onchange="updateActual('{{ task.task_id }}', this.value)">
+            <div class="number-control inline-number"
+            data-step="1">
+
+          <button type="button"
+                  onclick="adjustInlineNumber(this,-1,'actual','{{ task.task_id }}')">
+            −
+          </button>
+
+          <input type="number"
+                min="0"
+                max="100"
+                step="1"
+                value="{{ task.actual_hours or 0 }}"
+                oninput="validateInlineNumber(this)"
+                onchange="updateActual('{{ task.task_id }}', this.value)">
+
+          <button type="button"
+                  onclick="adjustInlineNumber(this,1,'actual','{{ task.task_id }}')">
+            +
+          </button>
+
+        </div>
+
 
       </div>
 

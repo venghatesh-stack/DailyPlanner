@@ -793,4 +793,51 @@
   margin: 0;
 }
 
+.number-control {
+  display: flex;
+  align-items: center;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  overflow: hidden;
+  background: white;
+}
+
+.number-control button {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: #f3f4f6;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.number-control button:active {
+  background: #e5e7eb;
+}
+
+.number-control input {
+  width: 60px;
+  height: 34px;
+  border: none;
+  text-align: center;
+  font-weight: 600;
+  outline: none;
+}
+
+/* Mobile scaling */
+@media (max-width: 768px) {
+
+  .number-control button {
+    width: 42px;
+    height: 42px;
+    font-size: 18px;
+  }
+
+  .number-control input {
+    width: 70px;
+    height: 42px;
+    font-size: 16px;
+  }
+}
 

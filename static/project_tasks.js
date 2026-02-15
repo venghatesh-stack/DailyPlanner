@@ -578,3 +578,57 @@ function attachScrollNumbers() {
 }
 
 document.addEventListener("DOMContentLoaded", attachScrollNumbers);
+function adjustInlineNumber(btn, direction, type, taskId, date=null) {
+  const wrapper = btn.closest(".number-control");
+  const input = wrapper.querySelector("input");
+
+  const step = parseFloat(wrapper.dataset.step || 1);
+  let value = parseFloat(input.value || 0);
+
+  value += direction * step;
+
+  if (value < 0) value = 0;
+  if (value > 100) value = 100;
+
+  input.value = value;
+
+  // Trigger backend update
+  if (type === "planned") {
+    updatePlanned(taskId, value);
+  }
+  if (type === "actual") {
+    updateActual(taskId, value);
+  }
+  if (type === "duration") {
+    updatePlanning(taskId, date);
+  }
+}
+
+function validateInlineNumber(input) {
+  let value = parseFloat(input.value);
+
+  if (isNaN(value)) value = 0;
+  if (value < 0) value = 0;
+  if (value > 100) value = 100;
+
+  input.value = value;
+}
+document.addEventListener("wheel", function(e) {
+  const wrapper = e.target.closest(".inline-number");
+  if (!wrapper) return;
+
+  e.preventDefault();
+
+  const input = wrapper.querySelector("input");
+  const step = parseFloat(wrapper.dataset.step || 1);
+
+  let value = parseFloat(input.value || 0);
+
+  if (e.deltaY < 0) value += step;
+  else value -= step;
+
+  if (value < 0) value = 0;
+  if (value > 100) value = 100;
+
+  input.value = value;
+}, { passive: false });

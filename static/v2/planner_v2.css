@@ -520,3 +520,61 @@ body {
   position: relative;
   min-height: 100vh;
 }
+.number-control {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 220px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+}
+
+.number-control button {
+  flex: 0 0 44px;
+  height: 44px;
+  border: none;
+  background: #f3f4f6;
+  font-size: 20px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.number-control button:active {
+  background: #e5e7eb;
+}
+
+.number-control input {
+  flex: 1;
+  height: 44px;
+  border: none;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  outline: none;
+}
+
+/* Remove default spin arrows */
+.number-control input::-webkit-outer-spin-button,
+.number-control input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Mobile full width */
+@media (max-width: 768px) {
+  .number-control {
+    max-width: 100%;
+  }
+
+  .number-control button {
+    flex: 0 0 50px;
+    height: 50px;
+  }
+
+  .number-control input {
+    height: 50px;
+    font-size: 18px;
+  }
+}

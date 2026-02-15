@@ -797,3 +797,46 @@ function formatHour(hour) {
 }
 
 
+function adjustTaskNumber(btn, direction) {
+  const wrapper = btn.closest(".number-control");
+  const input = wrapper.querySelector("input");
+
+  const step = parseFloat(wrapper.dataset.step || 1);
+  let value = parseFloat(input.value || 0);
+
+  value += direction * step;
+
+  if (value < 0) value = 0;
+  if (value > 100) value = 100;
+
+  input.value = parseFloat(value.toFixed(2));
+}
+
+function validateTaskNumber(input) {
+  let value = parseFloat(input.value);
+
+  if (isNaN(value)) value = 0;
+  if (value < 0) value = 0;
+  if (value > 100) value = 100;
+
+  input.value = value;
+}
+document.addEventListener("wheel", function(e) {
+  const wrapper = e.target.closest(".number-control");
+  if (!wrapper) return;
+
+  e.preventDefault();
+
+  const input = wrapper.querySelector("input");
+  const step = parseFloat(wrapper.dataset.step || 1);
+
+  let value = parseFloat(input.value || 0);
+
+  if (e.deltaY < 0) value += step;
+  else value -= step;
+
+  if (value < 0) value = 0;
+  if (value > 100) value = 100;
+
+  input.value = parseFloat(value.toFixed(2));
+}, { passive: false });

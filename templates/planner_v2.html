@@ -91,29 +91,43 @@
     </select>
 
     <label>Planned Hours</label>
-    <input id="task-planned-hours"
-       type="number"
-       min="0"
-       max="100"
-       step="0.5"
-       value="0">
+<div class="number-control" data-target="task-planned-hours" data-step="0.5">
+  <button type="button" onclick="adjustTaskNumber(this,-1)">−</button>
+  <input id="task-planned-hours"
+         type="number"
+         min="0"
+         max="100"
+         step="0.5"
+         value="0"
+         oninput="validateTaskNumber(this)">
+  <button type="button" onclick="adjustTaskNumber(this,1)">+</button>
+</div>
 
+<label>Actual Hours</label>
+<div class="number-control" data-target="task-actual-hours" data-step="0.5">
+  <button type="button" onclick="adjustTaskNumber(this,-1)">−</button>
+  <input id="task-actual-hours"
+         type="number"
+         min="0"
+         max="100"
+         step="0.5"
+         value="0"
+         oninput="validateTaskNumber(this)">
+  <button type="button" onclick="adjustTaskNumber(this,1)">+</button>
+</div>
 
-    <label>Actual Hours</label>
-    <input id="task-actual-hours"
-       type="number"
-       min="0"
-       max="100"
-       step="0.5"
-       value="0">
-
-    <label>Duration (days)</label>
-   <input id="task-duration"
-       type="number"
-       min="0"
-       max="100"
-       step="1"
-       value="0">
+<label>Duration (days)</label>
+<div class="number-control" data-target="task-duration" data-step="1">
+  <button type="button" onclick="adjustTaskNumber(this,-1)">−</button>
+  <input id="task-duration"
+         type="number"
+         min="0"
+         max="100"
+         step="1"
+         value="0"
+         oninput="validateTaskNumber(this)">
+  <button type="button" onclick="adjustTaskNumber(this,1)">+</button>
+</div>
 
     <label>Due Date</label>
     <input id="task-due-date" type="date">
