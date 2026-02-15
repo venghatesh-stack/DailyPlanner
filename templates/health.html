@@ -54,6 +54,56 @@
     </div>
 
     <button class="save-btn">💾 Save</button>
+<div class="daily-habits">
+  <h3>Daily Habits</h3>
+
+  <div class="habit-list">
+
+    <label class="habit-item">
+      <input type="checkbox"
+             data-habit="walking"
+             {% if habits.get("walking") %}checked{% endif %}>
+      <span>🚶 Walking</span>
+    </label>
+
+    <label class="habit-item">
+      <input type="checkbox"
+             data-habit="water"
+             {% if habits.get("water") %}checked{% endif %}>
+      <span>💧 Water</span>
+    </label>
+
+    <label class="habit-item">
+      <input type="checkbox"
+             data-habit="no_shopping"
+             {% if habits.get("no_shopping") %}checked{% endif %}>
+      <span>🛑 No Shopping</span>
+    </label>
+
+    <label class="habit-item">
+      <input type="checkbox"
+             data-habit="no_time_wastage"
+             {% if habits.get("no_time_wastage") %}checked{% endif %}>
+      <span>📵 No Time Wastage</span>
+    </label>
+
+    <label class="habit-item">
+      <input type="checkbox"
+             data-habit="sleep_8hrs"
+             {% if habits.get("sleep_8hrs") %}checked{% endif %}>
+      <span>😴 8 hrs Sleep</span>
+    </label>
+
+    <label class="habit-item">
+      <input type="checkbox"
+             data-habit="daily_prayers"
+             {% if habits.get("daily_prayers") %}checked{% endif %}>
+      <span>🙏 Daily Prayers</span>
+    </label>
+
+  </div>
+</div>
+
 
   </form>
 

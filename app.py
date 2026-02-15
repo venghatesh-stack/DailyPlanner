@@ -2384,6 +2384,49 @@ def save_daily_health():
 def health_dashboard():
     return render_template("health_dashboard.html")
 
+@app.route("/api/save-habit", methods=["POST"])
+def save_habit():
+    data = request.json
+    user_id = session["user_id"]
+
+    habit_key = data.get("habit")
+    completed = data.get("completed")
+    plan_date = data.get("plan_date")  # 🔥 use selected date
+
+    if not plan_date:
+        return jsonify({"error": "plan_date required"}), 400
+
+    # 1️⃣ Get existing row for that date
+    rows = get(
+        "daily_habits",
+        {
+            "user_id": f"eq.{user_id}",
+            "plan_date": f"eq.{plan_date}"
+        }
+    )
+
+    current_habits = {}
+
+    if rows:
+        current_habits = rows[0].get("habits") or {}
+
+    # 2️⃣ Update only changed habit
+    current_habits[habit_key] = completed
+
+    # 3️⃣ UPSERT using merge-duplicates
+    post(
+        "daily_habits",
+        {
+            "user_id": user_id,
+            "plan_date": plan_date,
+            "habits": current_habits
+        },
+        prefer="resolution=merge-duplicates"
+    )
+
+    return jsonify({"success": True})
+
+
 # ENTRY POINT
 # ==========================================================
 #if __name__ == "__main__":

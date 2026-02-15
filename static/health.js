@@ -27,3 +27,16 @@ async function saveHealth() {
 
   alert("Saved!");
 }
+
+document.querySelectorAll('[data-habit]').forEach(cb => {
+  cb.addEventListener('change', async () => {
+    await fetch('/api/save-habit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        habit: cb.dataset.habit,
+        completed: cb.checked
+      })
+    });
+  });
+});

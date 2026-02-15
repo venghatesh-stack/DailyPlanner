@@ -76,3 +76,46 @@ textarea {
     grid-template-columns: 1fr;
   }
 }
+/* ===============================
+   DAILY HABITS
+================================= */
+
+.daily-habits {
+  margin: 18px 0;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+}
+
+.daily-habits h3 {
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+
+.habit-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.habit-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: white;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.habit-item:hover {
+  background: #f3f4f6;
+}
+
+.habit-item input {
+  width: 16px;
+  height: 16px;
+}
