@@ -66,11 +66,12 @@
   </div>
 </div>
 <div id="task-card-modal" class="hidden">
-  <div class="modal-card">
-    <h3>Project Task</h3>
+  <div class="task-card">
+
+    <h2>Project Task</h2>
 
     <label>Title</label>
-    <input type="text" id="task-title">
+    <input id="task-title">
 
     <label>Description</label>
     <textarea id="task-description"></textarea>
@@ -90,26 +91,28 @@
     </select>
 
     <label>Planned Hours</label>
-    <input type="number" id="task-planned-hours">
+    <input id="task-planned-hours" type="number">
 
     <label>Actual Hours</label>
-    <input type="number" id="task-actual-hours">
+    <input id="task-actual-hours" type="number">
 
     <label>Duration (days)</label>
-    <input type="number" id="task-duration">
+    <input id="task-duration" type="number">
 
     <label>Due Date</label>
-    <input type="date" id="task-due-date">
+    <input id="task-due-date" type="date">
 
     <label>Start Time</label>
-    <input type="time" id="task-start-time">
+    <input id="task-start-time" type="time">
 
-    <div style="margin-top:15px;">
-      <button onclick="saveTaskCard()">Save</button>
-      <button onclick="closeTaskCard()">Cancel</button>
+    <div class="task-card-actions">
+      <button class="primary-btn" onclick="saveTaskCard()">Save</button>
+      <button class="secondary-btn" onclick="closeTaskCard()">Cancel</button>
     </div>
+
   </div>
 </div>
+
 
 </body>
 </html>

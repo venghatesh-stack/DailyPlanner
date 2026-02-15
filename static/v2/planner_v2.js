@@ -437,8 +437,38 @@ function openModal(ev) {
 
 }
 function closeTaskCard() {
-  document.getElementById("task-card-modal").classList.remove("show");
+  document.getElementById("task-card-modal")
+    .classList.add("hidden");
 }
+
+
+async function saveTaskCard() {
+
+  const taskId = selected?.task_id;
+
+  const payload = {
+    task_text: document.getElementById("task-title").value,
+    description: document.getElementById("task-description").value,
+    status: document.getElementById("task-status").value,
+    priority: document.getElementById("task-priority").value,
+    planned_hours: document.getElementById("task-planned-hours").value,
+    actual_hours: document.getElementById("task-actual-hours").value,
+    duration_days: document.getElementById("task-duration").value,
+    due_date: document.getElementById("task-due-date").value,
+    start_time: document.getElementById("task-start-time").value
+  };
+
+  await fetch(`/api/v2/project-tasks/${taskId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  closeTaskCard();
+  loadEvents();
+}
+
+
 
 function closeModal() {
   document.getElementById("modal").classList.remove("show");
