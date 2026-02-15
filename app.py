@@ -2387,10 +2387,10 @@ def save_daily_health():
     payload = {
         "user_id": user_id,
         "plan_date": plan_date,
-        "weight": data.get("weight"),
-        "sleep_hours": data.get("sleep_hours"),
+        "weight": clean_number(data.get("weight")),
+        "sleep_hours": clean_number(data.get("sleep_hours")),
         "mood": data.get("mood"),
-        "energy_level": data.get("energy_level"),
+        "energy_level": int(data.get("energy_level")) if data.get("energy_level") else None,
         "notes": data.get("notes")
     }
 
@@ -2497,7 +2497,7 @@ def save_habit():
 
     # 3️⃣ UPSERT using merge-duplicates
     post(
-        "daily_habits",
+        "daily_habits on_conflict=user_id,plan_date",
         {
             "user_id": user_id,
             "plan_date": plan_date,
@@ -2507,7 +2507,8 @@ def save_habit():
     )
 
     return jsonify({"success": True})
-
+def clean_number(val):
+    return float(val) if val not in ("", None) else None
 
 # ENTRY POINT
 # ==========================================================
