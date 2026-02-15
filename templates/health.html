@@ -7,9 +7,11 @@
 
 <body>
 
-<div class="container">
+<div class="health-container">
 
-  <div class="nav-icons">  {% include "_top_nav.html" %}  </div>
+  <div class="nav-icons">
+    {% include "_top_nav.html" %}
+  </div>
 
   <div class="health-header">
     <h2>🧘 Health & Reflection</h2>
@@ -20,7 +22,8 @@
 
   <form method="POST" class="health-form">
 
-    <div class="card">
+    <!-- Physical Card -->
+    <div class="health-card">
 
       <h3>Physical</h3>
 
@@ -42,7 +45,54 @@
 
     </div>
 
-    <div class="card">
+    <!-- Habits Card -->
+    <div class="health-card daily-habits">
+
+      <h3>Daily Habits</h3>
+
+      <div class="habit-list">
+
+        <label class="habit-item">
+          <input type="checkbox" data-habit="walking"
+            {% if habits.get("walking") %}checked{% endif %}>
+          🚶 Walking
+        </label>
+
+        <label class="habit-item">
+          <input type="checkbox" data-habit="water"
+            {% if habits.get("water") %}checked{% endif %}>
+          💧 Water
+        </label>
+
+        <label class="habit-item">
+          <input type="checkbox" data-habit="no_shopping"
+            {% if habits.get("no_shopping") %}checked{% endif %}>
+          🛑 No Shopping
+        </label>
+
+        <label class="habit-item">
+          <input type="checkbox" data-habit="no_time_wastage"
+            {% if habits.get("no_time_wastage") %}checked{% endif %}>
+          📵 No Time Wastage
+        </label>
+
+        <label class="habit-item">
+          <input type="checkbox" data-habit="sleep_8hrs"
+            {% if habits.get("sleep_8hrs") %}checked{% endif %}>
+          😴 8 hrs Sleep
+        </label>
+
+        <label class="habit-item">
+          <input type="checkbox" data-habit="daily_prayers"
+            {% if habits.get("daily_prayers") %}checked{% endif %}>
+          🙏 Daily Prayers
+        </label>
+
+      </div>
+    </div>
+
+    <!-- Reflection Card -->
+    <div class="health-card">
 
       <h3>🧠 Reflection</h3>
 
@@ -53,61 +103,15 @@
 
     </div>
 
-    <button class="save-btn">💾 Save</button>
-<div class="daily-habits">
-  <h3>Daily Habits</h3>
-
-  <div class="habit-list">
-
-    <label class="habit-item">
-      <input type="checkbox"
-             data-habit="walking"
-             {% if habits.get("walking") %}checked{% endif %}>
-      <span>🚶 Walking</span>
-    </label>
-
-    <label class="habit-item">
-      <input type="checkbox"
-             data-habit="water"
-             {% if habits.get("water") %}checked{% endif %}>
-      <span>💧 Water</span>
-    </label>
-
-    <label class="habit-item">
-      <input type="checkbox"
-             data-habit="no_shopping"
-             {% if habits.get("no_shopping") %}checked{% endif %}>
-      <span>🛑 No Shopping</span>
-    </label>
-
-    <label class="habit-item">
-      <input type="checkbox"
-             data-habit="no_time_wastage"
-             {% if habits.get("no_time_wastage") %}checked{% endif %}>
-      <span>📵 No Time Wastage</span>
-    </label>
-
-    <label class="habit-item">
-      <input type="checkbox"
-             data-habit="sleep_8hrs"
-             {% if habits.get("sleep_8hrs") %}checked{% endif %}>
-      <span>😴 8 hrs Sleep</span>
-    </label>
-
-    <label class="habit-item">
-      <input type="checkbox"
-             data-habit="daily_prayers"
-             {% if habits.get("daily_prayers") %}checked{% endif %}>
-      <span>🙏 Daily Prayers</span>
-    </label>
-
-  </div>
-</div>
-
-
   </form>
 
 </div>
 
+<!-- Sticky Save Button -->
+<div class="save-wrapper">
+  <button type="submit" class="save-btn">💾 Save</button>
+</div>
+
 </body>
+<script src="{{ url_for('static', filename='health.js') }}" defer></script>
 </html>
