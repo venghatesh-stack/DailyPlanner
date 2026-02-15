@@ -14,15 +14,15 @@ body {
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.55);
-  display: flex;
+  display: none;/* 🔥 hidden by default */
   align-items: center;
   justify-content: center;
   z-index: 2000;
 }
-
-#task-card-modal.hidden {
-  display: none;
+#task-card-modal.show {
+  display: flex;   /* 🔥 only visible when active */
 }
+
 
 .task-card {
   background: white;

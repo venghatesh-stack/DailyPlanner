@@ -51,7 +51,7 @@ async function loadEvents() {
     })),
     ...timedTasks.map(t => ({
       ...t,
-      id: t.task_id,                  // 🔥 critical
+      task_id: t.task_id,                  // 🔥 critical
       title: t.task_text,
       end_time: calculateEndTime(t.start_time, 30),
       type: "project"
@@ -65,7 +65,7 @@ async function loadEvents() {
 
 function normalizeProjectTask(t) {
   return {
-    id: t.task_id,
+    task_id: t.task_id,
     title: t.task_text,
     start_time: t.start_time,
     end_time: calculateEndTime(t.start_time, 30),
@@ -227,7 +227,7 @@ document.addEventListener("click", (e) => {
 });
 
 async function openTaskCard(taskId) {
-
+  selected = { task_id: taskId };   // 🔥 CRITICAL
   const res = await fetch(`/api/v2/project-tasks/${taskId}`);
   const task = await res.json();
 
@@ -243,7 +243,9 @@ async function openTaskCard(taskId) {
   document.getElementById("task-due-date").value = task.due_date || "";
   document.getElementById("task-start-time").value = task.start_time || "";
 
-  document.getElementById("task-card-modal").classList.add("show");
+  document.getElementById("task-card-modal")
+  .classList.add("show");
+
 
 }
 
@@ -438,7 +440,7 @@ function openModal(ev) {
 }
 function closeTaskCard() {
   document.getElementById("task-card-modal")
-    .classList.add("hidden");
+    .classList.remove("show");
 }
 
 
