@@ -195,7 +195,6 @@ function render() {
 
     root.appendChild(div);
   });
-  console.log(ev.type, ev);
 }
 async function openTaskCard(taskId) {
 
