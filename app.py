@@ -1211,6 +1211,13 @@ def project_tasks(project_id):
             "is_pinned": t.get("is_pinned", False),
              "planned_hours": t.get("planned_hours", 0),
              "actual_hours": t.get("actual_hours", 0),
+               # 🔥 ADD THESE
+            "is_recurring": t.get("is_recurring", False),
+            "recurrence_type": t.get("recurrence_type", "none"),
+            "recurrence_days": t.get("recurrence_days"),
+            "recurrence_interval": t.get("recurrence_interval"),
+            "recurrence_end": t.get("recurrence_end"),
+            "auto_advance": t.get("auto_advance", True),
         })
 
     grouped_tasks = group_tasks_smart(tasks)
