@@ -376,18 +376,19 @@ function renderFloatingTasks(tasks) {
 
   if (!tasks || !tasks.length) return;
 
-  // 🔥 SORT BY PRIORITY (high → medium → low)
   const priorityOrder = { high: 1, medium: 2, low: 3 };
   const todayStr = new Date().toISOString().split("T")[0];
   const now = new Date();
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  // 🔥 Sort by priority
   tasks.sort((a, b) => {
     const pa = priorityOrder[a.priority || "medium"];
     const pb = priorityOrder[b.priority || "medium"];
     return pa - pb;
   });
 
-  // 🧠 GROUP BY DUE DATE
+  // 🧠 Group by due date
   const grouped = {};
 
   tasks.forEach(task => {
@@ -395,27 +396,28 @@ function renderFloatingTasks(tasks) {
     if (!grouped[date]) grouped[date] = [];
     grouped[date].push(task);
   });
-   // 🔥 SORT GROUP KEYS CHRONOLOGICALLY
+
+  // 🔥 Sort groups chronologically
   const sortedDates = Object.keys(grouped).sort((a, b) => {
     if (a === "No Date") return 1;
     if (b === "No Date") return -1;
     return new Date(a) - new Date(b);
   });
+
   sortedDates.forEach(dateKey => {
 
-    // 🟡 Today Label (but maintain position)
     let label = dateKey;
-    if (dateKey === todayStr) {
-      label = `<span class="today-badge">🟡 Today</span> 
-         <span class="real-date">${dateKey}</span>`;
 
+    if (dateKey === todayStr) {
+      label = `
+        <span class="today-badge">🟡 Today</span>
+        <span class="real-date">${dateKey}</span>
+      `;
     }
 
     const groupHeader = document.createElement("div");
     groupHeader.className = "floating-group-header";
-    groupHeader.innerHTML = `
-      <div class="group-title">${label}</div>
-    `;
+    groupHeader.innerHTML = `<div class="group-title">${label}</div>`;
     container.appendChild(groupHeader);
 
     grouped[dateKey].forEach(task => {
@@ -424,28 +426,26 @@ function renderFloatingTasks(tasks) {
       div.className = "floating-task";
       div.draggable = true;
 
-      const due = task.due_date || "";
-      const time = task.start_time ? task.start_time.slice(0,5) : null;
+      const due = task.due_date || null;
+      const time = task.start_time ? task.start_time.slice(0, 5) : null;
       const priority = task.priority || "medium";
 
-      // 🔴 OVERDUE DATE
-      if (due && due !== "No Date" && new Date(due) < new Date(todayStr)) {
+      // 🔴 Overdue
+      if (due && new Date(due) < new Date(todayStr)) {
         div.classList.add("overdue-floating");
       }
 
-      // ⏰ ELAPSED TODAY TIME
-      if (due && due !== "No Date" && new Date(due) < new Date(todayStr)) {
-
-        const taskMinutes =
-          parseInt(time.split(":")[0]) * 60 +
-          parseInt(time.split(":")[1]);
+      // ⏰ Elapsed today
+      if (due === todayStr && time) {
+        const [h, m] = time.split(":").map(Number);
+        const taskMinutes = h * 60 + m;
 
         if (taskMinutes < currentMinutes) {
           div.classList.add("elapsed-floating");
         }
       }
 
-      // 📅 Scheduled Icon
+      // 📅 Scheduled indicator
       if (task.plan_date) {
         div.classList.add("scheduled-floating");
       }
@@ -479,8 +479,8 @@ function renderFloatingTasks(tasks) {
       container.appendChild(div);
     });
   });
-  
 }
+
 
 
 
