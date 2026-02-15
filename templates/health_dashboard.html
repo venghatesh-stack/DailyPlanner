@@ -1,4 +1,8 @@
-
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link
 <div class="nav-icons">  {% include "_top_nav.html" %}  </div>
 <div class="health-container">
 
@@ -75,4 +79,5 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{{ url_for('static', filename='health.js') }}"></script>
+<script src="{{ url_for('static', filename='health.js') }}" defer></script>
+</body> </html>
