@@ -11,27 +11,7 @@ body {
   margin-bottom: 20px;
 }
 
-#timeline {
-  position: relative;
-  min-height: 100vh;
-  border-left: 2px solid #d1d5db;
-  padding-left: 70px;
-}
 
-.hour-line {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: #e5e7eb;
-}
-
-.hour-label {
-  position: absolute;
-  left: -60px;
-  font-size: 12px;
-  color: #6b7280;
-}
 .event {
   position: absolute;
   border-radius: 12px;
@@ -219,9 +199,7 @@ body {
   pointer-events: none;
 }
 
-.hour-label {
-  pointer-events: none;
-}
+
 .current-time-line {
   position: absolute;
   left: 0;
@@ -260,4 +238,73 @@ body {
 
 .event-title-inline {
   font-weight: 600;
+}
+.day-schedule {
+  display: flex;
+  position: relative;
+}
+
+.time-row {
+  height: var(--slot-height);
+  border-top: 1px solid #e5e7eb;
+  position: relative;
+}
+
+.time-row:nth-child(even) {
+  border-top: 1px dashed #d1d5db;  /* 30-min */
+}
+.hour-label {
+  position: absolute;
+  right: 10px;
+  font-size: 12px;
+  color: #6b7280;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+
+
+.timeline-grid {
+  flex: 1;
+  position: relative;
+}
+.timeline-grid .time-row {
+  height: var(--slot-height);
+  border-top: 1px solid #e5e7eb;
+  position: relative;
+}
+
+.timeline-grid .time-row:nth-child(even) {
+  border-top: 1px dashed #d1d5db; /* 30-min */
+}
+
+:root {
+  --slot-height: 80px;   /* 30 mins */
+}
+.planner-wrapper {
+  display: flex;
+  position: relative;
+}
+.now-line {
+  position: absolute;
+  height: 2px;
+  background: red;
+  width: 100%;
+  z-index: 5;
+}
+.time-gutter {
+  width: 70px;
+  position: relative;
+  background: white;
+  border-right: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+.time-row:nth-child(odd) {
+  border-top: 1px solid #cbd5e1;  /* full hour stronger */
+}
+
+#timeline {
+  flex: 1;
+  position: relative;
+  min-height: 100vh;
 }

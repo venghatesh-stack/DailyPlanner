@@ -488,6 +488,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 loadEvents();
+// ✅ SAFE ADDITION
+  renderTimeGutter();
 });
 
 timeline.addEventListener("dragover", e => {
@@ -567,3 +569,30 @@ setInterval(() => {
 }, 60000);
 
 });   // ← closes DOMContentLoaded
+function renderTimeGutter() {
+  const gutter = document.getElementById("time-gutter");
+  if (!gutter) return;
+
+  gutter.innerHTML = "";
+
+  const slotHeight = parseInt(
+    getComputedStyle(document.documentElement)
+      .getPropertyValue("--slot-height")
+  );
+
+  for (let hour = 0; hour < 24; hour++) {
+    const label = document.createElement("div");
+    label.className = "hour-label";
+    label.style.top = (hour * 2 * slotHeight) + "px";
+    label.innerText = formatHour(hour);
+    gutter.appendChild(label);
+  }
+}
+
+function formatHour(hour) {
+  const h = hour % 12 || 12;
+  const ampm = hour < 12 ? "AM" : "PM";
+  return `${h} ${ampm}`;
+}
+
+

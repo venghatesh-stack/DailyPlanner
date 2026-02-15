@@ -106,6 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const root = document.getElementById("timeline-root");
     if (root) {
       renderTimeline(window.TIMELINE_TASKS || [], root);
+      renderTimeGutter();
     }
   }
 });
@@ -314,27 +315,12 @@ function renderTimeline(tasks, root) {
 
   normalized.forEach(task => {
     const hour = task.start_time.split(":")[0];
-
-    if (hour !== lastHour) {
-      root.appendChild(renderHourMarker(task.start_time));
-      lastHour = hour;
-    }
-
     root.appendChild(renderTaskCard(task));
   });
 }
 
 
-function renderHourMarker(startTime) {
-  const div = document.createElement("div");
-  div.className = "hour-marker";
-  div.innerHTML = `
-    <div class="hour-label">
-      ${getHourLabel(startTime)}
-    </div>
-  `;
-  return div;
-}
+
 function renderTaskCard(task) {
   const div = document.createElement("div");
   div.className = "task-card";
