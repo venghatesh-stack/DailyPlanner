@@ -257,6 +257,12 @@ function getISTNow() {
     new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
   );
 }
+function getISTDate() {
+  return new Date().toLocaleDateString('en-CA', {
+    timeZone: 'Asia/Kolkata'
+  });
+}
+
 function renderCurrentTimeLine(root) {
   const now = getISTNow();
   const today = getISTDate();
