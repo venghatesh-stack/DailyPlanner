@@ -2247,7 +2247,7 @@ def schedule_project_task(task_id):
 
     update(
         "project_tasks",
-        params={"id": f"eq.{task_id}"},
+        params={"task_id": f"eq.{task_id}"},
         json={
             "plan_date": data["due_date"],
             "start_time": data["start_time"],
@@ -2310,7 +2310,7 @@ def update_project_task(task_id):
 def complete_task(task_id):
     update(
         "project_tasks",
-        params={"id": f"eq.{task_id}"},
+        params={"task_id": f"eq.{task_id}"},
         json={"is_completed": True}
     )
 
