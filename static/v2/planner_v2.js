@@ -45,14 +45,35 @@ async function loadEvents() {
   const floatingTasks = taskData.filter(t => !t.start_time);
 
   events = [
-    ...eventData.map(e => ({ ...e, type: "event" })),
-    ...timedTasks.map(t => ({ ...t, type: "project" }))
+    ...eventData.map(e => ({
+      ...e,
+      type: "event"
+    })),
+    ...timedTasks.map(t => ({
+      ...t,
+      id: t.task_id,                  // 🔥 critical
+      title: t.task_text,
+      end_time: calculateEndTime(t.start_time, 30),
+      type: "project"
+    }))
   ];
 
   render();
   renderFloatingTasks(floatingTasks);
-  renderSummary();   // ✅ ADD THIS LINE
+  renderSummary();
 }
+
+function normalizeProjectTask(t) {
+  return {
+    id: t.task_id,
+    title: t.task_text,
+    start_time: t.start_time,
+    end_time: calculateEndTime(t.start_time, 30),
+    type: "project",
+    raw: t
+  };
+}
+
 function hasConflict(ev, list) {
   return list.some(other =>
     other !== ev &&
