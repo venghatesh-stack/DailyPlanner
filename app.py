@@ -2275,7 +2275,7 @@ def update_project_task(task_id):
 
     allowed_fields = {
     "task_text",
-    "description",
+    "notes",
     "status",
     "priority",
     "planned_hours",

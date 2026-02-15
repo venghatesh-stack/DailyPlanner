@@ -234,7 +234,7 @@ async function openTaskCard(taskId) {
   // populate your full project task modal fields
 
   document.getElementById("task-title").value = task.task_text;
-  document.getElementById("task-description").value = task.description || "";
+  document.getElementById("task-description").value = task.notes || "";
   document.getElementById("task-planned-hours").value = task.planned_hours || 0;
   document.getElementById("task-actual-hours").value = task.actual_hours || 0;
   document.getElementById("task-status").value = task.status;
@@ -450,7 +450,7 @@ async function saveTaskCard() {
 
   const payload = {
     task_text: document.getElementById("task-title").value,
-    description: document.getElementById("task-description").value,
+    notes: document.getElementById("task-description").value,
     status: document.getElementById("task-status").value,
     priority: document.getElementById("task-priority").value,
     planned_hours: document.getElementById("task-planned-hours").value,
