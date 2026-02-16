@@ -103,7 +103,7 @@ function wireHabitListeners() {
 }
 
 function showSavedFeedback() {
-  const btn = document.querySelector(".save-btn");
+  const btn = document.getElementById("saveBtn");
   if (!btn) return;
 
   btn.innerText = "✓ Saved";
