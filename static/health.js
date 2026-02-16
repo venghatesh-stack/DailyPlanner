@@ -77,8 +77,7 @@ async function saveHealth() {
     })
   });
 btn.classList.remove("saving");
-  btn.classList.add("saved");
-  btn.innerText = "Saved ✓";
+
   showSavedFeedback();
 }
 
