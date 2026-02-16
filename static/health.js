@@ -57,7 +57,7 @@ function updateHabitCircle(percent) {
 }
 
 async function saveHealth() {
-   const btn = document.querySelector("saveBtn");
+  const btn = document.getElementById("saveBtn");
 
   btn.classList.add("saving");
   btn.innerText = "Saving...";
