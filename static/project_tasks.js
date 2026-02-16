@@ -416,6 +416,26 @@ async function updateRecurrence(taskId, type) {
   } else {
     weeklyBox.style.display = "none";
   }
+// 3️⃣ 🔥 UPDATE RECURRENCE BADGE HERE
+  const badge = taskEl.querySelector(".repeat-badge");
+
+  if (type === "none") {
+    // Remove badge completely
+    if (badge) badge.remove();
+  } else {
+    // If badge doesn't exist, create it
+    if (!badge) {
+      const newBadge = document.createElement("span");
+      newBadge.className = "repeat-badge";
+      taskEl.querySelector(".task-header")?.appendChild(newBadge);
+    }
+
+    const finalBadge = taskEl.querySelector(".repeat-badge");
+    if (finalBadge) {
+      finalBadge.textContent = `🔁 ${type}`;
+    }
+  }
+
 }
 
 function updateRecurrenceDays(taskId) {
