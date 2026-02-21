@@ -1,30 +1,32 @@
-import os
+
 import requests
+import os
 
-GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
+def call_gemini(prompt):
+    API_KEY = os.getenv("GEMINI_API_KEY")
 
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key={API_KEY}"
 
-
-def call_gemini(prompt: str) -> str:
     headers = {
         "Content-Type": "application/json"
     }
 
-    params = {
-        "key": GOOGLE_API_KEY
-    }
-
-    data = {
+    payload = {
         "contents": [
             {
-                "parts": [{"text": prompt}]
+                "parts": [
+                    {"text": prompt}
+                ]
             }
         ]
     }
 
-    response = requests.post(GEMINI_URL, headers=headers, params=params, json=data)
+    response = requests.post(url, headers=headers, json=payload)
+
+    print("Gemini status:", response.status_code)
+    print("Gemini response:", response.text)
+
     response.raise_for_status()
 
-    result = response.json()
-    return result["candidates"][0]["content"]["parts"][0]["text"]
+    data = response.json()
+    return data["candidates"][0]["content"]["parts"][0]["text"]
