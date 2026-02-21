@@ -8,9 +8,7 @@ const AIAssist = (() => {
   const primaryBtn = () => document.getElementById("ai-primary-btn");
   const voiceBtn = () => document.getElementById("voiceBtn");
 
-  /* ------------------------------
-     Toast
-  ------------------------------ */
+  /* ---------------- Toast ---------------- */
 
   function showToast(message, duration = 3000) {
     const container = document.getElementById("toast-container");
@@ -24,9 +22,7 @@ const AIAssist = (() => {
     setTimeout(() => toast.remove(), duration);
   }
 
-  /* ------------------------------
-     Manual Mode
-  ------------------------------ */
+  /* ---------------- Manual Mode ---------------- */
 
   function openManualMode(query) {
     navigator.clipboard.writeText(query);
@@ -34,9 +30,7 @@ const AIAssist = (() => {
     showToast("Query copied. Paste in ChatGPT.");
   }
 
-  /* ------------------------------
-     API Mode
-  ------------------------------ */
+  /* ---------------- API Mode ---------------- */
 
   async function generateViaAPI(query) {
     try {
@@ -51,7 +45,6 @@ const AIAssist = (() => {
       const data = await res.json();
       previewBox().innerHTML = data.content || "";
 
-      // Auto-fill reference form
       const titleInput = document.getElementById("ref-title");
       if (titleInput && !titleInput.value.trim()) {
         titleInput.value = query.substring(0, 80);
@@ -68,13 +61,10 @@ const AIAssist = (() => {
     }
   }
 
-  /* ------------------------------
-     Generate Handler
-  ------------------------------ */
+  /* ---------------- Generate Handler ---------------- */
 
   function handleGenerate() {
     const query = queryInput()?.value.trim();
-
     if (!query) {
       showToast("Enter a question first.");
       return;
@@ -89,14 +79,11 @@ const AIAssist = (() => {
     }
   }
 
-  /* ------------------------------
-     Voice Support
-  ------------------------------ */
+  /* ---------------- Voice ---------------- */
 
   function initVoice() {
     const btn = voiceBtn();
     const input = queryInput();
-
     if (!btn || !input) return;
 
     if (!("webkitSpeechRecognition" in window)) {
@@ -106,7 +93,6 @@ const AIAssist = (() => {
 
     const recognition = new webkitSpeechRecognition();
     recognition.lang = "en-IN";
-    recognition.continuous = false;
 
     btn.addEventListener("click", () => {
       recognition.start();
@@ -117,7 +103,6 @@ const AIAssist = (() => {
       const transcript = event.results[0][0].transcript;
       input.value = transcript;
 
-      // Auto-fill title
       const titleInput = document.getElementById("ref-title");
       if (titleInput && !titleInput.value.trim()) {
         titleInput.value = transcript.substring(0, 80);
@@ -129,9 +114,7 @@ const AIAssist = (() => {
     };
   }
 
-  /* ------------------------------
-     Tagify Init
-  ------------------------------ */
+  /* ---------------- Tagify ---------------- */
 
   async function initTagify() {
     const input = document.getElementById("ref-tags");
@@ -142,21 +125,40 @@ const AIAssist = (() => {
 
     tagifyInstance = new Tagify(input, {
       whitelist: existingTags,
-      dropdown: {
-        enabled: 0,
-        maxItems: 10
-      }
+      dropdown: { enabled: 0, maxItems: 10 }
     });
   }
 
-  /* ------------------------------
-     Init
-  ------------------------------ */
+  /* ---------------- Auto Tagging ---------------- */
 
-  function init() {
+  function initAutoTagging() {
+    const titleInput = document.getElementById("ref-title");
+    if (!titleInput) return;
+
+    titleInput.addEventListener("blur", () => {
+      if (!tagifyInstance) return;
+
+      const title = titleInput.value.trim();
+      if (!title) return;
+
+      const words = title
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(w => w.length > 4);
+
+      const unique = [...new Set(words)];
+
+      tagifyInstance.addTags(unique.slice(0, 3));
+    });
+  }
+
+  /* ---------------- Init ---------------- */
+
+  async function init() {
     primaryBtn()?.addEventListener("click", handleGenerate);
     initVoice();
-    initTagify();
+    await initTagify();
+    initAutoTagging();
   }
 
   return { init };
