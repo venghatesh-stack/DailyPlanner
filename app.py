@@ -2565,8 +2565,8 @@ def add_reference():
 @login_required
 def list_references():
     user_id = session["user_id"]
-    tag = request.args.get("tag")
-    category = request.args.get("category")
+    tag = request.args.get("tag", "").strip()
+    category = request.args.get("category", "").strip()
 
     params = {
         "user_id": f"eq.{user_id}",
@@ -2574,14 +2574,12 @@ def list_references():
     }
 
     if tag:
-        params["tags"] = f'cs.["{tag.lower()}"]'   # ✅ FIXED
+        params["tags"] = f'cs.{{{tag.lower()}}}'   # ✅ FIXED FOR text[]
 
     if category:
         params["category"] = f"eq.{category}"
 
     refs = get("reference_links", params=params)
-
-    return render_template("reference.html", references=refs)
 
     return render_template("reference.html", references=refs)
 @app.get("/search_references")
