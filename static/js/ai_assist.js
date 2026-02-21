@@ -1,26 +1,27 @@
 const AIAssist = (() => {
 
+  let tagifyInstance = null;
+
   const queryInput = () => document.getElementById("ai-query");
   const modeSelect = () => document.getElementById("ai-mode");
   const previewBox = () => document.getElementById("ai-preview");
   const primaryBtn = () => document.getElementById("ai-primary-btn");
+  const voiceBtn = () => document.getElementById("voiceBtn");
 
   /* ------------------------------
-     Toast Notifications
+     Toast
   ------------------------------ */
 
   function showToast(message, duration = 3000) {
     const container = document.getElementById("toast-container");
+    if (!container) return;
 
     const toast = document.createElement("div");
     toast.className = "toast";
     toast.innerText = message;
 
     container.appendChild(toast);
-
-    setTimeout(() => {
-      toast.remove();
-    }, duration);
+    setTimeout(() => toast.remove(), duration);
   }
 
   /* ------------------------------
@@ -48,13 +49,17 @@ const AIAssist = (() => {
       });
 
       const data = await res.json();
-
-      previewBox().innerHTML = data.content;
+      previewBox().innerHTML = data.content || "";
 
       // Auto-fill reference form
-      document.getElementById("ref-title").value = query;
-      document.getElementById("ref-url").value = "";
-      document.getElementById("ref-tags").value = "ai-generated";
+      const titleInput = document.getElementById("ref-title");
+      if (titleInput && !titleInput.value.trim()) {
+        titleInput.value = query.substring(0, 80);
+      }
+
+      if (tagifyInstance) {
+        tagifyInstance.addTags(["ai-generated"]);
+      }
 
       showToast("AI response generated.");
     } catch (err) {
@@ -64,18 +69,18 @@ const AIAssist = (() => {
   }
 
   /* ------------------------------
-     Main Handler
+     Generate Handler
   ------------------------------ */
 
   function handleGenerate() {
-    const query = queryInput().value.trim();
+    const query = queryInput()?.value.trim();
 
     if (!query) {
       showToast("Enter a question first.");
       return;
     }
 
-    const mode = modeSelect().value;
+    const mode = modeSelect()?.value;
 
     if (mode === "manual") {
       openManualMode(query);
@@ -84,8 +89,74 @@ const AIAssist = (() => {
     }
   }
 
+  /* ------------------------------
+     Voice Support
+  ------------------------------ */
+
+  function initVoice() {
+    const btn = voiceBtn();
+    const input = queryInput();
+
+    if (!btn || !input) return;
+
+    if (!("webkitSpeechRecognition" in window)) {
+      btn.style.display = "none";
+      return;
+    }
+
+    const recognition = new webkitSpeechRecognition();
+    recognition.lang = "en-IN";
+    recognition.continuous = false;
+
+    btn.addEventListener("click", () => {
+      recognition.start();
+      btn.innerText = "🎧";
+    });
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      input.value = transcript;
+
+      // Auto-fill title
+      const titleInput = document.getElementById("ref-title");
+      if (titleInput && !titleInput.value.trim()) {
+        titleInput.value = transcript.substring(0, 80);
+      }
+    };
+
+    recognition.onend = () => {
+      btn.innerText = "🎙";
+    };
+  }
+
+  /* ------------------------------
+     Tagify Init
+  ------------------------------ */
+
+  async function initTagify() {
+    const input = document.getElementById("ref-tags");
+    if (!input) return;
+
+    const res = await fetch("/api/tags");
+    const existingTags = await res.json();
+
+    tagifyInstance = new Tagify(input, {
+      whitelist: existingTags,
+      dropdown: {
+        enabled: 0,
+        maxItems: 10
+      }
+    });
+  }
+
+  /* ------------------------------
+     Init
+  ------------------------------ */
+
   function init() {
-    primaryBtn().addEventListener("click", handleGenerate);
+    primaryBtn()?.addEventListener("click", handleGenerate);
+    initVoice();
+    initTagify();
   }
 
   return { init };
@@ -93,72 +164,3 @@ const AIAssist = (() => {
 })();
 
 document.addEventListener("DOMContentLoaded", AIAssist.init);
-document.addEventListener("DOMContentLoaded", () => {
-  const voiceBtn = document.getElementById("voiceBtn");
-  const questionInput = document.getElementById("questionInput");
-
-  if (!('webkitSpeechRecognition' in window)) {
-    voiceBtn.style.display = "none";
-    return;
-  }
-
-  const recognition = new webkitSpeechRecognition();
-  recognition.continuous = false;
-  recognition.lang = "en-IN";  // since you're in India
-  recognition.interimResults = false;
-
-  voiceBtn.addEventListener("click", () => {
-    recognition.start();
-    voiceBtn.innerText = "🎧 Listening...";
-  });
-
-  recognition.onresult = (event) => {
-    const transcript = event.results[0][0].transcript;
-    questionInput.value = transcript;
-
-    // Auto-copy to title
-    autoFillTitle(transcript);
-  };
-
-  recognition.onend = () => {
-    voiceBtn.innerText = "🎙";
-  };
-});
-function autoFillTitle(questionText) {
-  const titleInput = document.getElementById("titleInput");
-
-  if (!titleInput.value.trim()) {
-    // First 80 chars as title
-    titleInput.value = questionText.substring(0, 80);
-  }
-}
-questionInput.addEventListener("input", (e) => {
-  autoFillTitle(e.target.value);
-});
-
-document.addEventListener("DOMContentLoaded", async () => {
-
-  const input = document.querySelector("#tagInput");
-
-  // Fetch existing tags from backend
-  const res = await fetch("/api/tags");
-  const existingTags = await res.json(); 
-  // Example response: ["ai", "machine learning", "deep learning"]
-
-  const tagify = new Tagify(input, {
-    whitelist: existingTags,   // existing tags for suggestions
-    dropdown: {
-      maxItems: 10,
-      enabled: 0,              // show suggestions on focus
-      closeOnSelect: false
-    }
-  });
-
-});
-form.addEventListener("submit", () => {
-  const tagifyData = tagify.value;
-  const cleanTags = tagifyData.map(tag => tag.value);
-
-  // Put into hidden input
-  document.getElementById("hiddenTags").value = JSON.stringify(cleanTags);
-});
