@@ -5,7 +5,7 @@ import os
 
 def call_gemini(prompt, retries=3):
     API_KEY = os.getenv("GOOGLE_API_KEY")
-    model = "gemini-1.5-flash-latest"
+    model = "gemini-3-flash-preview"
 
     url = f"https://generativelanguage.googleapis.com/v1/models/{model}:generateContent?key={API_KEY}"
 
