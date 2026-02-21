@@ -459,3 +459,18 @@ function confirmSchedule(taskId) {
     })
   }).then(() => window.location.reload());
 }
+document.getElementById("generatePlanBtn")
+  .addEventListener("click", async () => {
+
+    const res = await fetch("/ai/generate-day-plan", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        date: "{{ selected_date }}"
+      })
+    });
+
+    const data = await res.json();
+
+    document.getElementById("aiPlanOutput").innerText = data.result;
+});

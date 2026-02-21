@@ -47,7 +47,11 @@ from config import (
 
 from utils.slots import current_slot,slot_label
 import traceback
+from services.ai_service  import call_gemini
+from flask import jsonify
 print("STEP 2: imports completed")
+
+
 
 
 app = Flask(__name__)
@@ -2670,6 +2674,105 @@ def get_tags():
     tag_list = [row["name"] for row in rows]
 
     return jsonify(tag_list)
+
+
+
+@app.post("/ai/reflection-summary")
+@login_required
+def reflection_summary():
+    reflection_text = request.json.get("reflection", "")
+
+    prompt = f"""
+    Summarize this daily reflection.
+    Extract:
+    - Key wins
+    - Challenges
+    - Lessons learned
+    - Improvement suggestions
+
+    Reflection:
+    {reflection_text}
+    """
+
+    summary = call_gemini(prompt)
+
+    return jsonify({"summary": summary})
+@app.post("/ai/generate-day-plan")
+@login_required
+def generate_day_plan():
+    user_id = session["user_id"]
+    plan_date = request.json.get("date")
+
+    # Get today's slots
+    slots = get("daily_slots", {
+        "plan_date": f"eq.{plan_date}",
+        "select": "slot,plan,priority,category,tags",
+        "order": "slot.asc"
+    })
+
+    prompt = f"""
+    You are a productivity AI assistant.
+
+    Here is today's schedule:
+    {slots}
+
+    Generate:
+    1. A prioritized plan
+    2. Suggested focus blocks
+    3. Risk areas
+    4. Time optimization suggestions
+
+    Keep it structured and concise.
+    """
+
+    ai_output = call_gemini(prompt)
+
+    return jsonify({"result": ai_output})
+
+@app.post("/ai/assistant")
+@login_required
+def ai_assistant():
+    message = request.json.get("message")
+
+    prompt = f"""
+    You are a productivity assistant for a Daily Planner app.
+    Help the user improve time management.
+
+    User says:
+    {message}
+    """
+
+    response = call_gemini(prompt)
+
+    return jsonify({"reply": response})
+@app.post("/references/ai-generate")
+@login_required
+def ai_generate_reference():
+    user_id = session["user_id"]
+    query = request.json.get("query")
+
+    prompt = f"""
+    Generate ONE high-quality web reference for: "{query}"
+
+    Return strictly in JSON format:
+
+    {{
+      "title": "",
+      "url": "",
+      "description": "",
+      "category": "Learning",
+      "tags": ["tag1","tag2"]
+    }}
+
+    Use a real public URL.
+    No explanation. JSON only.
+    """
+
+    ai_text = call_gemini(prompt)
+
+    data = json.loads(ai_text)
+
+    return jsonify(data)
 # ENTRY POINT
 # ==========================================================
 #if __name__ == "__main__":

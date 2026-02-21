@@ -166,3 +166,63 @@ const AIAssist = (() => {
 })();
 
 document.addEventListener("DOMContentLoaded", AIAssist.init);
+document.getElementById("ai-primary-btn")
+  .addEventListener("click", async () => {
+
+    const mode = document.getElementById("ai-mode").value;
+    const query = document.getElementById("ai-query").value.trim();
+    const preview = document.getElementById("ai-preview");
+
+    if (!query) {
+      preview.innerHTML = "Please enter a topic.";
+      return;
+    }
+
+    // Manual Mode (User copies from ChatGPT manually)
+    if (mode === "manual") {
+      preview.innerHTML = `
+        <p>Manual mode selected.</p>
+        <p>Copy from ChatGPT and paste into fields below.</p>
+      `;
+      return;
+    }
+
+    // API Mode (Google Gemini)
+    preview.innerHTML = "Generating with Google AI...";
+
+    try {
+      const res = await fetch("/references/ai-generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query })
+      });
+
+      const data = await res.json();
+
+      // Show preview
+      preview.innerHTML = `
+        <h4>${data.title}</h4>
+        <p>${data.description}</p>
+        <a href="${data.url}" target="_blank">${data.url}</a>
+      `;
+
+      // Auto-fill Add Reference form
+      document.getElementById("ref-title").value = data.title || "";
+      document.getElementById("ref-description").value = data.description || "";
+      document.getElementById("ref-url").value = data.url || "";
+
+      // Tags (array → comma string)
+      if (Array.isArray(data.tags)) {
+        document.getElementById("ref-tags").value =
+          data.tags.join(", ");
+      }
+
+      if (data.category) {
+        document.getElementById("ref-category").value = data.category;
+      }
+
+    } catch (err) {
+      preview.innerHTML = "AI generation failed.";
+      console.error(err);
+    }
+});
