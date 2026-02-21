@@ -2574,14 +2574,27 @@ def list_references():
     }
 
     if tag:
-        params["tags"] = f'cs.{{{tag.lower()}}}'   # ✅ FIXED FOR text[]
+        params["tags"] = f'cs.{{{tag.lower()}}}'
 
     if category:
         params["category"] = f"eq.{category}"
 
     refs = get("reference_links", params=params)
 
-    return render_template("reference.html", references=refs)
+    # 🔥 Fetch all categories separately
+    all_refs = get("reference_links", {
+        "user_id": f"eq.{user_id}"
+    })
+
+    categories = sorted(
+        list({r["category"] for r in all_refs if r.get("category")})
+    )
+
+    return render_template(
+        "reference.html",
+        references=refs,
+        categories=categories   # ✅ THIS WAS MISSING
+    )
 @app.get("/search_references")
 def search_references():
     user_id = session["user_id"]
