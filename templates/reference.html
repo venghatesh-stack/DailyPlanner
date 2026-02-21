@@ -42,7 +42,7 @@
     </form>
   </div>
 
-  <!-- 🤖 AI ASSIST -->
+<!-- 🤖 AI ASSIST -->
 <div class="ai-assist-card">
 
   <div class="ai-header">
@@ -53,16 +53,13 @@
       <option value="api">API Mode (Auto Generate)</option>
     </select>
   </div>
-<div class="question-input-wrapper">
-  <input type="text"
-         id="ai-query"
-         placeholder="Ask AI something..." />
 
-  <button type="button" id="voiceBtn">🎙</button>
-</div>
-  <input type="text"
-         id="ai-query"
-         placeholder="Ask AI something..." />
+  <div class="question-input-wrapper">
+    <input type="text"
+           id="ai-query"
+           placeholder="Ask AI something..." />
+    <button type="button" id="voiceBtn">🎙</button>
+  </div>
 
   <div class="ai-buttons">
     <button id="ai-primary-btn">Generate</button>
@@ -71,7 +68,9 @@
   <div id="ai-preview" class="ai-preview"></div>
 
 </div>
-<input id="tagInput" name="tags" placeholder="Add tags...">
+<input type="text"
+       id="ref-tags"
+       placeholder="tags (comma separated)" />
   <!-- ➕ ADD NEW REFERENCE -->
   <div class="reference-card">
 
