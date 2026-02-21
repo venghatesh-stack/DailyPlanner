@@ -1,32 +1,32 @@
 
+import time
 import requests
 import os
 
-def call_gemini(prompt):
+def call_gemini(prompt, retries=3):
     API_KEY = os.getenv("GOOGLE_API_KEY")
+    model = "gemini-1.5-flash-latest"
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1/models/{model}:generateContent?key={API_KEY}"
 
-    headers = {
-        "Content-Type": "application/json"
-    }
-
+    headers = {"Content-Type": "application/json"}
     payload = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": prompt}
-                ]
-            }
-        ]
+        "contents": [{"parts": [{"text": prompt}]}]
     }
 
-    response = requests.post(url, headers=headers, json=payload)
+    for attempt in range(retries):
+        response = requests.post(url, headers=headers, json=payload)
 
-    print("Gemini status:", response.status_code)
-    print("Gemini response:", response.text)
+        if response.status_code == 200:
+            data = response.json()
+            return data["candidates"][0]["content"]["parts"][0]["text"]
 
-    response.raise_for_status()
+        # If high demand or rate limit
+        if response.status_code in [429, 503]:
+            time.sleep(2 * (attempt + 1))
+            continue
 
-    data = response.json()
-    return data["candidates"][0]["content"]["parts"][0]["text"]
+        print("Gemini error:", response.text)
+        break
+
+    return "AI service is busy. Please try again in a few seconds."
