@@ -1,4 +1,4 @@
-let tagifyInstance;
+window.tagifyInstance = null;
 async function saveReference() {
   const btn = document.getElementById("saveRefBtn");
   if (!btn) return;
@@ -16,7 +16,9 @@ async function saveReference() {
     title: document.getElementById("ref-title")?.value?.trim() || null,
     description: document.getElementById("ref-description")?.value?.trim() || null,
     url: document.getElementById("ref-url")?.value?.trim(),
-    tags: tagifyInstance ? tagifyInstance.value : [],
+    tags: window.tagifyInstance
+  ? window.tagifyInstance.value.map(t => t.value)
+  : [],
     category: finalCategory
   };
 
@@ -43,14 +45,32 @@ async function saveReference() {
     document.getElementById("ref-title").value = "";
     document.getElementById("ref-description").value = "";
     document.getElementById("ref-url").value = "";
-    if (tagifyInstance) tagifyInstance.removeAllTags();
+    if (window.tagifyInstance) {
+      window.tagifyInstance.removeAllTags();
+    }
     document.getElementById("ref-category").value = "";
     document.getElementById("new-category").value = "";
 
     setTimeout(() => {
       btn.innerText = originalText;
       btn.disabled = false;
-      location.reload();   // optional: remove if you implement live append
+      const container = document.getElementById("referenceList");
+
+     if (container) {
+        const item = document.createElement("div");
+        item.className = "reference-item";
+
+        const strong = document.createElement("strong");
+        strong.textContent = payload.title || payload.url;
+
+        const p = document.createElement("p");
+        p.textContent = payload.description || "";
+
+        item.appendChild(strong);
+        item.appendChild(p);
+
+        container.prepend(item);
+      }
     }, 800);
 
   } catch (err) {
@@ -60,33 +80,14 @@ async function saveReference() {
   }
 }
 
-
-document.addEventListener("DOMContentLoaded", async () => {
-  const btn = document.getElementById("saveRefBtn");
-  if (btn) btn.addEventListener("click", saveReference);
-
-  const tagInput = document.getElementById("ref-tags");
-  if (!tagInput) return;
-
-  // Fetch existing tags
-  const res = await fetch("/api/tags");
-  const existingTags = await res.json();
-
-  tagifyInstance = new Tagify(tagInput, {
-    whitelist: existingTags,
-    dropdown: {
-      enabled: 0,
-      maxItems: 10
-    }
-  });
-});
 function searchReferences() {
   const query = document.getElementById("searchInput").value.trim();
 
-  if (!query) {
-    alert("Enter something to search");
-    return;
-  }
+if (!query) {
+  document.getElementById("searchResults").innerHTML =
+    "<p>Please enter a search term.</p>";
+  return;
+}
 
   fetch(`/search_references?q=${encodeURIComponent(query)}`)
     .then(response => response.json())
@@ -109,12 +110,16 @@ function searchReferences() {
       console.error("Search error:", error);
     });
 }
-document.getElementById("ref-url").addEventListener("blur", function() {
-  const titleInput = document.getElementById("ref-title");
-  if (!titleInput.value && this.value) {
-    try {
-      const url = new URL(this.value);
-      titleInput.value = url.hostname.replace("www.", "");
-    } catch (e) {}
-  }
-});
+const refUrlInput = document.getElementById("ref-url");
+
+if (refUrlInput) {
+  refUrlInput.addEventListener("blur", function () {
+    const titleInput = document.getElementById("ref-title");
+    if (!titleInput.value && this.value) {
+      try {
+        const url = new URL(this.value);
+        titleInput.value = url.hostname.replace("www.", "");
+      } catch (e) {}
+    }
+  });
+}

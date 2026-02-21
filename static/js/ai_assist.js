@@ -1,17 +1,11 @@
 const AIAssist = (() => {
 
-  let tagifyInstance = null;
+  /* ---------------- Helpers ---------------- */
 
-  const queryInput = () => document.getElementById("ai-query");
-  const modeSelect = () => document.getElementById("ai-mode");
-  const previewBox = () => document.getElementById("ai-preview");
-  const primaryBtn = () => document.getElementById("ai-primary-btn");
-  const voiceBtn = () => document.getElementById("voiceBtn");
+  const $ = (id) => document.getElementById(id);
 
-  /* ---------------- Toast ---------------- */
-
-  function showToast(message, duration = 3000) {
-    const container = document.getElementById("toast-container");
+  function showToast(message, duration = 2500) {
+    const container = $("toast-container");
     if (!container) return;
 
     const toast = document.createElement("div");
@@ -30,60 +24,60 @@ const AIAssist = (() => {
     showToast("Query copied. Paste in ChatGPT.");
   }
 
-  /* ---------------- API Mode ---------------- */
+  /* ---------------- API Mode (Gemini) ---------------- */
 
   async function generateViaAPI(query) {
-    try {
-      showToast("Generating...");
 
-      const res = await fetch("/generate-ai", {
+    const preview = $("ai-preview");
+    preview.innerHTML = "Generating with Google AI...";
+
+    try {
+      const res = await fetch("/references/ai-generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: query })
+        body: JSON.stringify({ query })
       });
 
+      if (!res.ok) {
+        preview.innerHTML = "AI request failed.";
+        return;
+      }
+
       const data = await res.json();
-      previewBox().innerHTML = data.content || "";
 
-      const titleInput = document.getElementById("ref-title");
-      if (titleInput && !titleInput.value.trim()) {
-        titleInput.value = query.substring(0, 80);
+      // Preview
+      preview.innerHTML = `
+        <h4>${data.title || ""}</h4>
+        <p>${data.description || ""}</p>
+        ${data.url ? `<a href="${data.url}" target="_blank">${data.url}</a>` : ""}
+      `;
+
+      // Autofill reference form
+      $("ref-title").value = data.title || "";
+      $("ref-description").value = data.description || "";
+      $("ref-url").value = data.url || "";
+      $("ref-category").value = data.category || "";
+
+      // Tagify (shared global instance)
+      if (window.tagifyInstance && Array.isArray(data.tags)) {
+        window.tagifyInstance.removeAllTags();
+        window.tagifyInstance.addTags(data.tags);
       }
 
-      if (tagifyInstance) {
-        tagifyInstance.addTags(["ai-generated"]);
-      }
+      showToast("AI content generated.");
 
-      showToast("AI response generated.");
     } catch (err) {
       console.error(err);
-      showToast("Error generating response.");
-    }
-  }
-
-  /* ---------------- Generate Handler ---------------- */
-
-  function handleGenerate() {
-    const query = queryInput()?.value.trim();
-    if (!query) {
-      showToast("Enter a question first.");
-      return;
-    }
-
-    const mode = modeSelect()?.value;
-
-    if (mode === "manual") {
-      openManualMode(query);
-    } else {
-      generateViaAPI(query);
+      preview.innerHTML = "AI generation failed.";
+      showToast("Error generating AI content.");
     }
   }
 
   /* ---------------- Voice ---------------- */
 
   function initVoice() {
-    const btn = voiceBtn();
-    const input = queryInput();
+    const btn = $("voiceBtn");
+    const input = $("ai-query");
     if (!btn || !input) return;
 
     if (!("webkitSpeechRecognition" in window)) {
@@ -103,9 +97,8 @@ const AIAssist = (() => {
       const transcript = event.results[0][0].transcript;
       input.value = transcript;
 
-      const titleInput = document.getElementById("ref-title");
-      if (titleInput && !titleInput.value.trim()) {
-        titleInput.value = transcript.substring(0, 80);
+      if (!$("ref-title").value.trim()) {
+        $("ref-title").value = transcript.substring(0, 80);
       }
     };
 
@@ -114,51 +107,37 @@ const AIAssist = (() => {
     };
   }
 
-  /* ---------------- Tagify ---------------- */
+  /* ---------------- Generate Button ---------------- */
 
-  async function initTagify() {
-    const input = document.getElementById("ref-tags");
-    if (!input) return;
+  function initGenerate() {
 
-    const res = await fetch("/api/tags");
-    const existingTags = await res.json();
+    const btn = $("ai-primary-btn");
+    if (!btn) return;
 
-    tagifyInstance = new Tagify(input, {
-      whitelist: existingTags,
-      dropdown: { enabled: 0, maxItems: 10 }
-    });
-  }
+    btn.addEventListener("click", async () => {
 
-  /* ---------------- Auto Tagging ---------------- */
+      const query = $("ai-query")?.value.trim();
+      const mode = $("ai-mode")?.value;
 
-  function initAutoTagging() {
-    const titleInput = document.getElementById("ref-title");
-    if (!titleInput) return;
+      if (!query) {
+        $("ai-preview").innerHTML = "Please enter a topic.";
+        return;
+      }
 
-    titleInput.addEventListener("blur", () => {
-      if (!tagifyInstance) return;
+      if (mode === "manual") {
+        openManualMode(query);
+      } else {
+        await generateViaAPI(query);
+      }
 
-      const title = titleInput.value.trim();
-      if (!title) return;
-
-      const words = title
-        .toLowerCase()
-        .split(/\s+/)
-        .filter(w => w.length > 4);
-
-      const unique = [...new Set(words)];
-
-      tagifyInstance.addTags(unique.slice(0, 3));
     });
   }
 
   /* ---------------- Init ---------------- */
 
-  async function init() {
-    primaryBtn()?.addEventListener("click", handleGenerate);
+  function init() {
+    initGenerate();
     initVoice();
-    await initTagify();
-    initAutoTagging();
   }
 
   return { init };
@@ -166,63 +145,3 @@ const AIAssist = (() => {
 })();
 
 document.addEventListener("DOMContentLoaded", AIAssist.init);
-document.getElementById("ai-primary-btn")
-  .addEventListener("click", async () => {
-
-    const mode = document.getElementById("ai-mode").value;
-    const query = document.getElementById("ai-query").value.trim();
-    const preview = document.getElementById("ai-preview");
-
-    if (!query) {
-      preview.innerHTML = "Please enter a topic.";
-      return;
-    }
-
-    // Manual Mode (User copies from ChatGPT manually)
-    if (mode === "manual") {
-      preview.innerHTML = `
-        <p>Manual mode selected.</p>
-        <p>Copy from ChatGPT and paste into fields below.</p>
-      `;
-      return;
-    }
-
-    // API Mode (Google Gemini)
-    preview.innerHTML = "Generating with Google AI...";
-
-    try {
-      const res = await fetch("/references/ai-generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query })
-      });
-
-      const data = await res.json();
-
-      // Show preview
-      preview.innerHTML = `
-        <h4>${data.title}</h4>
-        <p>${data.description}</p>
-        <a href="${data.url}" target="_blank">${data.url}</a>
-      `;
-
-      // Auto-fill Add Reference form
-      document.getElementById("ref-title").value = data.title || "";
-      document.getElementById("ref-description").value = data.description || "";
-      document.getElementById("ref-url").value = data.url || "";
-
-      // Tags (array → comma string)
-      if (Array.isArray(data.tags)) {
-        document.getElementById("ref-tags").value =
-          data.tags.join(", ");
-      }
-
-      if (data.category) {
-        document.getElementById("ref-category").value = data.category;
-      }
-
-    } catch (err) {
-      preview.innerHTML = "AI generation failed.";
-      console.error(err);
-    }
-});
