@@ -6,12 +6,17 @@ async function saveReference() {
   const originalText = btn.innerText;
   btn.innerText = "Saving...";
 
+  const selectedCategory = document.getElementById("ref-category")?.value;
+  const newCategory = document.getElementById("new-category")?.value?.trim();
+
+  const finalCategory = newCategory || selectedCategory || null;
+
   const payload = {
     title: document.getElementById("ref-title")?.value?.trim() || null,
     description: document.getElementById("ref-description")?.value?.trim() || null,
     url: document.getElementById("ref-url")?.value?.trim(),
     tags: document.getElementById("ref-tags")?.value || "",
-    category: document.getElementById("ref-category")?.value || null
+    category: finalCategory
   };
 
   if (!payload.url) {
@@ -33,11 +38,13 @@ async function saveReference() {
     btn.innerText = "Saved ✓";
 
     // Clear form fields
+    // Clear form fields
     document.getElementById("ref-title").value = "";
     document.getElementById("ref-description").value = "";
     document.getElementById("ref-url").value = "";
     document.getElementById("ref-tags").value = "";
     document.getElementById("ref-category").value = "";
+    document.getElementById("new-category").value = "";
 
     setTimeout(() => {
       btn.innerText = originalText;

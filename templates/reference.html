@@ -60,14 +60,18 @@
            id="ref-tags"
            placeholder="tags (comma separated)" />
 
-    <select id="ref-category">
-      <option value="">Select Category</option>
-      <option>Technology</option>
-      <option>Health</option>
-      <option>Finance</option>
-      <option>Learning</option>
-    </select>
+  <select id="ref-category">
+  <option value="">Select Category</option>
 
+  {% for cat in categories %}
+    <option value="{{ cat }}">{{ cat }}</option>
+  {% endfor %}
+</select>
+
+<!-- Optional: Allow custom category -->
+<input type="text"
+       id="new-category"
+       placeholder="Or enter new category">
     <button id="saveRefBtn">Save</button>
   </div>
 
