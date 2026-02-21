@@ -5,7 +5,7 @@ import os
 def call_gemini(prompt):
     API_KEY = os.getenv("GEMINI_API_KEY")
 
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key={API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={API_KEY}"
 
     headers = {
         "Content-Type": "application/json"
