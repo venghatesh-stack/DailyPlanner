@@ -40,7 +40,29 @@
     </form>
   </div>
 
+  <!-- 🤖 AI ASSIST -->
+<div class="ai-assist-card">
 
+  <div class="ai-header">
+    <h3>🤖 AI Assist</h3>
+
+    <select id="ai-mode">
+      <option value="manual">Manual (ChatGPT)</option>
+      <option value="api">API Mode (Auto Generate)</option>
+    </select>
+  </div>
+
+  <input type="text"
+         id="ai-query"
+         placeholder="Ask AI something..." />
+
+  <div class="ai-buttons">
+    <button id="ai-primary-btn">Generate</button>
+  </div>
+
+  <div id="ai-preview" class="ai-preview"></div>
+
+</div>
   <!-- ➕ ADD NEW REFERENCE -->
   <div class="reference-card">
 
@@ -122,6 +144,8 @@
   </div>
 
 </div>
+<div id="toast-container"></div>
 <script src="{{ url_for('static', filename='references.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/ai_assist.js') }}" defer></script>
 </body>
 </html>  
