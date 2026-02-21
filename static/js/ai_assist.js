@@ -93,3 +93,72 @@ const AIAssist = (() => {
 })();
 
 document.addEventListener("DOMContentLoaded", AIAssist.init);
+document.addEventListener("DOMContentLoaded", () => {
+  const voiceBtn = document.getElementById("voiceBtn");
+  const questionInput = document.getElementById("questionInput");
+
+  if (!('webkitSpeechRecognition' in window)) {
+    voiceBtn.style.display = "none";
+    return;
+  }
+
+  const recognition = new webkitSpeechRecognition();
+  recognition.continuous = false;
+  recognition.lang = "en-IN";  // since you're in India
+  recognition.interimResults = false;
+
+  voiceBtn.addEventListener("click", () => {
+    recognition.start();
+    voiceBtn.innerText = "🎧 Listening...";
+  });
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    questionInput.value = transcript;
+
+    // Auto-copy to title
+    autoFillTitle(transcript);
+  };
+
+  recognition.onend = () => {
+    voiceBtn.innerText = "🎙";
+  };
+});
+function autoFillTitle(questionText) {
+  const titleInput = document.getElementById("titleInput");
+
+  if (!titleInput.value.trim()) {
+    // First 80 chars as title
+    titleInput.value = questionText.substring(0, 80);
+  }
+}
+questionInput.addEventListener("input", (e) => {
+  autoFillTitle(e.target.value);
+});
+
+document.addEventListener("DOMContentLoaded", async () => {
+
+  const input = document.querySelector("#tagInput");
+
+  // Fetch existing tags from backend
+  const res = await fetch("/api/tags");
+  const existingTags = await res.json(); 
+  // Example response: ["ai", "machine learning", "deep learning"]
+
+  const tagify = new Tagify(input, {
+    whitelist: existingTags,   // existing tags for suggestions
+    dropdown: {
+      maxItems: 10,
+      enabled: 0,              // show suggestions on focus
+      closeOnSelect: false
+    }
+  });
+
+});
+form.addEventListener("submit", () => {
+  const tagifyData = tagify.value;
+  const cleanTags = tagifyData.map(tag => tag.value);
+
+  // Put into hidden input
+  document.getElementById("hiddenTags").value = JSON.stringify(cleanTags);
+});

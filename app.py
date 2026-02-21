@@ -2552,8 +2552,29 @@ def add_reference():
     data = request.get_json()
     user_id = session["user_id"]
 
-    tags = [t.strip().lower() for t in data.get("tags", "").split(",") if t.strip()]
+    raw_tags = data.get("tags", [])
 
+    # Handle Tagify JSON format
+    if isinstance(raw_tags, list):
+        tags = [t["value"].strip().lower() for t in raw_tags if t.get("value")]
+    else:
+        # fallback for comma string (if ever used)
+        tags = [t.strip().lower() for t in raw_tags.split(",") if t.strip()]
+
+    # 🔹 Auto-create missing tags
+    for tag in tags:
+        existing = get("tags", {
+            "user_id": f"eq.{user_id}",
+            "name": f"eq.{tag}"
+        })
+
+        if not existing:
+            post("tags", {
+                "user_id": user_id,
+                "name": tag
+            })
+
+    # 🔹 Save reference
     post("reference_links", {
         "user_id": user_id,
         "title": data.get("title"),
@@ -2615,7 +2636,40 @@ def search_references():
     )
 
     return jsonify({"results": rows})
+def process_tags(user_id, tag_list):
+    processed_tags = []
 
+    for tag in tag_list:
+        tag = tag.strip().lower()
+
+        # check if exists
+        existing = get("tags", {
+            "user_id": f"eq.{user_id}",
+            "name": f"eq.{tag}"
+        })
+
+        if existing:
+            processed_tags.append(tag)
+        else:
+            post("tags", {
+                "user_id": user_id,
+                "name": tag
+            })
+            processed_tags.append(tag)
+
+    return processed_tags
+@app.route("/api/tags")
+@login_required
+def get_tags():
+    user_id = session["user_id"]
+
+    rows = get("tags", {
+        "user_id": f"eq.{user_id}"
+    })
+
+    tag_list = [row["name"] for row in rows]
+
+    return jsonify(tag_list)
 # ENTRY POINT
 # ==========================================================
 #if __name__ == "__main__":

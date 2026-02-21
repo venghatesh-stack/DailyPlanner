@@ -1,3 +1,4 @@
+let tagifyInstance;
 async function saveReference() {
   const btn = document.getElementById("saveRefBtn");
   if (!btn) return;
@@ -15,7 +16,7 @@ async function saveReference() {
     title: document.getElementById("ref-title")?.value?.trim() || null,
     description: document.getElementById("ref-description")?.value?.trim() || null,
     url: document.getElementById("ref-url")?.value?.trim(),
-    tags: document.getElementById("ref-tags")?.value || "",
+    tags: tagifyInstance ? tagifyInstance.value : [],
     category: finalCategory
   };
 
@@ -42,7 +43,7 @@ async function saveReference() {
     document.getElementById("ref-title").value = "";
     document.getElementById("ref-description").value = "";
     document.getElementById("ref-url").value = "";
-    document.getElementById("ref-tags").value = "";
+    if (tagifyInstance) tagifyInstance.removeAllTags();
     document.getElementById("ref-category").value = "";
     document.getElementById("new-category").value = "";
 
@@ -60,11 +61,24 @@ async function saveReference() {
 }
 
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const btn = document.getElementById("saveRefBtn");
-  if (!btn) return;
+  if (btn) btn.addEventListener("click", saveReference);
 
-  btn.addEventListener("click", saveReference);
+  const tagInput = document.getElementById("ref-tags");
+  if (!tagInput) return;
+
+  // Fetch existing tags
+  const res = await fetch("/api/tags");
+  const existingTags = await res.json();
+
+  tagifyInstance = new Tagify(tagInput, {
+    whitelist: existingTags,
+    dropdown: {
+      enabled: 0,
+      maxItems: 10
+    }
+  });
 });
 function searchReferences() {
   const query = document.getElementById("searchInput").value.trim();
@@ -95,3 +109,12 @@ function searchReferences() {
       console.error("Search error:", error);
     });
 }
+document.getElementById("ref-url").addEventListener("blur", function() {
+  const titleInput = document.getElementById("ref-title");
+  if (!titleInput.value && this.value) {
+    try {
+      const url = new URL(this.value);
+      titleInput.value = url.hostname.replace("www.", "");
+    } catch (e) {}
+  }
+});

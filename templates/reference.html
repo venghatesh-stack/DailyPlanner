@@ -4,6 +4,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet"
         href="{{ url_for('static', filename='references.css') }}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css">
+  <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
 </head>
 <body>
 <div class="reference-container">
@@ -51,7 +53,10 @@
       <option value="api">API Mode (Auto Generate)</option>
     </select>
   </div>
-
+<div class="question-input-wrapper">
+  <textarea id="questionInput" placeholder="Ask something..."></textarea>
+  <button type="button" id="voiceBtn">🎙</button>
+</div>
   <input type="text"
          id="ai-query"
          placeholder="Ask AI something..." />
@@ -63,6 +68,7 @@
   <div id="ai-preview" class="ai-preview"></div>
 
 </div>
+<input id="tagInput" name="tags" placeholder="Add tags...">
   <!-- ➕ ADD NEW REFERENCE -->
   <div class="reference-card">
 
@@ -147,5 +153,6 @@
 <div id="toast-container"></div>
 <script src="{{ url_for('static', filename='references.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/ai_assist.js') }}" defer></script>
+
 </body>
 </html>  
