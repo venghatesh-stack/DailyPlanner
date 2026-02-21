@@ -7,7 +7,7 @@ def call_gemini(prompt, retries=3):
     API_KEY = os.getenv("GOOGLE_API_KEY")
     model = "gemini-3-flash-preview"
 
-    url = f"https://generativelanguage.googleapis.com/v1/models/{model}:generateContent?key={API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={API_KEY}"
 
     headers = {"Content-Type": "application/json"}
     payload = {
