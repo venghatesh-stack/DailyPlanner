@@ -49,6 +49,10 @@ from utils.slots import current_slot,slot_label
 import traceback
 from services.ai_service  import call_gemini
 from flask import jsonify
+import requests
+from flask import request, jsonify
+from bs4 import BeautifulSoup
+
 print("STEP 2: imports completed")
 
 
@@ -2773,6 +2777,61 @@ def ai_generate_reference():
     data = json.loads(ai_text)
 
     return jsonify(data)
+
+
+@app.route("/references/metadata", methods=["POST"])
+@login_required
+def fetch_metadata():
+
+    data = request.json
+    url = data.get("url")
+    use_ai = data.get("use_ai", True)
+
+    if not url:
+        return jsonify({"error": "URL required"}), 400
+
+    try:
+        # Always fetch page title
+        page = requests.get(url, timeout=5)
+        soup = BeautifulSoup(page.text, "html.parser")
+        title = soup.title.string.strip() if soup.title else None
+
+        # If AI disabled → return only title
+        if not use_ai:
+            return jsonify({
+                "title": title,
+                "tags": [],
+                "category": None
+            })
+
+        # AI enabled
+        prompt = f"""
+        Analyze this webpage title:
+        "{title}"
+
+        Return JSON ONLY like this:
+        {{
+          "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
+          "category": "Technology"
+        }}
+
+        Category must be one of:
+        Technology, Health, Finance, Learning
+        """
+
+        ai_response = call_gemini(prompt)
+
+        import json
+        ai_data = json.loads(ai_response)
+
+        return jsonify({
+            "title": title,
+            "tags": ai_data.get("tags", []),
+            "category": ai_data.get("category")
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 # ENTRY POINT
 # ==========================================================
 #if __name__ == "__main__":

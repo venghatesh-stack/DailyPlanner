@@ -41,7 +41,15 @@
       <button type="submit">Search</button>
     </form>
   </div>
-
+<div class="ai-toggle">
+  <label class="ai-toggle-label">
+    <input type="checkbox" id="enable-ai" checked>
+    <span>Enable AI Assist (Gemini)</span>
+  </label>
+  <small class="ai-note">
+    When enabled, title, tags and category are auto-generated.
+  </small>
+</div>
 <!-- 🤖 AI ASSIST -->
 <div class="ai-assist-card">
 
@@ -99,12 +107,12 @@
 <input type="text"
        id="new-category"
        placeholder="Or enter new category">
-    <button id="saveRefBtn">Save</button>
+    <button type="button" id="saveRefBtn">Save</button>
   </div>
 
 
   <!-- 📚 RESULTS -->
-  <div class="reference-list">
+  <div id="referenceList" class="reference-list">
 
     {% if references %}
       {% for ref in references %}
