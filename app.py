@@ -2574,12 +2574,14 @@ def list_references():
     }
 
     if tag:
-        params["tags"] = f"cs.{ {tag.lower()} }"
+        params["tags"] = f'cs.["{tag.lower()}"]'   # ✅ FIXED
 
     if category:
         params["category"] = f"eq.{category}"
 
     refs = get("reference_links", params=params)
+
+    return render_template("reference.html", references=refs)
 
     return render_template("reference.html", references=refs)
 @app.get("/search_references")
