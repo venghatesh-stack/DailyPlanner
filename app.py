@@ -1,4 +1,5 @@
 ## Eisenhower Matrix + Daily Planner integrated. Calender control working
+print("STEP 1: app.py import started")
 from flask import Flask, request, redirect, url_for, render_template_string, session,jsonify,render_template,abort
 import os
 from datetime import date, datetime, timedelta
@@ -46,17 +47,19 @@ from config import (
 
 from utils.slots import current_slot,slot_label
 import traceback
-
+print("STEP 2: imports completed")
 
 
 app = Flask(__name__)
+print("STEP 3: flask created")
+logger = setup_logger()
 @app.errorhandler(Exception)
 def catch_all_errors(e):
     print("🔥 GLOBAL EXCEPTION CAUGHT 🔥")
     traceback.print_exc()   # <-- ALWAYS prints
     logger.exception("UNHANDLED EXCEPTION")
     return "Internal Server Error", 500
-logger = setup_logger()
+
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "change-this-secret")
 APP_PASSWORD = os.environ.get("APP_PASSWORD", "changeme")
 # ==========================================================
