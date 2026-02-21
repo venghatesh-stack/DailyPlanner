@@ -2557,19 +2557,33 @@ def clean_number(val):
 @app.route("/references/add", methods=["POST"])
 @login_required
 def add_reference():
+
     data = request.get_json()
     user_id = session["user_id"]
 
     raw_tags = data.get("tags", [])
 
-    # Handle Tagify JSON format
+    # ---------------------------------
+    # Normalize Tags
+    # ---------------------------------
+    tags = []
+
     if isinstance(raw_tags, list):
-        tags = [t["value"].strip().lower() for t in raw_tags if t.get("value")]
-    else:
-        # fallback for comma string (if ever used)
+        for t in raw_tags:
+            if isinstance(t, dict) and t.get("value"):
+                tags.append(t["value"].strip().lower())
+            elif isinstance(t, str):
+                tags.append(t.strip().lower())
+
+    elif isinstance(raw_tags, str):
         tags = [t.strip().lower() for t in raw_tags.split(",") if t.strip()]
 
-    # 🔹 Auto-create missing tags
+    # Remove duplicates
+    tags = list(set(tags))
+
+    # ---------------------------------
+    # Auto-create missing tags
+    # ---------------------------------
     for tag in tags:
         existing = get("tags", {
             "user_id": f"eq.{user_id}",
@@ -2582,7 +2596,9 @@ def add_reference():
                 "name": tag
             })
 
-    # 🔹 Save reference
+    # ---------------------------------
+    # Save Reference
+    # ---------------------------------
     post("reference_links", {
         "user_id": user_id,
         "title": data.get("title"),
