@@ -123,3 +123,10 @@ if (refUrlInput) {
     }
   });
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+  const btn = document.getElementById("saveRefBtn");
+  if (btn) {
+    btn.addEventListener("click", saveReference);
+  }
+});
