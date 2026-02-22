@@ -2867,13 +2867,22 @@ def get_tags_with_counts():
         "user_id": f"eq.{user_id}"
     })
 
-    tag_counts = {}
+    grouped_tags = {}
 
     for ref in rows:
-        for tag in ref.get("tags", []):
-            tag_counts[tag] = tag_counts.get(tag, 0) + 1
+        category = ref.get("category") or "Uncategorized"
+        tags = ref.get("tags", [])
 
-    return jsonify(tag_counts)
+        if category not in grouped_tags:
+            grouped_tags[category] = {}
+
+        for tag in tags:
+            grouped_tags[category][tag] = (
+                grouped_tags[category].get(tag, 0) + 1
+            )
+
+    return jsonify(grouped_tags)
+
 @app.route("/references/list")
 @login_required
 def list_references_api():

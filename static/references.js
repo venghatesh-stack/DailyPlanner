@@ -264,37 +264,71 @@ function resetAndReload() {
 // ==========================================================
 // TAG CLOUD
 // ==========================================================
-
 async function loadTagCloud() {
-  const container = $("tagCloud");
+
+  const container = document.getElementById("tagCloud");
   if (!container) return;
 
   const res = await fetch("/references/tags");
-  const tags = await res.json();
+  const groupedTags = await res.json();
 
   container.innerHTML = "";
 
-  Object.keys(tags).sort().forEach(tag => {
-    const span = document.createElement("span");
-    span.className = "tag-cloud-item";
-    span.innerText = `# ${tag} (${tags[tag]})`;
+  Object.keys(groupedTags)
+    .sort()
+    .forEach(groupName => {
 
-    span.onclick = function () {
-      span.classList.toggle("active");
+      const groupWrapper = document.createElement("div");
+      groupWrapper.className = "tag-group";
 
-      if (state.selectedTags.includes(tag))
-        state.selectedTags = state.selectedTags.filter(t => t !== tag);
-      else
-        state.selectedTags.push(tag);
+      const header = document.createElement("div");
+      header.className = "tag-group-header";
+      header.innerHTML = `📁 ${groupName}`;
 
-      span.classList.add("pulse");
-      setTimeout(() => span.classList.remove("pulse"), 300);
+      const content = document.createElement("div");
+      content.className = "tag-group-content";
 
-      resetAndReload();
-    };
+      // Auto-expand if any selected tag belongs to this group
+      const groupTags = Object.keys(groupedTags[groupName]);
+      if (groupTags.some(tag => state.selectedTags.includes(tag))) {
+        content.classList.add("open");
+      }
 
-    container.appendChild(span);
-  });
+      header.addEventListener("click", () => {
+        content.classList.toggle("open");
+      });
+
+      groupTags.sort().forEach(tag => {
+
+        const span = document.createElement("span");
+        span.className = "tag-cloud-item";
+        span.innerText = `# ${tag} (${groupedTags[groupName][tag]})`;
+
+        if (state.selectedTags.includes(tag)) {
+          span.classList.add("active");
+        }
+
+        span.onclick = function (e) {
+          e.stopPropagation();
+
+          span.classList.toggle("active");
+
+          if (state.selectedTags.includes(tag)) {
+            state.selectedTags = state.selectedTags.filter(t => t !== tag);
+          } else {
+            state.selectedTags.push(tag);
+          }
+
+          resetAndReload();
+        };
+
+        content.appendChild(span);
+      });
+
+      groupWrapper.appendChild(header);
+      groupWrapper.appendChild(content);
+      container.appendChild(groupWrapper);
+    });
 }
 
 // ==========================================================

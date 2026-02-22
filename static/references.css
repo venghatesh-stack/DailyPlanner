@@ -312,3 +312,35 @@
   from { transform: scaleX(1); }
   to   { transform: scaleX(0); }
 }
+/* ========================= */
+/* TAG GROUP STYLING */
+/* ========================= */
+
+.tag-group {
+  margin-bottom: 12px;
+}
+
+.tag-group-header {
+  font-weight: 600;
+  padding: 8px 12px;
+  background: #f3f4f6;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.tag-group-header:hover {
+  background: #e5e7eb;
+}
+
+.tag-group-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  padding-left: 10px;
+}
+
+.tag-group-content.open {
+  max-height: 600px;
+  margin-top: 8px;
+}
