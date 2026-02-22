@@ -20,18 +20,35 @@ const AIAssist = (() => {
 
   const $ = (id) => document.getElementById(id);
 
-  function showToast(message, duration = 2500) {
-    const container = $("toast-container");
-    if (!container) return;
+  function showToast(message, type = "info", duration = 2500) {
+  const container = document.getElementById("toast-container");
+  if (!container) return;
 
-    const toast = document.createElement("div");
-    toast.className = "toast";
-    toast.innerText = message;
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
 
-    container.appendChild(toast);
-    setTimeout(() => toast.remove(), duration);
-  }
+  toast.innerHTML = `
+    <div class="toast-message">${message}</div>
+    <div class="toast-progress"></div>
+  `;
 
+  container.appendChild(toast);
+
+  // Show animation
+  setTimeout(() => {
+    toast.classList.add("show");
+  }, 10);
+
+  // Animate progress bar
+  const progress = toast.querySelector(".toast-progress");
+  progress.style.animation = `toastProgress ${duration}ms linear forwards`;
+
+  // Hide after duration
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
   /* ---------------- Manual Mode ---------------- */
 
   function openManualMode(query) {
