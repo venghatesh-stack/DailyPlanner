@@ -104,6 +104,12 @@ async function generateViaAPI(query, mode) {
     quill.setContents([]);
     quill.clipboard.dangerouslyPasteHTML(htmlContent);
 
+    // 🔥 Force auto-expand after content injection
+    setTimeout(() => {
+    quill.root.style.height = "auto";
+    quill.root.style.height = quill.root.scrollHeight + "px";
+    }, 0);
+
     // Autofill form
     $("ref-title").value = data.title || "";
     $("ref-description").value = quill.root.innerHTML;
