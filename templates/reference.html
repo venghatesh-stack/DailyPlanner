@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
 </head>
 <body>
+ 
 <div class="reference-container">
   <div class="nav-icons">  {% include "_top_nav.html" %}  </div>
   <!-- 🔍 SEARCH / FILTER -->
@@ -57,8 +58,8 @@
     <h3>🤖 AI Assist</h3>
 
     <select id="ai-mode">
-      <option value="manual">Manual (ChatGPT)</option>
       <option value="api">API Mode (Auto Generate)</option>
+      <option value="manual">Manual (ChatGPT)</option>
     </select>
   </div>
 
@@ -76,6 +77,7 @@
   <div id="ai-preview" class="ai-preview"></div>
 
 </div>
+ <div id="resultCount"></div>
 <div id="tagCloud" class="tag-cloud"></div>
   <!-- ➕ ADD NEW REFERENCE -->
   <div class="reference-card">

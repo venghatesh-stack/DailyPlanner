@@ -1,11 +1,13 @@
 window.tagifyInstance = null;
-let currentTag = null;
+
 let currentPage = 1;
 let selectedTags = [];
 let searchQuery = "";
 let sortOption = "created_at_desc";
 let isLoading = false;
 let hasMore = true;
+
+const referenceCache = {};
 async function saveReference() {
 
   const payload = {
@@ -19,38 +21,73 @@ async function saveReference() {
               document.getElementById("ref-category").value || null
   };
 
-  if (!payload.url) {
-    alert("URL is required");
-    return;
-  }
+  if (!payload.url) return;
 
-  const res = await fetch("/references/add", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
+  const container = document.getElementById("referenceList");
 
-  if (!res.ok) {
-    alert("Save failed");
-    return;
-  }
+  const tempItem = document.createElement("div");
+  tempItem.className = "ref-item saving";
 
-  // Reset form
+  tempItem.innerHTML = `
+    <h4><a href="${payload.url}" target="_blank">
+      ${payload.title || payload.url}
+    </a></h4>
+    ${payload.description ? `<p>${payload.description}</p>` : ""}
+  `;
+
+  container.prepend(tempItem);
+
+  try {
+    const res = await fetch("/references/add", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) throw new Error();
+
+  tempItem.classList.remove("saving");
+
+  // Clear form
   document.getElementById("ref-title").value = "";
   document.getElementById("ref-description").value = "";
   document.getElementById("ref-url").value = "";
   document.getElementById("ref-category").value = "";
   document.getElementById("new-category").value = "";
+  if (window.tagifyInstance) window.tagifyInstance.removeAllTags();
 
-  if (window.tagifyInstance) {
-    window.tagifyInstance.removeAllTags();
+  // Clear cache
+  Object.keys(referenceCache).forEach(k => delete referenceCache[k]);
+
+  // Optional: reload first page fresh
+  resetAndReload();
+  loadTagCloud();
+
+    // 🔥 Clear cache after save
+    Object.keys(referenceCache).forEach(k => delete referenceCache[k]);
+    loadTagCloud();
+  } catch (err) {
+    tempItem.remove();
+    alert("Save failed");
   }
+}
+function showSkeletonLoader() {
+  const container = document.getElementById("referenceList");
 
-  // Reload list
-  currentPage = 1;
-  hasMore = true;
-  document.getElementById("referenceList").innerHTML = "";
-  loadReferences();
+  // Prevent duplicates
+  if (container.querySelector(".ref-skeleton")) return;
+
+  for (let i = 0; i < 5; i++) {
+    const skeleton = document.createElement("div");
+    skeleton.className = "ref-skeleton";
+    container.appendChild(skeleton);
+  }
+}
+
+
+
+function removeSkeletonLoader() {
+  document.querySelectorAll(".ref-skeleton").forEach(el => el.remove());
 }
 document.addEventListener("DOMContentLoaded", function () {
 
@@ -149,8 +186,18 @@ document.getElementById("resetFilterBtn").addEventListener("click", function () 
 async function loadReferences() {
 
   if (isLoading || !hasMore) return;
-
   isLoading = true;
+
+  const container = document.getElementById("referenceList");
+
+  const cacheKey = `${currentPage}-${selectedTags.join(",")}-${searchQuery}-${sortOption}`;
+
+  // ✅ Use cache if exists
+  if (referenceCache[cacheKey]) {
+    renderReferences(referenceCache[cacheKey]);
+    isLoading = false;
+    return;
+  }
 
   let url = `/references/list?page=${currentPage}&sort=${sortOption}`;
 
@@ -162,57 +209,71 @@ async function loadReferences() {
     url += `&search=${encodeURIComponent(searchQuery)}`;
   }
 
+  showSkeletonLoader();
+
   try {
     const res = await fetch(url);
     const data = await res.json();
 
-    const container = document.getElementById("referenceList");
+    removeSkeletonLoader();
 
-    // ✅ FIX: use data.items instead of data
-    if (!data.items || data.items.length === 0) {
+    referenceCache[cacheKey] = data;
 
-      hasMore = false;
-
-      if (currentPage === 1) {
-        container.innerHTML =
-          "<div class='empty-state'>No results found.</div>";
-      }
-
-      isLoading = false;
-      return;
-    }
-
-    data.items.forEach(ref => {
-
-      const item = document.createElement("div");
-      item.className = "ref-item";
-
-      item.innerHTML = `
-        <h4><a href="${ref.url}" target="_blank">
-          ${ref.title || ref.url}
-        </a></h4>
-        ${ref.description ? `<p>${ref.description}</p>` : ""}
-        <div class="ref-meta">
-          ${(ref.tags || []).map(tag =>
-            `<span class="tag">${tag}</span>`
-          ).join("")}
-          ${ref.category ? `<span class="category">${ref.category}</span>` : ""}
-        </div>
-      `;
-
-      container.appendChild(item);
-    });
-
-    // ✅ FIX: update hasMore from backend
-    hasMore = data.has_more;
+    renderReferences(data);
 
   } catch (err) {
+    removeSkeletonLoader();
     console.error("Load failed", err);
   }
 
   isLoading = false;
 }
 
+function renderReferences(data) {
+
+  const container = document.getElementById("referenceList");
+
+  if (!data.items || data.items.length === 0) {
+    hasMore = false;
+    if (currentPage === 1) {
+      container.innerHTML = "<div class='empty-state'>No results found.</div>";
+    }
+    return;
+  }
+
+  data.items.forEach(ref => {
+
+    const item = document.createElement("div");
+    item.className = "ref-item";
+
+    item.innerHTML = `
+      <h4><a href="${ref.url}" target="_blank">
+        ${ref.title || ref.url}
+      </a></h4>
+      ${ref.description ? `<p>${ref.description}</p>` : ""}
+      <div class="ref-meta">
+        ${(ref.tags || []).map(tag =>
+          `<span class="tag">${tag}</span>`
+        ).join("")}
+        ${ref.category ? `<span class="category">${ref.category}</span>` : ""}
+      </div>
+    `;
+
+    container.appendChild(item);
+  });
+
+  hasMore = data.has_more;
+
+  // 🔥 Live Count Update
+  document.getElementById("resultCount").innerText =
+    `Showing ${document.querySelectorAll(".ref-item").length} results`;
+}
+function resetAndReload() {
+  currentPage = 1;
+  hasMore = true;
+  document.getElementById("referenceList").innerHTML = "";
+  loadReferences();
+}
 async function loadTagCloud() {
 
   const res = await fetch("/references/tags");
@@ -227,35 +288,43 @@ async function loadTagCloud() {
     span.className = "tag-cloud-item";
     span.innerText = `# ${tag} (${tags[tag]})`;
 
-   span.onclick = function () {
+    span.onclick = function () {
 
-  if (selectedTags.includes(tag)) {
-    selectedTags = selectedTags.filter(t => t !== tag);
-    span.classList.remove("active");
-  } else {
-    selectedTags.push(tag);
-    span.classList.add("active");
-  }
+      span.classList.toggle("active");
 
-  currentPage = 1;
-  hasMore = true;
-  document.getElementById("referenceList").innerHTML = "";
-  loadReferences();
-};
+      if (selectedTags.includes(tag)) {
+        selectedTags = selectedTags.filter(t => t !== tag);
+      } else {
+        selectedTags.push(tag);
+      }
+
+      span.classList.add("pulse");
+      setTimeout(() => span.classList.remove("pulse"), 300);
+
+      resetAndReload();
+    };
 
     container.appendChild(span);
   });
 }
+let scrollTimeout = null;
+
 window.addEventListener("scroll", function () {
 
-  if (isLoading || !hasMore) return;
+  if (scrollTimeout) clearTimeout(scrollTimeout);
 
-  const scrollPosition = window.innerHeight + window.scrollY;
-  const threshold = document.body.offsetHeight - 200;
+  scrollTimeout = setTimeout(() => {
 
-  if (scrollPosition >= threshold) {
-    currentPage++;
-    loadReferences();
-  }
+    if (isLoading || !hasMore) return;
+
+    const scrollPosition = window.innerHeight + window.scrollY;
+    const threshold = document.documentElement.scrollHeight - 250;
+
+    if (scrollPosition >= threshold) {
+      currentPage++;
+      loadReferences();
+    }
+
+  }, 120);
 
 });
