@@ -109,29 +109,40 @@
 /* QUILL AI PREVIEW STYLING */
 /* ========================= */
 
+/* ========================= */
+/* QUILL AI PREVIEW STYLING */
+/* ========================= */
+
 #ai-preview {
   margin-top: 14px;
   border-radius: 12px;
   overflow: hidden;
 }
 
-/* Container */
-#ai-preview .ql-container {
-  border-radius: 12px;
+#ai-preview .ql-toolbar {
   border: 1px solid #e2e8f0;
-  height: auto !important;
-  min-height: 120px;
+  border-bottom: none;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
 }
 
-/* Editor */
+#ai-preview .ql-container {
+  border: 1px solid #e2e8f0;
+  border-top: none;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  height: auto !important;
+}
+
 #ai-preview .ql-editor {
-  font-size: 14px;
-  line-height: 1.6;
+  min-height: 150px;      /* important */
   height: auto !important;
   overflow-y: visible !important;
   padding: 16px;
+  font-size: 14px;
+  line-height: 1.6;
+  background: #f8fafc;
 }
-
 /* Remove internal scroll */
 #ai-preview .ql-editor::-webkit-scrollbar {
   display: none;
