@@ -8,6 +8,22 @@ let isLoading = false;
 let hasMore = true;
 
 const referenceCache = {};
+
+function showToast(message, type = "info", duration = 2500) {
+  const container = document.getElementById("toast-container");
+  if (!container) return;
+
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+  toast.innerText = message;
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add("fade-out");
+    setTimeout(() => toast.remove(), 400);
+  }, duration);
+}
 async function saveReference() {
 
   const payload = {
@@ -21,10 +37,15 @@ async function saveReference() {
               document.getElementById("ref-category").value || null
   };
 
-  if (!payload.url) return;
-
+  if (!payload.url) {
+    showToast("URL is required", "error");
+    return;
+  }
   const container = document.getElementById("referenceList");
+   // 🔥 Toast: Saving
+  showToast("Saving reference...", "info", 1500);
 
+  // 🔥 Optimistic UI  
   const tempItem = document.createElement("div");
   tempItem.className = "ref-item saving";
 
@@ -45,8 +66,10 @@ async function saveReference() {
     });
 
     if (!res.ok) throw new Error();
+    tempItem.classList.remove("saving");
 
-  tempItem.classList.remove("saving");
+    showToast("Saved successfully ✓", "success");
+  
 
   // Clear form
   document.getElementById("ref-title").value = "";
@@ -68,7 +91,7 @@ async function saveReference() {
     loadTagCloud();
   } catch (err) {
     tempItem.remove();
-    alert("Save failed");
+    showToast("Saved successfully ✓", "success");
   }
 }
 function showSkeletonLoader() {
