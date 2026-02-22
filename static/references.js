@@ -57,7 +57,9 @@ function normalizedTagKey() {
 async function saveReference() {
   const payload = {
     title: $("ref-title")?.value.trim() || null,
-    description: $("ref-description")?.value.trim() || null,
+    description: quillInstance
+  ? quillInstance.root.innerHTML
+  : null,
     url: $("ref-url")?.value.trim(),
     tags: window.tagifyInstance
       ? window.tagifyInstance.value.map(t => t.value)
@@ -72,7 +74,20 @@ async function saveReference() {
     showToast("URL is required", "error");
     return;
   }
-
+  const editor = document.getElementById("ref-editor");
+  if (editor) {
+      quillInstance = new Quill("#ref-editor", {
+        theme: "snow",
+        modules: {
+          toolbar: [
+            [{ header: [1, 2, false] }],
+            ["bold", "italic"],
+            [{ list: "ordered" }, { list: "bullet" }],
+            ["link"]
+          ]
+        }
+      });
+    }
   const container = $("referenceList");
   if (!container) return;
 
@@ -101,8 +116,9 @@ async function saveReference() {
     showToast("Saved successfully ✓", "success");
 
     // Clear form
-    ["ref-title", "ref-description", "ref-url", "ref-category", "new-category"]
-      .forEach(id => { if ($(id)) $(id).value = ""; });
+    if (quillInstance) {
+      quillInstance.setContents([]);
+    }
 
     if (window.tagifyInstance) window.tagifyInstance.removeAllTags();
 
@@ -226,7 +242,9 @@ function renderReferences(data) {
       <h4><a href="${ref.url}" target="_blank">
         ${ref.title || ref.url}
       </a></h4>
-      ${ref.description ? `<p>${ref.description}</p>` : ""}
+      ${ref.description
+        ? `<div class="ref-content">${ref.description}</div>`
+        : ""}
       <div class="ref-meta">
         ${(ref.tags || []).map(tag =>
           `<span class="tag">${tag}</span>`

@@ -1,6 +1,16 @@
 const AIAssist = (() => {
   let quill;
-  function initEditor() {
+
+function autoResizeQuill() {
+  if (!quill) return;
+
+  const editor = quill.root;
+  if (!editor) return;
+
+  editor.style.height = "auto";
+  editor.style.height = editor.scrollHeight + "px";
+}
+function initEditor() {
   const container = $("ai-preview");
   if (!container) return;
 
@@ -16,21 +26,11 @@ const AIAssist = (() => {
     }
   });
 
-  function autoResizeQuill() {
-  const editor = quill.root;
-  const container = editor.parentElement;
+  // Auto resize on text change
+  quill.on("text-change", autoResizeQuill);
 
-  editor.style.height = "auto";
-  container.style.height = "auto";
-
-  const height = editor.scrollHeight;
-
-  editor.style.height = height + "px";
-  container.style.height = height + "px";
-}
-quill.on("text-change", function () {
-  autoResizeQuill();
-});
+  // Initial resize
+  setTimeout(autoResizeQuill, 0);
 }
   /* ---------------- Helpers ---------------- */
 
@@ -121,7 +121,7 @@ async function generateViaAPI(query, mode) {
     quill.clipboard.dangerouslyPasteHTML(htmlContent);
     setTimeout(() => {
         autoResizeQuill();
-        }, 0);
+        }, 50);
     
 
     // Autofill form
@@ -190,7 +190,7 @@ async function generateViaAPI(query, mode) {
   const mode = $("ai-mode")?.value;
 
   if (!query) {
-    $("ai-preview").innerHTML = "Please enter a topic.";
+    if (quill) quill.setText("Please enter a topic.");
     return;
   }
 

@@ -345,3 +345,25 @@
   max-height: 600px;
   margin-top: 8px;
 }
+.ref-content {
+  margin-top: 8px;
+  line-height: 1.6;
+  font-size: 14px;
+  color: #374151;
+}
+
+.ref-content h1,
+.ref-content h2,
+.ref-content h3 {
+  margin-top: 12px;
+  margin-bottom: 6px;
+}
+
+.ref-content p {
+  margin-bottom: 8px;
+}
+
+.ref-content ul,
+.ref-content ol {
+  margin-left: 18px;
+}

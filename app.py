@@ -54,7 +54,7 @@ from flask import jsonify
 import requests
 from flask import request, jsonify
 from bs4 import BeautifulSoup
-
+import bleach
 print("STEP 2: imports completed")
 
 
@@ -2635,14 +2635,35 @@ def add_reference():
 
         else:
             category = "Uncategorized"
+    
 
+    ALLOWED_TAGS = [
+        "p", "br",
+        "h1", "h2", "h3",
+        "strong", "em",
+        "ul", "ol", "li",
+        "a"
+    ]
+
+    ALLOWED_ATTRIBUTES = {
+        "a": ["href", "target", "rel"]
+    }
+
+    raw_description = data.get("description")
+
+    clean_description = bleach.clean(
+        raw_description,
+        tags=ALLOWED_TAGS,
+        attributes=ALLOWED_ATTRIBUTES,
+        strip=True
+    )
     # ---------------------------------
     # Save Reference
     # ---------------------------------
     post("reference_links", {
         "user_id": user_id,
         "title": data.get("title"),
-        "description": data.get("description"),
+        "description": clean_description,
         "url": data.get("url"),
         "tags": tags,
         "category": category
