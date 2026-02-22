@@ -25,7 +25,7 @@ function initEditor() {
       ]
     }
   });
-
+  
   // Auto resize on text change
   quill.on("text-change", autoResizeQuill);
 
@@ -126,7 +126,6 @@ async function generateViaAPI(query, mode) {
 
     // Autofill form
     $("ref-title").value = data.title || "";
-    $("ref-description").value = quill.root.innerHTML;
     $("ref-url").value = data.url || "";
     $("ref-category").value = data.category || "";
 
@@ -134,7 +133,19 @@ async function generateViaAPI(query, mode) {
       window.tagifyInstance.removeAllTags();
       window.tagifyInstance.addTags(data.tags);
     }
+    // Autofill form
+    $("ref-title").value = data.title || "";
+    $("ref-url").value = data.url || "";
+    $("ref-category").value = data.category || "";
 
+    // Inject into main reference editor (#ref-editor)
+    const mainEditor = document.getElementById("ref-editor");
+
+    if (mainEditor && mainEditor.__quill) {
+      const refQuill = mainEditor.__quill;
+      refQuill.setContents([]);
+      refQuill.clipboard.dangerouslyPasteHTML(htmlContent);
+    }
     showToast(`${mode === "groq" ? "Groq" : "Gemini"} content generated.`);
 
   } catch (err) {
