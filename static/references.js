@@ -6,6 +6,52 @@ let searchQuery = "";
 let sortOption = "created_at_desc";
 let isLoading = false;
 let hasMore = true;
+async function saveReference() {
+
+  const payload = {
+    title: document.getElementById("ref-title").value.trim() || null,
+    description: document.getElementById("ref-description").value.trim() || null,
+    url: document.getElementById("ref-url").value.trim(),
+    tags: window.tagifyInstance
+      ? window.tagifyInstance.value.map(t => t.value)
+      : [],
+    category: document.getElementById("new-category").value.trim() ||
+              document.getElementById("ref-category").value || null
+  };
+
+  if (!payload.url) {
+    alert("URL is required");
+    return;
+  }
+
+  const res = await fetch("/references/add", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    alert("Save failed");
+    return;
+  }
+
+  // Reset form
+  document.getElementById("ref-title").value = "";
+  document.getElementById("ref-description").value = "";
+  document.getElementById("ref-url").value = "";
+  document.getElementById("ref-category").value = "";
+  document.getElementById("new-category").value = "";
+
+  if (window.tagifyInstance) {
+    window.tagifyInstance.removeAllTags();
+  }
+
+  // Reload list
+  currentPage = 1;
+  hasMore = true;
+  document.getElementById("referenceList").innerHTML = "";
+  loadReferences();
+}
 document.addEventListener("DOMContentLoaded", function () {
 
   // -----------------------------
@@ -102,7 +148,7 @@ document.getElementById("resetFilterBtn").addEventListener("click", function () 
 });
 async function loadReferences() {
 
-  if (isLoading) return;
+  if (isLoading || !hasMore) return;
 
   isLoading = true;
 
@@ -116,43 +162,55 @@ async function loadReferences() {
     url += `&search=${encodeURIComponent(searchQuery)}`;
   }
 
-  const res = await fetch(url);
-  const data = await res.json();
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
 
- 
+    const container = document.getElementById("referenceList");
 
-  const container = document.getElementById("referenceList");
-   if (data.length === 0) {
-    hasMore = false;
-    if (currentPage === 1 && data.length === 0) {
-        document.getElementById("referenceList").innerHTML =
+    // ✅ FIX: use data.items instead of data
+    if (!data.items || data.items.length === 0) {
+
+      hasMore = false;
+
+      if (currentPage === 1) {
+        container.innerHTML =
           "<div class='empty-state'>No results found.</div>";
       }
-    isLoading = false;    
-    return;
-   }
-  data.forEach(ref => {
 
-    const item = document.createElement("div");
-    item.className = "ref-item";
+      isLoading = false;
+      return;
+    }
 
-    item.innerHTML = `
-      <h4><a href="${ref.url}" target="_blank">
-        ${ref.title || ref.url}
-      </a></h4>
-      ${ref.description ? `<p>${ref.description}</p>` : ""}
-      <div class="ref-meta">
-        ${(ref.tags || []).map(tag =>
-          `<span class="tag">${tag}</span>`
-        ).join("")}
-        ${ref.category ? `<span class="category">${ref.category}</span>` : ""}
-      </div>
-    `;
+    data.items.forEach(ref => {
 
-    container.appendChild(item);
-  });
+      const item = document.createElement("div");
+      item.className = "ref-item";
 
+      item.innerHTML = `
+        <h4><a href="${ref.url}" target="_blank">
+          ${ref.title || ref.url}
+        </a></h4>
+        ${ref.description ? `<p>${ref.description}</p>` : ""}
+        <div class="ref-meta">
+          ${(ref.tags || []).map(tag =>
+            `<span class="tag">${tag}</span>`
+          ).join("")}
+          ${ref.category ? `<span class="category">${ref.category}</span>` : ""}
+        </div>
+      `;
 
+      container.appendChild(item);
+    });
+
+    // ✅ FIX: update hasMore from backend
+    hasMore = data.has_more;
+
+  } catch (err) {
+    console.error("Load failed", err);
+  }
+
+  isLoading = false;
 }
 
 async function loadTagCloud() {
