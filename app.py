@@ -2649,7 +2649,9 @@ def add_reference():
         "a": ["href", "target", "rel"]
     }
 
-    raw_description = data.get("description")
+
+
+    raw_description = data.get("description") or ""
 
     clean_description = bleach.clean(
         raw_description,
