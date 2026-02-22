@@ -1,16 +1,33 @@
+// ==========================================================
+// GLOBAL STATE
+// ==========================================================
+
 window.tagifyInstance = null;
 
-let currentPage = 1;
-let selectedTags = [];
-let searchQuery = "";
-let sortOption = "created_at_desc";
-let isLoading = false;
-let hasMore = true;
+const state = {
+  currentPage: 1,
+  selectedTags: [],
+  searchQuery: "",
+  sortOption: "created_at_desc",
+  isLoading: false,
+  hasMore: true,
+  totalRendered: 0
+};
 
 const referenceCache = {};
+let searchTimeout = null;
+let scrollTimeout = null;
+
+// ==========================================================
+// UTILITIES
+// ==========================================================
+
+function $(id) {
+  return document.getElementById(id);
+}
 
 function showToast(message, type = "info", duration = 2500) {
-  const container = document.getElementById("toast-container");
+  const container = $("toast-container");
   if (!container) return;
 
   const toast = document.createElement("div");
@@ -24,38 +41,51 @@ function showToast(message, type = "info", duration = 2500) {
     setTimeout(() => toast.remove(), 400);
   }, duration);
 }
-async function saveReference() {
 
+function clearCache() {
+  Object.keys(referenceCache).forEach(k => delete referenceCache[k]);
+}
+
+function normalizedTagKey() {
+  return [...state.selectedTags].sort().join(",");
+}
+
+// ==========================================================
+// SAVE REFERENCE
+// ==========================================================
+
+async function saveReference() {
   const payload = {
-    title: document.getElementById("ref-title").value.trim() || null,
-    description: document.getElementById("ref-description").value.trim() || null,
-    url: document.getElementById("ref-url").value.trim(),
+    title: $("ref-title")?.value.trim() || null,
+    description: $("ref-description")?.value.trim() || null,
+    url: $("ref-url")?.value.trim(),
     tags: window.tagifyInstance
       ? window.tagifyInstance.value.map(t => t.value)
       : [],
-    category: document.getElementById("new-category").value.trim() ||
-              document.getElementById("ref-category").value || null
+    category:
+      $("new-category")?.value.trim() ||
+      $("ref-category")?.value ||
+      null
   };
 
   if (!payload.url) {
     showToast("URL is required", "error");
     return;
   }
-  const container = document.getElementById("referenceList");
-   // 🔥 Toast: Saving
+
+  const container = $("referenceList");
+  if (!container) return;
+
   showToast("Saving reference...", "info", 1500);
 
-  // 🔥 Optimistic UI  
   const tempItem = document.createElement("div");
   tempItem.className = "ref-item saving";
-
   tempItem.innerHTML = `
     <h4><a href="${payload.url}" target="_blank">
       ${payload.title || payload.url}
     </a></h4>
     ${payload.description ? `<p>${payload.description}</p>` : ""}
   `;
-
   container.prepend(tempItem);
 
   try {
@@ -65,40 +95,51 @@ async function saveReference() {
       body: JSON.stringify(payload)
     });
 
-    if (!res.ok) throw new Error();
+    if (!res.ok) throw new Error("Save failed");
+
     tempItem.classList.remove("saving");
-
     showToast("Saved successfully ✓", "success");
-  
 
-  // Clear form
-  document.getElementById("ref-title").value = "";
-  document.getElementById("ref-description").value = "";
-  document.getElementById("ref-url").value = "";
-  document.getElementById("ref-category").value = "";
-  document.getElementById("new-category").value = "";
-  if (window.tagifyInstance) window.tagifyInstance.removeAllTags();
+    // Clear form
+    ["ref-title", "ref-description", "ref-url", "ref-category", "new-category"]
+      .forEach(id => { if ($(id)) $(id).value = ""; });
 
-  // Clear cache
-  Object.keys(referenceCache).forEach(k => delete referenceCache[k]);
+    if (window.tagifyInstance) window.tagifyInstance.removeAllTags();
 
-  // Optional: reload first page fresh
-  resetAndReload();
-  loadTagCloud();
-
-    // 🔥 Clear cache after save
-    Object.keys(referenceCache).forEach(k => delete referenceCache[k]);
+    resetAIAssist();
+    clearCache();
+    resetAndReload();
     loadTagCloud();
+
   } catch (err) {
     tempItem.remove();
-    showToast("Saved successfully ✓", "success");
+    showToast("Save failed. Please try again.", "error");
   }
 }
-function showSkeletonLoader() {
-  const container = document.getElementById("referenceList");
 
-  // Prevent duplicates
-  if (container.querySelector(".ref-skeleton")) return;
+// ==========================================================
+// AI RESET
+// ==========================================================
+
+function resetAIAssist() {
+  const aiInput = $("ai-query");
+  const aiPreview = $("ai-preview");
+
+  if (aiInput) {
+    aiInput.value = "";
+    aiInput.focus();
+  }
+
+  if (aiPreview) aiPreview.innerHTML = "";
+}
+
+// ==========================================================
+// SKELETON
+// ==========================================================
+
+function showSkeletonLoader() {
+  const container = $("referenceList");
+  if (!container || container.querySelector(".ref-skeleton")) return;
 
   for (let i = 0; i < 5; i++) {
     const skeleton = document.createElement("div");
@@ -107,165 +148,77 @@ function showSkeletonLoader() {
   }
 }
 
-
-
 function removeSkeletonLoader() {
   document.querySelectorAll(".ref-skeleton").forEach(el => el.remove());
 }
-document.addEventListener("DOMContentLoaded", function () {
 
-  // -----------------------------
-  // INIT TAGIFY
-  // -----------------------------
-  const tagInput = document.getElementById("ref-tags");
-  if (tagInput) {
-    window.tagifyInstance = new Tagify(tagInput, {
-      delimiters: ",",
-      dropdown: { enabled: 0 }
-    });
-  }
+// ==========================================================
+// LOAD REFERENCES
+// ==========================================================
 
-  // -----------------------------
-  // AI Toggle Persistence
-  // -----------------------------
-  const aiToggle = document.getElementById("enable-ai");
-
-  if (aiToggle) {
-    const saved = localStorage.getItem("ai_enabled");
-
-    if (saved !== null) {
-      aiToggle.checked = saved === "true";
-    }
-
-    aiToggle.addEventListener("change", function () {
-      localStorage.setItem("ai_enabled", this.checked);
-    });
-  }
-
-  // -----------------------------
-  // SAVE BUTTON
-  // -----------------------------
-  const saveBtn = document.getElementById("saveRefBtn");
-  if (saveBtn) {
-    saveBtn.addEventListener("click", saveReference);
-  }
-
-  // -----------------------------
-  // URL AUTO METADATA
-  // -----------------------------
-  const refUrlInput = document.getElementById("ref-url");
-  if (refUrlInput) {
-    refUrlInput.addEventListener("change", autoFetchMetadata);
-  }
-
-  // -----------------------------
-  // LOAD INITIAL DATA
-  // -----------------------------
-  loadTagCloud();
-  loadReferences();
-
-  
- let searchTimeout = null;
-
-document.getElementById("searchInput").addEventListener("input", function () {
-
-  clearTimeout(searchTimeout);
-
-  searchTimeout = setTimeout(() => {
-    searchQuery = this.value.trim();
-    currentPage = 1;
-    hasMore = true;
-    document.getElementById("referenceList").innerHTML = "";
-    loadReferences();
-  }, 400); // 400ms delay
-
-});
-
-document.getElementById("sortSelect").addEventListener("change", function () {
-  sortOption = this.value;
-  currentPage = 1;
-  hasMore = true;
-  document.getElementById("referenceList").innerHTML = "";
-  loadReferences();
-});
-
-document.getElementById("resetFilterBtn").addEventListener("click", function () {
-  selectedTags = [];
-  searchQuery = "";
-  sortOption = "created_at_desc";
-  currentPage = 1;
-  hasMore = true;
-
-  document.getElementById("searchInput").value = "";
-  document.getElementById("sortSelect").value = "created_at_desc";
-
-  document.querySelectorAll(".tag-cloud-item")
-    .forEach(el => el.classList.remove("active"));
-
-  document.getElementById("referenceList").innerHTML = "";
-  loadReferences();
-});
-});
 async function loadReferences() {
+  if (state.isLoading || !state.hasMore) return;
 
-  if (isLoading || !hasMore) return;
-  isLoading = true;
+  state.isLoading = true;
 
-  const container = document.getElementById("referenceList");
+  const container = $("referenceList");
+  if (!container) return;
 
-  const cacheKey = `${currentPage}-${selectedTags.join(",")}-${searchQuery}-${sortOption}`;
+  const cacheKey =
+    `${state.currentPage}-${normalizedTagKey()}-${state.searchQuery}-${state.sortOption}`;
 
-  // ✅ Use cache if exists
   if (referenceCache[cacheKey]) {
     renderReferences(referenceCache[cacheKey]);
-    isLoading = false;
+    state.isLoading = false;
     return;
   }
 
-  let url = `/references/list?page=${currentPage}&sort=${sortOption}`;
+  let url = `/references/list?page=${state.currentPage}&sort=${state.sortOption}`;
 
-  if (selectedTags.length > 0) {
-    url += `&tags=${selectedTags.join(",")}`;
-  }
+  if (state.selectedTags.length > 0)
+    url += `&tags=${normalizedTagKey()}`;
 
-  if (searchQuery) {
-    url += `&search=${encodeURIComponent(searchQuery)}`;
-  }
+  if (state.searchQuery)
+    url += `&search=${encodeURIComponent(state.searchQuery)}`;
 
   showSkeletonLoader();
 
   try {
     const res = await fetch(url);
+    if (!res.ok) throw new Error("Server error");
+
     const data = await res.json();
 
     removeSkeletonLoader();
-
     referenceCache[cacheKey] = data;
-
     renderReferences(data);
 
   } catch (err) {
     removeSkeletonLoader();
-    console.error("Load failed", err);
+    console.error("Load failed:", err);
   }
 
-  isLoading = false;
+  state.isLoading = false;
 }
 
-function renderReferences(data) {
+// ==========================================================
+// RENDER
+// ==========================================================
 
-  const container = document.getElementById("referenceList");
+function renderReferences(data) {
+  const container = $("referenceList");
+  if (!container) return;
 
   if (!data.items || data.items.length === 0) {
-    hasMore = false;
-    if (currentPage === 1) {
+    state.hasMore = false;
+
+    if (state.currentPage === 1)
       container.innerHTML = "<div class='empty-state'>No results found.</div>";
-    }
+
     return;
   }
 
   data.items.forEach(ref => {
-
     const item = document.createElement("div");
     item.className = "ref-item";
 
@@ -283,43 +236,56 @@ function renderReferences(data) {
     `;
 
     container.appendChild(item);
+    state.totalRendered++;
   });
 
-  hasMore = data.has_more;
+  state.hasMore = data.has_more;
 
-  // 🔥 Live Count Update
-  document.getElementById("resultCount").innerText =
-    `Showing ${document.querySelectorAll(".ref-item").length} results`;
+  const resultCount = $("resultCount");
+  if (resultCount)
+    resultCount.innerText = `Showing ${state.totalRendered} results`;
 }
+
+// ==========================================================
+// RESET
+// ==========================================================
+
 function resetAndReload() {
-  currentPage = 1;
-  hasMore = true;
-  document.getElementById("referenceList").innerHTML = "";
+  state.currentPage = 1;
+  state.hasMore = true;
+  state.totalRendered = 0;
+
+  const container = $("referenceList");
+  if (container) container.innerHTML = "";
+
   loadReferences();
 }
+
+// ==========================================================
+// TAG CLOUD
+// ==========================================================
+
 async function loadTagCloud() {
+  const container = $("tagCloud");
+  if (!container) return;
 
   const res = await fetch("/references/tags");
   const tags = await res.json();
 
-  const container = document.getElementById("tagCloud");
   container.innerHTML = "";
 
   Object.keys(tags).sort().forEach(tag => {
-
     const span = document.createElement("span");
     span.className = "tag-cloud-item";
     span.innerText = `# ${tag} (${tags[tag]})`;
 
     span.onclick = function () {
-
       span.classList.toggle("active");
 
-      if (selectedTags.includes(tag)) {
-        selectedTags = selectedTags.filter(t => t !== tag);
-      } else {
-        selectedTags.push(tag);
-      }
+      if (state.selectedTags.includes(tag))
+        state.selectedTags = state.selectedTags.filter(t => t !== tag);
+      else
+        state.selectedTags.push(tag);
 
       span.classList.add("pulse");
       setTimeout(() => span.classList.remove("pulse"), 300);
@@ -330,24 +296,84 @@ async function loadTagCloud() {
     container.appendChild(span);
   });
 }
-let scrollTimeout = null;
+
+// ==========================================================
+// INIT
+// ==========================================================
+
+document.addEventListener("DOMContentLoaded", function () {
+
+  const tagInput = $("ref-tags");
+  if (tagInput) {
+    window.tagifyInstance = new Tagify(tagInput, {
+      delimiters: ",",
+      dropdown: { enabled: 0 }
+    });
+  }
+
+  const aiToggle = $("enable-ai");
+  if (aiToggle) {
+    const saved = localStorage.getItem("ai_enabled");
+    if (saved !== null) aiToggle.checked = saved === "true";
+    aiToggle.addEventListener("change", () =>
+      localStorage.setItem("ai_enabled", aiToggle.checked)
+    );
+  }
+
+  $("saveRefBtn")?.addEventListener("click", saveReference);
+
+  $("ref-url")?.addEventListener("change", autoFetchMetadata);
+
+  const searchInput = $("searchInput");
+  if (searchInput) {
+    searchInput.addEventListener("input", function () {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        state.searchQuery = this.value.trim();
+        resetAndReload();
+      }, 400);
+    });
+  }
+
+  $("sortSelect")?.addEventListener("change", function () {
+    state.sortOption = this.value;
+    resetAndReload();
+  });
+
+  $("resetFilterBtn")?.addEventListener("click", function () {
+    state.selectedTags = [];
+    state.searchQuery = "";
+    state.sortOption = "created_at_desc";
+
+    if ($("searchInput")) $("searchInput").value = "";
+    if ($("sortSelect")) $("sortSelect").value = "created_at_desc";
+
+    document.querySelectorAll(".tag-cloud-item")
+      .forEach(el => el.classList.remove("active"));
+
+    resetAndReload();
+  });
+
+  loadTagCloud();
+  loadReferences();
+});
+
+// ==========================================================
+// INFINITE SCROLL
+// ==========================================================
 
 window.addEventListener("scroll", function () {
-
   if (scrollTimeout) clearTimeout(scrollTimeout);
 
   scrollTimeout = setTimeout(() => {
-
-    if (isLoading || !hasMore) return;
+    if (state.isLoading || !state.hasMore) return;
 
     const scrollPosition = window.innerHeight + window.scrollY;
     const threshold = document.documentElement.scrollHeight - 250;
 
     if (scrollPosition >= threshold) {
-      currentPage++;
+      state.currentPage++;
       loadReferences();
     }
-
   }, 120);
-
 });
