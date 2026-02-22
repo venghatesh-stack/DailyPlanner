@@ -2672,12 +2672,11 @@ def add_reference():
     })
 
     return jsonify({"success": True})
-
 @app.route("/references")
 @login_required
 def list_references():
     user_id = session["user_id"]
-    tag = request.args.get("tag", "").strip()
+    tag = request.args.get("tag", "").strip().lower()
     category = request.args.get("category", "").strip()
 
     params = {
@@ -2685,15 +2684,19 @@ def list_references():
         "order": "created_at.desc"
     }
 
+    and_conditions = []
+
     if tag:
-        params["tags"] = f'cs.{{{tag.lower()}}}'
+        and_conditions.append(f"tags.cs.{{{tag}}}")
 
     if category:
-        params["category"] = f"eq.{category}"
+        and_conditions.append(f"category.eq.{category}")
+
+    if and_conditions:
+        params["and"] = f"({','.join(and_conditions)})"
 
     refs = get("reference_links", params=params)
 
-    # 🔥 Fetch all categories separately
     all_refs = get("reference_links", {
         "user_id": f"eq.{user_id}"
     })
@@ -2705,7 +2708,7 @@ def list_references():
     return render_template(
         "reference.html",
         references=refs,
-        categories=categories   # ✅ THIS WAS MISSING
+        categories=categories
     )
 
 @app.get("/search_references")
