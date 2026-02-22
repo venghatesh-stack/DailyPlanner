@@ -1,5 +1,21 @@
 const AIAssist = (() => {
+  let quill;
+  function initEditor() {
+  const container = $("ai-preview");
+  if (!container) return;
 
+  quill = new Quill("#ai-preview", {
+    theme: "snow",
+    modules: {
+      toolbar: [
+        ["bold", "italic", "underline"],
+        [{ header: [1, 2, 3, false] }],
+        [{ list: "ordered" }, { list: "bullet" }],
+        ["link"]
+      ]
+    }
+  });
+}
   /* ---------------- Helpers ---------------- */
 
   const $ = (id) => document.getElementById(id);
@@ -30,24 +46,22 @@ const AIAssist = (() => {
 
 async function generateViaAPI(query, mode) {
 
-  const preview = $("ai-preview");
-
   let endpoint = "";
-  let loadingText = "";
 
   if (mode === "gemini") {
     endpoint = "/references/ai-generate";
-    loadingText = "Generating with Gemini...";
   } 
   else if (mode === "groq") {
     endpoint = "/references/ai-generate-groq";
-    loadingText = "Generating with Groq...";
   } 
   else {
     return;
   }
 
-  preview.innerHTML = loadingText;
+  if (!quill) return;
+
+  // ✅ Show loading inside Quill
+  quill.setText(`Generating with ${mode === "groq" ? "Groq" : "Gemini"}...`);
 
   try {
     const res = await fetch(endpoint, {
@@ -57,21 +71,25 @@ async function generateViaAPI(query, mode) {
     });
 
     if (!res.ok) {
-      preview.innerHTML = "AI request failed.";
+      quill.setText("AI request failed.");
       return;
     }
 
     const data = await res.json();
 
-    preview.innerHTML = `
-      <h4>${data.title || ""}</h4>
+    const htmlContent = `
+      <h2>${data.title || ""}</h2>
       <p>${data.description || ""}</p>
-      ${data.url ? `<a href="${data.url}" target="_blank">${data.url}</a>` : ""}
+      ${data.url ? `<p><a href="${data.url}" target="_blank">${data.url}</a></p>` : ""}
     `;
 
-    // Autofill
+    // ✅ Inject formatted HTML safely
+    quill.setContents([]);
+    quill.clipboard.dangerouslyPasteHTML(htmlContent);
+
+    // Autofill form
     $("ref-title").value = data.title || "";
-    $("ref-description").value = data.description || "";
+    $("ref-description").value = quill.root.innerHTML;
     $("ref-url").value = data.url || "";
     $("ref-category").value = data.category || "";
 
@@ -84,7 +102,7 @@ async function generateViaAPI(query, mode) {
 
   } catch (err) {
     console.error(err);
-    preview.innerHTML = "AI generation failed.";
+    quill.setText("AI generation failed.");
     showToast("Error generating AI content.");
   }
 }
@@ -167,8 +185,10 @@ async function generateViaAPI(query, mode) {
     modeSelect.addEventListener("change", function () {
     localStorage.setItem("ai_mode", this.value);
     });
+    initEditor();   
     initGenerate();
     initVoice();
+    
   }
 
   return { init };
