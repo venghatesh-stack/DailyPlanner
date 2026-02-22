@@ -15,6 +15,22 @@ const AIAssist = (() => {
       ]
     }
   });
+
+  function autoResizeQuill() {
+  const editor = quill.root;
+  const container = editor.parentElement;
+
+  editor.style.height = "auto";
+  container.style.height = "auto";
+
+  const height = editor.scrollHeight;
+
+  editor.style.height = height + "px";
+  container.style.height = height + "px";
+}
+quill.on("text-change", function () {
+  autoResizeQuill();
+});
 }
   /* ---------------- Helpers ---------------- */
 
@@ -103,12 +119,10 @@ async function generateViaAPI(query, mode) {
     // ✅ Inject formatted HTML safely
     quill.setContents([]);
     quill.clipboard.dangerouslyPasteHTML(htmlContent);
-
-    // 🔥 Force auto-expand after content injection
     setTimeout(() => {
-    quill.root.style.height = "auto";
-    quill.root.style.height = quill.root.scrollHeight + "px";
-    }, 0);
+        autoResizeQuill();
+        }, 0);
+    
 
     // Autofill form
     $("ref-title").value = data.title || "";

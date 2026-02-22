@@ -2556,6 +2556,9 @@ def save_habit():
 
 def clean_number(val):
     return float(val) if val not in ("", None) else None
+def normalize_category(name):
+    return name.strip().lower().replace("-", " ").title()
+
 @app.route("/references/add", methods=["POST"])
 @login_required
 def add_reference():
@@ -2599,6 +2602,41 @@ def add_reference():
             })
 
     # ---------------------------------
+    # Category Handling
+    # ---------------------------------
+    category = data.get("category")
+
+    if not category:
+
+        # Fetch existing references
+        existing_refs = get("reference_links", {
+            "user_id": f"eq.{user_id}"
+        })
+
+        tag_category_scores = {}
+
+        for ref in existing_refs:
+            ref_category = ref.get("category")
+            ref_tags = ref.get("tags", [])
+
+            for tag in tags:
+                if tag in ref_tags and ref_category:
+                    tag_category_scores[ref_category] = (
+                        tag_category_scores.get(ref_category, 0) + 1
+                    )
+
+        if tag_category_scores:
+            # Pick highest scoring category
+            category = max(tag_category_scores, key=tag_category_scores.get)
+
+        elif tags:
+            # 🔥 Create new category from strongest tag
+            category = tags[0].capitalize()
+
+        else:
+            category = "Uncategorized"
+
+    # ---------------------------------
     # Save Reference
     # ---------------------------------
     post("reference_links", {
@@ -2607,7 +2645,7 @@ def add_reference():
         "description": data.get("description"),
         "url": data.get("url"),
         "tags": tags,
-        "category": data.get("category")
+        "category": category
     })
 
     return jsonify({"success": True})

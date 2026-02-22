@@ -124,6 +124,7 @@
   border-bottom: none;
   border-top-left-radius: 12px;
   border-top-right-radius: 12px;
+  height: auto !important;
 }
 
 #ai-preview .ql-container {
@@ -137,7 +138,7 @@
 #ai-preview .ql-editor {
   min-height: 150px;      /* important */
   height: auto !important;
-  overflow-y: visible !important;
+  overflow-y: hidden !important;
   padding: 16px;
   font-size: 14px;
   line-height: 1.6;
