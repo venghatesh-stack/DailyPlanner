@@ -2935,11 +2935,31 @@ def list_references_api():
 def ai_generate_groq():
     import os
     import requests
+    import json
+    import urllib.parse
 
     data = request.get_json()
     query = data.get("query")
 
     GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+    system_prompt = """
+        You are a knowledge reference generator.
+
+        Return ONLY valid JSON in this exact format:
+        {
+        "title": "short clear title",
+        "description": "detailed 4-6 sentence explanation",
+        "tags": ["tag1", "tag2"],
+        "category": "Technology | Health | Finance | Learning",
+        "url": "real public URL if known, otherwise null"
+        }
+
+        Rules:
+        - No markdown
+        - No explanation
+        - Only raw JSON
+        """
 
     response = requests.post(
         "https://api.groq.com/openai/v1/chat/completions",
@@ -2948,10 +2968,12 @@ def ai_generate_groq():
             "Content-Type": "application/json"
         },
         json={
-            "model": "llama-3.1-8b-instant",
+            "model": "llama3-8b-8192",
             "messages": [
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": query}
-            ]
+            ],
+            "temperature": 0.3
         }
     )
 
@@ -2961,14 +2983,23 @@ def ai_generate_groq():
     result = response.json()
     content = result["choices"][0]["message"]["content"]
 
-    # ⚡ You can structure output here if needed
-    return jsonify({
-        "title": query[:80],
-        "description": content,
-        "tags": [],
-        "category": None,
-        "url": None
-    })
+    try:
+        structured = json.loads(content)
+    except Exception:
+        return jsonify({"error": "Invalid AI JSON format"}), 500
+
+    # 🔥 Fallback: If no URL, generate Google search link
+    if not structured.get("url"):
+        search_url = "https://www.google.com/search?q=" + urllib.parse.quote(query)
+        structured["url"] = search_url
+
+    # Safety defaults
+    structured["title"] = structured.get("title") or query[:80]
+    structured["description"] = structured.get("description") or "No description generated."
+    structured["tags"] = structured.get("tags") or []
+    structured["category"] = structured.get("category") or "Learning"
+
+    return jsonify(structured)
 # ENTRY POINT
 # ==========================================================
 #if __name__ == "__main__":
