@@ -89,8 +89,7 @@
            id="ref-title"
            placeholder="Title (optional)" />
 
-    <textarea id="ref-description"
-              placeholder="Brief description..."></textarea>
+    <div id="ref-editor"></div>
 
     <input type="url"
            id="ref-url"
@@ -143,7 +142,9 @@
           </h4>
 
           {% if ref.description %}
-            <p class="ref-desc">{{ ref.description }}</p>
+            <div class="ref-content">
+              {{ ref.description | safe }}
+            </div>
           {% endif %}
 
           <div class="ref-meta">

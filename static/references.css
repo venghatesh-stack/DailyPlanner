@@ -367,3 +367,8 @@
 .ref-content ol {
   margin-left: 18px;
 }
+#ref-editor {
+  background: white;
+  min-height: 120px;
+  border-radius: 8px;
+}
