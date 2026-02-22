@@ -3070,7 +3070,11 @@ def ai_generate_groq():
     structured["category"] = structured.get("category") or "Learning"
 
     return jsonify(structured)
-# ENTRY POINT
+@app.route("/ping")
+def ping():
+    return "OK", 200
+# ENTR
+# Y POINT
 # ==========================================================
 #if __name__ == "__main__":
  #   logger.info("Starting Daily Planner – stable + Eisenhower")

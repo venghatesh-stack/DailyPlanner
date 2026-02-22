@@ -34,21 +34,28 @@
   }
 
   function showToast(message, type = "info", duration = 2500) {
-    const container = $("toast-container");
-    if (!container) return;
+  const container = $("toast-container");
+  if (!container) return;
 
-    const toast = document.createElement("div");
-    toast.className = `toast toast-${type}`;
-    toast.innerText = message;
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
 
-    container.appendChild(toast);
+  toast.innerHTML = `
+    <div class="toast-message">${message}</div>
+    <div class="toast-progress"></div>
+  `;
 
-    setTimeout(() => {
-      toast.classList.add("fade-out");
-      setTimeout(() => toast.remove(), 400);
-    }, duration);
-  }
+  container.appendChild(toast);
 
+  setTimeout(() => {
+    toast.classList.add("show");
+  }, 10);
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
   function clearCache() {
     Object.keys(referenceCache).forEach(k => delete referenceCache[k]);
   }
@@ -115,7 +122,11 @@
 
       if (quillInstance) quillInstance.setContents([]);
       if (window.tagifyInstance) window.tagifyInstance.removeAllTags();
-
+      // Clear input fields
+      if ($("ref-title")) $("ref-title").value = "";
+      if ($("ref-url")) $("ref-url").value = "";
+      if ($("ref-category")) $("ref-category").value = "";
+      if ($("new-category")) $("new-category").value = "";
       resetAIAssist();
       clearCache();
       resetAndReload();
