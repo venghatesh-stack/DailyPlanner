@@ -240,8 +240,10 @@
           ? `<div class="ref-content">${ref.description}</div>`
           : ""}
         <div class="ref-meta">
-          ${(ref.tags || []).map(tag =>
-            `<span class="tag">${tag}</span>`
+         ${(ref.tags || []).map(tag =>
+            `<span class="tag clickable-tag" data-tag="${tag}">
+              ${tag}
+            </span>`
           ).join("")}
           ${ref.category
             ? `<span class="category">${ref.category}</span>`
@@ -250,6 +252,17 @@
       `;
 
       container.appendChild(item);
+      item.querySelectorAll(".clickable-tag").forEach(el => {
+      el.addEventListener("click", function () {
+        const tag = this.dataset.tag;
+
+        if (!state.selectedTags.includes(tag)) {
+          state.selectedTags.push(tag);
+        }
+
+        resetAndReload();
+      });
+    });
       state.totalRendered++;
     });
 
