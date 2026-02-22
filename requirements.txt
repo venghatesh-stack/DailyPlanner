@@ -4,3 +4,4 @@ python-dotenv
 gunicorn
 beautifulsoup4
 lxml
+Groq

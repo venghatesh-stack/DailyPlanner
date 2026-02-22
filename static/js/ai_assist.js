@@ -26,53 +26,68 @@ const AIAssist = (() => {
 
   /* ---------------- API Mode (Gemini) ---------------- */
 
-  async function generateViaAPI(query) {
+  /* ---------------- API Mode Router ---------------- */
 
-    const preview = $("ai-preview");
-    preview.innerHTML = "Generating with Google AI...";
+async function generateViaAPI(query, mode) {
 
-    try {
-      const res = await fetch("/references/ai-generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query })
-      });
+  const preview = $("ai-preview");
 
-      if (!res.ok) {
-        preview.innerHTML = "AI request failed.";
-        return;
-      }
+  let endpoint = "";
+  let loadingText = "";
 
-      const data = await res.json();
-
-      // Preview
-      preview.innerHTML = `
-        <h4>${data.title || ""}</h4>
-        <p>${data.description || ""}</p>
-        ${data.url ? `<a href="${data.url}" target="_blank">${data.url}</a>` : ""}
-      `;
-
-      // Autofill reference form
-      $("ref-title").value = data.title || "";
-      $("ref-description").value = data.description || "";
-      $("ref-url").value = data.url || "";
-      $("ref-category").value = data.category || "";
-
-      // Tagify (shared global instance)
-      if (window.tagifyInstance && Array.isArray(data.tags)) {
-        window.tagifyInstance.removeAllTags();
-        window.tagifyInstance.addTags(data.tags);
-      }
-
-      showToast("AI content generated.");
-
-    } catch (err) {
-      console.error(err);
-      preview.innerHTML = "AI generation failed.";
-      showToast("Error generating AI content.");
-    }
+  if (mode === "gemini") {
+    endpoint = "/references/ai-generate";
+    loadingText = "Generating with Gemini...";
+  } 
+  else if (mode === "groq") {
+    endpoint = "/references/ai-generate-groq";
+    loadingText = "Generating with Groq...";
+  } 
+  else {
+    return;
   }
 
+  preview.innerHTML = loadingText;
+
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query })
+    });
+
+    if (!res.ok) {
+      preview.innerHTML = "AI request failed.";
+      return;
+    }
+
+    const data = await res.json();
+
+    preview.innerHTML = `
+      <h4>${data.title || ""}</h4>
+      <p>${data.description || ""}</p>
+      ${data.url ? `<a href="${data.url}" target="_blank">${data.url}</a>` : ""}
+    `;
+
+    // Autofill
+    $("ref-title").value = data.title || "";
+    $("ref-description").value = data.description || "";
+    $("ref-url").value = data.url || "";
+    $("ref-category").value = data.category || "";
+
+    if (window.tagifyInstance && Array.isArray(data.tags)) {
+      window.tagifyInstance.removeAllTags();
+      window.tagifyInstance.addTags(data.tags);
+    }
+
+    showToast(`${mode === "groq" ? "Groq" : "Gemini"} content generated.`);
+
+  } catch (err) {
+    console.error(err);
+    preview.innerHTML = "AI generation failed.";
+    showToast("Error generating AI content.");
+  }
+}
   /* ---------------- Voice ---------------- */
 
   function initVoice() {
@@ -114,28 +129,44 @@ const AIAssist = (() => {
     const btn = $("ai-primary-btn");
     if (!btn) return;
 
-    btn.addEventListener("click", async () => {
+   btn.addEventListener("click", async () => {
 
-      const query = $("ai-query")?.value.trim();
-      const mode = $("ai-mode")?.value;
+  const query = $("ai-query")?.value.trim();
+  const mode = $("ai-mode")?.value;
 
-      if (!query) {
-        $("ai-preview").innerHTML = "Please enter a topic.";
-        return;
-      }
-
-      if (mode === "manual") {
-        openManualMode(query);
-      } else {
-        await generateViaAPI(query);
-      }
-
-    });
+  if (!query) {
+    $("ai-preview").innerHTML = "Please enter a topic.";
+    return;
   }
+
+  btn.disabled = true;
+  btn.innerText = "Generating...";
+
+  try {
+    if (mode === "manual") {
+      openManualMode(query);
+    } else {
+      await generateViaAPI(query, mode);
+    }
+  } finally {
+    btn.disabled = false;
+    btn.innerText = "Generate";
+  }
+
+});
+}
 
   /* ---------------- Init ---------------- */
 
   function init() {
+    const modeSelect = $("ai-mode");
+    const savedMode = localStorage.getItem("ai_mode");
+
+    if (savedMode) modeSelect.value = savedMode;
+
+    modeSelect.addEventListener("change", function () {
+    localStorage.setItem("ai_mode", this.value);
+    });
     initGenerate();
     initVoice();
   }

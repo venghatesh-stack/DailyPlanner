@@ -2930,7 +2930,45 @@ def list_references_api():
     "items": rows,
     "has_more": len(rows) == limit
     })
+@app.route("/references/ai-generate-groq", methods=["POST"])
+@login_required
+def ai_generate_groq():
+    import os
+    import requests
 
+    data = request.get_json()
+    query = data.get("query")
+
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+    response = requests.post(
+        "https://api.groq.com/openai/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json"
+        },
+        json={
+            "model": "llama3-8b-8192",
+            "messages": [
+                {"role": "user", "content": query}
+            ]
+        }
+    )
+
+    if response.status_code != 200:
+        return jsonify({"error": "Groq failed"}), 500
+
+    result = response.json()
+    content = result["choices"][0]["message"]["content"]
+
+    # ⚡ You can structure output here if needed
+    return jsonify({
+        "title": query[:80],
+        "description": content,
+        "tags": [],
+        "category": None,
+        "url": None
+    })
 # ENTRY POINT
 # ==========================================================
 #if __name__ == "__main__":
