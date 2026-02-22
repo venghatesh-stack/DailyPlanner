@@ -76,6 +76,7 @@
   <div id="ai-preview" class="ai-preview"></div>
 
 </div>
+<div id="tagCloud" class="tag-cloud"></div>
   <!-- ➕ ADD NEW REFERENCE -->
   <div class="reference-card">
 
@@ -110,7 +111,19 @@
     <button type="button" id="saveRefBtn">Save</button>
   </div>
 
+<div class="filter-bar">
 
+  <button id="resetFilterBtn">All</button>
+
+  <input type="text" id="searchInput" placeholder="Search references...">
+
+  <select id="sortSelect">
+    <option value="created_at_desc">Newest</option>
+    <option value="created_at_asc">Oldest</option>
+    <option value="title_asc">Title A-Z</option>
+  </select>
+
+</div>
   <!-- 📚 RESULTS -->
   <div id="referenceList" class="reference-list">
 

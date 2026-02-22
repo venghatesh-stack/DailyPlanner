@@ -1,5 +1,7 @@
 ## Eisenhower Matrix + Daily Planner integrated. Calender control working
 print("STEP 1: app.py import started")
+from re import search
+from warnings import filters
 from flask import Flask, request, redirect, url_for, render_template_string, session,jsonify,render_template,abort
 import os
 from datetime import date, datetime, timedelta
@@ -2609,6 +2611,7 @@ def add_reference():
     })
 
     return jsonify({"success": True})
+
 @app.route("/references")
 @login_required
 def list_references():
@@ -2643,6 +2646,7 @@ def list_references():
         references=refs,
         categories=categories   # ✅ THIS WAS MISSING
     )
+
 @app.get("/search_references")
 def search_references():
     user_id = session["user_id"]
@@ -2660,6 +2664,7 @@ def search_references():
     )
 
     return jsonify({"results": rows})
+
 def process_tags(user_id, tag_list):
     processed_tags = []
 
@@ -2682,6 +2687,7 @@ def process_tags(user_id, tag_list):
             processed_tags.append(tag)
 
     return processed_tags
+
 @app.route("/api/tags")
 @login_required
 def get_tags():
@@ -2717,6 +2723,7 @@ def reflection_summary():
     summary = call_gemini(prompt)
 
     return jsonify({"summary": summary})
+
 @app.post("/ai/generate-day-plan")
 @login_required
 def generate_day_plan():
@@ -2765,6 +2772,7 @@ def ai_assistant():
     response = call_gemini(prompt)
 
     return jsonify({"reply": response})
+
 @app.post("/references/ai-generate")
 @login_required
 def ai_generate_reference():
@@ -2848,6 +2856,81 @@ def fetch_metadata():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route("/references/tags")
+@login_required
+def get_tags_with_counts():
+
+    user_id = session["user_id"]
+
+    rows = get("reference_links", {
+        "user_id": f"eq.{user_id}"
+    })
+
+    tag_counts = {}
+
+    for ref in rows:
+        for tag in ref.get("tags", []):
+            tag_counts[tag] = tag_counts.get(tag, 0) + 1
+
+    return jsonify(tag_counts)
+@app.route("/references/list")
+@login_required
+def list_references_api():
+
+    user_id = session["user_id"]
+    page = int(request.args.get("page", 1))
+    tags = request.args.get("tags")
+    search = request.args.get("search")
+    sort = request.args.get("sort", "created_at_desc")
+
+    limit = 10
+    offset = (page - 1) * limit
+
+    filters = {
+        "user_id": f"eq.{user_id}",
+        "limit": limit,
+        "offset": offset
+    }
+
+    # Sorting
+    if sort == "created_at_asc":
+        filters["order"] = "created_at.asc"
+    elif sort == "title_asc":
+        filters["order"] = "title.asc"
+    else:
+        filters["order"] = "created_at.desc"
+
+    and_conditions = []
+
+    # 1️⃣ Multi-tag OR block
+    if tags:
+        tag_list = tags.split(",")
+
+        tag_or = ",".join([
+            f"tags.cs.{{{tag.strip()}}}"
+            for tag in tag_list if tag.strip()
+        ])
+
+        if tag_or:
+            and_conditions.append(f"or({tag_or})")
+
+    # 2️⃣ Search OR block
+    if search:
+        search_or = f"title.ilike.%{search}%,description.ilike.%{search}%"
+        and_conditions.append(f"or({search_or})")
+
+    # 3️⃣ Attach combined AND logic
+    if and_conditions:
+        filters["and"] = f"({','.join(and_conditions)})"
+
+    rows = get("reference_links", filters)
+
+    return jsonify({
+    "items": rows,
+    "has_more": len(rows) == limit
+    })
+
 # ENTRY POINT
 # ==========================================================
 #if __name__ == "__main__":

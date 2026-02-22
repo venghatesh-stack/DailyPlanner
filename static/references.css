@@ -138,3 +138,25 @@
 .toast-success { background: #28a745; }
 .toast-error   { background: #dc3545; }
 .toast-info    { background: #007bff; }
+.tag-cloud {
+  margin-bottom: 15px;
+}
+
+.tag-cloud-item {
+  display: inline-block;
+  margin: 5px;
+  padding: 6px 10px;
+  background: #f0f0f0;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.tag-cloud-item:hover {
+  background: #007bff;
+  color: white;
+}
+.tag-cloud-item.active {
+  background: #007bff;
+  color: white;
+}

@@ -1,5 +1,11 @@
 window.tagifyInstance = null;
-
+let currentTag = null;
+let currentPage = 1;
+let selectedTags = [];
+let searchQuery = "";
+let sortOption = "created_at_desc";
+let isLoading = false;
+let hasMore = true;
 document.addEventListener("DOMContentLoaded", function () {
 
   // -----------------------------
@@ -12,22 +18,24 @@ document.addEventListener("DOMContentLoaded", function () {
       dropdown: { enabled: 0 }
     });
   }
+
   // -----------------------------
-// AI Toggle Persistence
-// -----------------------------
-const aiToggle = document.getElementById("enable-ai");
+  // AI Toggle Persistence
+  // -----------------------------
+  const aiToggle = document.getElementById("enable-ai");
 
-if (aiToggle) {
-  const saved = localStorage.getItem("ai_enabled");
+  if (aiToggle) {
+    const saved = localStorage.getItem("ai_enabled");
 
-  if (saved !== null) {
-    aiToggle.checked = saved === "true";
+    if (saved !== null) {
+      aiToggle.checked = saved === "true";
+    }
+
+    aiToggle.addEventListener("change", function () {
+      localStorage.setItem("ai_enabled", this.checked);
+    });
   }
 
-  aiToggle.addEventListener("change", function () {
-    localStorage.setItem("ai_enabled", this.checked);
-  });
-}
   // -----------------------------
   // SAVE BUTTON
   // -----------------------------
@@ -37,148 +45,159 @@ if (aiToggle) {
   }
 
   // -----------------------------
-  // URL AUTO METADATA FETCH
+  // URL AUTO METADATA
   // -----------------------------
   const refUrlInput = document.getElementById("ref-url");
   if (refUrlInput) {
     refUrlInput.addEventListener("change", autoFetchMetadata);
   }
 
+  // -----------------------------
+  // LOAD INITIAL DATA
+  // -----------------------------
+  loadTagCloud();
+  loadReferences();
+
+  
+ let searchTimeout = null;
+
+document.getElementById("searchInput").addEventListener("input", function () {
+
+  clearTimeout(searchTimeout);
+
+  searchTimeout = setTimeout(() => {
+    searchQuery = this.value.trim();
+    currentPage = 1;
+    hasMore = true;
+    document.getElementById("referenceList").innerHTML = "";
+    loadReferences();
+  }, 400); // 400ms delay
+
 });
 
+document.getElementById("sortSelect").addEventListener("change", function () {
+  sortOption = this.value;
+  currentPage = 1;
+  hasMore = true;
+  document.getElementById("referenceList").innerHTML = "";
+  loadReferences();
+});
 
-// =====================================================
-// AUTO FETCH METADATA (TITLE + TAGS + CATEGORY)
-// =====================================================
+document.getElementById("resetFilterBtn").addEventListener("click", function () {
+  selectedTags = [];
+  searchQuery = "";
+  sortOption = "created_at_desc";
+  currentPage = 1;
+  hasMore = true;
 
+  document.getElementById("searchInput").value = "";
+  document.getElementById("sortSelect").value = "created_at_desc";
 
+  document.querySelectorAll(".tag-cloud-item")
+    .forEach(el => el.classList.remove("active"));
 
-// =====================================================
-// SAVE REFERENCE
-// =====================================================
-async function saveReference() {
+  document.getElementById("referenceList").innerHTML = "";
+  loadReferences();
+});
+});
+async function loadReferences() {
 
-  const btn = document.getElementById("saveRefBtn");
-  btn.disabled = true;
-  const originalText = btn.innerText;
-  btn.innerText = "Saving...";
+  if (isLoading) return;
 
-  const payload = {
-    title: document.getElementById("ref-title").value.trim() || null,
-    description: document.getElementById("ref-description").value.trim() || null,
-    url: document.getElementById("ref-url").value.trim(),
-    tags: window.tagifyInstance
-      ? window.tagifyInstance.value.map(t => t.value)
-      : [],
-    category: document.getElementById("new-category").value.trim() ||
-              document.getElementById("ref-category").value || null
-  };
+  isLoading = true;
 
-  if (!payload.url) {
-    showToast("URL is required", "error");
-    btn.disabled = false;
-    btn.innerText = originalText;
-    return;
+  let url = `/references/list?page=${currentPage}&sort=${sortOption}`;
+
+  if (selectedTags.length > 0) {
+    url += `&tags=${selectedTags.join(",")}`;
   }
 
-  try {
-    const res = await fetch("/references/add", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) throw new Error();
-
-    showToast("Saved successfully ✓", "success");
-
-    // Clear form
-    document.getElementById("ref-title").value = "";
-    document.getElementById("ref-description").value = "";
-    document.getElementById("ref-url").value = "";
-    document.getElementById("ref-category").value = "";
-    document.getElementById("new-category").value = "";
-    if (window.tagifyInstance) window.tagifyInstance.removeAllTags();
-
-  } catch (err) {
-    showToast("Save failed", "error");
+  if (searchQuery) {
+    url += `&search=${encodeURIComponent(searchQuery)}`;
   }
 
-  btn.disabled = false;
-  btn.innerText = originalText;
-}
+  const res = await fetch(url);
+  const data = await res.json();
 
+ 
 
-// =====================================================
-// SMOOTH TOAST SYSTEM
-// =====================================================
-function showToast(message, type = "info") {
-
-  const container = document.getElementById("toast-container");
-  if (!container) return;
-
-  const toast = document.createElement("div");
-  toast.className = `toast toast-${type}`;
-  toast.innerText = message;
-
-  container.appendChild(toast);
-
-  setTimeout(() => {
-    toast.classList.add("show");
-  }, 10);
-
-  setTimeout(() => {
-    toast.classList.remove("show");
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
-}
-
-async function autoFetchMetadata() {
-
-  const url = document.getElementById("ref-url").value.trim();
-  if (!url) return;
-
-  const aiEnabled = document.getElementById("enable-ai")?.checked;
-
-  showToast("Fetching metadata...", "info");
-
-  try {
-
-    const res = await fetch("/references/metadata", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        url: url,
-        use_ai: aiEnabled
-      })
-    });
-
-    if (!res.ok) throw new Error();
-
-    const data = await res.json();
-
-    // Always fill title
-    if (data.title && !document.getElementById("ref-title").value) {
-      document.getElementById("ref-title").value = data.title;
-    }
-
-    // Only fill tags if AI enabled
-    if (aiEnabled && data.tags && window.tagifyInstance) {
-      window.tagifyInstance.removeAllTags();
-      window.tagifyInstance.addTags(data.tags);
-    }
-
-    // Only fill category if AI enabled
-    if (aiEnabled && data.category) {
-      const categorySelect = document.getElementById("ref-category");
-      if (categorySelect) {
-        categorySelect.value = data.category;
+  const container = document.getElementById("referenceList");
+   if (data.length === 0) {
+    hasMore = false;
+    if (currentPage === 1 && data.length === 0) {
+        document.getElementById("referenceList").innerHTML =
+          "<div class='empty-state'>No results found.</div>";
       }
-    }
+    isLoading = false;    
+    return;
+   }
+  data.forEach(ref => {
 
-    showToast("Metadata loaded ✓", "success");
+    const item = document.createElement("div");
+    item.className = "ref-item";
 
-  } catch (err) {
-    showToast("Metadata fetch failed", "error");
-  }
+    item.innerHTML = `
+      <h4><a href="${ref.url}" target="_blank">
+        ${ref.title || ref.url}
+      </a></h4>
+      ${ref.description ? `<p>${ref.description}</p>` : ""}
+      <div class="ref-meta">
+        ${(ref.tags || []).map(tag =>
+          `<span class="tag">${tag}</span>`
+        ).join("")}
+        ${ref.category ? `<span class="category">${ref.category}</span>` : ""}
+      </div>
+    `;
+
+    container.appendChild(item);
+  });
+
+
 }
+
+async function loadTagCloud() {
+
+  const res = await fetch("/references/tags");
+  const tags = await res.json();
+
+  const container = document.getElementById("tagCloud");
+  container.innerHTML = "";
+
+  Object.keys(tags).sort().forEach(tag => {
+
+    const span = document.createElement("span");
+    span.className = "tag-cloud-item";
+    span.innerText = `# ${tag} (${tags[tag]})`;
+
+   span.onclick = function () {
+
+  if (selectedTags.includes(tag)) {
+    selectedTags = selectedTags.filter(t => t !== tag);
+    span.classList.remove("active");
+  } else {
+    selectedTags.push(tag);
+    span.classList.add("active");
+  }
+
+  currentPage = 1;
+  hasMore = true;
+  document.getElementById("referenceList").innerHTML = "";
+  loadReferences();
+};
+
+    container.appendChild(span);
+  });
+}
+window.addEventListener("scroll", function () {
+
+  if (isLoading || !hasMore) return;
+
+  const scrollPosition = window.innerHeight + window.scrollY;
+  const threshold = document.body.offsetHeight - 200;
+
+  if (scrollPosition >= threshold) {
+    currentPage++;
+    loadReferences();
+  }
+
+});
