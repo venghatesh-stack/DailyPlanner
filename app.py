@@ -2684,17 +2684,11 @@ def list_references():
         "order": "created_at.desc"
     }
 
-    and_conditions = []
-
     if tag:
-        and_conditions.append(f"tags.cs.{{{tag}}}")
+      params["tags"] = f"cs.{{{tag}}}"
 
     if category:
-        and_conditions.append(f"category.eq.{category}")
-
-    if and_conditions:
-        params["and"] = f"({','.join(and_conditions)})"
-
+      params["category"] = f"eq.{category}"
     refs = get("reference_links", params=params)
 
     all_refs = get("reference_links", {
