@@ -198,7 +198,8 @@
 
     if (state.selectedTags.length > 0)
       url += `&tags=${normalizedTagKey()}`;
-
+    if (state.selectedCategory)
+      url += `&category=${encodeURIComponent(state.selectedCategory)}`;
     if (state.searchQuery)
       url += `&search=${encodeURIComponent(state.searchQuery)}`;
 
@@ -408,7 +409,18 @@
   // ==========================================================
 
   document.addEventListener("DOMContentLoaded", function () {
+    const params = new URLSearchParams(window.location.search);
 
+    const initialTag = params.get("tag");
+    const initialCategory = params.get("category");
+
+    if (initialTag) {
+      state.selectedTags = [initialTag.toLowerCase()];
+    }
+
+    if (initialCategory) {
+      state.selectedCategory = initialCategory;
+    }
     // Quill init (only once)
     const editor = $("ref-editor");
     if (editor) {

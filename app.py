@@ -2678,7 +2678,9 @@ def list_references():
     user_id = session["user_id"]
     tag = request.args.get("tag", "").strip().lower()
     category = request.args.get("category", "").strip()
-
+    print("🔥 DEBUG /references")
+    print("Query Params → tag:", tag)
+    print("Query Params → category:", category)
     params = {
         "user_id": f"eq.{user_id}",
         "order": "created_at.desc"
@@ -2920,7 +2922,7 @@ def fetch_metadata():
 def get_tags_with_counts():
 
     user_id = session["user_id"]
-
+    print("🔥 DEBUG /references/tags called")
     rows = get("reference_links", {
         "user_id": f"eq.{user_id}"
     })
@@ -2950,7 +2952,7 @@ def list_references_api():
     tags = request.args.get("tags")
     search = request.args.get("search")
     sort = request.args.get("sort", "created_at_desc")
-
+    category = request.args.get("category")
     limit = 10
     offset = (page - 1) * limit
 
@@ -2986,11 +2988,16 @@ def list_references_api():
     if search:
         search_or = f"title.ilike.%{search}%,description.ilike.%{search}%"
         and_conditions.append(f"or({search_or})")
-
+    if category:
+     and_conditions.append(f"category.eq.{category}")
     # 3️⃣ Attach combined AND logic
     if and_conditions:
         filters["and"] = f"({','.join(and_conditions)})"
-
+    print("🔥 DEBUG /references/list")
+    print("Incoming → tags:", tags)
+    print("Incoming → search:", search)
+    print("Incoming → sort:", sort)
+    print("Final filters →", filters)
     rows = get("reference_links", filters)
 
     return jsonify({
