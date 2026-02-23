@@ -3074,9 +3074,40 @@ def ai_generate_groq():
     structured["category"] = structured.get("category") or "Learning"
 
     return jsonify(structured)
+
+@app.post("/api/v2/smart-create")
+def smart_create():
+    data = request.json
+    text = data.get("text", "")
+    date = safe_date_from_string(data.get("date"))
+
+    created = []
+
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+
+        parsed = parse_planner_input(line, date)
+
+        payload = {
+            "plan_date": str(parsed["date"]),
+            "start_time": parsed["start"].strftime("%H:%M"),
+            "end_time": parsed["end"].strftime("%H:%M"),
+            "title": parsed["title"],
+        }
+
+        # Call existing event creation logic
+        create_event(payload)
+
+        created.append(payload)
+
+    return jsonify({"status": "ok", "count": len(created)})
 @app.route("/ping")
 def ping():
     return "OK", 200
+
+
 # ENTR
 # Y POINT
 # ==========================================================

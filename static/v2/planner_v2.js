@@ -997,3 +997,27 @@ async function undoDelete(id) {
 
   loadEvents();
 }
+async function runSmartPlanner() {
+
+  const text = document.getElementById("smart-input").value;
+
+  if (!text.trim()) return;
+
+  const res = await fetch("/api/v2/smart-create", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      date: currentDate,
+      text
+    })
+  });
+
+  if (!res.ok) {
+    alert("Smart planner failed");
+    return;
+  }
+
+  document.getElementById("smart-input").value = "";
+
+  loadEvents();
+}

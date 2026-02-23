@@ -767,3 +767,20 @@ body {
   border-radius: 6px;
   cursor: pointer;
 }
+.smart-planner-box {
+  background: white;
+  padding: 16px;
+  border-radius: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+
+.smart-planner-box textarea {
+  width: 100%;
+  min-height: 120px;
+  border-radius: 12px;
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  resize: vertical;
+  font-family: inherit;
+}
