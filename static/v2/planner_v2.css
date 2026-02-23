@@ -784,3 +784,52 @@ body {
   resize: vertical;
   font-family: inherit;
 }
+.planner-v2-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.smart-planner-panel {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+
+.planner-body {
+  display: flex;
+  position: relative;
+}
+
+.time-gutter {
+  width: 80px;
+  flex-shrink: 0;
+  border-right: 1px solid #e5e7eb;
+  background: white;
+}
+
+#timeline {
+  flex: 1;
+  position: relative;
+  min-height: 100vh;
+}
+.smart-planner-panel textarea {
+  transition: height 0.2s ease;
+}
+.smart-planner-box {
+  background: white;
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  margin: 20px 0;
+}
+
+.smart-planner-box textarea {
+  width: 100%;
+  min-height: 110px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 10px;
+  resize: vertical;
+}
