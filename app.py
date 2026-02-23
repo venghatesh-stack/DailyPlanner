@@ -54,6 +54,7 @@ from flask import jsonify
 import requests
 from flask import request, jsonify
 from bs4 import BeautifulSoup
+from utils.dates import safe_date_from_string
 import bleach
 print("STEP 2: imports completed")
 
