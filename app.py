@@ -3090,7 +3090,7 @@ def insert_event(user_id, data, force=False):
             "conflicting_events": conflicts
         }, 409
 
-    post("daily_events", {
+    response= post("daily_events", {
         "user_id": user_id,
         "plan_date": data["plan_date"],
         "start_time": data["start_time"],
@@ -3098,7 +3098,7 @@ def insert_event(user_id, data, force=False):
         "title": data["title"],
         "description": data.get("description", "")
     })
-
+    print("🔥 SUPABASE RESPONSE:", response)
     return {"success": True}, 200
 @app.post("/api/v2/smart-create")
 def smart_create():
