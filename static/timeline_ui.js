@@ -17,12 +17,21 @@ function dragOver(e) {
   e.preventDefault();
   e.currentTarget.classList.add("drag-over");
 }
-
-/* ======================
-   DRAG LEAVE
-====================== */
-
 function dragLeave(e) {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const x = e.clientX;
+  const y = e.clientY;
+
+  // if pointer is still inside block → ignore
+  if (
+    x >= rect.left &&
+    x <= rect.right &&
+    y >= rect.top &&
+    y <= rect.bottom
+  ) {
+    return;
+  }
+
   e.currentTarget.classList.remove("drag-over");
 }
 
