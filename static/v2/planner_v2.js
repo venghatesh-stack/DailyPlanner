@@ -962,3 +962,38 @@ document.addEventListener("wheel", function(e) {
 
   input.value = parseFloat(value.toFixed(2));
 }, { passive: false });
+async function deleteEvent() {
+  if (!selected) return;
+
+  const id = selected.id;
+
+  await fetch(`/api/v2/events/${id}`, {
+    method: "DELETE"
+  });
+
+  closeModal();
+  loadEvents();
+
+  showUndoToast(id);
+}
+function showUndoToast(eventId) {
+  const toast = document.createElement("div");
+  toast.className = "undo-toast";
+  toast.innerHTML = `
+    Event deleted
+    <button onclick="undoDelete('${eventId}')">Undo</button>
+  `;
+
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 5000);
+}
+async function undoDelete(id) {
+  await fetch(`/api/v2/events/${id}/restore`, {
+    method: "POST"
+  });
+
+  loadEvents();
+}
