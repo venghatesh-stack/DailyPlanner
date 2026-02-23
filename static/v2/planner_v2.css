@@ -187,12 +187,6 @@ body {
 }
 
 
-.event:hover {
-  z-index: 100;
-  height: auto !important;
-}
-
-
 
 #modal {
   position: fixed;
