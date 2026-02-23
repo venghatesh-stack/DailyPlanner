@@ -513,6 +513,7 @@ function toggleComplete(e, id) {
   loadEvents();
 }
 function openCreateModal() {
+  hideConflict();
   selected = null;
 
   document.getElementById("start-time").value = "";
@@ -528,6 +529,7 @@ function openCreateModal() {
 ========================= */
 
 function openModal(ev) {
+  hideConflict();
   selected = ev;
 
   document.getElementById("start-time").value = ev.start_time;
@@ -659,25 +661,22 @@ async function saveEvent() {
     console.error("Save error:", err);
   }
 }
+function hideConflict() {
+  const section = document.getElementById("conflict-section");
+  if (section) section.style.display = "none";
+}
 function showConflictDialog(conflicts, payload) {
 
-  const conflictHtml = conflicts.map(c =>
+  const list = document.getElementById("conflict-list");
+  const section = document.getElementById("conflict-section");
+
+  list.innerHTML = conflicts.map(c =>
     `<div style="margin:6px 0;">
        ${c.start_time} – ${c.end_time} : ${c.title}
      </div>`
   ).join("");
 
-  const modalCard = document.querySelector(".modal-card");
-
-  modalCard.innerHTML = `
-    <h3>Time Conflict</h3>
-    <p>This overlaps with:</p>
-    ${conflictHtml}
-    <div style="margin-top:12px;">
-      <button id="accept-conflict">Accept Anyway</button>
-      <button onclick="closeModal()">Cancel</button>
-    </div>
-  `;
+  section.style.display = "block";
 
   document.getElementById("accept-conflict").onclick = async () => {
     payload.force = true;
@@ -688,6 +687,7 @@ function showConflictDialog(conflicts, payload) {
       body: JSON.stringify(payload)
     });
 
+    hideConflict();
     closeModal();
     loadEvents();
   };

@@ -40,6 +40,16 @@
 
 <div id="modal">
   <div class="modal-card">
+    <div id="conflict-section" style="display:none; margin-top:12px;">
+      <h3>Time Conflict</h3>
+      <p>This overlaps with:</p>
+      <div id="conflict-list"></div>
+
+      <div style="margin-top:12px;">
+        <button id="accept-conflict">Accept Anyway</button>
+        <button onclick="hideConflict()">Cancel</button>
+      </div>
+    </div>
     <h3 id="modal-title">Event</h3>
    <label>Start</label>
     <input type="time" id="start-time" step="300">
