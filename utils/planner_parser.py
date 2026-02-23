@@ -190,7 +190,7 @@ def parse_planner_input(raw_text, plan_date):
         if category_match
         else DEFAULT_CATEGORY
     )
-
+    
     title = re.sub(r"\s(@|\$|%|#|Q[1-4]).*", "", raw_text).strip()
     tags = extract_tags(raw_text)
 
