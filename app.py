@@ -46,7 +46,7 @@ from config import (
     PRIORITY_MAP,
     SORT_PRESETS,
 )
-
+from utils.planner_parser import parse_planner_input
 from utils.slots import current_slot,slot_label
 import traceback
 from services.ai_service  import call_gemini
@@ -3072,35 +3072,48 @@ def ai_generate_groq():
     structured["category"] = structured.get("category") or "Learning"
 
     return jsonify(structured)
-
 @app.post("/api/v2/smart-create")
 def smart_create():
-    data = request.json
-    text = data.get("text", "")
+    data = request.json or {}
+
+    text = data.get("text", "").strip()
     date = safe_date_from_string(data.get("date"))
 
     created = []
+    failed = []
 
-    for line in text.splitlines():
-        line = line.strip()
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
         if not line:
             continue
 
-        parsed = parse_planner_input(line, date)
+        try:
+            parsed = parse_planner_input(line, date)
 
-        payload = {
-            "plan_date": str(parsed["date"]),
-            "start_time": parsed["start"].strftime("%H:%M"),
-            "end_time": parsed["end"].strftime("%H:%M"),
-            "title": parsed["title"],
-        }
+            payload = {
+                "plan_date": str(parsed["date"]),
+                "start_time": parsed["start"].strftime("%H:%M"),
+                "end_time": parsed["end"].strftime("%H:%M"),
+                "title": parsed["title"],
+            }
 
-        # Call existing event creation logic
-        create_event(payload)
+            create_event(payload)
 
-        created.append(payload)
+            created.append(payload)
 
-    return jsonify({"status": "ok", "count": len(created)})
+        except Exception as e:
+            failed.append({
+                "line": raw_line,
+                "error": str(e)
+            })
+
+    return jsonify({
+        "status": "ok",
+        "created_count": len(created),
+        "failed_count": len(failed),
+        "failed": failed
+    })
+    
 @app.route("/ping")
 def ping():
     return "OK", 200
