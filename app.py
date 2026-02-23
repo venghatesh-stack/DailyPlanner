@@ -58,9 +58,6 @@ from utils.dates import safe_date_from_string
 import bleach
 print("STEP 2: imports completed")
 
-
-
-
 app = Flask(__name__)
 print("STEP 3: flask created")
 logger = setup_logger()
