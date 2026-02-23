@@ -2217,6 +2217,7 @@ def create_event():
     })
 
     return jsonify({"success": True})
+
 @app.route("/api/v2/events/<event_id>", methods=["PUT"])
 def update_event(event_id):
     from flask import jsonify
@@ -3072,6 +3073,33 @@ def ai_generate_groq():
     structured["category"] = structured.get("category") or "Learning"
 
     return jsonify(structured)
+def insert_event(user_id, data, force=False):
+    if data["end_time"] <= data["start_time"]:
+        return {"error": "Invalid time range"}, 400
+
+    conflicts = get_conflicts(
+        user_id,
+        data["plan_date"],
+        data["start_time"],
+        data["end_time"]
+    )
+
+    if conflicts and not force:
+        return {
+            "conflict": True,
+            "conflicting_events": conflicts
+        }, 409
+
+    post("daily_events", {
+        "user_id": user_id,
+        "plan_date": data["plan_date"],
+        "start_time": data["start_time"],
+        "end_time": data["end_time"],
+        "title": data["title"],
+        "description": data.get("description", "")
+    })
+
+    return {"success": True}, 200
 @app.post("/api/v2/smart-create")
 def smart_create():
     data = request.json or {}
@@ -3097,9 +3125,15 @@ def smart_create():
                 "title": parsed["title"],
             }
 
-            create_event(payload)
+            result, status = insert_event("VenghateshS", payload)
 
-            created.append(payload)
+            if status == 200:
+                created.append(payload)
+            else:
+                failed.append({
+                    "line": raw_line,
+                    "error": result
+                })
 
         except Exception as e:
             failed.append({
@@ -3113,7 +3147,6 @@ def smart_create():
         "failed_count": len(failed),
         "failed": failed
     })
-    
 @app.route("/ping")
 def ping():
     return "OK", 200
