@@ -185,16 +185,35 @@ function render() {
 
     if (ev.type === "project") div.classList.add("project-event");
     div.classList.add(`p-${ev.priority || "medium"}`);
- div.innerHTML = `
+   div.innerHTML = `
   <div class="event-header">
     <span class="event-time-text">
       ${formatTime(ev.start_time)} – ${formatTime(ev.end_time)}
     </span>
-    <span class="event-title-inline">
-      ${ev.task_text || ev.title}
-    </span>
+
+    <div class="event-actions">
+      <span class="event-title-inline">
+        ${ev.task_text || ev.title}
+      </span>
+
+      <button class="gcal-btn" title="Add to Google Calendar">
+        <svg width="16" height="16" viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="18" rx="2" fill="#ffffff" stroke="#dadce0"/>
+          <rect x="3" y="4" width="18" height="5" fill="#4285F4"/>
+          <text x="12" y="18" text-anchor="middle" font-size="10" fill="#4285F4" font-family="Arial" font-weight="bold">${new Date(currentDate).getDate()}</text>
+        </svg>
+      </button>
+    </div>
   </div>
 
+  <div class="event-description">
+    ${ev.description || ""}
+  </div>
+`;
+  div.querySelector(".gcal-btn").onclick = (e) => {
+  e.stopPropagation();
+  addToGoogleCalendar(ev);
+};
   <div class="event-description">
     ${ev.description || ""}
   </div>
@@ -1041,4 +1060,21 @@ async function runSmartPlanner() {
   document.getElementById("smart-input").value = "";
 
   loadEvents();
+}
+function addToGoogleCalendar(ev) {
+  const date = currentDate.replaceAll("-", "");
+
+  const start = ev.start_time.replace(":", "") + "00";
+  const end = ev.end_time.replace(":", "") + "00";
+
+  const startDateTime = `${date}T${start}`;
+  const endDateTime = `${date}T${end}`;
+
+  const url =
+    `https://calendar.google.com/calendar/render?action=TEMPLATE` +
+    `&text=${encodeURIComponent(ev.title || ev.task_text)}` +
+    `&dates=${startDateTime}/${endDateTime}` +
+    `&details=${encodeURIComponent(ev.description || "")}`;
+
+  window.open(url, "_blank");
 }

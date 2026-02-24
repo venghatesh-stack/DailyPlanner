@@ -409,3 +409,27 @@ body {
 .primary-btn:hover {
   background: #4f46e5;
 }
+.event-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.gcal-btn {
+  background: transparent;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.event:hover .gcal-btn {
+  opacity: 1;
+}
+
+.gcal-btn:hover {
+  transform: scale(1.1);
+}
