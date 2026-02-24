@@ -3003,6 +3003,7 @@ def list_references_api():
     "items": rows,
     "has_more": len(rows) == limit
     })
+
 @app.route("/references/ai-generate-groq", methods=["POST"])
 @login_required
 def ai_generate_groq():
@@ -3073,6 +3074,7 @@ def ai_generate_groq():
     structured["category"] = structured.get("category") or "Learning"
 
     return jsonify(structured)
+
 def insert_event(user_id, data, force=False):
     if data["end_time"] <= data["start_time"]:
         return {"error": "Invalid time range"}, 400
@@ -3100,6 +3102,7 @@ def insert_event(user_id, data, force=False):
     })
     print("🔥 SUPABASE RESPONSE:", response)
     return {"success": True}, 200
+
 @app.post("/api/v2/smart-create")
 def smart_create():
     data = request.json or {}
@@ -3147,6 +3150,7 @@ def smart_create():
         "failed_count": len(failed),
         "failed": failed
     })
+
 @app.route("/ping")
 def ping():
     return "OK", 200
