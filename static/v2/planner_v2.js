@@ -169,7 +169,7 @@ function render() {
     div.className = "event";
     div.style.top = ev.top + "px";
     div.style.height = ev.height + "px";
-    const horizontalGap = 20; // px
+    const horizontalGap = 40; // px
 
     div.style.left = `calc(${ev.left}% + ${horizontalGap}px)`;
     div.style.width = `calc(${ev.width}% - ${horizontalGap * 2}px)`;
