@@ -333,3 +333,21 @@ body {
   border-radius: 20px;
   box-shadow: 0 25px 60px rgba(0,0,0,0.25);
 }
+/* =============================
+   Pleasant Priority Colors
+============================= */
+
+.event.p-low {
+  background: #ecfdf5;          /* soft mint */
+  box-shadow: inset 4px 0 0 #10b981;
+}
+
+.event.p-medium {
+  background: #eef2ff;          /* soft indigo */
+  box-shadow: inset 4px 0 0 #6366f1;
+}
+
+.event.p-high {
+  background: #fff7ed;          /* soft peach */
+  box-shadow: inset 4px 0 0 #f97316;
+}

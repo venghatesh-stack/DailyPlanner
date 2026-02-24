@@ -177,7 +177,7 @@ function render() {
     div.dataset.id = ev.id;
 
     if (ev.type === "project") div.classList.add("project-event");
-
+    div.classList.add(`p-${ev.priority || "medium"}`);
  div.innerHTML = `
   <div class="event-header">
     <span class="event-time-text">
@@ -614,7 +614,8 @@ async function saveEvent() {
     plan_date: currentDate,
     start_time: start,
     end_time: calculateEndTime(start, duration),
-    title: document.getElementById("event-title").value
+    title: document.getElementById("event-title").value,
+    priority: document.getElementById("event-priority").value
   };
 
   let url;

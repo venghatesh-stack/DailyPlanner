@@ -2213,7 +2213,8 @@ def create_event():
         "start_time": data["start_time"],
         "end_time": data["end_time"],
         "title": data["title"],
-        "description": data.get("description", "")
+        "description": data.get("description", ""),
+        "priority": data.get("priority", "medium")
     })
 
     return jsonify({"success": True})
