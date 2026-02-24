@@ -169,8 +169,10 @@ function render() {
     div.className = "event";
     div.style.top = ev.top + "px";
     div.style.height = ev.height + "px";
-    div.style.left = ev.left + "%";
-    div.style.width = ev.width + "%";
+    const horizontalGap = 6; // px
+
+    div.style.left = `calc(${ev.left}% + ${horizontalGap}px)`;
+    div.style.width = `calc(${ev.width}% - ${horizontalGap * 2}px)`;
 
     div.dataset.id = ev.id;
 
