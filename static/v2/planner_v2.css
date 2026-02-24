@@ -352,3 +352,61 @@ body {
   background: #fff7ed;          /* soft peach */
   box-shadow: inset 4px 0 0 #f97316;
 }
+/* =============================
+   Smart Planner Box
+============================= */
+
+.smart-planner-box {
+  background: white;
+  padding: 20px;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  margin-top: 30px;
+}
+
+.smart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.smart-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+#smart-input {
+  width: 100%;
+  min-height: 90px;
+  resize: vertical;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+#smart-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+
+/* Primary Button Style (if not defined already) */
+.primary-btn {
+  background: #6366f1;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.primary-btn:hover {
+  background: #4f46e5;
+}
