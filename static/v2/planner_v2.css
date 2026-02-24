@@ -433,3 +433,21 @@ body {
 .gcal-btn:hover {
   transform: scale(1.1);
 }
+.event-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.event-title-text {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event-time-inline {
+  font-size: 0.85em;
+  opacity: 0.75;
+}

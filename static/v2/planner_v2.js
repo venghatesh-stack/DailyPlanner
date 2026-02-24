@@ -177,15 +177,11 @@ function render() {
     div.classList.add(`p-${ev.priority || "medium"}`);
 
     div.innerHTML = `
-      <div class="event-header">
-        <span class="event-time-text">
-          ${formatTime(ev.start_time)} – ${formatTime(ev.end_time)}
+       <div class="event-line">
+        ${ev.task_text || ev.title}
+        <span class="event-time-inline">
+          (${formatTime(ev.start_time).replace(":", ".")} - ${formatTime(ev.end_time).replace(":", ".")})
         </span>
-
-        <div class="event-actions">
-          <span class="event-title-inline">
-            ${ev.task_text || ev.title}
-          </span>
 
           <button class="gcal-btn" title="Add to Google Calendar">
             <svg width="16" height="16" viewBox="0 0 24 24">
@@ -204,7 +200,6 @@ function render() {
             </svg>
           </button>
         </div>
-      </div>
 
       <div class="event-description">
         ${ev.description || ""}
