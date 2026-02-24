@@ -1061,7 +1061,8 @@ function addToGoogleCalendar(ev) {
     `https://calendar.google.com/calendar/render?action=TEMPLATE` +
     `&text=${encodeURIComponent(ev.title || ev.task_text)}` +
     `&dates=${startDateTime}/${endDateTime}` +
-    `&details=${encodeURIComponent(ev.description || "")}`;
+    `&details=${encodeURIComponent(ev.description || "")}` +
+    `&reminders=popup:10`;   // 🔥 10 minute notification
 
   window.open(url, "_blank");
 }
