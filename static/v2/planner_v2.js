@@ -169,11 +169,18 @@ function render() {
     div.className = "event";
     div.style.top = ev.top + "px";
     div.style.height = ev.height + "px";
-    const horizontalGap = 40; // px
+   
 
-    div.style.left = `calc(${ev.left}% + ${horizontalGap}px)`;
-    div.style.width = `calc(${ev.width}% - ${horizontalGap * 2}px)`;
+    div.style.left = ev.left + "%";
+    div.style.width = ev.width + "%";
 
+   const gap = 8;
+
+    if (ev.totalCols > 1) {
+      div.style.width = `calc(${ev.width}% - ${gap}px)`;
+    } else {
+      div.style.width = ev.width + "%";
+    }
     div.dataset.id = ev.id;
 
     if (ev.type === "project") div.classList.add("project-event");
@@ -285,6 +292,8 @@ function renderCurrentTimeLine(root) {
    LAYOUT ENGINE
 ========================= */
 function computeLayout(events) {
+  const GAP_PX = 8;
+
   const enriched = events.map(ev => {
     const start = minutes(ev.start_time);
     const end = minutes(ev.end_time);
@@ -302,6 +311,7 @@ function computeLayout(events) {
 
   const clusters = [];
 
+  // Build overlap clusters
   enriched.forEach(ev => {
     let placed = false;
 
@@ -316,6 +326,7 @@ function computeLayout(events) {
     if (!placed) clusters.push([ev]);
   });
 
+  // Assign columns inside each cluster
   clusters.forEach(cluster => {
     const columns = [];
 
@@ -341,8 +352,21 @@ function computeLayout(events) {
     const totalCols = columns.length;
 
     cluster.forEach(ev => {
-      ev.width = 100 / totalCols;
-      ev.left = ev.col * ev.width;
+      ev.totalCols = totalCols;
+
+      if (totalCols === 1) {
+        ev.width = 100;
+        ev.left = 0;
+      } else {
+        const totalGap = GAP_PX * (totalCols - 1);
+        const widthPercent =
+          (100 - (totalGap / document.getElementById("timeline").offsetWidth) * 100)
+          / totalCols;
+
+        ev.width = widthPercent;
+        ev.left = ev.col * widthPercent +
+          (ev.col * GAP_PX / document.getElementById("timeline").offsetWidth) * 100;
+      }
     });
   });
 
