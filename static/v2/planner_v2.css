@@ -94,10 +94,11 @@ body {
   position: absolute;
   left: 18px;
   transform: translateY(-50%); /* centers exactly on hour line */
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 800;
   color: #dc2626; /* clean red (not harsh) */
   pointer-events: none;
+  opacity: 0.9;
 }
 
 /* ============================= */
