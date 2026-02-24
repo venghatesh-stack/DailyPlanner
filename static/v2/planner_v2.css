@@ -92,14 +92,11 @@ body {
 
 .hour-label {
   position: absolute;
-  top: 0;
-  left: 12px;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  font-size: 12px;
-  font-weight: 500;
-  color: #374151;
+  left: 18px;
+  transform: translateY(-50%); /* centers exactly on hour line */
+  font-size: 14px;
+  font-weight: 600;
+  color: #dc2626; /* clean red (not harsh) */
   pointer-events: none;
 }
 
