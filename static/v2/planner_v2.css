@@ -73,6 +73,7 @@ body {
   border-right: 1px solid #e5e7eb;
   background: #f8fafc;
   position: relative;
+  z-index: 5;
 }
 
 .time-row {
