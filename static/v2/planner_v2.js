@@ -157,9 +157,7 @@ function render() {
   const root = document.getElementById("timeline");
   root.innerHTML = "";
 
-  // Hour lines
   renderTimeGrid();
-
   renderCurrentTimeLine(root);
 
   const positioned = computeLayout(events);
@@ -167,81 +165,75 @@ function render() {
   positioned.forEach(ev => {
     const div = document.createElement("div");
     div.className = "event";
+    const TIMELINE_LEFT_PADDING = 12; // px
     div.style.top = ev.top + "px";
     div.style.height = ev.height + "px";
-   
+    div.style.left = `calc(${ev.left}% + ${TIMELINE_LEFT_PADDING}px)`;
+    div.style.width = `calc(${ev.width}% - ${TIMELINE_LEFT_PADDING}px)`;
 
-    div.style.left = ev.left + "%";
-    div.style.width = ev.width + "%";
-
-   const gap = 8;
-
-    if (ev.totalCols > 1) {
-      div.style.width = `calc(${ev.width}% - ${gap}px)`;
-    } else {
-      div.style.width = ev.width + "%";
-    }
     div.dataset.id = ev.id;
 
     if (ev.type === "project") div.classList.add("project-event");
     div.classList.add(`p-${ev.priority || "medium"}`);
-   div.innerHTML = `
-  <div class="event-header">
-    <span class="event-time-text">
-      ${formatTime(ev.start_time)} – ${formatTime(ev.end_time)}
-    </span>
 
-    <div class="event-actions">
-      <span class="event-title-inline">
-        ${ev.task_text || ev.title}
-      </span>
+    div.innerHTML = `
+      <div class="event-header">
+        <span class="event-time-text">
+          ${formatTime(ev.start_time)} – ${formatTime(ev.end_time)}
+        </span>
 
-      <button class="gcal-btn" title="Add to Google Calendar">
-        <svg width="16" height="16" viewBox="0 0 24 24">
-          <rect x="3" y="4" width="18" height="18" rx="2" fill="#ffffff" stroke="#dadce0"/>
-          <rect x="3" y="4" width="18" height="5" fill="#4285F4"/>
-          <text x="12" y="18" text-anchor="middle" font-size="10" fill="#4285F4" font-family="Arial" font-weight="bold">${new Date(currentDate).getDate()}</text>
-        </svg>
-      </button>
-    </div>
-  </div>
+        <div class="event-actions">
+          <span class="event-title-inline">
+            ${ev.task_text || ev.title}
+          </span>
 
-  <div class="event-description">
-    ${ev.description || ""}
-  </div>
-`;
-  div.querySelector(".gcal-btn").onclick = (e) => {
-  e.stopPropagation();
-  addToGoogleCalendar(ev);
-};
-  <div class="event-description">
-    ${ev.description || ""}
-  </div>
-`;
+          <button class="gcal-btn" title="Add to Google Calendar">
+            <svg width="16" height="16" viewBox="0 0 24 24">
+              <rect x="3" y="4" width="18" height="18" rx="2"
+                    fill="#ffffff" stroke="#dadce0"/>
+              <rect x="3" y="4" width="18" height="5"
+                    fill="#4285F4"/>
+              <text x="12" y="18"
+                    text-anchor="middle"
+                    font-size="10"
+                    fill="#4285F4"
+                    font-family="Arial"
+                    font-weight="bold">
+                ${new Date(currentDate).getDate()}
+              </text>
+            </svg>
+          </button>
+        </div>
+      </div>
 
+      <div class="event-description">
+        ${ev.description || ""}
+      </div>
+    `;
 
-    // OPEN MODAL
-   div.addEventListener("click", (e) => {
-  if (e.target.classList.contains("resize-handle")) return;
+    const gcalBtn = div.querySelector(".gcal-btn");
+    if (gcalBtn) {
+      gcalBtn.onclick = (e) => {
+        e.stopPropagation();
+        addToGoogleCalendar(ev);
+      };
+    }
 
-  if (ev.type === "project") {
-    console.log("➡ Opening project card");
-    openTaskCard(ev.task_id);
-  } else {
+    div.addEventListener("click", (e) => {
+      if (e.target.classList.contains("resize-handle")) return;
 
-    openModal(ev);
-  }
-});
+      if (ev.type === "project") {
+        openTaskCard(ev.task_id);
+      } else {
+        openModal(ev);
+      }
+    });
 
-
-
-    // DRAG TO MOVE
     div.draggable = true;
     div.ondragstart = () => {
       draggedTask = ev;
     };
 
-    // RESIZE HANDLE
     const resizeHandle = document.createElement("div");
     resizeHandle.className = "resize-handle";
     div.appendChild(resizeHandle);
