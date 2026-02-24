@@ -358,14 +358,8 @@ function computeLayout(events) {
         ev.width = 100;
         ev.left = 0;
       } else {
-        const totalGap = GAP_PX * (totalCols - 1);
-        const widthPercent =
-          (100 - (totalGap / document.getElementById("timeline").offsetWidth) * 100)
-          / totalCols;
-
-        ev.width = widthPercent;
-        ev.left = ev.col * widthPercent +
-          (ev.col * GAP_PX / document.getElementById("timeline").offsetWidth) * 100;
+        ev.width = 100 / totalCols;
+        ev.left = ev.col * ev.width;
       }
     });
   });

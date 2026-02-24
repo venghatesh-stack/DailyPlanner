@@ -119,6 +119,7 @@ body {
   min-height: 40px;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   z-index: 1;
+  margin-right: 8px;   /* 👈 horizontal gap */
 }
 
 .event-time {
