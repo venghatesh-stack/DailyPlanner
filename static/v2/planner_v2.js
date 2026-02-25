@@ -745,7 +745,51 @@ function showConflictDialog(conflicts, payload) {
 /* =========================
    INIT
 ========================= */
+function startResize(e, ev) {
+  const startY = e.clientY;
+  const originalEnd = minutes(ev.end_time);
 
+  function onMouseMove(moveEvent) {
+    const delta = moveEvent.clientY - startY;
+    const minutesDelta = (delta / HOUR_HEIGHT) * 60;
+    const snapped = Math.round(minutesDelta / SNAP) * SNAP;
+
+    const newEnd = originalEnd + snapped;
+    if (newEnd <= ev.start) return;
+    const el = document.querySelector(`[data-id='${ev.id}']`);
+    if (el) {
+      const newHeight = ((newEnd - ev.start) / 60) * HOUR_HEIGHT;
+      el.style.height = newHeight + "px";
+    }
+  }
+
+  async function onMouseUp(upEvent) {
+    document.removeEventListener("mousemove", onMouseMove);
+    document.removeEventListener("mouseup", onMouseUp);
+
+    const delta = upEvent.clientY - startY;
+    const minutesDelta = (delta / HOUR_HEIGHT) * 60;
+    const snapped = Math.round(minutesDelta / SNAP) * SNAP;
+
+    const newEnd = toTime(originalEnd + snapped);
+
+    await fetch(`/api/v2/events/${ev.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        plan_date: currentDate,
+        start_time: ev.start_time,
+        end_time: newEnd,
+        title: ev.title
+      })
+    });
+
+    loadEvents();
+  }
+
+  document.addEventListener("mousemove", onMouseMove);
+  document.addEventListener("mouseup", onMouseUp);
+}
 document.addEventListener("DOMContentLoaded", () => {
   updateDateHeader();
   loadEvents();
@@ -833,51 +877,7 @@ timeline.addEventListener("dragover", e => {
 
   snapLine.style.top = top + "px";
 });
-function startResize(e, ev) {
-  const startY = e.clientY;
-  const originalEnd = minutes(ev.end_time);
 
-  function onMouseMove(moveEvent) {
-    const delta = moveEvent.clientY - startY;
-    const minutesDelta = (delta / HOUR_HEIGHT) * 60;
-    const snapped = Math.round(minutesDelta / SNAP) * SNAP;
-
-    const newEnd = originalEnd + snapped;
-    if (newEnd <= ev.start) return;
-    const el = document.querySelector(`[data-id='${ev.id}']`);
-    if (el) {
-      const newHeight = ((newEnd - ev.start) / 60) * HOUR_HEIGHT;
-      el.style.height = newHeight + "px";
-    }
-  }
-
-  async function onMouseUp(upEvent) {
-    document.removeEventListener("mousemove", onMouseMove);
-    document.removeEventListener("mouseup", onMouseUp);
-
-    const delta = upEvent.clientY - startY;
-    const minutesDelta = (delta / HOUR_HEIGHT) * 60;
-    const snapped = Math.round(minutesDelta / SNAP) * SNAP;
-
-    const newEnd = toTime(originalEnd + snapped);
-
-    await fetch(`/api/v2/events/${ev.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        plan_date: currentDate,
-        start_time: ev.start_time,
-        end_time: newEnd,
-        title: ev.title
-      })
-    });
-
-    loadEvents();
-  }
-
-  document.addEventListener("mousemove", onMouseMove);
-  document.addEventListener("mouseup", onMouseUp);
-}
 
 timeline.addEventListener("dragleave", () => {
   if (snapLine) {
@@ -892,6 +892,7 @@ setInterval(() => {
 }, 60000);
 
 });   // ← closes DOMContentLoaded
+
 function renderTimeGrid() {
   const timeline = document.getElementById("timeline");
   const gutter = document.getElementById("time-gutter");
