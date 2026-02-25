@@ -3246,10 +3246,17 @@ def ping():
     return "OK", 200
 @app.route('/google-login')
 def google_login():
-    flow = Flow.from_client_secrets_file(
-        'client_secret.json',
-        scopes=SCOPES,
-        redirect_uri=url_for('oauth2callback', _external=True)
+    flow = Flow.from_client_config(
+    {
+        "web": {
+            "client_id": os.environ["GOOGLE_CLIENT_ID"],
+            "client_secret": os.environ["GOOGLE_CLIENT_SECRET"],
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token"
+        }
+    },
+    scopes=SCOPES,
+    redirect_uri=url_for('oauth2callback', _external=True)
     )
 
     authorization_url, state = flow.authorization_url(
