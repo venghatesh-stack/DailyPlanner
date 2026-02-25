@@ -3260,8 +3260,9 @@ def google_login():
     )
 
     authorization_url, state = flow.authorization_url(
-        access_type='offline',
-        include_granted_scopes='true'
+    access_type='offline',
+    include_granted_scopes='true',
+    prompt='consent'
     )
 
     session['state'] = state
@@ -3364,7 +3365,10 @@ def insert_google_event(event_row):
         update(
             "user_google_tokens",
             params={"user_id": f"eq.{user_id}"},
-            json={"access_token": credentials.token}
+            json={
+                "access_token": credentials.token,
+                "updated_at": datetime.utcnow().isoformat()
+            }
         )
 
     service = build("calendar", "v3", credentials=credentials)
