@@ -749,6 +749,8 @@ function showConflictDialog(conflicts, payload) {
 document.addEventListener("DOMContentLoaded", () => {
   updateDateHeader();
   loadEvents();
+  document.getElementById("reminder-select")
+  ?.addEventListener("change", handleReminderSelect);
   document.getElementById("new-event-btn")
   .addEventListener("click", openCreateModal);
 
@@ -758,8 +760,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   timeline.addEventListener("drop", async e => {
   e.preventDefault();
-  document.getElementById("reminder-select")
-  ?.addEventListener("change", handleReminderSelect);
+
   if (!draggedTask) return;
 
   const rect = timeline.getBoundingClientRect();
@@ -811,8 +812,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
  loadEvents();
-// ✅ SAFE ADDITION
-  renderTimeGrid();
+
 });
 
 timeline.addEventListener("dragover", e => {
