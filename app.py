@@ -2196,9 +2196,17 @@ def list_events():
     return jsonify(events)
 
 
+
+
 def build_google_datetime(plan_date, time_str):
     tz = pytz.timezone("Asia/Kolkata")
-    dt = datetime.strptime(f"{plan_date} {time_str}", "%Y-%m-%d %H:%M")
+
+    # 🔥 Support both HH:MM and HH:MM:SS
+    try:
+        dt = datetime.strptime(f"{plan_date} {time_str}", "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        dt = datetime.strptime(f"{plan_date} {time_str}", "%Y-%m-%d %H:%M")
+
     dt = tz.localize(dt)
     return dt.isoformat()
 
