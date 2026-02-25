@@ -2193,10 +2193,11 @@ def list_events():
 
     return jsonify(events)
 @app.route("/api/v2/events", methods=["POST"])
+@login_required
 def create_event():
     from flask import jsonify
 
-    user_id = "VenghateshS"
+    user_id = session["user_id"]
     data = request.json
     force = data.get("force", False)
 
@@ -3386,7 +3387,10 @@ def oauth2callback():
 
 def insert_google_event(event_row):
     print("🔥 GOOGLE INSERT FUNCTION CALLED")
-    user_id = "VenghateshS"  # session.get("user_id") or hardcoded for testing
+    user_id = session.get("user_id")
+    if not user_id:
+      return None
+    user_id = session["user_id"]  # session.get("user_id") or hardcoded for testing
     print("USER ID:", session.get("user_id"))
     rows = get(
         "user_google_tokens",
