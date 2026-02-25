@@ -46,12 +46,14 @@ def get(path, params=None):
         r.raise_for_status()
 
     return r.json()
-
-def post(path, data, prefer=None):
+def post(path, data, prefer="return=representation"):
     headers = HEADERS.copy()
+
+    # ✅ Always return inserted rows by default
     if prefer:
         headers["Prefer"] = prefer
-       # 🔒 SAFETY: strip eq. from POST payload
+
+    # 🔒 SAFETY: strip eq. from POST payload
     if isinstance(data, dict):
         data = {k: _strip_eq(v) for k, v in data.items()}
     elif isinstance(data, list):
@@ -59,15 +61,22 @@ def post(path, data, prefer=None):
             {k: _strip_eq(v) for k, v in row.items()}
             for row in data
         ]
+
     logger.debug("SUPABASE Post → %s | params=%s", path, data)
+
     r = requests.post(
         f"{SUPABASE_URL}/rest/v1/{path}",
         headers=headers,
         json=data,
     )
-    r.raise_for_status()
-    return r.json() if r.text else None
 
+    r.raise_for_status()
+
+    # 🔥 Important change
+    if r.text:
+        return r.json()
+
+    return []
 def delete(path, params):
     r = requests.delete(
         f"{SUPABASE_URL}/rest/v1/{path}",
