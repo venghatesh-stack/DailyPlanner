@@ -3276,7 +3276,7 @@ def credentials_to_dict(credentials):
         "client_secret": credentials.client_secret,
         "scopes": credentials.scopes
     }
- @app.route('/oauth2callback')
+@app.route('/oauth2callback')
 def oauth2callback():
 
     flow = Flow.from_client_config(
