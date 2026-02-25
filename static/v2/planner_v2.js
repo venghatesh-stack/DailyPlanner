@@ -183,22 +183,7 @@ function render() {
           (${formatTime(ev.start_time).replace(":", ".")} - ${formatTime(ev.end_time).replace(":", ".")})
         </span>
 
-          <button class="gcal-btn" title="Add to Google Calendar">
-            <svg width="16" height="16" viewBox="0 0 24 24">
-              <rect x="3" y="4" width="18" height="18" rx="2"
-                    fill="#ffffff" stroke="#dadce0"/>
-              <rect x="3" y="4" width="18" height="5"
-                    fill="#4285F4"/>
-              <text x="12" y="18"
-                    text-anchor="middle"
-                    font-size="10"
-                    fill="#4285F4"
-                    font-family="Arial"
-                    font-weight="bold">
-                ${new Date(currentDate).getDate()}
-              </text>
-            </svg>
-          </button>
+
         </div>
 
       <div class="event-description">
@@ -206,14 +191,7 @@ function render() {
       </div>
     `;
 
-    const gcalBtn = div.querySelector(".gcal-btn");
-    if (gcalBtn) {
-      gcalBtn.onclick = (e) => {
-        e.stopPropagation();
-        addToGoogleCalendar(ev);
-      };
-    }
-
+  
     div.addEventListener("click", (e) => {
       if (e.target.classList.contains("resize-handle")) return;
 
@@ -1048,21 +1026,39 @@ async function runSmartPlanner() {
 
   loadEvents();
 }
-function addToGoogleCalendar(ev) {
-  const date = currentDate.replaceAll("-", "");
+async function addToGoogleCalendar(ev) {
 
-  const start = ev.start_time.replace(":", "") + "00";
-  const end = ev.end_time.replace(":", "") + "00";
+  try {
 
-  const startDateTime = `${date}T${start}`;
-  const endDateTime = `${date}T${end}`;
+    const payload = {
+      title: ev.title || ev.task_text,
+      description: ev.description || "",
+      plan_date: currentDate,
+      start_time: ev.start_time,
+      end_time: ev.end_time
+    };
 
-  const url =
-    `https://calendar.google.com/calendar/render?action=TEMPLATE` +
-    `&text=${encodeURIComponent(ev.title || ev.task_text)}` +
-    `&dates=${startDateTime}/${endDateTime}` +
-    `&details=${encodeURIComponent(ev.description || "")}` +
-    `&reminders=popup:10`;   // 🔥 10 minute notification
+    const res = await fetch("/add-to-calendar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
 
-  window.open(url, "_blank");
+    if (res.redirected) {
+      window.location.href = res.url;  // 🔐 OAuth redirect
+      return;
+    }
+
+    const data = await res.json();
+
+    if (data.status === "success") {
+      alert("Added to Google Calendar ✅");
+    } else {
+      alert("Failed to add event.");
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("Error connecting to Google.");
+  }
 }

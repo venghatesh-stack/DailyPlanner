@@ -7,6 +7,8 @@ import os
 from datetime import date, datetime, timedelta
 import calendar
 import json
+from google.auth.transport.requests import Request   
+from werkzeug.wrappers import response
 from supabase_client import get, post, update
 from logger import setup_logger
 from utils.dates import safe_date 
@@ -56,6 +58,10 @@ from flask import request, jsonify
 from bs4 import BeautifulSoup
 from utils.dates import safe_date_from_string
 import bleach
+from flask import session, redirect, url_for, request, jsonify
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build
 print("STEP 2: imports completed")
 
 app = Flask(__name__)
@@ -73,6 +79,9 @@ APP_PASSWORD = os.environ.get("APP_PASSWORD", "changeme")
 # ==========================================================
 # Log in codestarts here
 # ==========================================================
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # REMOVE in production
+
+SCOPES = ['https://www.googleapis.com/auth/calendar.events']
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -2207,17 +2216,34 @@ def create_event():
             "conflicting_events": conflicts
         }), 409
 
-    post("daily_events", {
-        "user_id": user_id,
-        "plan_date": data["plan_date"],
-        "start_time": data["start_time"],
-        "end_time": data["end_time"],
-        "title": data["title"],
-        "description": data.get("description", ""),
-        "priority": data.get("priority", "medium")
+    response1 = post("daily_events", {
+    "user_id": user_id,
+    "plan_date": data["plan_date"],
+    "start_time": data["start_time"],
+    "end_time": data["end_time"],
+    "title": data["title"],
+    "description": data.get("description", ""),
+    "priority": data.get("priority", "medium")
     })
 
+    created_row = response1[0] if response1 else None
+
+# 🔥 AUTO SYNC TO GOOGLE
+    if created_row and 'credentials' in session:
+        try:
+            google_id = insert_google_event(created_row)
+
+            if google_id:
+                update(
+                    "daily_events",
+                    params={"id": f"eq.{created_row['id']}"},
+                    json={"google_event_id": google_id}
+                )
+        except Exception as e:
+            print("Google sync failed:", e)
+
     return jsonify({"success": True})
+
 
 @app.route("/api/v2/events/<event_id>", methods=["PUT"])
 def update_event(event_id):
@@ -2251,7 +2277,38 @@ def update_event(event_id):
             "description": data.get("description", "")
         }
     )
+    # 🔥 SYNC GOOGLE UPDATE
+    row = get(
+        "daily_events",
+        params={"id": f"eq.{event_id}"}
+    )
 
+    if row and row[0].get("google_event_id") and 'credentials' in session:
+        try:
+            credentials = Credentials(**session['credentials'])
+            service = build('calendar', 'v3', credentials=credentials)
+
+            google_id = row[0]["google_event_id"]
+
+            service.events().update(
+                calendarId="primary",
+                eventId=google_id,
+                body={
+                    "summary": data["title"],
+                    "description": data.get("description", ""),
+                    "start": {
+                        "dateTime": f"{data['plan_date']}T{data['start_time']}:00",
+                        "timeZone": "Asia/Kolkata"
+                    },
+                    "end": {
+                        "dateTime": f"{data['plan_date']}T{data['end_time']}:00",
+                        "timeZone": "Asia/Kolkata"
+                    }
+                }
+            ).execute()
+
+        except Exception as e:
+            print("Google update failed:", e)
     return jsonify({"success": True})
 
 @app.route("/api/v2/events/<event_id>", methods=["DELETE"])
@@ -2261,7 +2318,24 @@ def delete_event(event_id):
         params={"id": f"eq.{event_id}"},
         json={"is_deleted": True}
     )
-    return {"ok": True}
+    row = get(
+    "daily_events",
+    params={"id": f"eq.{event_id}"}
+)
+
+    if row and row[0].get("google_event_id") and 'credentials' in session:
+        try:
+            credentials = Credentials(**session['credentials'])
+            service = build('calendar', 'v3', credentials=credentials)
+
+            service.events().delete(
+                calendarId="primary",
+                eventId=row[0]["google_event_id"]
+            ).execute()
+
+        except Exception as e:
+            print("Google delete failed:", e)
+        return {"ok": True}
 @app.route("/api/v2/project-tasks")
 def get_project_tasks():
     user_id = "VenghateshS"
@@ -3075,7 +3149,6 @@ def ai_generate_groq():
     structured["category"] = structured.get("category") or "Learning"
 
     return jsonify(structured)
-
 def insert_event(user_id, data, force=False):
     if data["end_time"] <= data["start_time"]:
         return {"error": "Invalid time range"}, 400
@@ -3093,7 +3166,7 @@ def insert_event(user_id, data, force=False):
             "conflicting_events": conflicts
         }, 409
 
-    response= post("daily_events", {
+    response1 = post("daily_events", {
         "user_id": user_id,
         "plan_date": data["plan_date"],
         "start_time": data["start_time"],
@@ -3101,7 +3174,23 @@ def insert_event(user_id, data, force=False):
         "title": data["title"],
         "description": data.get("description", "")
     })
-    print("🔥 SUPABASE RESPONSE:", response)
+
+    created_row = response1[0] if response1 else None
+
+    # 🔥 GOOGLE AUTO SYNC HERE
+    if created_row and 'credentials' in session:
+        try:
+            google_id = insert_google_event(created_row)
+
+            if google_id:
+                update(
+                    "daily_events",
+                    params={"id": f"eq.{created_row['id']}"},
+                    json={"google_event_id": google_id}
+                )
+        except Exception as e:
+            print("Google sync failed:", e)
+
     return {"success": True}, 200
 
 @app.post("/api/v2/smart-create")
@@ -3155,6 +3244,91 @@ def smart_create():
 @app.route("/ping")
 def ping():
     return "OK", 200
+@app.route('/google-login')
+def google_login():
+    flow = Flow.from_client_secrets_file(
+        'client_secret.json',
+        scopes=SCOPES,
+        redirect_uri=url_for('oauth2callback', _external=True)
+    )
+
+    authorization_url, state = flow.authorization_url(
+        access_type='offline',
+        include_granted_scopes='true'
+    )
+
+    session['state'] = state
+    return redirect(authorization_url)
+
+def credentials_to_dict(credentials):
+    return {
+        "token": credentials.token,
+        "refresh_token": credentials.refresh_token,
+        "token_uri": credentials.token_uri,
+        "client_id": credentials.client_id,
+        "client_secret": credentials.client_secret,
+        "scopes": credentials.scopes
+    }
+    
+@app.route('/oauth2callback')
+def oauth2callback():
+    state = session['state']
+
+    flow = Flow.from_client_secrets_file(
+        'client_secret.json',
+        scopes=SCOPES,
+        state=state,
+        redirect_uri=url_for('oauth2callback', _external=True)
+    )
+
+    flow.fetch_token(authorization_response=request.url)
+
+    credentials = flow.credentials
+    session['credentials'] = credentials_to_dict(credentials)
+
+    return redirect('/planner-v2')
+
+
+def insert_google_event(event_row):
+    if 'credentials' not in session:
+        return None
+
+    credentials = Credentials(**session['credentials'])
+
+    if credentials.expired and credentials.refresh_token:
+        credentials.refresh(Request())
+        session['credentials'] = credentials_to_dict(credentials)
+    service = build('calendar', 'v3', credentials=credentials)
+
+    start_iso = f"{event_row['plan_date']}T{event_row['start_time']}:00"
+    end_iso = f"{event_row['plan_date']}T{event_row['end_time']}:00"
+
+    event_body = {
+        "summary": event_row["title"],
+        "description": event_row.get("description", ""),
+        "start": {
+            "dateTime": start_iso,
+            "timeZone": "Asia/Kolkata"
+        },
+        "end": {
+            "dateTime": end_iso,
+            "timeZone": "Asia/Kolkata"
+        },
+        "reminders": {
+            "useDefault": False,
+            "overrides": [
+                {"method": "popup", "minutes": 10}
+            ]
+        }
+    }
+
+    created = service.events().insert(
+        calendarId="primary",
+        body=event_body
+    ).execute()
+
+    return created.get("id")
+
 
 
 # ENTR
