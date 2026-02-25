@@ -2283,29 +2283,57 @@ def update_event(event_id):
         params={"id": f"eq.{event_id}"}
     )
 
-    if row and row[0].get("google_event_id") and 'credentials' in session:
+    if row and row[0].get("google_event_id"):
         try:
-            credentials = Credentials(**session['credentials'])
-            service = build('calendar', 'v3', credentials=credentials)
-
             google_id = row[0]["google_event_id"]
 
-            service.events().update(
-                calendarId="primary",
-                eventId=google_id,
-                body={
-                    "summary": data["title"],
-                    "description": data.get("description", ""),
-                    "start": {
-                        "dateTime": f"{data['plan_date']}T{data['start_time']}:00",
-                        "timeZone": "Asia/Kolkata"
-                    },
-                    "end": {
-                        "dateTime": f"{data['plan_date']}T{data['end_time']}:00",
-                        "timeZone": "Asia/Kolkata"
+            # 🔥 Load user Google credentials from DB
+            user_id = "VenghateshS"
+
+            rows = get(
+                "user_google_tokens",
+                {"user_id": f"eq.{user_id}"}
+            )
+
+            if rows:
+                token_row = rows[0]
+
+                credentials = Credentials(
+                    token=token_row["access_token"],
+                    refresh_token=token_row["refresh_token"],
+                    token_uri=token_row["token_uri"],
+                    client_id=token_row["client_id"],
+                    client_secret=token_row["client_secret"],
+                    scopes=token_row["scopes"].split(",")
+                )
+
+                if credentials.expired and credentials.refresh_token:
+                    credentials.refresh(Request())
+
+                    update(
+                        "user_google_tokens",
+                        params={"user_id": f"eq.{user_id}"},
+                        json={"access_token": credentials.token}
+                    )
+
+                service = build("calendar", "v3", credentials=credentials)
+
+                service.events().update(
+                    calendarId="primary",
+                    eventId=google_id,
+                    body={
+                        "summary": data["title"],
+                        "description": data.get("description", ""),
+                        "start": {
+                            "dateTime": f"{data['plan_date']}T{data['start_time']}:00",
+                            "timeZone": "Asia/Kolkata"
+                        },
+                        "end": {
+                            "dateTime": f"{data['plan_date']}T{data['end_time']}:00",
+                            "timeZone": "Asia/Kolkata"
+                        }
                     }
-                }
-            ).execute()
+                ).execute()
 
         except Exception as e:
             print("Google update failed:", e)
@@ -2323,19 +2351,39 @@ def delete_event(event_id):
     params={"id": f"eq.{event_id}"}
 )
 
-    if row and row[0].get("google_event_id") and 'credentials' in session:
+    if row and row[0].get("google_event_id"):
         try:
-            credentials = Credentials(**session['credentials'])
-            service = build('calendar', 'v3', credentials=credentials)
+            google_id = row[0]["google_event_id"]
 
-            service.events().delete(
-                calendarId="primary",
-                eventId=row[0]["google_event_id"]
-            ).execute()
+            user_id = "VenghateshS"
+
+            rows = get(
+                "user_google_tokens",
+                {"user_id": f"eq.{user_id}"}
+            )
+
+            if rows:
+                token_row = rows[0]
+
+                credentials = Credentials(
+                    token=token_row["access_token"],
+                    refresh_token=token_row["refresh_token"],
+                    token_uri=token_row["token_uri"],
+                    client_id=token_row["client_id"],
+                    client_secret=token_row["client_secret"],
+                    scopes=token_row["scopes"].split(",")
+                )
+
+                service = build("calendar", "v3", credentials=credentials)
+
+                service.events().delete(
+                    calendarId="primary",
+                    eventId=google_id
+                ).execute()
 
         except Exception as e:
             print("Google delete failed:", e)
-        return {"ok": True}
+    return {"ok": True}
 @app.route("/api/v2/project-tasks")
 def get_project_tasks():
     user_id = "VenghateshS"
