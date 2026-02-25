@@ -2229,7 +2229,7 @@ def create_event():
     created_row = response1[0] if response1 else None
 
 # 🔥 AUTO SYNC TO GOOGLE
-    if created_row and 'credentials' in session:
+    if created_row:
         try:
             google_id = insert_google_event(created_row)
 
@@ -3178,7 +3178,7 @@ def insert_event(user_id, data, force=False):
     created_row = response1[0] if response1 else None
 
     # 🔥 GOOGLE AUTO SYNC HERE
-    if created_row and 'credentials' in session:
+    if created_row:
         try:
             google_id = insert_google_event(created_row)
 
@@ -3217,8 +3217,8 @@ def smart_create():
                 "end_time": parsed["end"].strftime("%H:%M"),
                 "title": parsed["title"],
             }
-
-            result, status = insert_event("VenghateshS", payload)
+            user_id = session["user_id"]
+            result, status = insert_event(user_id, payload)
 
             if status == 200:
                 created.append(payload)
@@ -3277,6 +3277,7 @@ def credentials_to_dict(credentials):
         "scopes": credentials.scopes
     }
 @app.route('/oauth2callback')
+@login_required
 def oauth2callback():
 
     flow = Flow.from_client_config(
@@ -3294,23 +3295,79 @@ def oauth2callback():
     )
 
     flow.fetch_token(authorization_response=request.url)
-
     credentials = flow.credentials
-    session["credentials"] = credentials_to_dict(credentials)
+
+    creds_dict = credentials_to_dict(credentials)
+    user_id = session["user_id"]
+
+    # 🔥 MANUAL UPSERT (since you don't use supabase upsert)
+    existing = get(
+        "user_google_tokens",
+        {"user_id": f"eq.{user_id}"}
+    )
+
+    if existing:
+        update(
+            "user_google_tokens",
+            params={"user_id": f"eq.{user_id}"},
+            json={
+                "access_token": creds_dict["token"],
+                "refresh_token": creds_dict["refresh_token"],
+                "token_uri": creds_dict["token_uri"],
+                "client_id": creds_dict["client_id"],
+                "client_secret": creds_dict["client_secret"],
+                "scopes": ",".join(creds_dict["scopes"])
+            }
+        )
+    else:
+        post(
+            "user_google_tokens",
+            {
+                "user_id": user_id,
+                "access_token": creds_dict["token"],
+                "refresh_token": creds_dict["refresh_token"],
+                "token_uri": creds_dict["token_uri"],
+                "client_id": creds_dict["client_id"],
+                "client_secret": creds_dict["client_secret"],
+                "scopes": ",".join(creds_dict["scopes"])
+            }
+        )
 
     return redirect("/planner-v2")
 
-
 def insert_google_event(event_row):
-    if 'credentials' not in session:
+
+    user_id = session["user_id"]
+
+    rows = get(
+        "user_google_tokens",
+        {"user_id": f"eq.{user_id}"}
+    )
+
+    if not rows:
         return None
 
-    credentials = Credentials(**session['credentials'])
+    row = rows[0]
+
+    credentials = Credentials(
+        token=row["access_token"],
+        refresh_token=row["refresh_token"],
+        token_uri=row["token_uri"],
+        client_id=row["client_id"],
+        client_secret=row["client_secret"],
+        scopes=row["scopes"].split(",")
+    )
 
     if credentials.expired and credentials.refresh_token:
         credentials.refresh(Request())
-        session['credentials'] = credentials_to_dict(credentials)
-    service = build('calendar', 'v3', credentials=credentials)
+
+        update(
+            "user_google_tokens",
+            params={"user_id": f"eq.{user_id}"},
+            json={"access_token": credentials.token}
+        )
+
+    service = build("calendar", "v3", credentials=credentials)
 
     start_iso = f"{event_row['plan_date']}T{event_row['start_time']}:00"
     end_iso = f"{event_row['plan_date']}T{event_row['end_time']}:00"
