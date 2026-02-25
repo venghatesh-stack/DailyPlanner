@@ -2226,9 +2226,9 @@ def create_event():
     "description": data.get("description", ""),
     "priority": data.get("priority", "medium")
     })
-
+    print("Created event:", response1)
     created_row = response1[0] if response1 else None
-
+    print("Created row:", created_row )
 # 🔥 AUTO SYNC TO GOOGLE
     if created_row:
         try:
@@ -3163,7 +3163,8 @@ def ai_generate_groq():
         "https://api.groq.com/openai/v1/chat/completions",
         headers={
             "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            
         },
         json={
             "model": "llama-3.1-8b-instant",
