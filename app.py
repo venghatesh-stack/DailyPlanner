@@ -62,6 +62,8 @@ from flask import session, redirect, url_for, request, jsonify
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
+from datetime import datetime
+import pytz
 print("STEP 2: imports completed")
 
 app = Flask(__name__)
@@ -2192,6 +2194,14 @@ def list_events():
     ) or []
 
     return jsonify(events)
+
+
+def build_google_datetime(plan_date, time_str):
+    tz = pytz.timezone("Asia/Kolkata")
+    dt = datetime.strptime(f"{plan_date} {time_str}", "%Y-%m-%d %H:%M")
+    dt = tz.localize(dt)
+    return dt.isoformat()
+
 @app.route("/api/v2/events", methods=["POST"])
 @login_required
 def create_event():
@@ -3429,8 +3439,8 @@ def insert_google_event(event_row):
 
     service = build("calendar", "v3", credentials=credentials)
 
-    start_iso = f"{event_row['plan_date']}T{event_row['start_time']}:00"
-    end_iso = f"{event_row['plan_date']}T{event_row['end_time']}:00"
+    start_iso = build_google_datetime(event_row["plan_date"], event_row["start_time"])
+    end_iso = build_google_datetime(event_row["plan_date"], event_row["end_time"])
 
     event_body = {
         "summary": event_row["title"],
