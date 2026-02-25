@@ -149,7 +149,27 @@ function renderSummary() {
   });
 }
 
+function handleReminderSelect() {
+  const select = document.getElementById("reminder-select");
+  const custom = document.getElementById("custom-reminder");
 
+  if (select.value === "custom") {
+    custom.style.display = "block";
+  } else {
+    custom.style.display = "none";
+  }
+}
+
+function getReminderMinutes() {
+  const select = document.getElementById("reminder-select");
+  const custom = document.getElementById("custom-reminder");
+
+  if (select.value === "custom") {
+    return parseInt(custom.value || 0);
+  }
+
+  return parseInt(select.value);
+}
 /* =========================
    RENDER TIMELINE
 ========================= */
@@ -524,14 +544,20 @@ function openCreateModal() {
   document.getElementById("duration").value = 30;
   document.getElementById("event-title").value = "";
 
-  document.getElementById("modal").classList.add("show");
+  // 🔥 Reset reminder cleanly
+  const select = document.getElementById("reminder-select");
+  const custom = document.getElementById("custom-reminder");
 
+  select.value = "10";
+  custom.value = "";
+  custom.style.display = "none";
+
+  document.getElementById("modal").classList.remove("hidden");
 }
 
 /* =========================
    MODAL
 ========================= */
-
 function openModal(ev) {
   hideConflict();
   selected = ev;
@@ -543,9 +569,28 @@ function openModal(ev) {
 
   document.getElementById("event-title").value = ev.task_text || ev.title;
 
-  document.getElementById("modal").classList.add("show");
+  // 🔥 RESET REMINDER FIRST
+  const select = document.getElementById("reminder-select");
+  const custom = document.getElementById("custom-reminder");
 
+  select.value = "10";          // default
+  custom.value = "";
+  custom.style.display = "none";
 
+  // 🔥 APPLY EXISTING REMINDER IF AVAILABLE
+  if (ev.reminder_minutes !== undefined && ev.reminder_minutes !== null) {
+    const reminder = parseInt(ev.reminder_minutes);
+
+    if ([5, 10, 15, 30, 60].includes(reminder)) {
+      select.value = reminder;
+    } else {
+      select.value = "custom";
+      custom.value = reminder;
+      custom.style.display = "block";
+    }
+  }
+
+  document.getElementById("modal").classList.remove("hidden");
 }
 function closeTaskCard() {
   document.getElementById("task-card-modal")
@@ -606,7 +651,7 @@ attachScrollNumber("task-duration");
 
 
 function closeModal() {
-  document.getElementById("modal").classList.remove("show");
+  document.getElementById("modal").classList.add("hidden");
 }
 async function saveEvent() {
   const start = document.getElementById("start-time").value;
@@ -619,7 +664,7 @@ async function saveEvent() {
     title: document.getElementById("event-title").value,
     priority: document.getElementById("event-priority").value
   };
-
+  payload.reminder_minutes = getReminderMinutes();
   let url;
   let method = "POST";
 
@@ -697,27 +742,6 @@ function showConflictDialog(conflicts, payload) {
     loadEvents();
   };
 }
-
-async function deleteEvent() {
-  if (!selected) return;
-
-  // 🔥 Only allow deleting real calendar events
-  if (selected.type !== "event") {
-    alert("Only calendar events can be deleted here.");
-    return;
-  }
-
-  const confirmed = confirm("Delete this event?");
-  if (!confirmed) return;
-
-  await fetch(`/api/v2/events/${selected.id}`, {
-    method: "DELETE"
-  });
-
-  closeModal();
-  loadEvents();
-}
-
 /* =========================
    INIT
 ========================= */
@@ -734,7 +758,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   timeline.addEventListener("drop", async e => {
   e.preventDefault();
-
+  document.getElementById("reminder-select")
+  ?.addEventListener("change", handleReminderSelect);
   if (!draggedTask) return;
 
   const rect = timeline.getBoundingClientRect();
@@ -785,9 +810,9 @@ document.addEventListener("DOMContentLoaded", () => {
     snapLine = null;
   }
 
-loadEvents();
+ loadEvents();
 // ✅ SAFE ADDITION
-  renderTimeGutter();
+  renderTimeGrid();
 });
 
 timeline.addEventListener("dragover", e => {
@@ -810,7 +835,7 @@ timeline.addEventListener("dragover", e => {
 });
 function startResize(e, ev) {
   const startY = e.clientY;
-  const originalEnd = ev.end;
+  const originalEnd = minutes(ev.end_time);
 
   function onMouseMove(moveEvent) {
     const delta = moveEvent.clientY - startY;

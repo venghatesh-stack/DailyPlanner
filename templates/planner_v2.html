@@ -50,48 +50,93 @@
 </div>
 
 
-<div id="modal">
-  <div class="modal-card">
-    <div id="conflict-section" style="display:none; margin-top:12px;">
-      <h3>Time Conflict</h3>
-      <p>This overlaps with:</p>
-      <div id="conflict-list"></div>
+<div id="modal" class="modal-overlay hidden">
+  <div class="modal-card modern">
 
-      <div style="margin-top:12px;">
-        <button id="accept-conflict">Accept Anyway</button>
-        <button onclick="hideConflict()">Cancel</button>
+    <!-- Header -->
+    <div class="modal-header">
+      <h3 id="modal-title">New Event</h3>
+      <button class="close-btn" onclick="closeModal()">✕</button>
+    </div>
+
+    <!-- Conflict Section -->
+    <div id="conflict-section" class="conflict-box" style="display:none;">
+      <h4>Time Conflict</h4>
+      <div id="conflict-list"></div>
+      <div class="conflict-actions">
+        <button id="accept-conflict" class="primary-btn">Accept Anyway</button>
+        <button onclick="hideConflict()" class="secondary-btn">Cancel</button>
       </div>
     </div>
-    <h3 id="modal-title">Event</h3>
-   <label>Start</label>
-    <input type="time" id="start-time" step="300">
 
-    <label>Duration</label>
-    <select id="duration">
-    <option value="15">15 mins</option>
-    <option value="30" selected>30 mins</option>
-    <option value="45">45 mins</option>
-    <option value="60">1 hour</option>
-    <option value="90">1.5 hours</option>
-    <option value="120">2 hours</option>
-    </select>
-    <label>Priority</label>
-    <select id="event-priority">
-      <option value="low">Low</option>
-      <option value="medium" selected>Medium</option>
-      <option value="high">High</option>
-    </select>
-<div id="end-display" style="margin-top:6px; font-size:13px; opacity:.6;"></div>
+    <!-- Time Row -->
+    <div class="form-row">
+      <div class="form-group">
+        <label>Start</label>
+        <input type="time" id="start-time" step="300">
+      </div>
 
-    <input type="text" id="event-title" placeholder="Title">
-    <textarea id="event-desc" placeholder="Description"></textarea>
-    <div class="modal-actions">
-      <button onclick="saveEvent()">Save</button>
-      <button onclick="deleteEvent()">Delete</button>
-      <button onclick="closeModal()">Cancel</button>
+      <div class="form-group">
+        <label>Duration</label>
+        <select id="duration">
+          <option value="15">15m</option>
+          <option value="30" selected>30m</option>
+          <option value="45">45m</option>
+          <option value="60">1h</option>
+          <option value="90">1.5h</option>
+          <option value="120">2h</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Priority</label>
+        <select id="event-priority">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
     </div>
+
+    <div id="end-display" class="end-preview"></div>
+
+    <!-- Title -->
+    <label>Title</label>
+    <input type="text" id="event-title" placeholder="Meeting with team">
+
+    <!-- Description -->
+    <label>Description</label>
+    <textarea id="event-desc" placeholder="Optional notes..."></textarea>
+
+    <!-- Reminder Section -->
+    <label>Reminder</label>
+    <div class="reminder-row">
+      <select id="reminder-select" onchange="handleReminderSelect()">
+        <option value="0">No reminder</option>
+        <option value="5">5 mins before</option>
+        <option value="10">10 mins before</option>
+        <option value="15">15 mins before</option>
+        <option value="30">30 mins before</option>
+        <option value="60">1 hour before</option>
+        <option value="custom">Custom</option>
+      </select>
+
+      <input type="number"
+             id="custom-reminder"
+             placeholder="Minutes"
+             min="1"
+             style="display:none;">
+    </div>
+
+    <!-- Actions -->
+    <div class="modal-actions modern-actions">
+      <button class="primary-btn" onclick="saveEvent()">Save</button>
+      <button class="danger-btn" onclick="deleteEvent()">Delete</button>
+    </div>
+
   </div>
 </div>
+
 <div id="task-card-modal" class="hidden" >
   <div class="task-card">
 
