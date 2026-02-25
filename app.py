@@ -3385,9 +3385,9 @@ def oauth2callback():
     return redirect("/planner-v2")
 
 def insert_google_event(event_row):
-
-    user_id = session["user_id"]
-
+    print("🔥 GOOGLE INSERT FUNCTION CALLED")
+    user_id = "VenghateshS"  # session.get("user_id") or hardcoded for testing
+    print("USER ID:", session.get("user_id"))
     rows = get(
         "user_google_tokens",
         {"user_id": f"eq.{user_id}"}
