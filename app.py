@@ -2196,7 +2196,10 @@ def list_events():
 @login_required
 def create_event():
     from flask import jsonify
-
+    print("Received event creation request with data:", request.json)
+    print("Session data:", dict(session))
+    print("User ID from session:", session.get("user_id"))
+    print("Session user_id:", session["user_id"]) 
     user_id = session["user_id"]
     data = request.json
     force = data.get("force", False)
