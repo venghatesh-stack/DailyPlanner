@@ -295,14 +295,7 @@ body {
 /* Modal */
 /* ============================= */
 
-#modal,
-#task-card-modal {
-  position: fixed;
-  inset: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-}
+
 
 #modal {
   background: rgba(0,0,0,0.4);
