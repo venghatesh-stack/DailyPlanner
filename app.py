@@ -3276,24 +3276,29 @@ def credentials_to_dict(credentials):
         "client_secret": credentials.client_secret,
         "scopes": credentials.scopes
     }
-    
-@app.route('/oauth2callback')
+ @app.route('/oauth2callback')
 def oauth2callback():
-    state = session['state']
 
-    flow = Flow.from_client_secrets_file(
-        'client_secret.json',
+    flow = Flow.from_client_config(
+        {
+            "web": {
+                "client_id": os.environ["GOOGLE_CLIENT_ID"],
+                "client_secret": os.environ["GOOGLE_CLIENT_SECRET"],
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token"
+            }
+        },
         scopes=SCOPES,
-        state=state,
-        redirect_uri=url_for('oauth2callback', _external=True)
+        state=session["state"],
+        redirect_uri=url_for("oauth2callback", _external=True)
     )
 
     flow.fetch_token(authorization_response=request.url)
 
     credentials = flow.credentials
-    session['credentials'] = credentials_to_dict(credentials)
+    session["credentials"] = credentials_to_dict(credentials)
 
-    return redirect('/planner-v2')
+    return redirect("/planner-v2")
 
 
 def insert_google_event(event_row):
