@@ -100,16 +100,24 @@
 
     <div id="end-display" class="end-preview"></div>
 
-    <!-- Title -->
-    <label>Title</label>
-    <input type="text" id="event-title" placeholder="Meeting with team">
+   <div class="form-row">
+    <div class="form-group">
+      <label>Title</label>
+      <input type="text" id="event-title" placeholder="Meeting with team">
+    </div>
 
-    <!-- Description -->
-    <label>Description</label>
-    <textarea id="event-desc" placeholder="Optional notes..."></textarea>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="event-desc" placeholder="Optional notes..."></textarea>
+    </div>
+  </div>
 
-    <!-- Reminder Section -->
+   <div class="form-group">
     <label>Reminder</label>
+    <div class="reminder-row">
+      ...
+    </div>
+  </div>
     <div class="reminder-row">
       <select id="reminder-select" onchange="handleReminderSelect()">
         <option value="0">No reminder</option>
