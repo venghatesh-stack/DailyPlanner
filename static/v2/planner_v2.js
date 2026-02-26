@@ -593,10 +593,10 @@ function openModal(ev) {
   document.getElementById("modal").classList.remove("hidden");
 }
 function closeTaskCard() {
-  document.getElementById("task-card-modal")
-    .classList.remove("show");
+  const modal = document.getElementById("task-card-modal");
+  modal.classList.remove("show");
+  selected = null;  // clean state
 }
-
 
 async function saveTaskCard() {
 

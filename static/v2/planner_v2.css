@@ -303,8 +303,17 @@ body {
 }
 
 #task-card-modal {
+  position: fixed;
+  inset: 0;
+  display: none;          /* 🔥 important */
+  align-items: center;
+  justify-content: center;
   background: rgba(15, 23, 42, 0.55);
   z-index: 2000;
+}
+
+#task-card-modal.show {
+  display: flex;
 }
 
 
