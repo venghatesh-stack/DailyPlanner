@@ -662,6 +662,7 @@ async function saveEvent() {
     start_time: start,
     end_time: calculateEndTime(start, duration),
     title: document.getElementById("event-title").value,
+    description: document.getElementById("event-desc").value,   // 🔥 ADD THIS
     priority: document.getElementById("event-priority").value
   };
   payload.reminder_minutes = getReminderMinutes();
