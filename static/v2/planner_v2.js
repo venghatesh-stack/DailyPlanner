@@ -553,6 +553,10 @@ function openCreateModal() {
   custom.style.display = "none";
 
   document.getElementById("modal").classList.remove("hidden");
+    // 🔥 AUTO FOCUS START FIELD
+  setTimeout(() => {
+    document.getElementById("start-time").focus();
+  }, 50);
 }
 
 /* =========================
