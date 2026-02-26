@@ -921,6 +921,12 @@ function renderTimeGrid() {
     label.className = "hour-label";
     label.style.top = hourTop + "px";
     label.innerText = `${hour}:00`;
+     // 🔥 Add this block
+    const now = getISTNow();
+    const today = getISTDate();
+     if (currentDate === today && hour === now.getHours()) {
+      label.classList.add("current-hour");
+    }
     gutter.appendChild(label);
 
     // ========================
