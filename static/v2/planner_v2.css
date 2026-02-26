@@ -301,22 +301,49 @@ body {
   background: rgba(0,0,0,0.4);
   z-index: 1000;
 }
+/* ============================= */
+/* TASK CARD MODAL - RESPONSIVE FIX */
+/* ============================= */
 
 #task-card-modal {
   position: fixed;
   inset: 0;
-  display: none;          /* 🔥 important */
+  display: none;
   align-items: center;
   justify-content: center;
   background: rgba(15, 23, 42, 0.55);
   z-index: 2000;
+  padding: 16px; /* prevents edge touching */
 }
 
 #task-card-modal.show {
   display: flex;
 }
 
+.task-card {
+  background: white;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 20px;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.25);
+}
 
+@media (max-width: 640px) {
+
+  #task-card-modal {
+    align-items: flex-end; /* slide-up feel */
+  }
+
+  .task-card {
+    width: 100%;
+    max-width: 100%;
+    max-height: 95vh;
+    border-radius: 20px 20px 0 0;
+  }
+
+}
 
 .modal-card,
 .task-card {
