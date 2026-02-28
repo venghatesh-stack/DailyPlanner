@@ -89,37 +89,45 @@ function renderHabits(habits) {
 
   habits.forEach(h => {
 
-    const safeValue = h.value ?? "";
-    const goal = h.goal ?? 0;
+    const value = h.value ?? "";
+    const goal  = h.goal ?? 0;
+    const percent = goal > 0 ? Math.min(100, Math.round((value / goal) * 100)) : 0;
 
     container.innerHTML += `
       <div class="habit-item" data-id="${h.id}">
-        
-        <div class="habit-edit-row">
-          <input value="${h.name}" 
-                 data-id="${h.id}" 
-                 class="habit-name-edit">
 
-          <input value="${h.unit}" 
-                 data-id="${h.id}" 
-                 class="habit-unit-edit">
+        <div class="habit-header">
+          <div>
+            <div class="habit-title">${h.name}</div>
+            <div class="habit-sub">
+              Goal: ${goal} ${h.unit}
+            </div>
+          </div>
 
-          <input type="number"
-                 step="0.1"
-                 value="${goal}"
-                 data-id="${h.id}"
-                 class="habit-goal-edit"
-                 placeholder="Goal">
-
-          <button onclick="showHabitChart('${h.id}')">📈</button>
-          <button onclick="deleteHabit('${h.id}')">🗑</button>
+          <div class="habit-actions">
+            <button onclick="toggleEdit('${h.id}')">✏️</button>
+            <button onclick="showHabitChart('${h.id}')">📈</button>
+            <button onclick="deleteHabit('${h.id}')">🗑</button>
+          </div>
         </div>
 
         <input type="number"
                step="0.1"
-               value="${safeValue}"
+               value="${value}"
                data-id="${h.id}"
-               class="habit-input">
+               class="habit-input"
+               placeholder="Enter today’s value">
+
+        <div class="habit-progress">
+          <div class="habit-progress-fill"
+               style="width: ${percent}%"></div>
+        </div>
+
+        <div class="habit-edit-panel" id="edit-${h.id}">
+          <input value="${h.name}" class="habit-name-edit" data-id="${h.id}">
+          <input value="${h.unit}" class="habit-unit-edit" data-id="${h.id}">
+          <input value="${goal}" class="habit-goal-edit" data-id="${h.id}">
+        </div>
 
       </div>
     `;

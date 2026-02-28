@@ -326,4 +326,5 @@ canvas {
 }
 .habit-item.completed {
   box-shadow: 0 0 0 2px #16a34a inset;
+  background: #f0fdf4;
 }
