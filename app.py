@@ -2531,8 +2531,47 @@ def get_daily_health():
         }
     )
 
-    health = health_rows[0] if health_rows else {}
+    if health_rows:
+        health = health_rows[0]
+    else:
+        prev_rows = get(
+            "daily_health",
+            params={
+                "user_id": f"eq.{user_id}",
+                "plan_date": f"lt.{plan_date}",
+                "order": "plan_date.desc",
+                "limit": 1
+            }
+        )
 
+        if prev_rows:
+            prev = prev_rows[0]
+
+            health = {
+                "goal": prev.get("goal"),
+                "height": prev.get("height"),
+                "weight": prev.get("weight")
+            }
+        else:
+            health = {}
+    # ---------------------
+    # Calculate BMI
+    # ---------------------
+    height = health.get("height")
+    weight = health.get("weight")
+    health.setdefault("goal", None)
+    health.setdefault("height", None)
+    health.setdefault("weight", None)
+    bmi = None
+
+    try:
+        if height and weight:
+            height_m = float(height) / 100
+            bmi = round(float(weight) / (height_m * height_m), 1)
+    except:
+        pass
+    
+   
     # ---------------------
     # Load all habits (definitions)
     # ---------------------
@@ -2559,9 +2598,9 @@ def get_daily_health():
     completed = 0
 
     for h in habit_defs:
-        value = entry_map.get(h["id"], 0)
+        value = float(entry_map.get(h["id"], 0) or 0)
 
-        if value and float(value) > 0:
+        if value > 0:
             completed += 1
 
         habit_list.append({
@@ -2573,13 +2612,71 @@ def get_daily_health():
 
     total = len(habit_defs)
     habit_percent = round((completed / total) * 100) if total else 0
+    habit_score = habit_percent
 
-    streak = compute_health_streak(user_id, date.fromisoformat(plan_date))
+    if habit_score >= 90:
+        habit_label = "Excellent"
+    elif habit_score >= 70:
+        habit_label = "Good"
+    elif habit_score >= 40:
+        habit_label = "Moderate"
+    else:
+        habit_label = "Needs Work"
+
+
+    # ---------------------
+    # Weight trend (last 7 days)
+    # ---------------------
+    trend_rows = get(
+        "daily_health",
+        params={
+            "user_id": f"eq.{user_id}",
+            "plan_date": f"lte.{plan_date}",
+            "order": "plan_date.desc",
+            "limit": 30
+        }
+    )
+
+    weight_map = {}
+
+    for r in trend_rows:
+        if r.get("weight"):
+            weight_map[r["plan_date"]] = float(r["weight"])
+
+    weight_trend = []
+
+    current = date.fromisoformat(plan_date)
+
+    last_weight = None
+
+    for i in range(6, -1, -1):
+
+        d = (current - timedelta(days=i)).isoformat()
+
+        if d in weight_map:
+            last_weight = weight_map[d]
+
+        weight_trend.append({
+            "date": d,
+            "weight": last_weight
+        })
+    weekly_change = None
+
+    valid_weights = [w["weight"] for w in weight_trend if w["weight"]]
+
+    if len(valid_weights) >= 2:
+        weekly_change = round(valid_weights[-1] - valid_weights[0], 1)
+        streak = compute_health_streak(user_id, date.fromisoformat(plan_date))
 
     return jsonify({
         **health,
+        "bmi": bmi,
         "habits": habit_list,
         "habit_percent": habit_percent,
+        "habit_score": habit_score,
+        "habit_label": habit_label,
+        "weight_trend": weight_trend,
+        "weekly_change": weekly_change,
         "streak": streak
     })
     

@@ -41,7 +41,10 @@
         </svg>
         <div class="circle-text">{{ habit_percent }}%</div>
       </div>
-
+        <!-- NEW Sparkline -->
+      <div class="weight-sparkline">
+        <canvas id="weightSparkline"></canvas>
+      </div>
       <div class="weekly-line" id="weeklyAvg"></div>
       <div id="bestHabit" class="best-habit"></div>
     </div>
@@ -69,8 +72,11 @@
       <label>Weight (kg)</label>
       <input type="number" id="weight" step="0.1">
 
-      <label>Sleep (hours)</label>
-      <input type="number" id="sleep" step="0.5">
+      <label>Height (cm)</label>
+      <input type="number" id="height">
+
+      <h4>Weight Trend</h4>
+      <canvas id="weightChart" height="80"></canvas>
 
       <label>Mood</label>
       <select id="mood">

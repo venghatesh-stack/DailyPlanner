@@ -7,7 +7,7 @@ async function loadHealth(date) {
   // Basic health fields
   // ------------------------
   document.getElementById("weight").value = data.weight || "";
-  document.getElementById("sleep").value = data.sleep_hours || "";
+  document.getElementById("height").value = data.height || "";
   document.getElementById("energy").value = data.energy_level || 5;
   document.getElementById("mood").value = data.mood || "😊 Happy";
   document.getElementById("health-notes").value = data.notes || "";
@@ -28,7 +28,13 @@ async function loadHealth(date) {
   if (badge) {
     badge.innerText = `🔥 ${data.streak || 0} day streak`;
   }
-
+  // ------------------------
+  // Weight Trend Graph
+  // ------------------------
+  if (data.weight_trend) {
+    renderWeightTrend(data.weight_trend);
+    renderWeightSparkline(data.weight_trend);
+  }
   // ------------------------
   // Chart update
   // ------------------------
@@ -43,41 +49,34 @@ async function loadHealth(date) {
   }
 
   // ------------------------
-  // Weekly analytics
+  // Weekly + Monthly analytics (parallel)
   // ------------------------
-  fetch("/api/v2/weekly-health")
-    .then(res => res.json())
-    .then(weekly => {
+  Promise.all([
+    fetch("/api/v2/weekly-health").then(r => r.json()),
+    fetch("/api/v2/monthly-summary").then(r => r.json())
+  ]).then(([weekly, month]) => {
 
-      const avgEl = document.getElementById("weeklyAvg");
-      if (avgEl) {
-        avgEl.innerText = `7-day avg: ${weekly.weekly_avg}%`;
-      }
+    const avgEl = document.getElementById("weeklyAvg");
+    if (avgEl) {
+      avgEl.innerText = `7-day avg: ${weekly.weekly_avg}%`;
+    }
 
-      const bestEl = document.getElementById("bestHabit");
-      if (bestEl) {
-        bestEl.innerText =
-          weekly.best_habit ? `🏆 Best: ${weekly.best_habit}` : "";
-      }
+    const bestEl = document.getElementById("bestHabit");
+    if (bestEl) {
+      bestEl.innerText =
+        weekly.best_habit ? `🏆 Best: ${weekly.best_habit}` : "";
+    }
 
-    });
-
-  // ------------------------
-  // Monthly summary
-  // ------------------------
-  fetch("/api/v2/monthly-summary")
-    .then(res => res.json())
-    .then(month => {
-
-      const monthlyEl = document.getElementById("monthlySummary");
-      if (!monthlyEl) return;
-
+    const monthlyEl = document.getElementById("monthlySummary");
+    if (monthlyEl) {
       monthlyEl.innerHTML = `
         <p>Days tracked: ${month.days_tracked}</p>
         <p>Avg completion: ${month.avg_percent}%</p>
         <p>Total sleep: ${month.total_sleep} hrs</p>
       `;
-    });
+    }
+
+  });
 
 }
 function renderHabits(habits) {
@@ -259,7 +258,7 @@ async function saveHealth() {
     body: JSON.stringify({
       plan_date: date,
       weight: document.getElementById("weight").value,
-      sleep_hours: document.getElementById("sleep").value,
+     height: document.getElementById("height").value,
       mood: document.getElementById("mood").value,
       energy_level: document.getElementById("energy").value,
       notes: document.getElementById("health-notes").value
@@ -275,50 +274,41 @@ async function saveHealth() {
 }
 
 function wireHabitInputs() {
+
   document.querySelectorAll(".habit-input").forEach(input => {
 
-  let timeout;
+    if (input.dataset.bound) return;
+    input.dataset.bound = "1";
 
-input.addEventListener("input", () => {
+    let timeout;
 
-  clearTimeout(timeout);
+    input.addEventListener("input", () => {
 
-  timeout = setTimeout(async () => {
+      clearTimeout(timeout);
 
-    const date = document.getElementById("health-date").value;
-    const value = parseFloat(input.value) || 0;
+      timeout = setTimeout(async () => {
 
-    await fetch("/api/save-habit-value", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({
-        habit_id: input.dataset.id,
-        plan_date: date,
-        value: value
-      })
+        const date = document.getElementById("health-date").value;
+        const value = parseFloat(input.value) || 0;
+
+        await fetch("/api/save-habit-value", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            habit_id: input.dataset.id,
+            plan_date: date,
+            value: value
+          })
+        });
+
+        recalcHabitPercent();
+
+      }, 500);
+
     });
 
-    const item = input.closest(".habit-item");
-    item.classList.add("saved");
-      setTimeout(() => {
-        item.classList.remove("saved");
-      }, 800);
-    const indicator = item.querySelector(".habit-save-indicator");
-
-    if (indicator) {
-      indicator.textContent = "Saved ✓";
-      indicator.classList.add("show");
-
-      setTimeout(() => {
-        indicator.classList.remove("show");
-      }, 1000);
-    }
-
-    recalcHabitPercent();
-
-      }, 500); // saves 0.5s after typing stops
   });
-  });
+
 }
 function recalcHabitPercent() {
 
@@ -546,3 +536,79 @@ document.addEventListener("focus", function (e) {
     e.target.select();
   }
 }, true);
+
+let weightChart = null;
+
+function renderWeightTrend(data) {
+
+  if (!data || data.length === 0) return;
+
+  const ctx = document.getElementById("weightChart");
+
+  if (!ctx) return;
+
+  // destroy previous chart
+  if (weightChart) {
+    weightChart.destroy();
+  }
+
+  weightChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: data.map(d => d.date.slice(5)),
+    datasets: [{
+        data: data.map(d => d.weight ?? null),
+        tension: 0.4,
+        borderColor: "#2563eb",
+        borderWidth: 2,
+        pointRadius: 3,
+        fill: false
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { display: false },
+        x: { display: false }
+      }
+    }
+  });
+
+}
+let sparklineChart = null;
+
+function renderWeightSparkline(data) {
+
+  if (!data || data.length === 0) return;
+
+  const ctx = document.getElementById("weightSparkline");
+  if (!ctx) return;
+
+  if (sparklineChart) sparklineChart.destroy();
+
+  sparklineChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: data.map(d => ""),
+      datasets: [{
+        data: data.map(d => d.weight ?? null),
+        borderColor: "#16a34a",
+        borderWidth: 2,
+        tension: 0.4,
+        pointRadius: 0,
+        fill: false
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { display: false },
+        y: { display: false }
+      },
+      animation: {
+        duration: 800
+      }
+    }
+  });
+}

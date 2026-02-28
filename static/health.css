@@ -403,3 +403,8 @@ canvas {
   box-shadow: 0 0 0 2px #16a34a inset;
   background: #f0fdf4;
 }
+.weight-sparkline {
+  width: 120px;
+  height: 40px;
+  margin-top: 10px;
+}
