@@ -205,3 +205,37 @@ canvas {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+.best-habit {
+  font-weight: 600;
+  color: #2563eb;
+  margin-top: 4px;
+}
+#heatmap {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 12px;
+  grid-template-rows: repeat(7, 12px);
+  gap: 4px;
+}
+
+.heat-cell {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+.habit-circle-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.weekly-line {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+}
+#monthlySummary p {
+  margin: 6px 0;
+  font-size: 14px;
+}

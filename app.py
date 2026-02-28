@@ -2534,37 +2534,54 @@ def get_daily_health():
     health = health_rows[0] if health_rows else {}
 
     # ---------------------
-    # Load habits
+    # Load all habits (definitions)
     # ---------------------
-    habit_rows = get(
-        "daily_habits",
+    habit_defs = get(
+        "habit_master",
+        params={"user_id": f"eq.{user_id}"}
+    )
+
+    # ---------------------
+    # Load entries for date
+    # ---------------------
+    habit_entries = get(
+        "habit_entries",
         params={
             "user_id": f"eq.{user_id}",
             "plan_date": f"eq.{plan_date}"
         }
     )
 
-    habits = habit_rows[0]["habits"] if habit_rows else {}
+    entry_map = {h["habit_id"]: h["value"] for h in habit_entries}
 
-    # ---------------------
-    # Habit %
-    # ---------------------
-    total = len(HABIT_LIST)
-    completed = sum(1 for h in HABIT_LIST if habits.get(h))
+    habit_list = []
+    completed = 0
+
+    for h in habit_defs:
+        value = entry_map.get(h["id"], 0)
+
+        if value and float(value) > 0:
+            completed += 1
+
+        habit_list.append({
+            "id": h["id"],
+            "name": h["name"],
+            "unit": h["unit"],
+            "value": value
+        })
+
+    total = len(habit_defs)
     habit_percent = round((completed / total) * 100) if total else 0
 
-    # ---------------------
-    # Streak
-    # ---------------------
     streak = compute_health_streak(user_id, date.fromisoformat(plan_date))
 
     return jsonify({
         **health,
-        "habits": habits,
+        "habits": habit_list,
         "habit_percent": habit_percent,
         "streak": streak
     })
-
+    
 @app.route("/api/v2/daily-health", methods=["POST"])
 @login_required
 def save_daily_health():
@@ -2621,82 +2638,77 @@ def health_dashboard():
     health = health_rows[0] if health_rows else {}
 
     # -----------------------
-    # Load daily habits
+    # Load habits dynamically
     # -----------------------
-    habit_rows = get(
-        "daily_habits",
+    habit_defs = get(
+        "habit_master",
+        params={"user_id": f"eq.{user_id}"}
+    )
+
+    habit_entries = get(
+        "habit_entries",
         params={
             "user_id": f"eq.{user_id}",
             "plan_date": f"eq.{plan_date_str}"
         }
     )
 
-    habits = habit_rows[0]["habits"] if habit_rows else {}
+    entry_map = {h["habit_id"]: h["value"] for h in habit_entries}
 
-    # -----------------------
-    # Habit completion %
-    # -----------------------
-    total = len(HABIT_LIST)
-    completed = sum(1 for h in HABIT_LIST if habits.get(h))
+    habit_list = []
+    completed = 0
+
+    for h in habit_defs:
+        value = entry_map.get(h["id"], 0)
+        if value and float(value) > 0:
+            completed += 1
+
+        habit_list.append({
+            "id": h["id"],
+            "name": h["name"],
+            "unit": h["unit"],
+            "value": value
+        })
+
+    total = len(habit_defs)
     habit_percent = round((completed / total) * 100) if total else 0
-
-    # -----------------------
-    # Streak
-    # -----------------------
     health_streak = compute_health_streak(user_id, plan_date)
-
     return render_template(
-        "health_dashboard.html",
-        plan_date=plan_date,
-        health=health,
-        habits=habits,
-        habit_percent=habit_percent,
-        health_streak=health_streak,
-        habit_list=HABIT_LIST,
-        habit_icons=HABIT_ICONS
-    )
+    "health_dashboard.html",
+    plan_date=plan_date,
+    health=health,
+    habit_list=habit_list,
+    habit_percent=habit_percent,
+    health_streak=health_streak
+)
 
 
-@app.route("/api/save-habit", methods=["POST"])
+@app.route("/api/save-habit-value", methods=["POST"])
 @login_required
-def save_habit():
-    data = request.json
+def save_habit_value():
     user_id = session["user_id"]
+    data = request.json
 
-    habit_key = data.get("habit")
-    completed = data.get("completed")
+    habit_id = data.get("habit_id")
     plan_date = data.get("plan_date")
+    value = clean_number(data.get("value"))
 
-    if not habit_key or not plan_date:
+    if not habit_id or not plan_date:
         return jsonify({"error": "Missing data"}), 400
 
-    # 1️⃣ Get existing row
-    rows = get(
-        "daily_habits",
-        {
-            "user_id": f"eq.{user_id}",
-            "plan_date": f"eq.{plan_date}"
-        }
-    )
-
-    current_habits = rows[0].get("habits") if rows else {}
-    current_habits = current_habits or {}
-
-    # 2️⃣ Update only changed habit
-    current_habits[habit_key] = completed
-
-    # 3️⃣ Proper UPSERT
     post(
-        "daily_habits?on_conflict=user_id,plan_date",
+        "habit_entries?on_conflict=user_id,habit_id,plan_date",
         {
             "user_id": user_id,
+            "habit_id": habit_id,
             "plan_date": plan_date,
-            "habits": current_habits
+            "value": value
         },
         prefer="resolution=merge-duplicates"
     )
 
     return jsonify({"success": True})
+
 
 def clean_number(val):
     return float(val) if val not in ("", None) else None
@@ -3476,7 +3488,149 @@ def insert_google_event(event_row):
 
     return created.get("id")
 
+@app.route("/api/v2/weekly-health")
+@login_required
+def weekly_health():
+    user_id = session["user_id"]
 
+    today = datetime.now(IST).date()
+    start = today - timedelta(days=6)
+
+    rows = get(
+        "habit_entries",
+        params={
+            "user_id": f"eq.{user_id}",
+            "plan_date": f"gte.{start}",
+        }
+    )
+
+    # Organize by date
+    date_map = {}
+    for r in rows:
+        date_map.setdefault(r["plan_date"], []).append(r)
+
+    # Count total habits
+    habit_defs = get("habit_master", {"user_id": f"eq.{user_id}"})
+    total = len(habit_defs)
+
+    percentages = []
+
+    for i in range(7):
+        day = (start + timedelta(days=i)).isoformat()
+        entries = date_map.get(day, [])
+
+        completed = sum(1 for e in entries if e["value"] and float(e["value"]) > 0)
+
+        percent = round((completed / total) * 100) if total else 0
+        percentages.append(percent)
+
+    avg = round(sum(percentages) / len(percentages)) if percentages else 0
+    # Sum per habit
+    habit_totals = {}
+
+    for r in rows:
+        hid = r["habit_id"]
+        habit_totals[hid] = habit_totals.get(hid, 0) + float(r["value"] or 0)
+
+    best_habit_id = max(habit_totals, key=habit_totals.get) if habit_totals else None
+
+    best_name = None
+    if best_habit_id:
+        best = get("habit_master", {
+            "id": f"eq.{best_habit_id}",
+            "user_id": f"eq.{user_id}"
+        })
+        if best:
+            best_name = best[0]["name"]
+
+    return jsonify({
+        "daily": percentages,
+        "weekly_avg": avg,
+        "best_habit": best_name
+    })
+@app.route("/api/v2/monthly-summary")
+@login_required
+def monthly_summary():
+    user_id = session["user_id"]
+
+    today = datetime.now(IST).date()
+    start = today.replace(day=1)
+
+    health_rows = get(
+        "daily_health",
+        {
+            "user_id": f"eq.{user_id}",
+            "plan_date": f"gte.{start}"
+        }
+    )
+
+    habit_rows = get(
+        "habit_entries",
+        {
+            "user_id": f"eq.{user_id}",
+            "plan_date": f"gte.{start}"
+        }
+    )
+
+    days = len({h["plan_date"] for h in health_rows})
+
+    total_sleep = sum(float(h["sleep_hours"] or 0) for h in health_rows)
+
+    # Compute monthly habit %
+    habit_defs = get("habit_master", {"user_id": f"eq.{user_id}"})
+    total_habits = len(habit_defs)
+
+    date_map = {}
+    for r in habit_rows:
+        date_map.setdefault(r["plan_date"], []).append(r)
+
+    percents = []
+    for day, entries in date_map.items():
+        completed = sum(1 for e in entries if float(e["value"] or 0) > 0)
+        percent = round((completed / total_habits) * 100) if total_habits else 0
+        percents.append(percent)
+
+    avg_percent = round(sum(percents) / len(percents)) if percents else 0
+
+    return jsonify({
+        "days_tracked": days,
+        "avg_percent": avg_percent,
+        "total_sleep": round(total_sleep, 1)
+    })
+@app.route("/api/v2/heatmap")
+@login_required
+def heatmap():
+    user_id = session["user_id"]
+
+    today = datetime.now(IST).date()
+    start = today - timedelta(days=365)
+
+    rows = get(
+        "habit_entries",
+        {
+            "user_id": f"eq.{user_id}",
+            "plan_date": f"gte.{start.isoformat()}"
+        }
+    )
+
+    habit_defs = get("habit_master", {"user_id": f"eq.{user_id}"})
+    total = len(habit_defs)
+
+    date_map = {}
+
+    for r in rows:
+        date_map.setdefault(r["plan_date"], []).append(r)
+
+    heat = {}
+
+    for day, entries in date_map.items():
+        completed = sum(1 for e in entries if float(e["value"] or 0) > 0)
+        percent = round((completed / total) * 100) if total else 0
+        heat[day] = percent
+
+    return jsonify(heat)       
+    
+    
 
 # ENTR
 # Y POINT

@@ -6,39 +6,59 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='health.css') }}">
 <title>Health Dashboard</title>
 </head>
+
 <body>
 <div class="health-container">
-<div class="nav-icons">  {% include "_top_nav.html" %}  </div>
+
+  <!-- Top Navigation -->
+  <div class="nav-icons">
+    {% include "_top_nav.html" %}
+  </div>
+
+  <!-- Header -->
   <div class="health-header">
     <h2>💚 Health Dashboard</h2>
     <input type="date" id="health-date">
   </div>
-<div class="habit-summary">
 
-  <div class="habit-circle">
-    <svg width="120" height="120">
-      <circle cx="60" cy="60" r="50" stroke="#e5e7eb" stroke-width="10" fill="none"/>
-      <circle cx="60" cy="60" r="50"
-              stroke="#2563eb"
-              stroke-width="10"
-              fill="none"
-              stroke-dasharray="314"
-              stroke-dashoffset="{{ 314 - (habit_percent * 3.14) }}"
-              transform="rotate(-90 60 60)"/>
-    </svg>
-    <div class="circle-text">{{ habit_percent }}%</div>
+ <div class="habit-summary">
+
+  <div class="habit-circle-wrapper">
+
+    <div class="habit-circle">
+      <svg width="120" height="120">
+        <circle cx="60" cy="60" r="50"
+                stroke="#e5e7eb"
+                stroke-width="10"
+                fill="none"/>
+        <circle cx="60" cy="60" r="50"
+                stroke="#2563eb"
+                stroke-width="10"
+                fill="none"
+                stroke-dasharray="314"
+                stroke-dashoffset="{{ 314 - (habit_percent * 3.14) }}"
+                transform="rotate(-90 60 60)"/>
+      </svg>
+      <div class="circle-text">{{ habit_percent }}%</div>
+    </div>
+
+    <!-- 🔥 NEW -->
+    <div class="weekly-line" id="weeklyAvg"></div>
+    <div id="bestHabit" class="best-habit"></div>
+
   </div>
 
-  <div class="streak-badge">
+  <div class="streak-badge" id="streak-badge">
     🔥 {{ health_streak }} day streak
   </div>
 
 </div>
-
+  <!-- Main Grid -->
   <div class="health-grid">
 
     <!-- Metrics Card -->
     <div class="health-card">
+
       <label>Weight (kg)</label>
       <input type="number" id="weight" step="0.1">
 
@@ -57,24 +77,39 @@
 
       <label>Notes</label>
       <textarea id="health-notes"></textarea>
+
       <h4>Daily Habits</h4>
-        <div class="habit-list">
+      <div id="habitContainer">
         {% for habit in habit_list %}
-            <label class="habit-item">
-            <input type="checkbox"
-                    data-habit="{{ habit }}"
-                    {% if habits.get(habit) %}checked{% endif %}>
-            <span>{{ habit_icons.get(habit) }} {{ habit.replace("_", " ").title() }}</span>
-            </label>
+          <div class="habit-item">
+            <label>{{ habit.name }} ({{ habit.unit }})</label>
+            <input type="number"
+                   step="0.1"
+                   value="{{ habit.value }}"
+                   data-id="{{ habit.id }}"
+                   class="habit-input">
+          </div>
         {% endfor %}
-        </div>
+      </div>
 
       <button id="saveBtn" onclick="saveHealth()">Save</button>
+
     </div>
 
-    <!-- Chart Card -->
+    <!-- Chart + Monthly Summary Card -->
     <div class="health-card">
+
       <canvas id="healthChart"></canvas>
+
+      <h4>📅 Monthly Summary</h4>
+      <div id="monthlySummary"></div>
+
+    </div>
+
+    <!-- Heatmap Card -->
+    <div class="health-card">
+      <h4>📊 Activity Heatmap</h4>
+      <div id="heatmap"></div>
     </div>
 
   </div>
@@ -83,5 +118,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ url_for('static', filename='health.js') }}" defer></script>
-</body> 
+
+</body>
 </html>
