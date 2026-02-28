@@ -238,10 +238,10 @@ function appendHabitToDOM(h) {
   wireHabitInputs();
 }
 async function saveHealth() {
+
   const btn = document.getElementById("saveBtn");
 
   btn.classList.add("saving");
-  btn.innerText = "Saving...";
 
   const date = document.getElementById("health-date").value;
 
@@ -257,9 +257,13 @@ async function saveHealth() {
       notes: document.getElementById("health-notes").value
     })
   });
-btn.classList.remove("saving");
 
-  showSavedFeedback();
+  btn.classList.remove("saving");
+  btn.classList.add("saved");
+
+  setTimeout(() => {
+    btn.classList.remove("saved");
+  }, 1500);
 }
 
 function wireHabitInputs() {
@@ -408,24 +412,28 @@ async function deleteHabit(id) {
 }
 document.addEventListener("change", async (e) => {
 
-  if (e.target.classList.contains("habit-name-edit") ||
-      e.target.classList.contains("habit-unit-edit") ||
-      e.target.classList.contains("habit-goal-edit")) {
+  if (
+    e.target.classList.contains("habit-name-edit") ||
+    e.target.classList.contains("habit-unit-edit") ||
+    e.target.classList.contains("habit-goal-edit")
+  ) {
 
     const id = e.target.dataset.id;
 
-    const name = document.querySelector(
-      `.habit-name-edit[data-id="${id}"]`
-    ).value;
+    const item = document.querySelector(`.habit-item[data-id="${id}"]`);
+    if (!item) return;
 
-    const unit = document.querySelector(
-      `.habit-unit-edit[data-id="${id}"]`
-    ).value;
+    const nameInput = item.querySelector(".habit-name-edit");
+    const unitInput = item.querySelector(".habit-unit-edit");
+    const goalInput = item.querySelector(".habit-goal-edit");
+    const valueInput = item.querySelector(".habit-input");
 
-    const goal = document.querySelector(
-      `.habit-goal-edit[data-id="${id}"]`
-    ).value;
+    const name = nameInput.value;
+    const unit = unitInput.value;
+    const goal = parseFloat(goalInput.value || 0);
+    const value = parseFloat(valueInput.value || 0);
 
+    // 🔥 1. Update backend
     await fetch("/api/habits/update", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
@@ -437,9 +445,25 @@ document.addEventListener("change", async (e) => {
       })
     });
 
+    // 🔥 2. Update visible header text
+    const title = item.querySelector(".habit-title");
+    const sub = item.querySelector(".habit-sub");
+
+    if (title) title.innerText = name;
+    if (sub) sub.innerText = `Goal: ${goal} ${unit}`;
+
+    // 🔥 3. Update progress bar
+    const percent = goal > 0
+      ? Math.min(100, Math.round((value / goal) * 100))
+      : 0;
+
+    const fill = item.querySelector(".habit-progress-fill");
+    if (fill) fill.style.width = percent + "%";
+
+    // 🔥 4. Recalculate overall completion
+    recalcHabitPercent();
   }
 });
-
 async function showHabitChart(id) {
 
   const res = await fetch(`/api/v2/habit-weekly/${id}`);

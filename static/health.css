@@ -338,3 +338,31 @@ canvas {
 .habit-drag:active {
   cursor: grabbing;
 }
+.metrics-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.icon-save {
+  background: #f1f5f9;
+  border: none;
+  border-radius: 10px;
+  padding: 8px;
+  cursor: pointer;
+  color: #2563eb;
+  transition: all 0.2s ease;
+}
+
+.icon-save:hover {
+  background: #e2e8f0;
+}
+
+.icon-save.saving {
+  color: #f59e0b;
+}
+
+.icon-save.saved {
+  color: #16a34a;
+}
