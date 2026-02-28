@@ -317,12 +317,16 @@ canvas {
   background: linear-gradient(90deg, #2563eb, #16a34a);
   transition: width 0.3s ease;
 }
-
 .habit-edit-panel {
-  margin-top: 10px;
-  display: none;
-  gap: 6px;
-  flex-direction: column;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 16px;
+  padding-top: 14px;
+}
+.habit-edit-panel input {
+  font-size: 14px;
+  font-weight: 500;
+  background: #eef2f7;
+  border: 1px solid #e2e8f0;
 }
 .habit-item.completed {
   box-shadow: 0 0 0 2px #16a34a inset;
@@ -365,4 +369,33 @@ canvas {
 
 .icon-save.saved {
   color: #16a34a;
+}
+.habit-save-indicator {
+  font-size: 12px;
+  color: #16a34a;
+  margin-top: 4px;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.habit-save-indicator.show {
+  opacity: 1;
+}
+.habit-entry-block {
+  margin-top: 8px;
+}
+
+.entry-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #2563eb;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.habit-sub {
+  font-size: 12px;
+  color: #94a3b8;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
 }

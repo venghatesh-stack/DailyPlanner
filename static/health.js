@@ -112,13 +112,17 @@ function renderHabits(habits) {
           </div>
         </div>
 
-        <input type="number"
-               step="0.1"
-               value="${value}"
-               data-id="${h.id}"
-               class="habit-input"
-               placeholder="Enter today’s value">
+       <div class="habit-entry-block">
+          <div class="entry-label">Today</div>
 
+          <input type="number"
+                step="0.1"
+                value="${value}"
+                data-id="${h.id}"
+                class="habit-input"
+                placeholder="Enter value">
+        </div>
+        <div class="habit-save-indicator"></div>
         <div class="habit-progress">
           <div class="habit-progress-fill"
                style="width: ${percent}%"></div>
@@ -213,12 +217,16 @@ function appendHabitToDOM(h) {
       </div>
     </div>
 
-    <input type="number"
-           step="0.1"
-           value="${value}"
-           data-id="${h.id}"
-           class="habit-input"
-           placeholder="Enter today’s value">
+      <div class="habit-entry-block">
+      <div class="entry-label">Today</div>
+
+      <input type="number"
+            step="0.1"
+            value="${value}"
+            data-id="${h.id}"
+            class="habit-input"
+            placeholder="Enter value">
+    </div>
 
     <div class="habit-progress">
       <div class="habit-progress-fill"
@@ -283,7 +291,17 @@ function wireHabitInputs() {
           value: value
         })
       });
+      const item = input.closest(".habit-item");
+      const indicator = item.querySelector(".habit-save-indicator");
 
+      if (indicator) {
+        indicator.textContent = "Saved ✓";
+        indicator.classList.add("show");
+
+        setTimeout(() => {
+          indicator.classList.remove("show");
+        }, 1000);
+}
       // 🔥 Recalculate completion locally
       recalcHabitPercent();
     });
