@@ -27,7 +27,24 @@
     <div class="habit-summary">
 
       <div class="habit-circle-wrapper">
+        <div class="health-score-card">
 
+          <div class="health-score-ring">
+            <svg width="120" height="120">
+              <circle cx="60" cy="60" r="50" stroke="#e5e7eb" stroke-width="10" fill="none" />
+
+              <circle id="scoreRing" cx="60" cy="60" r="50" stroke="#22c55e" stroke-width="10" fill="none"
+                stroke-linecap="round" transform="rotate(-90 60 60)" />
+            </svg>
+
+            <div id="healthScoreNumber" class="score-number">0</div>
+          </div>
+
+          <div class="score-label">
+            Daily Health Score
+          </div>
+
+        </div>
         <div class="habit-circle">
           <svg width="120" height="120">
             <circle cx="60" cy="60" r="50" stroke="#e5e7eb" stroke-width="10" fill="none" />
@@ -179,8 +196,8 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <script src="{{ url_for('static', filename='health.js') }}" defer></script>
-<div id="toast-container"></div>
-<div id="saveToast">Saved ✓</div>
+  <div id="toast-container"></div>
+  <div id="saveToast">Saved ✓</div>
 </body>
 
 </html>

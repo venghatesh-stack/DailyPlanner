@@ -541,3 +541,34 @@ canvas {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+.health-score-card{
+  background:white;
+  padding:18px;
+  border-radius:18px;
+  text-align:center;
+  box-shadow:0 10px 30px rgba(0,0,0,0.05);
+  margin-bottom:16px;
+}
+
+.health-score-ring{
+  position:relative;
+  width:120px;
+  height:120px;
+  margin:auto;
+}
+
+.score-number{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  font-size:28px;
+  font-weight:700;
+  color:#111;
+}
+
+.score-label{
+  margin-top:10px;
+  font-size:14px;
+  color:#6b7280;
+}

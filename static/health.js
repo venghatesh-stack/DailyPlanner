@@ -20,6 +20,7 @@ async function loadHealth(date) {
   }
 
   updateHabitCircle(data.habit_percent || 0);
+  updateHealthScore(data);
 
   // ------------------------
   // Streak
@@ -76,7 +77,7 @@ async function loadHealth(date) {
       `;
     }
 
-  });
+  }).catch(err => console.warn("Analytics load failed", err));;
 
 }
 function renderHabits(habits) {
@@ -115,7 +116,7 @@ function renderHabits(habits) {
           <div class="entry-label">
             Today
             <span class="goal-label">
-              (Goal: ${goal || "Not set"} ${h.unit || ""})
+              (Goal: ${goal || "⚠ Set"} ${h.unit || ""})
             </span>
           </div>
 
@@ -143,6 +144,7 @@ function renderHabits(habits) {
   });
 
   wireHabitInputs();
+  wireQuickTapHabits();
 }
 function updateHabitCircle(percent) {
   const circle = document.querySelector(".habit-circle circle:nth-child(2)");
@@ -300,33 +302,30 @@ function appendHabitToDOM(h) {
 }
 async function saveHealth() {
 
-  const btn = document.getElementById("saveBtn");
+  const payload = {
+    plan_date: document.getElementById("health-date").value,
+    weight: document.getElementById("weight").value,
+    height: document.getElementById("height").value,
+    mood: document.getElementById("mood").value,
+    energy_level: document.getElementById("energy").value,
+    notes: document.getElementById("health-notes").value
+  };
 
-  btn.classList.add("saving");
+  const payloadString = JSON.stringify(payload);
 
-  const date = document.getElementById("health-date").value;
+  // 🚀 Prevent duplicate saves
+  if (payloadString === lastHealthPayload) return;
+
+  lastHealthPayload = payloadString;
 
   await fetch("/api/v2/daily-health", {
     method: "POST",
     headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
-      plan_date: date,
-      weight: document.getElementById("weight").value,
-     height: document.getElementById("height").value,
-      mood: document.getElementById("mood").value,
-      energy_level: document.getElementById("energy").value,
-      notes: document.getElementById("health-notes").value
-    })
+    body: payloadString
   });
 
-  btn.classList.remove("saving");
-  btn.classList.add("saved");
-
-  setTimeout(() => {
-    btn.classList.remove("saved");
-  }, 1500);
+  showSaveToast();
 }
-
 function wireHabitInputs() {
 
   document.querySelectorAll(".habit-input").forEach(input => {
@@ -697,7 +696,10 @@ async function quickAdd(id) {
   const input = item.querySelector(".habit-input");
 
   let current = parseFloat(input.value || 0);
-  const step = parseFloat(input.step || 1);
+  const unitInput = item.querySelector(".habit-unit-edit");
+  const unit = unitInput ? unitInput.value : "";
+
+  const step = getStepFromUnit(unit);
 
   current = Math.round((current + step) * 100) / 100;
 
@@ -766,13 +768,12 @@ function autoSaveHealth() {
 ["weight","height","mood","energy","health-notes"].forEach(id => {
 
   const el = document.getElementById(id);
-  if (!el) return;
+  if (!el || el.dataset.bound) return;
 
-  // typing pause save
+  el.dataset.bound = "1";
+
   el.addEventListener("input", autoSaveHealth);
-
-  // leaving field save
-  el.addEventListener("blur", saveHealth);
+  el.addEventListener("blur", autoSaveHealth);
 
 });
 function showToast(message,type="info"){
@@ -811,5 +812,56 @@ function showSaveToast(){
   toast.timer = setTimeout(()=>{
     toast.classList.remove("show");
   },1200);
+
+}
+
+function updateHealthScore(data){
+
+  const habits = data.habit_percent || 0;
+  const energy = data.energy_level || 5;
+  const mood   = data.mood || "Neutral";
+  const streak = data.streak || 0;
+
+  const habitScore = habits * 0.5;
+
+  const energyScore = (energy/10)*15;
+
+  const moodScore =
+      mood.includes("Happy") ? 10 :
+      mood.includes("Neutral") ? 6 :
+      3;
+
+  const streakScore = Math.min(streak*1.5,15);
+
+  const weightScore = 10; // optional stability logic later
+
+  const total =
+      habitScore +
+      energyScore +
+      moodScore +
+      streakScore +
+      weightScore;
+
+  const score = Math.round(total);
+
+  renderHealthScore(score);
+
+}
+function renderHealthScore(score){
+
+  const number = document.getElementById("healthScoreNumber");
+  const ring = document.getElementById("scoreRing");
+
+  if(!ring || !number) return;
+
+  number.innerText = score;
+
+  const radius = 50;
+  const circumference = 2*Math.PI*radius;
+
+  ring.style.strokeDasharray = circumference;
+
+  ring.style.strokeDashoffset =
+        circumference - (score/100)*circumference;
 
 }
