@@ -259,3 +259,6 @@ canvas {
 .habit-edit-row input {
   min-width: 60px;
 }
+.add-habit-section {
+  margin-bottom: 18px;
+}
