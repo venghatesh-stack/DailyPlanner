@@ -2694,7 +2694,7 @@ def save_daily_health():
         "user_id": user_id,
         "plan_date": plan_date,
         "weight": clean_number(data.get("weight")),
-        "sleep_hours": clean_number(data.get("sleep_hours")),
+        "height": clean_number(data.get("height")),
         "mood": data.get("mood"),
         "energy_level": int(data.get("energy_level")) if data.get("energy_level") else None,
         "notes": data.get("notes")
