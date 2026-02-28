@@ -95,7 +95,7 @@ function renderHabits(habits) {
     container.innerHTML += `
       <div class="habit-item" data-id="${h.id}">
 
-        <div class="habit-header">
+        <div class="habit-header habit-tap" data-id="${h.id}">
         <div class="habit-drag">☰</div>
           <div>
             <div class="habit-title">${h.name}</div>
@@ -184,6 +184,41 @@ async function addHabit() {
   document.getElementById("newHabitName").value = "";
   document.getElementById("newHabitUnit").value = "";
 }
+function wireQuickTapHabits() {
+
+  document.querySelectorAll(".habit-tap").forEach(header => {
+
+    if (header.dataset.tapbound) return;
+    header.dataset.tapbound = "1";
+
+    header.addEventListener("click", async () => {
+
+      const item = header.closest(".habit-item");
+      const input = item.querySelector(".habit-input");
+
+      if (!input) return;
+
+      let current = parseFloat(input.value || 0);
+
+      // increment amount
+      const step = parseFloat(input.step || 1);
+
+      current += step;
+
+      input.value = current;
+
+      // trigger save
+      input.dispatchEvent(new Event("input"));
+
+      // visual pulse
+      item.classList.add("tap-flash");
+      setTimeout(() => item.classList.remove("tap-flash"), 300);
+
+    });
+
+  });
+
+}
 function appendHabitToDOM(h) {
 
   const container = document.getElementById("habitContainer");
@@ -200,7 +235,7 @@ function appendHabitToDOM(h) {
   div.dataset.id = h.id;
 
   div.innerHTML = `
-    <div class="habit-header">
+    <div class="habit-header habit-tap" data-id="${h.id}">
       <div class="habit-drag">☰</div>
       <div>
         <div class="habit-title">${h.name}</div>
@@ -243,6 +278,7 @@ function appendHabitToDOM(h) {
 
   // 🔥 Attach input listener
   wireHabitInputs();
+  wireQuickTapHabits();
 }
 async function saveHealth() {
 
@@ -334,6 +370,7 @@ function recalcHabitPercent() {
   const percent = total ? Math.round((completed / total) * 100) : 0;
 
   updateHabitCircle(percent);
+
 }
 function showSavedFeedback() {
   const btn = document.getElementById("saveBtn");
@@ -485,7 +522,13 @@ document.addEventListener("input", function (e) {
 
       const fill = item.querySelector(".habit-progress-fill");
       if (fill) fill.style.width = percent + "%";
-
+      // 🔥 Move focus to entry field after goal edit
+      if (e.target.classList.contains("habit-goal-edit")) {
+        if (valueInput) {
+          valueInput.focus();
+          valueInput.select();
+        }
+      }
       // 🔥 Visual save glow
       item.classList.add("saved");
       setTimeout(() => {
@@ -612,3 +655,18 @@ function renderWeightSparkline(data) {
     }
   });
 }
+document.addEventListener("keydown", function(e){
+
+  if (e.target.classList.contains("habit-goal-edit") && e.key === "Enter") {
+
+    const item = e.target.closest(".habit-item");
+    const entry = item.querySelector(".habit-input");
+
+    if (entry) {
+      entry.focus();
+      entry.select();
+    }
+
+  }
+
+});

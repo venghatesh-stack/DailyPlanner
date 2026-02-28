@@ -408,3 +408,11 @@ canvas {
   height: 40px;
   margin-top: 10px;
 }
+.habit-tap {
+  cursor: pointer;
+}
+
+.tap-flash {
+  background: #ecfdf5;
+  transition: background 0.3s;
+}
