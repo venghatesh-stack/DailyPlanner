@@ -139,18 +139,13 @@ textarea {
 
 .habit-item {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
   padding: 10px;
   background: #f9fafc;
   border-radius: 12px;
   border: 1px solid #e5e7eb;
   font-size: 14px;
-}
-
-.habit-item input {
-  width: 18px;
-  height: 18px;
 }
 
 /* ===============================
@@ -238,4 +233,29 @@ canvas {
 #monthlySummary p {
   margin: 6px 0;
   font-size: 14px;
+}
+.habit-edit-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.habit-edit-row button {
+  width: auto !important;
+  padding: 6px 10px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+.habit-edit-row input {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+#newHabitName,
+#newHabitUnit {
+  margin-top: 12px;
+}
+.habit-edit-row input {
+  min-width: 60px;
 }
