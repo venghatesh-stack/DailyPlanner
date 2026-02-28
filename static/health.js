@@ -227,7 +227,7 @@ function appendHabitToDOM(h) {
             class="habit-input"
             placeholder="Enter value">
     </div>
-
+    <div class="habit-save-indicator"></div>
     <div class="habit-progress">
       <div class="habit-progress-fill"
            style="width: ${percent}%"></div>
@@ -277,35 +277,47 @@ async function saveHealth() {
 function wireHabitInputs() {
   document.querySelectorAll(".habit-input").forEach(input => {
 
-    input.addEventListener("change", async () => {
+  let timeout;
 
-      const date = document.getElementById("health-date").value;
-      const value = parseFloat(input.value) || 0;
+input.addEventListener("input", () => {
 
-      await fetch("/api/save-habit-value", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          habit_id: input.dataset.id,
-          plan_date: date,
-          value: value
-        })
-      });
-      const item = input.closest(".habit-item");
-      const indicator = item.querySelector(".habit-save-indicator");
+  clearTimeout(timeout);
 
-      if (indicator) {
-        indicator.textContent = "Saved ✓";
-        indicator.classList.add("show");
+  timeout = setTimeout(async () => {
 
-        setTimeout(() => {
-          indicator.classList.remove("show");
-        }, 1000);
-}
-      // 🔥 Recalculate completion locally
-      recalcHabitPercent();
+    const date = document.getElementById("health-date").value;
+    const value = parseFloat(input.value) || 0;
+
+    await fetch("/api/save-habit-value", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        habit_id: input.dataset.id,
+        plan_date: date,
+        value: value
+      })
     });
 
+    const item = input.closest(".habit-item");
+    item.classList.add("saved");
+      setTimeout(() => {
+        item.classList.remove("saved");
+      }, 800);
+    const indicator = item.querySelector(".habit-save-indicator");
+
+    if (indicator) {
+      indicator.textContent = "Saved ✓";
+      indicator.classList.add("show");
+
+      setTimeout(() => {
+        indicator.classList.remove("show");
+      }, 1000);
+    }
+
+    recalcHabitPercent();
+
+      }, 500); // saves 0.5s after typing stops
+  });
   });
 }
 function recalcHabitPercent() {

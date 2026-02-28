@@ -399,3 +399,7 @@ canvas {
   letter-spacing: 0.3px;
   text-transform: uppercase;
 }
+.habit-item.saved {
+  box-shadow: 0 0 0 2px #16a34a inset;
+  background: #f0fdf4;
+}
