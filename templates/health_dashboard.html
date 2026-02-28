@@ -57,7 +57,15 @@
 
     <!-- Metrics Card -->
     <div class="health-card">
+       <div class="metrics-header">
+          <h4>Health Metrics</h4>
 
+          <button id="saveBtn" class="icon-save" onclick="saveHealth()">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M17 3H5a2 2 0 0 0-2 2v14l4-4h10a2 2 0 0 0 2-2V7l-2-4zM7 5h8v4H7V5z"/>
+            </svg>
+          </button>
+        </div>
       <label>Weight (kg)</label>
       <input type="number" id="weight" step="0.1">
 
@@ -130,15 +138,7 @@
       <button onclick="addHabit()">Add Habit</button>
     </div>
 
-    <div class="metrics-header">
-  <h4>Health Metrics</h4>
-
-  <button id="saveBtn" class="icon-save" onclick="saveHealth()">
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-      <path d="M17 3H5a2 2 0 0 0-2 2v14l4-4h10a2 2 0 0 0 2-2V7l-2-4zM7 5h8v4H7V5z"/>
-    </svg>
-  </button>
-</div>
+   
 
     </div>
 
