@@ -2538,7 +2538,8 @@ def get_daily_health():
     # ---------------------
     habit_defs = get(
         "habit_master",
-        params={"user_id": f"eq.{user_id}"}
+        params={"user_id": f"eq.{user_id}","is_deleted": "is.false", "order": "position.asc"},
+        
     )
 
     # ---------------------
@@ -3487,7 +3488,6 @@ def insert_google_event(event_row):
     ).execute()
 
     return created.get("id")
-
 @app.route("/api/v2/weekly-health")
 @login_required
 def weekly_health():
@@ -3498,20 +3498,25 @@ def weekly_health():
 
     rows = get(
         "habit_entries",
-        params={
+        {
             "user_id": f"eq.{user_id}",
-            "plan_date": f"gte.{start}",
+            "plan_date": f"gte.{start.isoformat()}",
         }
     )
 
-    # Organize by date
+    habit_defs = get(
+        "habit_master",
+        {
+            "user_id": f"eq.{user_id}",
+            "is_deleted": "is.false"
+        }
+    )
+
+    total = len(habit_defs)
+
     date_map = {}
     for r in rows:
         date_map.setdefault(r["plan_date"], []).append(r)
-
-    # Count total habits
-    habit_defs = get("habit_master", {"user_id": f"eq.{user_id}"})
-    total = len(habit_defs)
 
     percentages = []
 
@@ -3519,38 +3524,48 @@ def weekly_health():
         day = (start + timedelta(days=i)).isoformat()
         entries = date_map.get(day, [])
 
-        completed = sum(1 for e in entries if e["value"] and float(e["value"]) > 0)
+        completed = 0
+
+        for e in entries:
+            habit = next((h for h in habit_defs if h["id"] == e["habit_id"]), None)
+            if not habit:
+                continue
+
+            goal = float(habit.get("goal") or 0)
+            value = float(e.get("value") or 0)
+
+            if goal > 0 and value >= goal:
+                completed += 1
 
         percent = round((completed / total) * 100) if total else 0
         percentages.append(percent)
 
     avg = round(sum(percentages) / len(percentages)) if percentages else 0
-    # Sum per habit
-    habit_totals = {}
 
+    # Best habit
+    habit_totals = {}
     for r in rows:
-        hid = r["habit_id"]
-        habit_totals[hid] = habit_totals.get(hid, 0) + float(r["value"] or 0)
+        habit_totals[r["habit_id"]] = habit_totals.get(r["habit_id"], 0) + float(r["value"] or 0)
 
     best_habit_id = max(habit_totals, key=habit_totals.get) if habit_totals else None
 
     best_name = None
     if best_habit_id:
-        best = get("habit_master", {
-            "id": f"eq.{best_habit_id}",
-            "user_id": f"eq.{user_id}"
-        })
+        best = next((h for h in habit_defs if h["id"] == best_habit_id), None)
         if best:
-            best_name = best[0]["name"]
+            best_name = best["name"]
 
     return jsonify({
         "daily": percentages,
         "weekly_avg": avg,
         "best_habit": best_name
     })
+from calendar import monthrange
+
 @app.route("/api/v2/monthly-summary")
 @login_required
 def monthly_summary():
+
     user_id = session["user_id"]
 
     today = datetime.now(IST).date()
@@ -3560,7 +3575,7 @@ def monthly_summary():
         "daily_health",
         {
             "user_id": f"eq.{user_id}",
-            "plan_date": f"gte.{start}"
+            "plan_date": f"gte.{start.isoformat()}"
         }
     )
 
@@ -3568,25 +3583,51 @@ def monthly_summary():
         "habit_entries",
         {
             "user_id": f"eq.{user_id}",
-            "plan_date": f"gte.{start}"
+            "plan_date": f"gte.{start.isoformat()}"
         }
     )
 
     days = len({h["plan_date"] for h in health_rows})
-
     total_sleep = sum(float(h["sleep_hours"] or 0) for h in health_rows)
 
-    # Compute monthly habit %
-    habit_defs = get("habit_master", {"user_id": f"eq.{user_id}"})
+    habit_defs = get(
+        "habit_master",
+        {
+            "user_id": f"eq.{user_id}",
+            "is_deleted": "is.false"
+        }
+    )
+
     total_habits = len(habit_defs)
+    habit_map = {h["id"]: h for h in habit_defs}
 
     date_map = {}
     for r in habit_rows:
         date_map.setdefault(r["plan_date"], []).append(r)
 
+    from calendar import monthrange
+    num_days = monthrange(today.year, today.month)[1]
+
     percents = []
-    for day, entries in date_map.items():
-        completed = sum(1 for e in entries if float(e["value"] or 0) > 0)
+
+    for d in range(1, num_days + 1):
+
+        day = today.replace(day=d).isoformat()
+        entries = date_map.get(day, [])
+
+        completed = 0
+
+        for e in entries:
+            habit = habit_map.get(e["habit_id"])
+            if not habit:
+                continue
+
+            goal = float(habit.get("goal") or 0)
+            value = float(e.get("value") or 0)
+
+            if goal > 0 and value >= goal:
+                completed += 1
+
         percent = round((completed / total_habits) * 100) if total_habits else 0
         percents.append(percent)
 
@@ -3613,7 +3654,13 @@ def heatmap():
         }
     )
 
-    habit_defs = get("habit_master", {"user_id": f"eq.{user_id}"})
+    habit_defs = get(
+        "habit_master",
+        {
+            "user_id": f"eq.{user_id}",
+            "is_deleted": "is.false"
+        }
+    )
     total = len(habit_defs)
 
     date_map = {}
@@ -3630,7 +3677,96 @@ def heatmap():
 
     return jsonify(heat)       
     
-    
+@app.route("/api/habits/add", methods=["POST"])
+@login_required
+def add_habit():
+    user_id = session["user_id"]
+    data = request.get_json()
+
+    name = (data.get("name") or "").strip()
+    unit = (data.get("unit") or "").strip()
+
+    if not name or not unit:
+        return jsonify({"error": "Name and unit required"}), 400
+
+    post(
+        "habit_master",
+        {
+            "user_id": user_id,
+            "name": name,
+            "unit": unit
+        }
+    )
+
+    return jsonify({"success": True})  
+@app.route("/api/habits/delete", methods=["POST"])
+@login_required
+def delete_habit():
+    data = request.get_json()
+    habit_id = data.get("habit_id")
+
+    update(
+        "habit_master",
+        params={"id": f"eq.{habit_id}"},
+        json={"is_deleted": True}
+    )
+
+    return jsonify({"success": True})
+
+@app.route("/api/habits/update", methods=["POST"])
+@login_required
+def update_habit():
+    data = request.get_json()
+
+    update(
+        "habit_master",
+        params={"id": f"eq.{data['habit_id']}"},
+        json={
+            "name": data.get("name"),
+            "unit": data.get("unit"),
+            "goal": data.get("goal")
+        }
+    )
+
+    return jsonify({"success": True})
+
+@app.route("/api/habits/reorder", methods=["POST"])
+@login_required
+def reorder_habit():
+    data = request.get_json()
+
+    update(
+        "habit_master",
+        params={"id": f"eq.{data['habit_id']}"},
+        json={"position": data["position"]}
+    )
+
+    return jsonify({"success": True})
+
+@app.route("/api/v2/habit-weekly/<habit_id>")
+@login_required
+def habit_weekly(habit_id):
+    user_id = session["user_id"]
+    today = date.today()
+    start = today - timedelta(days=6)
+
+    rows = get(
+        "habit_entries",
+        params={
+            "user_id": f"eq.{user_id}",
+            "habit_id": f"eq.{habit_id}",
+            "plan_date": f"gte.{start.isoformat()}"
+        }
+    )
+
+    date_map = {r["plan_date"]: float(r["value"] or 0) for r in rows}
+
+    data = []
+    for i in range(7):
+        day = (start + timedelta(days=i)).isoformat()
+        data.append(date_map.get(day, 0))
+
+    return jsonify(data)
 
 # ENTR
 # Y POINT

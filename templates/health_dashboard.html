@@ -21,38 +21,37 @@
     <input type="date" id="health-date">
   </div>
 
- <div class="habit-summary">
+  <!-- Habit Summary -->
+  <div class="habit-summary">
 
-  <div class="habit-circle-wrapper">
+    <div class="habit-circle-wrapper">
+      <div class="habit-circle">
+        <svg width="120" height="120">
+          <circle cx="60" cy="60" r="50"
+                  stroke="#e5e7eb"
+                  stroke-width="10"
+                  fill="none"/>
+          <circle cx="60" cy="60" r="50"
+                  stroke="#2563eb"
+                  stroke-width="10"
+                  fill="none"
+                  stroke-dasharray="314"
+                  stroke-dashoffset="{{ 314 - (habit_percent * 3.14) }}"
+                  transform="rotate(-90 60 60)"/>
+        </svg>
+        <div class="circle-text">{{ habit_percent }}%</div>
+      </div>
 
-    <div class="habit-circle">
-      <svg width="120" height="120">
-        <circle cx="60" cy="60" r="50"
-                stroke="#e5e7eb"
-                stroke-width="10"
-                fill="none"/>
-        <circle cx="60" cy="60" r="50"
-                stroke="#2563eb"
-                stroke-width="10"
-                fill="none"
-                stroke-dasharray="314"
-                stroke-dashoffset="{{ 314 - (habit_percent * 3.14) }}"
-                transform="rotate(-90 60 60)"/>
-      </svg>
-      <div class="circle-text">{{ habit_percent }}%</div>
+      <div class="weekly-line" id="weeklyAvg"></div>
+      <div id="bestHabit" class="best-habit"></div>
     </div>
 
-    <!-- 🔥 NEW -->
-    <div class="weekly-line" id="weeklyAvg"></div>
-    <div id="bestHabit" class="best-habit"></div>
+    <div class="streak-badge" id="streak-badge">
+      🔥 {{ health_streak }} day streak
+    </div>
 
   </div>
 
-  <div class="streak-badge" id="streak-badge">
-    🔥 {{ health_streak }} day streak
-  </div>
-
-</div>
   <!-- Main Grid -->
   <div class="health-grid">
 
@@ -79,34 +78,62 @@
       <textarea id="health-notes"></textarea>
 
       <h4>Daily Habits</h4>
-      <div id="habitContainer">
+
+      <!-- ✅ Correct container -->
+      <div id="habitContainer" class="sortable-habits">
+
         {% for habit in habit_list %}
-          <div class="habit-item">
-            <label>{{ habit.name }} ({{ habit.unit }})</label>
+        <div class="habit-item" data-id="{{ habit.id }}">
+
+          <div class="habit-edit-row">
+            <input value="{{ habit.name }}"
+                   data-id="{{ habit.id }}"
+                   class="habit-name-edit">
+
+            <input value="{{ habit.unit }}"
+                   data-id="{{ habit.id }}"
+                   class="habit-unit-edit">
+
             <input type="number"
                    step="0.1"
-                   value="{{ habit.value }}"
+                   value="{{ habit.goal or 0 }}"
                    data-id="{{ habit.id }}"
-                   class="habit-input">
+                   class="habit-goal-edit"
+                   placeholder="Goal">
+
+            <button onclick="showHabitChart('{{ habit.id }}')">📈</button>
+            <button onclick="deleteHabit('{{ habit.id }}')">🗑</button>
           </div>
+
+          <input type="number"
+                 step="0.1"
+                 value="{{ habit.value }}"
+                 data-id="{{ habit.id }}"
+                 class="habit-input">
+
+        </div>
         {% endfor %}
+
       </div>
+
+      <!-- Add Habit -->
+      <input id="newHabitName" placeholder="Habit name">
+      <input id="newHabitUnit" placeholder="Unit (mins, hrs)">
+      <button onclick="addHabit()">Add Habit</button>
 
       <button id="saveBtn" onclick="saveHealth()">Save</button>
 
     </div>
 
-    <!-- Chart + Monthly Summary Card -->
+    <!-- Chart + Monthly Summary -->
     <div class="health-card">
-
       <canvas id="healthChart"></canvas>
 
       <h4>📅 Monthly Summary</h4>
       <div id="monthlySummary"></div>
-
     </div>
 
-    <!-- Heatmap Card -->
+    <!-- Heatmap -->
     <div class="health-card">
       <h4>📊 Activity Heatmap</h4>
       <div id="heatmap"></div>
@@ -117,6 +144,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script src="{{ url_for('static', filename='health.js') }}" defer></script>
 
 </body>

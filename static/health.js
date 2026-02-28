@@ -81,23 +81,46 @@ async function loadHealth(date) {
 
 }
 function renderHabits(habits) {
+
   const container = document.getElementById("habitContainer");
   if (!container) return;
 
   container.innerHTML = "";
 
   habits.forEach(h => {
-    const safeValue =
-      h.value !== null && h.value !== undefined ? h.value : "";
+
+    const safeValue = h.value ?? "";
+    const goal = h.goal ?? 0;
 
     container.innerHTML += `
-      <div class="habit-item">
-        <label>${h.name} (${h.unit})</label>
+      <div class="habit-item" data-id="${h.id}">
+        
+        <div class="habit-edit-row">
+          <input value="${h.name}" 
+                 data-id="${h.id}" 
+                 class="habit-name-edit">
+
+          <input value="${h.unit}" 
+                 data-id="${h.id}" 
+                 class="habit-unit-edit">
+
+          <input type="number"
+                 step="0.1"
+                 value="${goal}"
+                 data-id="${h.id}"
+                 class="habit-goal-edit"
+                 placeholder="Goal">
+
+          <button onclick="showHabitChart('${h.id}')">📈</button>
+          <button onclick="deleteHabit('${h.id}')">🗑</button>
+        </div>
+
         <input type="number"
                step="0.1"
                value="${safeValue}"
                data-id="${h.id}"
-               class="habit-input"/>
+               class="habit-input">
+
       </div>
     `;
   });
@@ -119,7 +142,27 @@ function updateHabitCircle(percent) {
 
   if (text) text.innerText = percent + "%";
 }
+async function addHabit() {
+  const name = document.getElementById("newHabitName").value.trim();
+  const unit = document.getElementById("newHabitUnit").value.trim();
 
+  if (!name || !unit) {
+    alert("Enter habit name and unit");
+    return;
+  }
+
+  const res = await fetch("/api/habits/add", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, unit })
+  });
+
+  if (res.ok) {
+    location.reload();  // refresh to show new habit
+  } else {
+    alert("Failed to add habit");
+  }
+}
 async function saveHealth() {
   const btn = document.getElementById("saveBtn");
 
@@ -170,30 +213,29 @@ function wireHabitInputs() {
   });
 }
 function recalcHabitPercent() {
-  const inputs = document.querySelectorAll(".habit-input");
 
-  let total = inputs.length;
+  const items = document.querySelectorAll(".habit-item");
+
+  let total = items.length;
   let completed = 0;
 
-  inputs.forEach(input => {
-    const value = parseFloat(input.value);
-    if (value && value > 0) completed++;
+  items.forEach(item => {
+
+    const valueInput = item.querySelector(".habit-input");
+    const goalInput  = item.querySelector(".habit-goal-edit");
+
+    const value = parseFloat(valueInput?.value || 0);
+    const goal  = parseFloat(goalInput?.value || 0);
+
+    if (goal > 0 && value >= goal) {
+      completed++;
+    }
+
   });
 
   const percent = total ? Math.round((completed / total) * 100) : 0;
 
   updateHabitCircle(percent);
-
-  // Update chart safely
-  if (
-    window.healthChart &&
-    window.healthChart.data &&
-    window.healthChart.data.datasets &&
-    window.healthChart.data.datasets.length > 2
-  ) {
-    window.healthChart.data.datasets[2].data = [percent];
-    window.healthChart.update();
-  }
 }
 function showSavedFeedback() {
   const btn = document.getElementById("saveBtn");
@@ -225,7 +267,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadHealth(dateInput.value);
   });
 
-  // 🔥 Load heatmap ONCE
+  // 🔥 Load heatmap once
   fetch("/api/v2/heatmap")
     .then(res => res.json())
     .then(data => {
@@ -247,9 +289,102 @@ document.addEventListener("DOMContentLoaded", async () => {
           "#e5e7eb";
 
         container.appendChild(div);
-
       });
-
     });
 
+  // 🔥 Enable Drag Reorder
+  const container = document.getElementById("habitContainer");
+
+  if (container) {
+    new Sortable(container, {
+      animation: 150,
+      onEnd: async function () {
+
+        const items = document.querySelectorAll(".habit-item");
+
+        for (let i = 0; i < items.length; i++) {
+
+          const id = items[i].dataset.id;
+
+          await fetch("/api/habits/reorder", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+              habit_id: id,
+              position: i
+            })
+          });
+        }
+      }
+    });
+  }
+
 });
+async function deleteHabit(id) {
+  if (!confirm("Delete this habit?")) return;
+
+  await fetch("/api/habits/delete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ habit_id: id })
+  });
+
+  location.reload();
+}
+document.addEventListener("change", async (e) => {
+
+  if (e.target.classList.contains("habit-name-edit") ||
+      e.target.classList.contains("habit-unit-edit") ||
+      e.target.classList.contains("habit-goal-edit")) {
+
+    const id = e.target.dataset.id;
+
+    const name = document.querySelector(
+      `.habit-name-edit[data-id="${id}"]`
+    ).value;
+
+    const unit = document.querySelector(
+      `.habit-unit-edit[data-id="${id}"]`
+    ).value;
+
+    const goal = document.querySelector(
+      `.habit-goal-edit[data-id="${id}"]`
+    ).value;
+
+    await fetch("/api/habits/update", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        habit_id: id,
+        name,
+        unit,
+        goal
+      })
+    });
+
+  }
+});
+
+async function showHabitChart(id) {
+
+  const res = await fetch(`/api/v2/habit-weekly/${id}`);
+  const data = await res.json();
+
+  const ctx = document.getElementById("healthChart");
+
+  if (window.habitChartInstance) {
+    window.habitChartInstance.destroy();
+  }
+
+  window.habitChartInstance = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
+      datasets: [{
+        label: "Weekly Progress",
+        data: data,
+        tension: 0.3
+      }]
+    }
+  });
+}
