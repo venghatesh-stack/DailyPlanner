@@ -388,3 +388,8 @@ async function showHabitChart(id) {
     }
   });
 }
+function toggleEdit(id) {
+  const panel = document.getElementById("edit-" + id);
+  panel.style.display =
+    panel.style.display === "flex" ? "none" : "flex";
+}

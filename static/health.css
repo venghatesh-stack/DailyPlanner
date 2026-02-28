@@ -262,3 +262,68 @@ canvas {
 .add-habit-section {
   margin-bottom: 18px;
 }
+.habit-item {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+  border: none;
+}
+
+.habit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.habit-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.habit-sub {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.habit-actions button {
+  background: #f1f5f9;
+  border: none;
+  border-radius: 10px;
+  padding: 6px 8px;
+  font-size: 14px;
+  margin-left: 4px;
+}
+
+.habit-input {
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+  background: #f9fafc;
+  border-radius: 14px;
+}
+
+.habit-progress {
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 6px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.habit-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #16a34a);
+  transition: width 0.3s ease;
+}
+
+.habit-edit-panel {
+  margin-top: 10px;
+  display: none;
+  gap: 6px;
+  flex-direction: column;
+}
+.habit-item.completed {
+  box-shadow: 0 0 0 2px #16a34a inset;
+}

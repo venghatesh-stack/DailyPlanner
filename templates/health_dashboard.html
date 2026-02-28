@@ -83,33 +83,41 @@
       <div id="habitContainer" class="sortable-habits">
 
         {% for habit in habit_list %}
-        <div class="habit-item" data-id="{{ habit.id }}">
+       <div class="habit-item" data-id="{{ habit.id }}">
 
-          <div class="habit-edit-row">
-            <input value="{{ habit.name }}"
-                   data-id="{{ habit.id }}"
-                   class="habit-name-edit">
+          <div class="habit-header">
+            <div>
+              <div class="habit-title">{{ habit.name }}</div>
+              <div class="habit-sub">
+                Goal: {{ habit.goal }} {{ habit.unit }}
+              </div>
+            </div>
 
-            <input value="{{ habit.unit }}"
-                   data-id="{{ habit.id }}"
-                   class="habit-unit-edit">
-
-            <input type="number"
-                   step="0.1"
-                   value="{{ habit.goal or 0 }}"
-                   data-id="{{ habit.id }}"
-                   class="habit-goal-edit"
-                   placeholder="Goal">
-
-            <button onclick="showHabitChart('{{ habit.id }}')">📈</button>
-            <button onclick="deleteHabit('{{ habit.id }}')">🗑</button>
+            <div class="habit-actions">
+              <button onclick="toggleEdit('{{ habit.id }}')">✏️</button>
+              <button onclick="showHabitChart('{{ habit.id }}')">📈</button>
+              <button onclick="deleteHabit('{{ habit.id }}')">🗑</button>
+            </div>
           </div>
 
           <input type="number"
-                 step="0.1"
-                 value="{{ habit.value }}"
-                 data-id="{{ habit.id }}"
-                 class="habit-input">
+                step="0.1"
+                value="{{ habit.value }}"
+                data-id="{{ habit.id }}"
+                class="habit-input"
+                placeholder="Enter today’s value">
+
+          <div class="habit-progress">
+            <div class="habit-progress-fill"
+                style="width: {{ habit.percent or 0 }}%"></div>
+          </div>
+
+          <!-- Hidden Edit Section -->
+          <div class="habit-edit-panel" id="edit-{{ habit.id }}">
+            <input value="{{ habit.name }}" class="habit-name-edit" data-id="{{ habit.id }}">
+            <input value="{{ habit.unit }}" class="habit-unit-edit" data-id="{{ habit.id }}">
+            <input value="{{ habit.goal }}" class="habit-goal-edit" data-id="{{ habit.id }}">
+          </div>
 
         </div>
         {% endfor %}
