@@ -70,11 +70,12 @@ async function loadHealth(date) {
 
     const monthlyEl = document.getElementById("monthlySummary");
     if (monthlyEl) {
-      monthlyEl.innerHTML = `
-        <p>Days tracked: ${month.days_tracked}</p>
-        <p>Avg completion: ${month.avg_percent}%</p>
-        <p>Total sleep: ${month.total_sleep} hrs</p>
-      `;
+     monthlyEl.innerHTML = `
+      <p>Days tracked: ${month.days_tracked}</p>
+      <p>Avg completion: ${month.avg_percent}%</p>
+      <p>Weight change: ${month.weight_change} kg</p>
+      <p>Avg energy: ${month.avg_energy}/10</p>
+    `;
     }
 
   }).catch(err => console.warn("Analytics load failed", err));;

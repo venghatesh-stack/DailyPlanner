@@ -6,6 +6,7 @@ from flask import Flask, request, redirect, url_for, render_template_string, ses
 import os
 from datetime import date, datetime, timedelta
 import calendar
+from calendar import monthrange
 import json
 from google.auth.transport.requests import Request   
 from werkzeug.wrappers import response
@@ -3624,7 +3625,8 @@ def weekly_health():
         completed = 0
 
         for e in entries:
-            habit = next((h for h in habit_defs if h["id"] == e["habit_id"]), None)
+            habit_map = {h["id"]: h for h in habit_defs}
+            habit = habit_map.get(e["habit_id"])
             if not habit:
                 continue
 
@@ -3657,7 +3659,7 @@ def weekly_health():
         "weekly_avg": avg,
         "best_habit": best_name
     })
-from calendar import monthrange
+
 
 @app.route("/api/v2/monthly-summary")
 @login_required
@@ -3685,7 +3687,10 @@ def monthly_summary():
     )
 
     days = len({h["plan_date"] for h in health_rows})
-    total_sleep = sum(float(h["sleep_hours"] or 0) for h in health_rows)
+    avg_height = round(
+        sum(float(h.get("height") or 0) for h in health_rows) / len(health_rows),
+        1
+    ) if health_rows else 0
 
     habit_defs = get(
         "habit_master",
@@ -3729,11 +3734,16 @@ def monthly_summary():
         percents.append(percent)
 
     avg_percent = round(sum(percents) / len(percents)) if percents else 0
+    weights = [float(h.get("weight") or 0) for h in health_rows if h.get("weight")]
+    energy = [float(h.get("energy_level") or 0) for h in health_rows if h.get("energy_level")]
 
+    weight_change = round(weights[-1] - weights[0], 1) if len(weights) >= 2 else 0
+    avg_energy = round(sum(energy) / len(energy), 1) if energy else 0
     return jsonify({
         "days_tracked": days,
         "avg_percent": avg_percent,
-        "total_sleep": round(total_sleep, 1)
+        "weight_change": weight_change,
+        "avg_energy": avg_energy
     })
 @app.route("/api/v2/heatmap")
 @login_required
