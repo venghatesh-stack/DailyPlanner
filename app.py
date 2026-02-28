@@ -2666,7 +2666,7 @@ def get_daily_health():
 
     if len(valid_weights) >= 2:
         weekly_change = round(valid_weights[-1] - valid_weights[0], 1)
-        streak = compute_health_streak(user_id, date.fromisoformat(plan_date))
+    streak = compute_health_streak(user_id, date.fromisoformat(plan_date))
 
     return jsonify({
         **health,
