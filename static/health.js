@@ -112,7 +112,12 @@ function renderHabits(habits) {
         </div>
 
        <div class="habit-entry-block">
-          <div class="entry-label">Today</div>
+          <div class="entry-label">
+            Today
+            <span class="goal-label">
+              (Goal: ${goal || "Not set"} ${h.unit || ""})
+            </span>
+          </div>
 
           <input type="number"
                 step="0.1"
@@ -158,28 +163,34 @@ async function addHabit() {
 
   const name = document.getElementById("newHabitName").value.trim();
   const unit = document.getElementById("newHabitUnit").value.trim();
+  const goal = prompt("Enter goal value");
+
+if (!name || !unit || !goal) {
+  showToast("Habit name, unit and goal are required","error");
+  return;
+}
 
   if (!name || !unit) {
-    alert("Enter habit name and unit");
+    showToast("Enter habit name and unit","error");
     return;
   }
 
   const res = await fetch("/api/habits/add", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, unit })
+    body: JSON.stringify({ name, unit,goal })
   });
 
   if (!res.ok) {
-    alert("Failed to add habit");
+    showToast("Failed to add habit","error");
     return;
   }
-
+  
   const newHabit = await res.json();
 
   // 🔥 Add new habit to DOM immediately
   appendHabitToDOM(newHabit);
-
+  showToast("Habit added","success");
   // Clear inputs
   document.getElementById("newHabitName").value = "";
   document.getElementById("newHabitUnit").value = "";
@@ -240,7 +251,7 @@ function appendHabitToDOM(h) {
       <div>
         <div class="habit-title">${h.name}</div>
         <div class="habit-sub">
-          ${goal > 0 ? `Goal: ${goal} ${h.unit}` : "No goal set"}
+          ${goal > 0 ? `Goal: ${goal} ${h.unit}` : "⚠ Goal required"}
         </div>
       </div>
 
@@ -279,6 +290,13 @@ function appendHabitToDOM(h) {
   // 🔥 Attach input listener
   wireHabitInputs();
   wireQuickTapHabits();
+  const goalInput = div.querySelector(".habit-goal-edit");
+
+  if(goalInput){
+      toggleEdit(h.id);
+      goalInput.focus();
+      goalInput.select();
+    }
 }
 async function saveHealth() {
 
@@ -336,7 +354,7 @@ function wireHabitInputs() {
             value: value
           })
         });
-
+        showSaveToast();
         recalcHabitPercent();
 
       }, 500);
@@ -733,4 +751,65 @@ function quickAdjust(id, direction) {
   // visual feedback
   item.classList.add("tap-flash");
   setTimeout(() => item.classList.remove("tap-flash"), 250);
+}
+let healthSaveTimer;
+
+function autoSaveHealth() {
+
+  clearTimeout(healthSaveTimer);
+
+  healthSaveTimer = setTimeout(() => {
+    saveHealth();
+  }, 800); // save after user pauses 0.8s
+
+}
+["weight","height","mood","energy","health-notes"].forEach(id => {
+
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  // typing pause save
+  el.addEventListener("input", autoSaveHealth);
+
+  // leaving field save
+  el.addEventListener("blur", saveHealth);
+
+});
+function showToast(message,type="info"){
+
+  const container = document.getElementById("toast-container");
+  if(!container) return;
+
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+
+  container.appendChild(toast);
+
+  requestAnimationFrame(()=>{
+    toast.classList.add("show");
+  });
+
+  setTimeout(()=>{
+    toast.classList.remove("show");
+
+    setTimeout(()=>{
+      toast.remove();
+    },300);
+
+  },2200);
+}
+function showSaveToast(){
+
+  const toast = document.getElementById("saveToast");
+  if(!toast) return;
+
+  toast.classList.add("show");
+
+  clearTimeout(toast.timer);
+
+  toast.timer = setTimeout(()=>{
+    toast.classList.remove("show");
+  },1200);
+
 }
