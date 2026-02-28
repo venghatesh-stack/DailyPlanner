@@ -393,3 +393,14 @@ function toggleEdit(id) {
   panel.style.display =
     panel.style.display === "flex" ? "none" : "flex";
 }
+
+document.addEventListener("focus", function (e) {
+  if (
+    e.target.classList.contains("habit-input") ||
+    e.target.classList.contains("habit-name-edit") ||
+    e.target.classList.contains("habit-unit-edit") ||
+    e.target.classList.contains("habit-goal-edit")
+  ) {
+    e.target.select();
+  }
+}, true);
