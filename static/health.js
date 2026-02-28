@@ -97,6 +97,7 @@ function renderHabits(habits) {
       <div class="habit-item" data-id="${h.id}">
 
         <div class="habit-header">
+        <div class="habit-drag">☰</div>
           <div>
             <div class="habit-title">${h.name}</div>
             <div class="habit-sub">
@@ -151,6 +152,7 @@ function updateHabitCircle(percent) {
   if (text) text.innerText = percent + "%";
 }
 async function addHabit() {
+
   const name = document.getElementById("newHabitName").value.trim();
   const unit = document.getElementById("newHabitUnit").value.trim();
 
@@ -165,11 +167,75 @@ async function addHabit() {
     body: JSON.stringify({ name, unit })
   });
 
-  if (res.ok) {
-    location.reload();  // refresh to show new habit
-  } else {
+  if (!res.ok) {
     alert("Failed to add habit");
+    return;
   }
+
+  const newHabit = await res.json();
+
+  // 🔥 Add new habit to DOM immediately
+  appendHabitToDOM(newHabit);
+
+  // Clear inputs
+  document.getElementById("newHabitName").value = "";
+  document.getElementById("newHabitUnit").value = "";
+}
+function appendHabitToDOM(h) {
+
+  const container = document.getElementById("habitContainer");
+  if (!container) return;
+
+  const goal = h.goal ?? 0;
+  const value = h.value ?? "";
+  const percent = goal > 0
+    ? Math.min(100, Math.round((value / goal) * 100))
+    : 0;
+
+  const div = document.createElement("div");
+  div.className = "habit-item";
+  div.dataset.id = h.id;
+
+  div.innerHTML = `
+    <div class="habit-header">
+      <div class="habit-drag">☰</div>
+      <div>
+        <div class="habit-title">${h.name}</div>
+        <div class="habit-sub">
+          ${goal > 0 ? `Goal: ${goal} ${h.unit}` : "No goal set"}
+        </div>
+      </div>
+
+      <div class="habit-actions">
+        <button onclick="toggleEdit('${h.id}')">✏️</button>
+        <button onclick="showHabitChart('${h.id}')">📈</button>
+        <button onclick="deleteHabit('${h.id}')">🗑</button>
+      </div>
+    </div>
+
+    <input type="number"
+           step="0.1"
+           value="${value}"
+           data-id="${h.id}"
+           class="habit-input"
+           placeholder="Enter today’s value">
+
+    <div class="habit-progress">
+      <div class="habit-progress-fill"
+           style="width: ${percent}%"></div>
+    </div>
+
+    <div class="habit-edit-panel" id="edit-${h.id}">
+      <input value="${h.name}" class="habit-name-edit" data-id="${h.id}">
+      <input value="${h.unit}" class="habit-unit-edit" data-id="${h.id}">
+      <input value="${goal}" class="habit-goal-edit" data-id="${h.id}">
+    </div>
+  `;
+
+  container.appendChild(div);
+
+  // 🔥 Attach input listener
+  wireHabitInputs();
 }
 async function saveHealth() {
   const btn = document.getElementById("saveBtn");
@@ -306,6 +372,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (container) {
     new Sortable(container, {
       animation: 150,
+      handle: ".habit-drag",  // 🔥 only drag via ☰
       onEnd: async function () {
 
         const items = document.querySelectorAll(".habit-item");

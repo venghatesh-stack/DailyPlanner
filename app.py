@@ -3670,13 +3670,26 @@ def heatmap():
 
     heat = {}
 
+    habit_map = {h["id"]: h for h in habit_defs}
+
     for day, entries in date_map.items():
-        completed = sum(1 for e in entries if float(e["value"] or 0) > 0)
+        completed = 0
+
+        for e in entries:
+            habit = habit_map.get(e["habit_id"])
+            if not habit:
+                continue
+
+            goal = float(habit.get("goal") or 0)
+            value = float(e.get("value") or 0)
+
+            if goal > 0 and value >= goal:
+                completed += 1
+
         percent = round((completed / total) * 100) if total else 0
         heat[day] = percent
 
     return jsonify(heat)       
-    
 @app.route("/api/habits/add", methods=["POST"])
 @login_required
 def add_habit():
@@ -3689,16 +3702,46 @@ def add_habit():
     if not name or not unit:
         return jsonify({"error": "Name and unit required"}), 400
 
-    post(
+    # 🔥 Insert with default goal + position
+    inserted = post(
         "habit_master",
         {
             "user_id": user_id,
             "name": name,
-            "unit": unit
+            "unit": unit,
+            "goal": 0,
+            "position": 9999,   # temporary bottom
+            "is_deleted": False
         }
     )
 
-    return jsonify({"success": True})  
+    # Supabase post() should return inserted row
+    # If not, fetch it manually:
+
+    new_habit = get(
+        "habit_master",
+        {
+            "user_id": f"eq.{user_id}",
+            "name": f"eq.{name}",
+            "is_deleted": "is.false",
+            "order": "created_at.desc",
+            "limit": 1
+        }
+    )
+
+    if not new_habit:
+        return jsonify({"error": "Insert failed"}), 500
+
+    habit = new_habit[0]
+
+    return jsonify({
+        "id": habit["id"],
+        "name": habit["name"],
+        "unit": habit["unit"],
+        "goal": habit.get("goal", 0),
+        "value": 0
+    })
+    
 @app.route("/api/habits/delete", methods=["POST"])
 @login_required
 def delete_habit():

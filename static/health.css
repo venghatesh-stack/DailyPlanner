@@ -328,3 +328,13 @@ canvas {
   box-shadow: 0 0 0 2px #16a34a inset;
   background: #f0fdf4;
 }
+.habit-drag {
+  cursor: grab;
+  font-size: 16px;
+  padding: 6px;
+  color: #9ca3af;
+}
+
+.habit-drag:active {
+  cursor: grabbing;
+}
