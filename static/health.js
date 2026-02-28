@@ -440,7 +440,9 @@ async function deleteHabit(id) {
 
   location.reload();
 }
-document.addEventListener("change", async (e) => {
+let editTimeout;
+
+document.addEventListener("input", function (e) {
 
   if (
     e.target.classList.contains("habit-name-edit") ||
@@ -448,50 +450,61 @@ document.addEventListener("change", async (e) => {
     e.target.classList.contains("habit-goal-edit")
   ) {
 
-    const id = e.target.dataset.id;
+    clearTimeout(editTimeout);
 
-    const item = document.querySelector(`.habit-item[data-id="${id}"]`);
-    if (!item) return;
+    editTimeout = setTimeout(async () => {
 
-    const nameInput = item.querySelector(".habit-name-edit");
-    const unitInput = item.querySelector(".habit-unit-edit");
-    const goalInput = item.querySelector(".habit-goal-edit");
-    const valueInput = item.querySelector(".habit-input");
+      const id = e.target.dataset.id;
 
-    const name = nameInput.value;
-    const unit = unitInput.value;
-    const goal = parseFloat(goalInput.value || 0);
-    const value = parseFloat(valueInput.value || 0);
+      const item = document.querySelector(`.habit-item[data-id="${id}"]`);
+      if (!item) return;
 
-    // 🔥 1. Update backend
-    await fetch("/api/habits/update", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({
-        habit_id: id,
-        name,
-        unit,
-        goal
-      })
-    });
+      const nameInput = item.querySelector(".habit-name-edit");
+      const unitInput = item.querySelector(".habit-unit-edit");
+      const goalInput = item.querySelector(".habit-goal-edit");
+      const valueInput = item.querySelector(".habit-input");
 
-    // 🔥 2. Update visible header text
-    const title = item.querySelector(".habit-title");
-    const sub = item.querySelector(".habit-sub");
+      const name = nameInput.value;
+      const unit = unitInput.value;
+      const goal = parseFloat(goalInput.value || 0);
+      const value = parseFloat(valueInput.value || 0);
 
-    if (title) title.innerText = name;
-    if (sub) sub.innerText = `Goal: ${goal} ${unit}`;
+      // 🔥 Save to backend
+      await fetch("/api/habits/update", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          habit_id: id,
+          name,
+          unit,
+          goal
+        })
+      });
 
-    // 🔥 3. Update progress bar
-    const percent = goal > 0
-      ? Math.min(100, Math.round((value / goal) * 100))
-      : 0;
+      // 🔥 Update header immediately
+      const title = item.querySelector(".habit-title");
+      const sub = item.querySelector(".habit-sub");
 
-    const fill = item.querySelector(".habit-progress-fill");
-    if (fill) fill.style.width = percent + "%";
+      if (title) title.innerText = name;
+      if (sub) sub.innerText = `Goal: ${goal} ${unit}`;
 
-    // 🔥 4. Recalculate overall completion
-    recalcHabitPercent();
+      // 🔥 Update progress bar
+      const percent = goal > 0
+        ? Math.min(100, Math.round((value / goal) * 100))
+        : 0;
+
+      const fill = item.querySelector(".habit-progress-fill");
+      if (fill) fill.style.width = percent + "%";
+
+      // 🔥 Visual save glow
+      item.classList.add("saved");
+      setTimeout(() => {
+        item.classList.remove("saved");
+      }, 800);
+
+      recalcHabitPercent();
+
+    }, 600); // Save 600ms after typing stops
   }
 });
 async function showHabitChart(id) {
