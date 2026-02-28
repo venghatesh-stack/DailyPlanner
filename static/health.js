@@ -203,7 +203,7 @@ function wireQuickTapHabits() {
       // increment amount
       const step = parseFloat(input.step || 1);
 
-      current += step;
+      current = Math.round((current + step) * 100) / 100;
 
       input.value = current;
 
@@ -670,3 +670,67 @@ document.addEventListener("keydown", function(e){
   }
 
 });
+
+async function quickAdd(id) {
+
+  const item = document.querySelector(`.habit-item[data-id="${id}"]`);
+  if (!item) return;
+
+  const input = item.querySelector(".habit-input");
+
+  let current = parseFloat(input.value || 0);
+  const step = parseFloat(input.step || 1);
+
+  current = Math.round((current + step) * 100) / 100;
+
+  input.value = current;
+
+  // trigger autosave
+  input.dispatchEvent(new Event("input"));
+
+  // visual feedback
+  item.classList.add("tap-flash");
+  setTimeout(() => item.classList.remove("tap-flash"), 300);
+
+}
+function getStepFromUnit(unit) {
+
+  if (!unit) return 1;
+
+  unit = unit.toLowerCase();
+
+  if (unit.includes("min")) return 5;
+  if (unit.includes("hr")) return 0.5;
+  if (unit.includes("step")) return 50;
+  if (unit.includes("ml")) return 50;
+  if (unit.includes("rs")) return 50;
+
+  return 1;
+}
+function quickAdjust(id, direction) {
+
+  const item = document.querySelector(`.habit-item[data-id="${id}"]`);
+  if (!item) return;
+
+  const input = item.querySelector(".habit-input");
+  const unitInput = item.querySelector(".habit-unit-edit");
+
+  const unit = unitInput ? unitInput.value : "";
+
+  let current = parseFloat(input.value || 0);
+
+  const step = getStepFromUnit(unit);
+
+  current = Math.round((current + step * direction) * 100) / 100;
+
+  if (current < 0) current = 0;
+
+  input.value = current;
+
+  // trigger autosave
+  input.dispatchEvent(new Event("input"));
+
+  // visual feedback
+  item.classList.add("tap-flash");
+  setTimeout(() => item.classList.remove("tap-flash"), 250);
+}

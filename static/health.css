@@ -416,3 +416,62 @@ canvas {
   background: #ecfdf5;
   transition: background 0.3s;
 }
+.habit-create-box{
+  border:2px dashed #d1d5db;
+  padding:20px;
+  border-radius:14px;
+  background:#f9fafb;
+  margin-bottom:20px;
+}
+
+.habit-create-box h4{
+  margin-bottom:10px;
+  font-weight:600;
+}
+
+.habit-create-box input{
+  width:100%;
+  padding:10px;
+  margin-bottom:10px;
+}
+
+.habit-create-box button{
+  width:100%;
+}
+.habit-plus{
+  width:28px;
+  height:28px;
+  border-radius:6px;
+  border:none;
+  background:#2563eb;
+  color:white;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.habit-plus:hover{
+  background:#1d4ed8;
+}
+.habit-plus,
+.habit-minus{
+  width:26px;
+  height:26px;
+  border:none;
+  border-radius:6px;
+  background:#2563eb;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.habit-minus{
+  background:#64748b;
+}
+
+.habit-plus:hover{
+  background:#1d4ed8;
+}
+
+.habit-minus:hover{
+  background:#475569;
+}
