@@ -701,28 +701,50 @@ def ensure_daily_habits_row(user_id, plan_date):
 def is_health_day(habits):
     return len(HEALTH_HABITS.intersection(habits)) >= MIN_HEALTH_HABITS
 def compute_health_streak(user_id, plan_date):
+
     try:
-        rows = get(
-            "daily_habits",
-            params={
+        # Get active habits
+        habit_defs = get(
+            "habit_master",
+            {
                 "user_id": f"eq.{user_id}",
-                "plan_date": f"eq.{plan_date}",
-                "select": "habits",
-            },
+                "is_deleted": "is.false"
+            }
         )
+
+        total = len(habit_defs)
+        if total == 0:
+            return 0
+
+        habit_map = {h["id"]: h for h in habit_defs}
+
+        # Get entries for that day
+        entries = get(
+            "habit_entries",
+            {
+                "user_id": f"eq.{user_id}",
+                "plan_date": f"eq.{plan_date}"
+            }
+        )
+
+        completed = 0
+
+        for e in entries:
+            habit = habit_map.get(e["habit_id"])
+            if not habit:
+                continue
+
+            goal = float(habit.get("goal") or 0)
+            value = float(e.get("value") or 0)
+
+            if goal > 0 and value >= goal:
+                completed += 1
+
+        return completed
+
     except Exception as e:
         logger.warning(f"Health streak query failed: {e}")
         return 0
-
-    if not rows:
-        return 0
-
-    habits = rows[0].get("habits") or {}
-    return sum(1 for v in habits.values() if v)
-
-
-
-
 
 def parse_recurrence_block(text, default_date):
     text = text.lower()
