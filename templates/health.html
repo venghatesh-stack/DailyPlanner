@@ -111,7 +111,31 @@
 <div class="save-wrapper">
   <button type="submit" class="save-btn">💾 Save</button>
 </div>
+<!-- Add Habit Modal -->
+<div id="habitModal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Add New Habit</h3>
+      <button class="modal-close" onclick="closeHabitModal()">✕</button>
+    </div>
 
+    <div class="modal-body">
+      <label>Habit Name</label>
+      <input type="text" id="modalHabitName" placeholder="e.g. Walk">
+
+      <label>Unit</label>
+      <input type="text" id="modalHabitUnit" placeholder="e.g. steps, mins">
+
+      <label>Daily Goal</label>
+      <input type="number" id="modalHabitGoal" placeholder="e.g. 8000">
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeHabitModal()">Cancel</button>
+      <button class="btn-primary" onclick="submitHabitModal()">Add Habit</button>
+    </div>
+  </div>
+</div>
 </body>
 <script src="{{ url_for('static', filename='health.js') }}" defer></script>
 </html>

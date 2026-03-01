@@ -137,41 +137,53 @@ function updateHabitCircle(percent) {
 
   if (text) text.innerText = percent + "%";
 }
-async function addHabit() {
+function openHabitModal() {
+  const modal = document.getElementById("habitModal");
+  modal.classList.add("active");
 
-  const name = document.getElementById("newHabitName").value.trim();
-  const unit = document.getElementById("newHabitUnit").value.trim();
-  const goal = prompt("Enter goal value");
-
-if (!name || !unit || !goal) {
-  showToast("Habit name, unit and goal are required","error");
-  return;
+  setTimeout(() => {
+    document.getElementById("modalHabitName").focus();
+  }, 100);
 }
 
-  if (!name || !unit) {
-    showToast("Enter habit name and unit","error");
+function closeHabitModal() {
+  document.getElementById("habitModal").classList.remove("active");
+}
+
+async function submitHabitModal() {
+
+  const name = document.getElementById("modalHabitName").value.trim();
+  const unit = document.getElementById("modalHabitUnit").value.trim();
+  const goal = parseFloat(document.getElementById("modalHabitGoal").value);
+
+  if (!name || !unit || !goal) {
+    showToast("All fields are required", "error");
     return;
   }
 
   const res = await fetch("/api/habits/add", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, unit,goal })
+    body: JSON.stringify({ name, unit, goal })
   });
 
   if (!res.ok) {
-    showToast("Failed to add habit","error");
+    showToast("Failed to add habit", "error");
     return;
   }
-  
+
   const newHabit = await res.json();
 
-  // 🔥 Add new habit to DOM immediately
   appendHabitToDOM(newHabit);
-  showToast("Habit added","success");
+
+  showToast("Habit added", "success");
+
   // Clear inputs
-  document.getElementById("newHabitName").value = "";
-  document.getElementById("newHabitUnit").value = "";
+  document.getElementById("modalHabitName").value = "";
+  document.getElementById("modalHabitUnit").value = "";
+  document.getElementById("modalHabitGoal").value = "";
+
+  closeHabitModal();
 }
 function wireQuickTapHabits() {
 
@@ -873,4 +885,83 @@ async function loadAnalytics(){
   }).catch(err => console.warn("Analytics load failed", err));;
 
   // update DOM here
+}
+let selectedEmoji = "";
+let selectedColor = "#2563eb";
+
+function openHabitSheet() {
+  document.getElementById("habitSheet").classList.add("active");
+}
+
+function closeHabitSheet() {
+  document.getElementById("habitSheet").classList.remove("active");
+}
+document.addEventListener("click", function(e){
+  if(e.target.closest(".emoji-picker")){
+    selectedEmoji = e.target.textContent;
+    document.getElementById("sheetHabitName").value = selectedEmoji + " ";
+    document.getElementById("sheetHabitName").focus();
+  }
+});
+document.querySelectorAll(".color-dot").forEach(dot=>{
+  dot.style.background = dot.dataset.color;
+
+  dot.addEventListener("click", ()=>{
+    document.querySelectorAll(".color-dot").forEach(d=>d.classList.remove("active"));
+    dot.classList.add("active");
+    selectedColor = dot.dataset.color;
+  });
+});
+
+document.getElementById("sheetHabitUnit").addEventListener("input", function(){
+
+  const unit = this.value.toLowerCase();
+  const suggestions = document.getElementById("goalSuggestions");
+
+  suggestions.innerHTML = "";
+
+  let values = [];
+
+  if(unit.includes("step")) values = [5000,8000,10000];
+  if(unit.includes("min")) values = [15,30,45];
+  if(unit.includes("ml")) values = [1500,2000,3000];
+  if(unit.includes("hr")) values = [1,2,3];
+
+  values.forEach(val=>{
+    const btn = document.createElement("button");
+    btn.innerText = val;
+    btn.onclick = ()=> {
+      document.getElementById("sheetHabitGoal").value = val;
+    };
+    suggestions.appendChild(btn);
+  });
+});
+async function submitHabitSheet(){
+
+  const name = document.getElementById("sheetHabitName").value.trim();
+  const unit = document.getElementById("sheetHabitUnit").value.trim();
+  const goal = parseFloat(document.getElementById("sheetHabitGoal").value);
+
+  if(!name || !unit || !goal){
+    showToast("All fields required","error");
+    return;
+  }
+
+  const res = await fetch("/api/habits/add",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({
+      name,
+      unit,
+      goal,
+      emoji:selectedEmoji,
+      color:selectedColor
+    })
+  });
+
+  const newHabit = await res.json();
+
+  appendHabitToDOM(newHabit);
+  closeHabitSheet();
+  showToast("Habit added","success");
 }
