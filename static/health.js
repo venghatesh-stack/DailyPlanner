@@ -1,3 +1,4 @@
+let lastHealthPayload = "";
 async function loadHealth(date) {
 
   const res = await fetch(`/api/v2/daily-health?date=${date}`);
