@@ -3804,8 +3804,8 @@ def add_habit():
     user_id = session["user_id"]
     data = request.get_json()
 
-    name = (data.get("name") or "").strip()
-    unit = (data.get("unit") or "").strip()
+    name = (data.get("name") or "").strip().upper()
+    unit = (data.get("unit") or "").strip().upper() 
 
     try:
         goal = float(data.get("goal") or 0)
