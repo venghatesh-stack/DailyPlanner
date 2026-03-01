@@ -856,10 +856,12 @@ function renderHealthScore(score){
 
 }
 async function loadAnalytics(){
-  const [weekly, month] = await Promise.all([
-    fetch("/api/v2/weekly-health").then(r => r.json()),
-    fetch("/api/v2/monthly-summary").then(r => r.json())
-  ]).then(([weekly, month]) => {
+  try {
+
+    const [weekly, month] = await Promise.all([
+      fetch("/api/v2/weekly-health").then(r => r.json()),
+      fetch("/api/v2/monthly-summary").then(r => r.json())
+    ]);
 
     const avgEl = document.getElementById("weeklyAvg");
     if (avgEl) {
@@ -874,17 +876,17 @@ async function loadAnalytics(){
 
     const monthlyEl = document.getElementById("monthlySummary");
     if (monthlyEl) {
-     monthlyEl.innerHTML = `
-      <p>Days tracked: ${month.days_tracked}</p>
-      <p>Avg completion: ${month.avg_percent}%</p>
-      <p>Weight change: ${month.weight_change} kg</p>
-      <p>Avg energy: ${month.avg_energy}/10</p>
-    `;
+      monthlyEl.innerHTML = `
+        <p>Days tracked: ${month.days_tracked}</p>
+        <p>Avg completion: ${month.avg_percent}%</p>
+        <p>Weight change: ${month.weight_change} kg</p>
+        <p>Avg energy: ${month.avg_energy}/10</p>
+      `;
     }
 
-  }).catch(err => console.warn("Analytics load failed", err));;
-
-  // update DOM here
+  } catch (err) {
+    console.warn("Analytics load failed", err);
+  }
 }
 let selectedEmoji = "";
 let selectedColor = "#2563eb";
