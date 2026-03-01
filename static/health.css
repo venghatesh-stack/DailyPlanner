@@ -765,3 +765,16 @@ body.dark {
   --input-bg: #111827;
   color: #e5e7eb;
 }
+.fab-add {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  border: none;
+  background: #2563eb;
+  color: white;
+  font-size: 28px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+}
