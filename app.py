@@ -2700,7 +2700,8 @@ def save_daily_health():
         "energy_level": int(data.get("energy_level")) if data.get("energy_level") else None,
         "notes": data.get("notes")
     }
-
+    print("HEIGHT RAW:", data.get("height"))
+    print("HEIGHT CLEAN:", clean_number(data.get("height")))
     # 🔥 UPSERT instead of check-then-update
     post(
         "daily_health",

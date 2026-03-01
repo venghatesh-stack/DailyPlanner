@@ -407,6 +407,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const dateInput = document.getElementById("health-date");
   if (!dateInput) return;
+  
+  ["weight","height","mood","energy","health-notes"].forEach(id => {
+
+    const el = document.getElementById(id);
+    if (!el || el.dataset.bound) return;
+
+    el.dataset.bound = "1";
+
+    el.addEventListener("input", autoSaveHealth);
+    el.addEventListener("blur", autoSaveHealth);
+
+  });
 
   const today = new Date().toLocaleDateString("en-CA", {
     timeZone: "Asia/Kolkata"
@@ -766,17 +778,6 @@ function autoSaveHealth() {
   }, 800); // save after user pauses 0.8s
 
 }
-["weight","height","mood","energy","health-notes"].forEach(id => {
-
-  const el = document.getElementById(id);
-  if (!el || el.dataset.bound) return;
-
-  el.dataset.bound = "1";
-
-  el.addEventListener("input", autoSaveHealth);
-  el.addEventListener("blur", autoSaveHealth);
-
-});
 function showToast(message,type="info"){
 
   const container = document.getElementById("toast-container");
