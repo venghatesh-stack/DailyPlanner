@@ -53,33 +53,7 @@ async function loadHealth(date) {
   // ------------------------
   // Weekly + Monthly analytics (parallel)
   // ------------------------
-  Promise.all([
-    fetch("/api/v2/weekly-health").then(r => r.json()),
-    fetch("/api/v2/monthly-summary").then(r => r.json())
-  ]).then(([weekly, month]) => {
 
-    const avgEl = document.getElementById("weeklyAvg");
-    if (avgEl) {
-      avgEl.innerText = `7-day avg: ${weekly.weekly_avg}%`;
-    }
-
-    const bestEl = document.getElementById("bestHabit");
-    if (bestEl) {
-      bestEl.innerText =
-        weekly.best_habit ? `🏆 Best: ${weekly.best_habit}` : "";
-    }
-
-    const monthlyEl = document.getElementById("monthlySummary");
-    if (monthlyEl) {
-     monthlyEl.innerHTML = `
-      <p>Days tracked: ${month.days_tracked}</p>
-      <p>Avg completion: ${month.avg_percent}%</p>
-      <p>Weight change: ${month.weight_change} kg</p>
-      <p>Avg energy: ${month.avg_energy}/10</p>
-    `;
-    }
-
-  }).catch(err => console.warn("Analytics load failed", err));;
 
 }
 function renderHabits(habits) {
@@ -428,6 +402,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   dateInput.value = today;
 
   await loadHealth(today);
+  loadAnalytics(); // 🔥 call once only
 
   dateInput.addEventListener("change", async () => {
     await loadHealth(dateInput.value);
@@ -776,7 +751,7 @@ function autoSaveHealth() {
 
   healthSaveTimer = setTimeout(() => {
     saveHealth();
-  }, 800); // save after user pauses 0.8s
+  }, 1500); // save after user pauses 1.5s
 
 }
 function showToast(message,type="info"){
@@ -867,4 +842,35 @@ function renderHealthScore(score){
   ring.style.strokeDashoffset =
         circumference - (score/100)*circumference;
 
+}
+async function loadAnalytics(){
+  const [weekly, month] = await Promise.all([
+    fetch("/api/v2/weekly-health").then(r => r.json()),
+    fetch("/api/v2/monthly-summary").then(r => r.json())
+  ]).then(([weekly, month]) => {
+
+    const avgEl = document.getElementById("weeklyAvg");
+    if (avgEl) {
+      avgEl.innerText = `7-day avg: ${weekly.weekly_avg}%`;
+    }
+
+    const bestEl = document.getElementById("bestHabit");
+    if (bestEl) {
+      bestEl.innerText =
+        weekly.best_habit ? `🏆 Best: ${weekly.best_habit}` : "";
+    }
+
+    const monthlyEl = document.getElementById("monthlySummary");
+    if (monthlyEl) {
+     monthlyEl.innerHTML = `
+      <p>Days tracked: ${month.days_tracked}</p>
+      <p>Avg completion: ${month.avg_percent}%</p>
+      <p>Weight change: ${month.weight_change} kg</p>
+      <p>Avg energy: ${month.avg_energy}/10</p>
+    `;
+    }
+
+  }).catch(err => console.warn("Analytics load failed", err));;
+
+  // update DOM here
 }
