@@ -87,7 +87,7 @@
           </button>
         </div>
 
-     
+
         <h4>Weight Trend</h4>
         <canvas id="weightChart" height="80"></canvas>
 
@@ -189,48 +189,57 @@
   <div id="toast-container"></div>
   <div id="saveToast">Saved ✓</div>
   <!-- Habit Bottom Sheet -->
-<div id="habitSheet" class="sheet-overlay">
-  <div class="sheet">
+  <div id="habitSheet" class="sheet-overlay">
+    <div class="sheet">
 
-    <div class="sheet-handle"></div>
+      <div class="sheet-handle"></div>
 
-    <div class="sheet-header">
-      <h3>New Habit</h3>
-      <button onclick="closeHabitSheet()">✕</button>
-    </div>
-
-    <div class="sheet-body">
-
-      <!-- Emoji -->
-      <div class="emoji-picker" id="emojiPicker">
-        😀 💪 🚶 📚 🧘 🏃 🥗 💧 💤 🎯
+      <div class="sheet-header">
+        <h3>New Habit</h3>
+        <button onclick="closeHabitSheet()">✕</button>
       </div>
 
-      <input type="text" id="sheetHabitName" placeholder="Habit name">
+      <div class="sheet-body">
 
-      <input type="text" id="sheetHabitUnit" placeholder="Unit (mins, steps, ml)">
+        <!-- Emoji -->
+        <div class="emoji-picker" id="emojiPicker">
+          <span class="emoji">😀</span>
+          <span class="emoji">💪</span>
+          <span class="emoji">🚶</span>
+          <span class="emoji">📚</span>
+          <span class="emoji">🧘</span>
+          <span class="emoji">🏃</span>
+          <span class="emoji">🥗</span>
+          <span class="emoji">💧</span>
+          <span class="emoji">💤</span>
+          <span class="emoji">🎯</span>
+        </div>
 
-      <input type="number" id="sheetHabitGoal" placeholder="Daily goal">
+        <input type="text" id="sheetHabitName" placeholder="Habit name">
 
-      <!-- Smart Suggestions -->
-      <div class="goal-suggestions" id="goalSuggestions"></div>
+        <input type="text" id="sheetHabitUnit" placeholder="Unit (mins, steps, ml)">
 
-      <!-- Color Picker -->
-      <div class="color-picker">
-        <div class="color-dot" data-color="#2563eb"></div>
-        <div class="color-dot" data-color="#16a34a"></div>
-        <div class="color-dot" data-color="#f59e0b"></div>
-        <div class="color-dot" data-color="#ef4444"></div>
-        <div class="color-dot" data-color="#8b5cf6"></div>
+        <input type="number" id="sheetHabitGoal" placeholder="Daily goal">
+
+        <!-- Smart Suggestions -->
+        <div class="goal-suggestions" id="goalSuggestions"></div>
+
+        <!-- Color Picker -->
+        <div class="color-picker">
+          <div class="color-dot" data-color="#2563eb"></div>
+          <div class="color-dot" data-color="#16a34a"></div>
+          <div class="color-dot" data-color="#f59e0b"></div>
+          <div class="color-dot" data-color="#ef4444"></div>
+          <div class="color-dot" data-color="#8b5cf6"></div>
+        </div>
+
+        <button class="sheet-submit" onclick="submitHabitSheet()">
+          Add Habit
+        </button>
+
       </div>
-
-      <button class="sheet-submit" onclick="submitHabitSheet()">
-        Add Habit
-      </button>
-
     </div>
   </div>
-</div>
 </body>
 
 </html>

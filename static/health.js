@@ -84,7 +84,9 @@ function renderHabits(habits) {
           <div class="habit-actions">
             <button onclick="toggleEdit('${h.id}')">✏️</button>
             <button onclick="showHabitChart('${h.id}')">📈</button>
-            <button onclick="deleteHabit('${h.id}')">🗑</button>
+            <button class="habit-delete-btn" onclick="deleteHabit('${h.id}')">
+              🗑
+            </button>
           </div>
         </div>
 
@@ -248,7 +250,9 @@ function appendHabitToDOM(h) {
       <div class="habit-actions">
         <button onclick="toggleEdit('${h.id}')">✏️</button>
         <button onclick="showHabitChart('${h.id}')">📈</button>
-        <button onclick="deleteHabit('${h.id}')">🗑</button>
+        <button class="habit-delete-btn" onclick="deleteHabit('${h.id}')">
+          🗑
+        </button>
       </div>
     </div>
 
@@ -898,12 +902,15 @@ function openHabitSheet() {
 function closeHabitSheet() {
   document.getElementById("habitSheet").classList.remove("active");
 }
-document.addEventListener("click", function(e){
-  if(e.target.closest(".emoji-picker")){
-    selectedEmoji = e.target.textContent;
-    document.getElementById("sheetHabitName").value = selectedEmoji + " ";
-    document.getElementById("sheetHabitName").focus();
-  }
+document.querySelectorAll(".emoji-picker .emoji").forEach(el => {
+  el.addEventListener("click", () => {
+
+    selectedEmoji = el.textContent;
+
+    document.getElementById("sheetHabitName").value =
+      selectedEmoji + " ";
+
+  });
 });
 document.querySelectorAll(".color-dot").forEach(dot=>{
   dot.style.background = dot.dataset.color;

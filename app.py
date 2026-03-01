@@ -3807,40 +3807,31 @@ def add_habit():
     name = (data.get("name") or "").strip()
     unit = (data.get("unit") or "").strip()
 
+    try:
+        goal = float(data.get("goal") or 0)
+    except:
+        goal = 0
+
     if not name or not unit:
         return jsonify({"error": "Name and unit required"}), 400
 
-    # 🔥 Insert with default goal + position
     inserted = post(
         "habit_master",
         {
             "user_id": user_id,
             "name": name,
             "unit": unit,
-            "goal": 0,
-            "position": 9999,   # temporary bottom
+            "goal": goal,
+            "position": 9999,
             "is_deleted": False
-        }
+        },
+        prefer="return=representation"
     )
 
-    # Supabase post() should return inserted row
-    # If not, fetch it manually:
-
-    new_habit = get(
-        "habit_master",
-        {
-            "user_id": f"eq.{user_id}",
-            "name": f"eq.{name}",
-            "is_deleted": "is.false",
-            "order": "created_at.desc",
-            "limit": 1
-        }
-    )
-
-    if not new_habit:
+    if not inserted:
         return jsonify({"error": "Insert failed"}), 500
 
-    habit = new_habit[0]
+    habit = inserted[0]
 
     return jsonify({
         "id": habit["id"],
