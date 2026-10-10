@@ -221,18 +221,3 @@ def restore_habit():
     return jsonify({"success": True})
 
 
-def get_goal_for_date(habit_id, plan_date):
-
-    rows = get(
-        "habit_goal_history",
-        params={
-            "habit_id": f"eq.{habit_id}",
-            "effective_from": f"lte.{plan_date}",
-            "order": "effective_from.desc,created_at.desc",
-            "limit": 1
-        }
-    )
-
-    if rows:
-        return float(rows[0]["goal"])
-    return 0
