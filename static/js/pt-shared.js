@@ -210,6 +210,14 @@
     window.location.href = "/todo";
   };
 
+  /* True when the element's stylesheet is on this page. Both the FAB and
+     the bottom bar are position:fixed in project_tasks.css (the bar is
+     display:none on desktop, which still reports position:fixed). */
+  function ptStyled(el) {
+    try { return getComputedStyle(el).position === "fixed"; }
+    catch (e) { return true; }
+  }
+
   function ensureFab() {
     let el = $("pt-new-fab");
     if (el) return el;
@@ -221,6 +229,9 @@
     el.textContent = "+";
     el.addEventListener("click", () => window.ptNewTask && window.ptNewTask());
     document.body.appendChild(el);
+    // Its styles live in project_tasks.css. A page that loads this script
+    // without that sheet got a bare "+" glyph at the bottom of the page.
+    if (!ptStyled(el)) { el.remove(); return null; }
     return el;
   }
   document.addEventListener("DOMContentLoaded", ensureFab, { once: true });
@@ -252,6 +263,9 @@
         + '<i data-feather="' + t.icon + '"></i><span>' + t.label + '</span></a>';
     }).join("");
     document.body.appendChild(bar);
+    // Same guard as the FAB: unstyled, this rendered as a raw row of links
+    // ("TodayTasksProjectsHealth") under the Review page on desktop.
+    if (!ptStyled(bar)) { bar.remove(); return; }
     if (window.feather) feather.replace();
   }
   document.addEventListener("DOMContentLoaded", ensureBottomNav, { once: true });

@@ -106,7 +106,9 @@
         {% if block.tasks %}
 
           {% for t in block.tasks %}
+            {% set pc = project_colors.get(t.project_id|string) if project_colors else None %}
             <article class="timeline-card"
+                 {% if pc %}style="box-shadow: inset 4px 0 0 {{ pc }}"{% endif %}
                  draggable="true"
                  data-task="{{ t.task_id }}"
                  data-project="{{ t.project_id }}"

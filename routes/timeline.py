@@ -11,6 +11,10 @@ from services.timeline_service import load_timeline_tasks
 from supabase_client import get, update
 
 
+import re
+
+_HEX_RE = re.compile(r"#[0-9a-fA-F]{6}")
+
 timeline_bp = Blueprint("timeline", __name__)
 
 
@@ -76,25 +80,42 @@ def task_timeline():
         }
     )
 
+    # Each project's saved colour (MIGRATION_PROJECT_COLOR.sql), plain hex
+    # only, keyed by id for the cards' colour edge.
+    project_colors = {}
+    for p in projects or []:
+        c = (p.get("color") or "").strip()
+        if _HEX_RE.fullmatch(c):
+            project_colors[str(p.get("project_id"))] = c.lower()
+
     return render_template(
         "project_timeline.html",
         timeline_blocks=timeline_blocks,
         zoom=zoom,
         projects=projects,
+        project_colors=project_colors,
     )
     
 
 @timeline_bp.route("/api/timeline/reschedule", methods=["POST"])
 @login_required
 def timeline_reschedule():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
 
-    task_id = data["task_id"]
-    new_date = data["new_date"]
+    task_id = data.get("task_id")
+    new_date = data.get("new_date")
+    if not task_id or not new_date:
+        return jsonify({"error": "task_id and new_date required"}), 400
+    try:
+        new_date = date.fromisoformat(str(new_date)[:10]).isoformat()
+    except ValueError:
+        return jsonify({"error": "new_date must be YYYY-MM-DD"}), 400
 
+    # SCOPED TO THE CALLER. This used to filter on task_id alone, so any
+    # signed-in user could move any user's task by posting its id.
     update(
         "project_tasks",
-        params={"task_id": f"eq.{task_id}"},
+        params={"task_id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}"},
         json={"due_date": new_date}
     )
 
