@@ -82,7 +82,7 @@ body {
   gap: 7px;
   padding: 11px 20px;
   background: var(--kb-primary);
-  color: #fff;
+  color: var(--color-on-primary);
   border: none;
   border-radius: 11px;
   font-family: inherit;
@@ -138,7 +138,7 @@ body {
   gap: 6px;
   padding: 9px 16px;
   background: var(--kb-primary);
-  color: #fff;
+  color: var(--color-on-primary);
   border: none;
   border-radius: 9px;
   font-family: inherit;
@@ -298,7 +298,7 @@ body {
 }
 .kb-tag-cloud .tag.active {
   background: var(--kb-primary);
-  color: #fff;
+  color: var(--color-on-primary);
   border-color: var(--kb-primary);
 }
 
@@ -397,7 +397,7 @@ body {
 }
 .kb-vt-btn:last-child { border-right: none; }
 .kb-vt-btn:hover { background: var(--kb-surface-alt); color: var(--kb-text); }
-.kb-vt-btn.active { background: var(--kb-primary); color: #fff; }
+.kb-vt-btn.active { background: var(--kb-primary); color: var(--color-on-primary); }
 .kb-vt-btn svg { width: 17px; height: 17px; }
 
 .kb-active-filters {
@@ -843,7 +843,7 @@ textarea.kb-field { resize: vertical; min-height: 100px; }
 .kb-btn svg { width: 14px; height: 14px; }
 .kb-btn-primary {
   background: var(--kb-primary);
-  color: #fff;
+  color: var(--color-on-primary);
   border-color: var(--kb-primary);
   box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3);
 }

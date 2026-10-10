@@ -77,14 +77,14 @@
      survives if the line breaks do. Without pre-wrap the whole thing collapses
      into one unbroken paragraph, which is what it used to do. The first line is
      given a little more weight so the headline reads as a headline. */
-  .fld.answer { white-space: pre-wrap; background: #f5f7ff; border-left: 3px solid #6366f1;
+  .fld.answer { white-space: pre-wrap; background: #f5f7ff; border-left: 3px solid var(--color-primary-ink);
                 border-radius: 6px; padding: 8px 11px; font-size: 13.5px; line-height: 1.6;
                 overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .fld.answer .head { display: block; font-weight: 700; font-size: 14.5px; line-height: 1.45;
                       margin-bottom: 6px; color: var(--color-text); }
   /* Long-form "explain it like I'm new to this" walkthrough: keeps the
      step/section line breaks the text was written with. */
-  .fld.deep { white-space: pre-wrap; background: #f5f7ff; border-left: 3px solid #6366f1;
+  .fld.deep { white-space: pre-wrap; background: #f5f7ff; border-left: 3px solid var(--color-primary-ink);
               border-radius: 6px; padding: 8px 11px; font-size: 13px; line-height: 1.62;
               overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .fld.deep .lbl { color: var(--color-primary-ink); }
@@ -153,7 +153,7 @@
   .q-freq { font-size: 10px; font-weight: 900; letter-spacing: .02em; border-radius: 999px;
             padding: 2px 8px; white-space: nowrap; flex: none; }
   .freq-must { color: #fff; background: var(--color-danger-strong); }
-  .freq-common { color: #fff; background: var(--color-primary); }
+  .freq-common { color: var(--color-on-primary); background: var(--color-primary); }
   .freq-rare { color: var(--color-text-secondary); background: var(--color-bg); border: 1px solid var(--color-border); }
   .q-sub { font-size: 10px; font-weight: 800; color: #0f766e; background: #ccfbf1; border-radius: 999px;
            padding: 2px 8px; white-space: nowrap; flex: none; }
@@ -197,7 +197,7 @@ html.dark .diff-medium { color: #fcd34d; background: #78350f; } html.dark .diff-
           border: 1px solid var(--color-border); background: var(--color-surface);
           color: var(--color-text-secondary); border-radius: 999px; cursor: pointer; }
   .rbtn .n { font-weight: 700; opacity: .75; }
-  .rbtn.on { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+  .rbtn.on { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-on-primary); }
   .rbtn.on .n { opacity: .85; }
   /* Which section this topic is in, said on the card itself. The
      frequency chip beside it says "Common", which is the vocabulary the
@@ -284,7 +284,7 @@ html.dark .diff-medium { color: #fcd34d; background: #78350f; } html.dark .diff-
     :root:not(.light) .diff-easy { color: #6ee7b7; background: #064e3b; }
     :root:not(.light) .diff-medium { color: #fcd34d; background: #78350f; }
     :root:not(.light) .diff-hard { color: #fca5a5; background: #7f1d1d; }
-    :root:not(.light) .tag { background: #1e1b4b; border-color: #3730a3; color: #c7d2fe; }
+    :root:not(.light) .tag { background: #1e1b4b; border-color: var(--color-primary-ink); color: #c7d2fe; }
     :root:not(.light) .fld.deep .lbl { color: #a5b4fc; }
     :root:not(.light) .fld.recipe .lbl { color: #fcd34d; }
     :root:not(.light) .fld.plan .lbl { color: #c4b5fd; }

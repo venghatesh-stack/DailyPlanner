@@ -73,7 +73,7 @@
   }
   .chat-filter-chip.is-active {
     background: var(--color-primary);
-    color: white;
+    color: var(--color-on-primary);
     border-color: var(--color-primary);
   }
 
@@ -129,7 +129,7 @@
   }
   .msg.mine {
     background: var(--color-primary);
-    color: white;
+    color: var(--color-on-primary);
     align-self: flex-end;
     border-bottom-right-radius: 4px;
   }
@@ -203,7 +203,7 @@
     border: 1px solid var(--color-border);
     background: var(--color-surface); color: var(--color-text);
   }
-  .msg-edit-actions .me-save { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+  .msg-edit-actions .me-save { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); }
 
   /* Day separator chip between messages on different calendar days. */
   .day-sep {
@@ -256,7 +256,7 @@
     display: none; flex: none;
     align-items: center; justify-content: center;
     width: 48px; height: 48px;
-    background: var(--color-primary); color: white;
+    background: var(--color-primary); color: var(--color-on-primary);
     border: none; border-radius: 50%;
     cursor: pointer; transition: transform .08s;
   }
@@ -299,7 +299,7 @@
 
   /* File-share bubbles get a blue accent stripe to set them apart
      from KB/inbox link shares (amber). */
-  .msg[data-kind="file-share"] { border-left: 3px solid #3b82f6; }
+  .msg[data-kind="file-share"] { border-left: 3px solid var(--color-primary-ink); }
   .msg.mine[data-kind="file-share"] { border-left-color: var(--color-primary-border); }
 
   /* ── Attachment rendering inside a bubble ── */
@@ -384,7 +384,7 @@
     color: var(--color-text-secondary); cursor: pointer;
   }
   .chat-search-toggle:hover { background: var(--color-surface-secondary, #f1f5f9); color: var(--color-text); }
-  .chat-search-toggle.is-active { background: var(--color-primary); color: white; border-color: var(--color-primary); }
+  .chat-search-toggle.is-active { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); }
   .chat-search-toggle svg { width: 17px; height: 17px; }
 
   /* Lightbox for tapping an image attachment. */
@@ -422,7 +422,7 @@
     transition: background .12s, color .12s, border-color .12s;
   }
   .room-chip:hover { background: var(--color-surface-secondary, #f1f5f9); color: var(--color-text); }
-  .room-chip.is-active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+  .room-chip.is-active { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); }
   /* Emoji icons render from the device's full-colour emoji font, so
      they stay crisp at any size — we just give them room to shine. */
   .room-emoji {
@@ -507,7 +507,7 @@
     background: var(--color-surface); color: var(--color-text);
   }
   .qb-btn:hover { background: var(--color-surface-secondary, #f1f5f9); }
-  .qb-btn-primary { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+  .qb-btn-primary { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); }
   .qb-btn-primary:hover { background: var(--color-primary-hover, #1d4ed8); }
   .qb-btn-danger { color: var(--color-danger-on-tint); border-color: var(--color-danger-border); background: var(--color-danger-light); }
   .qb-btn-danger:hover { background: var(--color-danger-light); }
@@ -565,7 +565,7 @@
   .install-tip button {
     flex: none; font: inherit; font-size: 13px; font-weight: 700;
     padding: 8px 14px; border-radius: 9px; cursor: pointer; border: none;
-    background: var(--color-primary); color: #fff;
+    background: var(--color-primary); color: var(--color-on-primary);
   }
   .install-tip .it-dismiss { background: transparent; color: inherit; font-weight: 600; padding: 8px; }
 

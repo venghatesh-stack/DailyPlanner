@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>{{ heading }} — Behavioral STAR</title>
 <style>
-  :root { --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --accent:#4338ca; }
+  :root { --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --accent:var(--color-primary-ink); }
   * { box-sizing: border-box; }
   body { font-family: -apple-system, "Segoe UI", Inter, Arial, sans-serif; color: var(--ink); max-width: 900px; margin: 0 auto; padding: 32px 28px 48px; line-height: 1.5; }
   .doc-head { border-bottom: 3px solid var(--accent); padding-bottom: 12px; margin-bottom: 18px; }
@@ -19,7 +19,7 @@
   .entry h2 { font-size: 16px; margin: 6px 0 8px; letter-spacing: -.01em; }
   .star { font-size: 13.5px; line-height: 1.45; margin: 5px 0; }
   .star b { display: inline-flex; width: 20px; height: 20px; align-items: center; justify-content: center; border-radius: 6px; font-size: 11px; font-weight: 800; color: #fff; margin-right: 8px; vertical-align: 1px; }
-  .star.s b { background: #6366f1; } .star.t b { background: #0ea5e9; } .star.a b { background: #f59e0b; } .star.r b { background: #10b981; }
+  .star.s b { background: var(--color-primary); } .star.t b { background: #0ea5e9; } .star.a b { background: #f59e0b; } .star.r b { background: #10b981; }
   .tip { font-size: 12.5px; font-style: italic; color: var(--muted); margin: 8px 0 4px; }
   .tags { margin-top: 6px; }
   .tag { display: inline-block; font-size: 10.5px; color: var(--accent); background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 999px; padding: 1px 8px; margin: 2px 3px 0 0; }

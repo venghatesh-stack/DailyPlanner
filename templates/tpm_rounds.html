@@ -31,7 +31,7 @@
   .loop .r .n { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--color-text-secondary); }
   .loop .r .t { font-size: 14px; font-weight: 800; margin: 2px 0 4px; }
   .loop .r .c { font-size: 12px; color: var(--color-text-secondary); line-height: 1.45; }
-  .loop .r.here { border-color: #6366f1; box-shadow: 0 0 0 1px #6366f1 inset; }
+  .loop .r.here { border-color: var(--color-primary-ink); box-shadow: 0 0 0 1px var(--color-primary-ink) inset; }
   .loop .r a { color: var(--color-primary-ink); font-weight: 700; text-decoration: none; font-size: 12px; }
 
   .effort { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; font-weight: 700; color: var(--color-text-secondary); margin: 0 0 10px; }
@@ -39,7 +39,7 @@
   .effort .bar { flex: 1 0 100%; height: 6px; border-radius: 999px; background: var(--color-border); overflow: hidden; }
   .effort .bar > i { display: block; height: 100%; background: var(--color-success); }
 
-  .brief { font-size: 13px; line-height: 1.6; background: var(--color-primary-light); border-left: 3px solid #6366f1; border-radius: 8px; padding: 10px 13px; margin: 0 0 12px; }
+  .brief { font-size: 13px; line-height: 1.6; background: var(--color-primary-light); border-left: 3px solid var(--color-primary-ink); border-radius: 8px; padding: 10px 13px; margin: 0 0 12px; }
   .brief b { font-weight: 800; }
 
   .q-card { border: 1px solid var(--color-border); border-radius: 12px; margin-bottom: 8px; background: var(--color-surface); overflow: hidden; }
@@ -64,7 +64,7 @@ html.dark .diff-hard { color: #fca5a5; background: #7f1d1d; }
      what they test (grey), the framework (indigo), the worked answer (green),
      strong-vs-weak (amber), probes (purple), pitfalls (red). */
   .fld.test .lbl { color: var(--color-text-secondary); }
-  .fld.frame { white-space: pre-wrap; background: #f5f7ff; border-left: 3px solid #6366f1; border-radius: 6px; padding: 9px 12px; font-size: 13px; line-height: 1.62; }
+  .fld.frame { white-space: pre-wrap; background: #f5f7ff; border-left: 3px solid var(--color-primary-ink); border-radius: 6px; padding: 9px 12px; font-size: 13px; line-height: 1.62; }
   .fld.frame .lbl { color: var(--color-primary-ink); }
   .fld.worked { white-space: pre-wrap; background: var(--color-success-light); border-left: 3px solid var(--color-success); border-radius: 6px; padding: 9px 12px; font-size: 13px; line-height: 1.62; }
   .fld.worked .lbl { color: var(--color-success-on-tint); }
@@ -103,7 +103,7 @@ html.dark .diff-hard { color: #fca5a5; background: #7f1d1d; }
     :root:not(.light) .fld.sw { background: #241a06; border-left-color: #fbbf24; }
     :root:not(.light) .fld.pit { background: #2a1215; border-left-color: #ef4444; }
     :root:not(.light) .probe { background: #1e1233; border-left-color: #8b5cf6; }
-    :root:not(.light) .tag { background: #1e1b4b; border-color: #3730a3; color: #c7d2fe; }
+    :root:not(.light) .tag { background: #1e1b4b; border-color: var(--color-primary-ink); color: #c7d2fe; }
     :root:not(.light) .fld.frame .lbl { color: #a5b4fc; }
     :root:not(.light) .fld.worked .lbl { color: #6ee7b7; }
     :root:not(.light) .fld.sw .lbl { color: #fcd34d; }
@@ -165,7 +165,7 @@ html.dark .diff-hard { color: #fca5a5; background: #7f1d1d; }
       <div class="r ${r.here?'here':''}">
         <div class="n">${r.n}</div><div class="t">${r.t}</div>
         <div class="c">${r.c}</div>
-        ${r.here?'<div class="c" style="margin-top:4px;color:#6366f1;font-weight:700;">On this page ↓</div>'
+        ${r.here?'<div class="c" style="margin-top:4px;color:var(--color-primary-ink);font-weight:700;">On this page ↓</div>'
                 :`<div style="margin-top:4px;"><a href="${r.link}">${r.linkText}</a></div>`}
       </div>`).join("");
   }

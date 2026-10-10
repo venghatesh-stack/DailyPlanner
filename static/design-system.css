@@ -239,7 +239,7 @@
        separate app: do = brick, schedule = ink, delegate = marigold,
        eliminate = the warm grey. The mapping is unchanged. */
     --color-q-do:        var(--color-danger);
-    --color-q-schedule:  var(--color-primary);
+    --color-q-schedule:  var(--color-primary-ink);   /* indigo, as in the redesign; on-primary labels stay legible on it in both themes */
     --color-q-delegate:  var(--color-warning);
     --color-q-eliminate: #5b5e66;
     --color-q-eliminate: light-dark(#5b5e66, #9ea1a9);

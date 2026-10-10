@@ -281,7 +281,7 @@ body {
 
 .action-stack button[type="submit"] {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
   font-weight: 600;
 }
 
@@ -346,7 +346,7 @@ body {
 /* Active day */
 .day-item.active {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
 }
 
 /* Today (but not active) */
@@ -543,7 +543,7 @@ body {
   border: none;
 
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
 
   font-size: 15px;
   font-weight: 600;

@@ -35,9 +35,9 @@
      else: the change would apply on every page except this one. */
 }
 :root {
-  --sm-bg: var(--color-bg); --sm-surface: #fff; --sm-text: #1a1a2e;
-  --sm-text2: var(--color-text-secondary); --sm-text3: #9ca3af; --sm-border: #e5e7eb;
-  --sm-primary: var(--color-primary); --sm-primary-light: #eff6ff;
+  --sm-bg: var(--color-bg); --sm-surface: var(--color-surface); --sm-text: var(--color-text);
+  --sm-text2: var(--color-text-secondary); --sm-text3: var(--color-text-muted); --sm-border: var(--color-border);
+  --sm-primary: var(--color-primary); --sm-primary-light: var(--color-primary-light);
   --sm-success: var(--color-success); --sm-purple: #7c3aed; --sm-amber: #f59e0b;
   --sm-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
@@ -60,7 +60,7 @@ body { font-family:'Plus Jakarta Sans',system-ui,sans-serif; background:var(--sm
 }
 .vtab:last-child { border-right:none; }
 .vtab:hover { background:var(--sm-border); }
-.vtab.active { background:var(--sm-primary); color:#fff; }
+.vtab.active { background:var(--sm-primary); color:var(--color-on-primary); }
 
 .date-nav { display:flex; align-items:center; gap:4px; }
 .nav-arrow {
@@ -260,7 +260,7 @@ body { font-family:'Plus Jakarta Sans',system-ui,sans-serif; background:var(--sm
 .ai-content { min-height:40px; }
 .ai-btn {
   display:inline-flex; align-items:center; gap:6px;
-  padding:8px 16px; background:var(--sm-primary); color:#fff;
+  padding:8px 16px; background:var(--sm-primary); color:var(--color-on-primary);
   border:none; border-radius:8px; font-size:13px; font-weight:600;
   font-family:inherit; cursor:pointer; transition:opacity 0.15s;
 }
@@ -668,7 +668,7 @@ body { font-family:'Plus Jakarta Sans',system-ui,sans-serif; background:var(--sm
   border-radius: 8px; font: inherit; font-size: 13px; font-weight: 700;
   border: none; cursor: pointer;
 }
-.md-focus-save { background: var(--color-primary, #2563eb); color: #fff; }
+.md-focus-save { background: var(--color-primary, #2563eb); color: var(--color-on-primary); }
 .md-focus-cancel {
   background: transparent;
   color: var(--color-text-secondary, #64748b);
@@ -932,7 +932,7 @@ html.dark .md-recap-card    .md-card-body .md-table-wrap {
 /* Agenda row: subtle left accent by type for glance-scanning */
 .md-row { transition: background .12s; }
 .md-row:hover { background: color-mix(in srgb, var(--color-primary) 5%, transparent); }
-.md-row.md-type-meeting { box-shadow: inset 3px 0 0 0 #2563eb; }
+.md-row.md-type-meeting { box-shadow: inset 3px 0 0 0 var(--color-primary-ink); }
 .md-row.md-type-task    { box-shadow: inset 3px 0 0 0 #9ca3af; }
 .md-row.md-type-habit   { box-shadow: inset 3px 0 0 0 #059669; }
 .md-row.md-done {
@@ -1704,7 +1704,7 @@ html.dark .md-recap-card    .md-card-body .md-table-wrap {
   }
   .peek-btn-primary {
     background: var(--accent-primary) !important;
-    color: #fff !important;
+    color: var(--color-on-primary) !important;
   }
   .peek-btn-primary:hover { background: var(--accent-primary-hover) !important; }
   .peek-btn-primary.peek-btn-success {

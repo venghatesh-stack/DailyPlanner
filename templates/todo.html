@@ -85,7 +85,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--em-bg
 .em-quick-input{flex:1;padding:10px 14px;border:1.5px solid var(--em-border);border-radius:10px;font-size:14px;font-family:inherit;background:var(--em-surface);color:var(--em-text);outline:none;}
 .em-quick-input:focus{border-color:var(--q-schedule);}
 .em-quad-select{padding:8px 10px;border:1px solid var(--em-border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--em-surface);color:var(--em-text);cursor:pointer;}
-.em-add-btn{padding:8px 16px;border:none;border-radius:8px;font-size:14px;font-weight:600;font-family:inherit;background:var(--q-schedule);color:#fff;cursor:pointer;}
+.em-add-btn{padding:8px 16px;border:none;border-radius:8px;font-size:14px;font-weight:600;font-family:inherit;background:var(--q-schedule);color:var(--color-on-primary);cursor:pointer;}
 .em-add-btn:hover{opacity:.9;}
 
 /* Matrix Grid */
@@ -149,7 +149,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--em-bg
 .em-due-chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--em-text3);padding:1px 2px;line-height:1.2;}
 
 /* Non-open status: subtle left-border tweak so user still sees a hint */
-.em-task[data-status="in_progress"]{box-shadow:inset 3px 0 0 0 #2563eb;}
+.em-task[data-status="in_progress"]{box-shadow:inset 3px 0 0 0 var(--color-primary-ink);}
 .em-task[data-status="skipped"]{opacity:.6;}
 .em-task[data-status="deleted"]{opacity:.5;text-decoration:line-through;}
 
@@ -293,7 +293,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--em-bg
 .em-select-bar{
   position:sticky;top:0;z-index:50;
   display:flex;align-items:center;gap:10px;padding:10px 16px;
-  background:var(--q-schedule);color:#fff;
+  background:var(--q-schedule);color:var(--color-on-primary);
   border-radius:12px;margin-bottom:14px;
   box-shadow:0 4px 14px rgba(37,99,235,.25);
   animation:emSlideDown .18s ease;
@@ -401,7 +401,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--em-bg
 }
 
 /* Filter toggle button — sticky alongside other em-action buttons */
-.em-action-btn.active{background:var(--q-schedule)!important;color:#fff!important;border-color:var(--q-schedule)!important;}
+.em-action-btn.active{background:var(--q-schedule)!important;color:var(--color-on-primary)!important;border-color:var(--q-schedule)!important;}
 
 /* ── Priority indicators (visually consistent w/ Planner V2) ── */
 /* Priority stripe retired for the matrix cards too (unified with the
@@ -446,7 +446,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--em-bg
 
 .tv-add{display:grid;grid-template-columns:1fr 110px 130px 70px;gap:6px;align-items:center;padding:10px 0 4px;}
 .tv-add input,.tv-add select{padding:7px 10px;border:1px solid var(--em-border);border-radius:6px;font-size:13px;font-family:inherit;background:var(--em-surface);color:var(--em-text);outline:none;}
-.tv-add button{padding:8px 12px;border:none;border-radius:6px;font-size:12px;font-weight:600;font-family:inherit;background:var(--q-schedule);color:#fff;cursor:pointer;}
+.tv-add button{padding:8px 12px;border:none;border-radius:6px;font-size:12px;font-weight:600;font-family:inherit;background:var(--q-schedule);color:var(--color-on-primary);cursor:pointer;}
 
 .tv-empty{text-align:center;padding:24px 10px;color:var(--em-text3);font-size:13px;}
 
@@ -507,12 +507,12 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--em-bg
 .em-filter-badge{
   display:inline-flex;align-items:center;justify-content:center;
   min-width:18px;height:18px;padding:0 5px;
-  background:var(--q-schedule);color:#fff;
+  background:var(--q-schedule);color:var(--color-on-primary);
   font-size:10px;font-weight:800;border-radius:10px;margin-left:2px;
 }
 #em-filter-btn.has-filters{
   background:var(--q-schedule)!important;
-  color:#fff!important;
+  color:var(--color-on-primary)!important;
   border-color:var(--q-schedule)!important;
 }
 #em-filter-btn.has-filters svg{stroke:#fff;}
@@ -530,15 +530,15 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--em-bg
   margin-bottom: 18px;
   border-radius: 18px;
   overflow: hidden;
-  background:
-    radial-gradient(1200px 300px at 0% 0%, rgba(147, 197, 253, 0.35) 0%, transparent 50%),
-    radial-gradient(1000px 260px at 100% 100%, rgba(251, 191, 36, 0.25) 0%, transparent 55%),
-    linear-gradient(135deg, #1e3a8a 0%, #2563eb 45%, #0ea5e9 100%);
-  color: #f8fafc;
-  box-shadow: 0 14px 40px rgba(37, 99, 235, 0.22), 0 2px 6px rgba(0, 0, 0, 0.1);
+  /* Redesign: a flat ink card with a lime quote mark, like the dark
+     hero cards elsewhere, instead of the blue-to-teal gradient. */
+  background: #15161a;
+  color: #f2f2ef;
+  box-shadow: var(--shadow-md);
   isolation: isolate;
 }
 .em-quote::before {
+  display: none;
   content: "";
   position: absolute;
   inset: 0;
@@ -547,6 +547,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--em-bg
   z-index: 0;
 }
 .em-quote::after {
+  display: none;
   content: "";
   position: absolute;
   top: -40px; right: -40px;
@@ -556,18 +557,15 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--em-bg
   z-index: 0;
 }
 html.dark .em-quote {
-  background:
-    radial-gradient(1200px 300px at 0% 0%, rgba(59, 130, 246, 0.28) 0%, transparent 50%),
-    radial-gradient(1000px 260px at 100% 100%, rgba(217, 119, 6, 0.22) 0%, transparent 55%),
-    linear-gradient(135deg, #0b1e4a 0%, #1e3a8a 45%, #0f766e 100%);
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.25);
+  background: #1a1b20;
+  box-shadow: inset 0 0 0 1px #2c2e34;
 }
 .em-quote-mark {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 96px;
   line-height: 0.75;
   font-weight: 800;
-  color: rgba(255, 255, 255, 0.32);
+  color: #d7f35b;
   flex-shrink: 0;
   align-self: flex-start;
   z-index: 1;
@@ -908,7 +906,7 @@ html.dark .em-proj-menu { box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5); }
 .em-fs-chip.selected{
   background:var(--q-schedule);
   border-color:var(--q-schedule);
-  color:#fff;
+  color:var(--color-on-primary);
   box-shadow:0 2px 10px rgba(37,99,235,.3);
 }
 .em-fs-chip-text{
@@ -954,7 +952,7 @@ html.dark .em-proj-menu { box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5); }
 .em-fs-btn-primary{
   background:var(--q-schedule);
   border:1.5px solid var(--q-schedule);
-  color:#fff;
+  color:var(--color-on-primary);
   box-shadow:0 4px 14px rgba(37,99,235,.3);
 }
 .em-fs-btn-primary:hover{filter:brightness(1.05);}
@@ -963,15 +961,13 @@ html.dark .em-proj-menu { box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5); }
    MOBILE — readable type, generous touch targets, clearer layout
    ═══════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
+  /* Was a hard-coded light palette, so on a dark phone the quadrant
+     titles were near-black on near-black. The tokens already flip. */
   :root {
-    --em-text: #0f172a;
-    --em-text2: #475569;
-    --em-text3: #64748b;
-    --em-bg: #f4f6fb;
-  }
-  html.dark {
-    --em-text2: #cbd5e1;
-    --em-text3: #94a3b8;
+    --em-text: var(--color-text);
+    --em-text2: var(--color-text-secondary);
+    --em-text3: var(--color-text-muted);
+    --em-bg: var(--color-bg);
   }
 
   body { -webkit-text-size-adjust: 100%; font-size: 15px; }
@@ -1765,7 +1761,7 @@ html.dark .em-proj-menu { box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5); }
     }
     .em-quick-add:not(.em-qa-compact) .em-qa-more {
       background: var(--color-primary, #4338ca) !important;
-      color: #fff !important;
+      color: var(--color-on-primary) !important;
     }
 
     /* ── COMPACT HEADER ─────────────────────────────────────
@@ -1867,7 +1863,7 @@ html.dark .em-proj-menu { box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5); }
       font-size: 16px; font-weight: 700; color: var(--color-danger-on-tint); line-height: 1.35;
     }
     body:not([data-em-view="grid"]) .em-task[data-quadrant="schedule"] {
-      border-left-color: #3b82f6;
+      border-left-color: var(--color-primary-ink);
     }
     body:not([data-em-view="grid"]) .em-task[data-quadrant="schedule"] .em-task-text {
       font-size: 14px; font-weight: 600; color: var(--color-primary-ink);
@@ -2124,7 +2120,7 @@ html.dark .em-proj-menu { box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5); }
     background: rgba(37,99,235,.1); color: var(--color-primary-ink); border-color: var(--color-primary);
   }
   .em-parked-primary {
-    background: var(--q-schedule); color: #fff; border-color: var(--q-schedule);
+    background: var(--q-schedule); color: var(--color-on-primary); border-color: var(--q-schedule);
   }
   .em-parked-primary:hover { filter: brightness(1.08); }
   .em-parked-date {
@@ -2270,7 +2266,7 @@ html.dark .em-proj-menu { box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5); }
 .em-tr-primary-btn{
   display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
   padding:11px 16px;border:none;border-radius:9px;
-  background:var(--q-schedule);color:#fff;
+  background:var(--q-schedule);color:var(--color-on-primary);
   font-size:13.5px;font-weight:600;font-family:inherit;cursor:pointer;
   transition:filter .12s,transform .1s;
 }

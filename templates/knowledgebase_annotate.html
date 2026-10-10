@@ -39,7 +39,7 @@
   }
   .ann-back:hover { background: #1f2937; }
   .ann-save {
-    background: var(--color-primary); color: white; margin-left: auto;
+    background: var(--color-primary); color: var(--color-on-primary); margin-left: auto;
   }
   .ann-save:hover { background: var(--color-primary-hover); }
   .ann-save:disabled { background: #4b5563; cursor: wait; }
@@ -61,7 +61,7 @@
   }
   .ann-tool:hover { background: #1f2937; color: #fff; }
   .ann-tool.is-active {
-    background: var(--color-primary); color: white; border-color: var(--color-primary);
+    background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary);
   }
   .ann-tool svg { width: 16px; height: 16px; }
 
@@ -73,7 +73,7 @@
     border: 2px solid transparent; cursor: pointer;
     background-clip: padding-box;
   }
-  .ann-swatch.is-active { border-color: #f9fafb; box-shadow: 0 0 0 2px #2563eb; }
+  .ann-swatch.is-active { border-color: #f9fafb; box-shadow: 0 0 0 2px var(--color-primary-ink); }
 
   /* Pages area — dark gutter, pages float as paper-white. */
   .ann-pages {

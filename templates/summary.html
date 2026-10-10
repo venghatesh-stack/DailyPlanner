@@ -312,13 +312,13 @@
     }
     .md-c-status .md-task-toggle:hover,
     .md-c-status .md-task-toggle-status:hover {
-      border-color: #4f46e5;
+      border-color: var(--color-primary-ink);
     }
     .md-c-status .md-check {
       display: inline-flex; align-items: center; justify-content: center;
     }
     .md-c-status .md-check-done {
-      background: var(--color-primary); border-color: #4f46e5; color: #fff;
+      background: var(--color-primary); border-color: var(--color-primary-ink); color: var(--color-on-primary);
     }
     .md-c-status .md-check-done svg { width: 12px; height: 12px; }
     .md-c-status .md-check-open { border-color: var(--color-border-strong); }
@@ -408,11 +408,11 @@
     }
     .md-table .md-task-toggle:hover,
     .md-table .md-task-toggle-status:hover {
-      border-color: #4f46e5 !important;
+      border-color: var(--color-primary-ink) !important;
       background: rgba(79, 70, 229, .06) !important;
     }
     .md-table .md-task-toggle.is-done {
-      border-color: #4f46e5 !important;
+      border-color: var(--color-primary-ink) !important;
       background: var(--color-primary) !important;
     }
     .md-table .md-task-toggle.is-done::after {
@@ -1222,9 +1222,9 @@
     }
     .md-chip:hover { background: var(--color-surface-secondary, #f3f4f6); color: var(--color-text, #111827); }
     .md-chip.is-active {
-      background: var(--color-primary); color: #fff; border-color: var(--color-primary);
+      background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary);
     }
-    .md-chip--bucket.is-active { background: var(--color-primary); border-color: #6366f1; }
+    .md-chip--bucket.is-active { background: var(--color-primary); border-color: var(--color-primary-ink); }
     .md-chip-count {
       font-size: 11px; padding: 1px 7px; border-radius: 999px;
       background: rgba(0,0,0,.07); font-weight: 700;
@@ -2199,7 +2199,7 @@
 }
 .peek-btn:hover { filter: brightness(1.06); }
 .peek-btn:active { transform: scale(.98); }
-.peek-btn-primary { background: var(--color-primary, #2563eb); color: #fff; }
+.peek-btn-primary { background: var(--color-primary, #2563eb); color: var(--color-on-primary); }
 .peek-btn-primary.peek-btn-success { background: var(--color-success-strong); }
 .peek-btn-primary.peek-btn-disabled,
 .peek-btn-primary:disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
@@ -2292,7 +2292,7 @@
   border: 1px solid var(--color-primary, #2563eb);
   border-radius: 999px;
   background: var(--color-primary, #2563eb);
-  color: #fff;
+  color: var(--color-on-primary);
   font: inherit; font-size: 12.5px; font-weight: 600;
   cursor: pointer;
   transition: background .12s, border-color .12s, color .12s, transform .08s;
@@ -2368,7 +2368,7 @@
   border-radius: 50%;
   border: none;
   background: var(--color-primary, #2563eb);
-  color: #fff;
+  color: var(--color-on-primary);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   z-index: 1050;
@@ -2458,7 +2458,7 @@
 .qc-chip:hover { border-color: var(--color-primary, #2563eb); color: var(--color-primary-ink); }
 .qc-chip-active {
   background: var(--color-primary, #2563eb);
-  color: #fff; border-color: var(--color-primary, #2563eb);
+  color: var(--color-on-primary); border-color: var(--color-primary, #2563eb);
 }
 .qc-chip-active:hover { color: #fff; }
 .qc-date {
@@ -2475,7 +2475,7 @@
   padding: 9px 16px; border-radius: 10px; font: inherit; font-size: 13.5px; font-weight: 700;
   border: none; cursor: pointer;
 }
-.qc-btn-primary { background: var(--color-primary, #2563eb); color: #fff; }
+.qc-btn-primary { background: var(--color-primary, #2563eb); color: var(--color-on-primary); }
 .qc-btn-primary:disabled { opacity: .5; cursor: not-allowed; }
 .qc-btn-ghost { background: transparent; color: var(--color-text-secondary, #475569); border: 1px solid var(--color-border, #e2e8f0); }
 .qc-btn-ghost:hover { background: var(--color-border, #e5e7eb); }
@@ -3835,7 +3835,7 @@ document.addEventListener("keydown", (e) => {
   }
   .reflection-textarea:focus {
     outline: none;
-    border-color: #6366f1;
+    border-color: var(--color-primary-ink);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, .15);
   }
   .reflection-save-status {

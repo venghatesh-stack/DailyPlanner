@@ -29,7 +29,7 @@
        row that already carries several coloured chips, and a transparent
        icon among them reads as decoration rather than a control. */
     ".prep-plan-btn{flex:none;display:inline-flex;align-items:center;gap:5px;",
-    "font:inherit;font-size:11.5px;font-weight:800;line-height:1;color:#fff;",
+    "font:inherit;font-size:11.5px;font-weight:800;line-height:1;color:var(--color-on-primary,#fff);",
     "background:var(--color-primary,#2563eb);border:1px solid var(--color-primary,#2563eb);",
     "border-radius:999px;padding:7px 11px;cursor:pointer;white-space:nowrap;",
     "box-shadow:0 1px 2px rgba(0,0,0,.12)}",
@@ -37,7 +37,7 @@
     "border-color:var(--color-primary-hover,#1d4ed8)}",
     ".prep-plan-btn:active{transform:translateY(1px)}",
     ".prep-plan-btn:focus-visible{outline:3px solid var(--color-primary-ring,rgba(37,99,235,.18));outline-offset:1px}",
-    ".prep-plan-btn.on{background:var(--color-surface,#fff);color:var(--color-primary,#2563eb);",
+    ".prep-plan-btn.on{background:var(--color-surface,#fff);color:var(--color-primary-ink,#2563eb);",
     "border-color:var(--color-border,#e5e7eb);box-shadow:none}",
 
     /* The panel, injected under the card header on first press. */

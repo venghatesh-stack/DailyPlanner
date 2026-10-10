@@ -132,7 +132,7 @@ body {
 .view-btn:hover { background: var(--gcal-surface); }
 .view-btn.active {
   background: var(--gcal-primary);
-  color: #fff;
+  color: var(--color-on-primary);
 }
 
 /* Create Button */
@@ -142,7 +142,7 @@ body {
   gap: 6px;
   padding: 8px 20px;
   background: var(--gcal-primary);
-  color: #fff;
+  color: var(--color-on-primary);
   border: none;
   border-radius: 24px;
   font-size: 14px;
@@ -275,7 +275,7 @@ body {
   height: 28px;
   border: none;
   background: var(--gcal-primary);
-  color: #fff;
+  color: var(--color-on-primary);
   border-radius: 6px;
   cursor: pointer;
   display: flex;
@@ -979,7 +979,7 @@ html.dark .event-chip.is-missed {
 .dur-btn:hover { border-color: var(--gcal-primary); color: var(--gcal-primary); }
 .dur-btn.active {
   background: var(--gcal-primary);
-  color: #fff;
+  color: var(--color-on-primary);
   border-color: var(--gcal-primary);
 }
 
@@ -1118,7 +1118,7 @@ html.dark .event-chip.is-missed {
 .time-chip.active {
   background: var(--gcal-primary);
   border-color: var(--gcal-primary);
-  color: #fff;
+  color: var(--color-on-primary);
   box-shadow: 0 2px 6px rgba(26, 115, 232, 0.28);
 }
 
@@ -1260,7 +1260,7 @@ html.dark .event-chip.is-missed {
 .cp-ampm-btn.active {
   background: var(--gcal-primary);
   border-color: var(--gcal-primary);
-  color: #ffffff;
+  color: var(--color-on-primary);
   box-shadow: 0 2px 8px rgba(26, 115, 232, 0.35);
 }
 
@@ -1353,7 +1353,7 @@ html.dark .event-chip.is-missed {
 }
 .cp-btn-primary {
   background: var(--gcal-primary);
-  color: #ffffff;
+  color: var(--color-on-primary);
   border-color: var(--gcal-primary);
   box-shadow: 0 3px 12px rgba(26, 115, 232, 0.35);
 }
@@ -1449,7 +1449,7 @@ html.dark .event-chip.is-missed {
 }
 .btn:active { transform: scale(0.97); }
 .btn-sm { padding: 5px 10px; font-size: 12px; }
-.btn-primary { background: var(--gcal-primary); color: #fff; }
+.btn-primary { background: var(--gcal-primary); color: var(--color-on-primary); }
 .btn-primary:hover { background: var(--gcal-primary-hover); }
 .btn-danger { background: #d93025; color: #fff; }
 .btn-danger:hover { background: #c5221f; }
@@ -1784,8 +1784,8 @@ html.dark .event-chip.is-missed {
 }
 .recurrence-day-picker label:has(input:checked) {
   background: var(--color-primary);
-  border-color: #6366f1;
-  color: #fff;
+  border-color: var(--color-primary-ink);
+  color: var(--color-on-primary);
 }
 
 .recurrence-end-row {

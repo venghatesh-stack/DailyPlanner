@@ -113,7 +113,7 @@ body {
 }
 .date-today-btn:hover {
   background: var(--hab-primary);
-  color: #fff;
+  color: var(--color-on-primary);
 }
 
 /* Date pill */
@@ -183,11 +183,11 @@ body {
   box-shadow: 0 3px 12px rgba(99, 102, 241, 0.3);
 }
 .date-pill.active .dp-day,
-.date-pill.active .dp-num { color: #fff; }
+.date-pill.active .dp-num { color: var(--color-on-primary); }
 .date-pill.active .dp-dot { background: rgba(255, 255, 255, 0.7); }
 .date-pill.active .dp-month {
   background: var(--hab-primary);
-  color: #fff;
+  color: var(--color-on-primary);
   border-color: #fff;
 }
 .date-pill.today:not(.active) {
@@ -249,7 +249,7 @@ body {
 .stat-icon svg { width: 18px; height: 18px; }
 .streak-icon { background: var(--color-warning-light); color: #f59e0b; }
 .score-icon { background: #fce7f3; color: #ec4899; }
-.avg-icon { background: var(--color-primary-light); color: #3b82f6; }
+.avg-icon { background: var(--color-primary-light); color: var(--color-primary-ink); }
 .stat-value { font-size: 24px; font-weight: 800; color: var(--hab-text); line-height: 1; }
 .stat-label {
   font-size: 11px; font-weight: 500; color: var(--hab-text3);
@@ -267,7 +267,7 @@ body {
 .add-habit-btn {
   display: flex; align-items: center; gap: 4px;
   padding: 6px 14px;
-  background: var(--hab-primary); color: #fff;
+  background: var(--hab-primary); color: var(--color-on-primary);
   border: none; border-radius: 8px;
   font-size: 13px; font-weight: 600; font-family: inherit;
   cursor: pointer; transition: opacity 0.15s;
@@ -334,7 +334,7 @@ body {
   user-select: none; -webkit-tap-highlight-color: transparent;
 }
 .habit-adjust-btn:hover { background: var(--hab-primary-light); color: var(--hab-primary); }
-.habit-adjust-btn:active { transform: scale(0.88); background: var(--hab-primary); color: #fff; }
+.habit-adjust-btn:active { transform: scale(0.88); background: var(--hab-primary); color: var(--color-on-primary); }
 
 .habit-value-wrap {
   flex: 1; display: flex; flex-direction: column; align-items: center; min-width: 0;
@@ -596,7 +596,7 @@ body {
   background: var(--hab-bg); font-size: 13px; font-weight: 500;
   font-family: inherit; cursor: pointer; color: var(--hab-text2); transition: all 0.15s;
 }
-.type-btn.active { background: var(--hab-primary); color: #fff; }
+.type-btn.active { background: var(--hab-primary); color: var(--color-on-primary); }
 
 .sheet-actions {
   display: flex; gap: 8px; margin-top: 20px; padding-top: 16px;
@@ -610,7 +610,7 @@ body {
   cursor: pointer; transition: all 0.15s;
 }
 .btn:active { transform: scale(0.97); }
-.btn-primary { background: var(--hab-primary); color: #fff; }
+.btn-primary { background: var(--hab-primary); color: var(--color-on-primary); }
 .btn-primary:hover { opacity: 0.9; }
 .btn-ghost { background: transparent; color: var(--hab-text2); }
 .btn-ghost:hover { background: var(--hab-bg); }

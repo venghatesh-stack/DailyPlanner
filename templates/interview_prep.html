@@ -23,7 +23,7 @@
   input, select, textarea { font: inherit; color: var(--color-text); background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 10px; outline: none; }
   input:focus, select:focus, textarea:focus { border-color: var(--color-primary); }
   .btn { font: inherit; font-weight: 700; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); border-radius: 10px; padding: 9px 13px; cursor: pointer; }
-  .btn.primary { background: var(--color-primary); color: #fff; border-color: transparent; }
+  .btn.primary { background: var(--color-primary); color: var(--color-on-primary); border-color: transparent; }
   .btn.sm { padding: 5px 9px; font-size: 12.5px; }
 
   /* ── Header / hero ── */
@@ -86,7 +86,7 @@ html.dark .coach.celebrate { background: #161a33; }
   .focus-item { display: flex; align-items: center; gap: 8px; font-size: 13.5px; padding: 8px 10px; background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 10px; }
   .focus-item .cat { font-size: 10.5px; color: var(--color-text-secondary); font-weight: 700; margin-left: auto; white-space: nowrap; }
   .focus-item.weak { border-left: 3px solid #ef4444; }
-  .focus-item.story { border-left: 3px solid #6366f1; }
+  .focus-item.story { border-left: 3px solid var(--color-primary-ink); }
   .breakdown { display: flex; gap: 8px; margin-top: 10px; }
   .bd { flex: 1; text-align: center; background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 10px; padding: 8px; }
   .bd b { font-size: 17px; font-weight: 900; } .bd span { display: block; font-size: 10.5px; color: var(--color-text-secondary); font-weight: 600; margin-top: 2px; }
@@ -138,7 +138,7 @@ html.dark .coach.celebrate { background: #161a33; }
   .q-card.open .q-body { display: block; }
   .star { font-size: 13.5px; line-height: 1.45; margin: 4px 0; }
   .star b { display: inline-flex; width: 18px; height: 18px; align-items: center; justify-content: center; border-radius: 6px; font-size: 11px; font-weight: 800; color: #fff; margin-right: 7px; vertical-align: 1px; }
-  .star.s b { background: var(--color-primary); } .star.t b { background: #0ea5e9; } .star.a b { background: var(--color-warning); } .star.r b { background: var(--color-success); }
+  .star.s b { background: var(--color-primary); color: var(--color-on-primary); } .star.t b { background: #0ea5e9; } .star.a b { background: var(--color-warning); } .star.r b { background: var(--color-success); }
   .q-tip { font-size: 12.5px; font-style: italic; color: var(--color-text-secondary); margin: 8px 0 10px; }
   /* What separates a hire from a no-hire on this specific question, and the
      follow-ups the panel will push with — where the round is actually decided. */
@@ -233,7 +233,7 @@ html.dark .coach.celebrate { background: #161a33; }
     :root:not(.light) .coach.celebrate { background: #161a33; }
     :root:not(.light) .q-sw { background: #241a06; border-left-color: #fbbf24; }
     :root:not(.light) .q-probe { background: #1e1233; border-left-color: #8b5cf6; }
-    :root:not(.light) .sd-tag { background: #1e1b4b; border-color: #3730a3; color: #c7d2fe; }
+    :root:not(.light) .sd-tag { background: #1e1b4b; border-color: var(--color-primary-ink); color: #c7d2fe; }
     :root:not(.light) .q-sw .lbl { color: #fcd34d; }
     :root:not(.light) .q-probes > .lbl { color: #c4b5fd; }
     :root:not(.light) .q-probe .n { color: #c4b5fd; }

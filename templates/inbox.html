@@ -18,8 +18,8 @@
    The --ib names stay (every rule below uses them); only their
    values now come from one place. */
 :root {
-  --ib-bg: var(--color-bg); --ib-surface: var(--color-surface, #fff); --ib-text:#1a1a2e;
-  --ib-text2: var(--color-text-secondary); --ib-text3:#9ca3af; --ib-border: var(--color-border, #e5e7eb);
+  --ib-bg: var(--color-bg); --ib-surface: var(--color-surface, #fff); --ib-text: var(--color-text);
+  --ib-text2: var(--color-text-secondary); --ib-text3: var(--color-text-muted); --ib-border: var(--color-border, #e5e7eb);
   --ib-primary: var(--color-primary, #2563eb); --ib-primary-light: var(--color-primary-light, #eff6ff);
   --ib-success: var(--color-success); --ib-warning:#f59e0b; --ib-danger:#ef4444;
   --ib-shadow:0 1px 3px rgba(0,0,0,0.06);
@@ -56,7 +56,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--ib-bg
 .qa-paste-btn:hover{border-color:var(--ib-primary);color:var(--ib-primary);}
 .qa-paste-btn svg{width:14px;height:14px;}
 .qa-save-btn{
-  width:38px;height:38px;border:none;background:var(--ib-primary);color:#fff;
+  width:38px;height:38px;border:none;background:var(--ib-primary);color:var(--color-on-primary);
   border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;
   transition:opacity 0.15s;flex-shrink:0;
 }
@@ -81,7 +81,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--ib-bg
   font-family:inherit;color:var(--ib-text2);cursor:pointer;transition:all 0.15s;
 }
 .filter-btn:hover{border-color:var(--ib-primary);color:var(--ib-primary);}
-.filter-btn.active{background:var(--ib-primary);color:#fff;border-color:var(--ib-primary);}
+.filter-btn.active{background:var(--ib-primary);color:var(--color-on-primary);border-color:var(--ib-primary);}
 .search-input{
   margin-left:auto;padding:5px 12px;border:1px solid var(--ib-border);border-radius:8px;
   font-size:13px;font-family:inherit;background:var(--ib-surface);color:var(--ib-text);
@@ -270,7 +270,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--ib-bg
   color:var(--ib-primary);border-radius:6px;cursor:pointer;display:flex;
   align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;
 }
-.cu-save:hover{background:var(--ib-primary);color:#fff;}
+.cu-save:hover{background:var(--ib-primary);color:var(--color-on-primary);}
 .cu-save.saved{background:var(--ib-success);border-color:var(--ib-success);color:#fff;pointer-events:none;}
 .cu-save svg{width:14px;height:14px;}
 
@@ -388,7 +388,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--ib-bg
   color:var(--ib-primary);border-radius:8px;cursor:pointer;display:flex;
   align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;
 }
-.sr-save-btn:hover{background:var(--ib-primary);color:#fff;}
+.sr-save-btn:hover{background:var(--ib-primary);color:var(--color-on-primary);}
 .sr-save-btn.saved{background:var(--ib-success);border-color:var(--ib-success);color:#fff;pointer-events:none;}
 .sr-save-btn svg{width:16px;height:16px;}
 
@@ -489,7 +489,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--ib-bg
     background: var(--color-surface, #fff); color: var(--color-text, #111827);
   }
   .share-actions .share-save {
-    background: var(--color-primary, #2563eb); color: #fff; border-color: transparent;
+    background: var(--color-primary, #2563eb); color: var(--color-on-primary); border-color: transparent;
   }
 
   .share-when { display: flex; gap: 10px; margin: 0 0 10px; flex-wrap: wrap; }
