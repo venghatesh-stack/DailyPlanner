@@ -1698,7 +1698,11 @@ def cron_snapshot():
     Requires CRON_SECRET header for auth (set in .env)."""
     import os
     secret = os.environ.get("CRON_SECRET", "")
-    if not secret or request.headers.get("X-Cron-Secret") != secret:
+    import hmac
+    # Constant-time compare, so the secret cannot be guessed byte by byte
+    # from response timing.
+    if not secret or not hmac.compare_digest(
+            (request.headers.get("X-Cron-Secret") or "").encode(), secret.encode()):
         return jsonify({"error": "Unauthorized"}), 401
 
     # Get all distinct user_ids that have holdings

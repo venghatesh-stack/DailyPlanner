@@ -111,7 +111,7 @@ def _project_name_map(user_id: str, project_ids: Iterable) -> dict:
     return {r["project_id"]: r.get("name") for r in rows}
 
 
-def _kr_label_map(kr_ids: Iterable, initiative_ids: Iterable) -> dict:
+def _kr_label_map(user_id: str, kr_ids: Iterable, initiative_ids: Iterable) -> dict:
     """Maps each id (key_result_id OR initiative_id) → a short label
     suitable for a chip on a task row. Initiatives are resolved to
     their parent KR title (one step up the OKR ladder), so a task
@@ -119,6 +119,9 @@ def _kr_label_map(kr_ids: Iterable, initiative_ids: Iterable) -> dict:
 
     Returns: { id: "KR title", ... }  — same dict for both id types
     so the caller can do a single .get(...) without branching.
+    Scoped to `user_id`: the ids come from task rows, and a task can be
+    pointed at any id, so an unscoped lookup would print another user's
+    key-result title on this user's board.
     """
     kr_ids_set = {x for x in kr_ids if x}
     init_ids_set = {x for x in initiative_ids if x}
@@ -129,6 +132,7 @@ def _kr_label_map(kr_ids: Iterable, initiative_ids: Iterable) -> dict:
         rows = _safe_get(
             "key_results",
             params={
+                "user_id": f"eq.{user_id}",
                 "id": f"in.({','.join(str(i) for i in kr_ids_set)})",
                 "is_deleted": "eq.false",
                 "select": "id,title",
@@ -143,6 +147,7 @@ def _kr_label_map(kr_ids: Iterable, initiative_ids: Iterable) -> dict:
         init_rows = _safe_get(
             "initiatives",
             params={
+                "user_id": f"eq.{user_id}",
                 "id": f"in.({','.join(str(i) for i in init_ids_set)})",
                 "select": "id,key_result_id",
             },
@@ -156,6 +161,7 @@ def _kr_label_map(kr_ids: Iterable, initiative_ids: Iterable) -> dict:
             kr_rows = _safe_get(
                 "key_results",
                 params={
+                    "user_id": f"eq.{user_id}",
                     "id": f"in.({','.join(str(i) for i in kr_ids_via_init)})",
                     "is_deleted": "eq.false",
                     "select": "id,title",
@@ -373,6 +379,7 @@ def fetch_project_items(
     # OKR chip labels: resolve KR titles for tasks linked to a key_result
     # or (one ladder rung lower) an initiative.
     kr_label_map = _kr_label_map(
+        user_id,
         (r.get("key_result_id") for r in rows),
         (r.get("initiative_id") for r in rows),
     )
@@ -540,6 +547,7 @@ def fetch_done_today(user_id: str, plan_date) -> list[dict]:
         + [r.get("project_id") for r in project_rows],
     )
     kr_label_map = _kr_label_map(
+        user_id,
         (r.get("key_result_id") for r in project_rows),
         (r.get("initiative_id") for r in project_rows),
     )

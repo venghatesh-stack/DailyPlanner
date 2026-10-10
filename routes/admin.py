@@ -70,11 +70,20 @@ def _admin_emails():
     admins = _split("ADMIN_EMAILS") | _split("REGISTRATION_ALLOWLIST")
     if admins:
         return admins
+    # Last resort ONLY for a one-person install. This page dumps every
+    # user's tables (backups), so falling back to the whole family chat
+    # allowlist made every family member an admin. With several people on
+    # that list and no ADMIN_EMAILS, nobody is — set ADMIN_EMAILS.
     try:
         from routes.chat import _allowlist
-        return _allowlist()
+        family = _allowlist()
     except Exception:
-        return set()
+        family = set()
+    if len(family) == 1:
+        return family
+    if family:
+        logger.warning("admin: ADMIN_EMAILS is not set; admin pages are closed")
+    return set()
 
 
 def _gate():

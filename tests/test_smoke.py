@@ -5748,6 +5748,8 @@ def test_a_task_can_be_filed_straight_against_a_goal(auth_client, monkeypatch):
     def fake_get(table, params=None, **k):
         if table == "projects":
             return [{"project_id": "p1", "name": "Office"}]
+        if table == "objectives":          # the goal is the caller's own
+            return [{"id": "obj-7"}]
         return []
 
     def fake_post(table, payload, **k):
@@ -5785,7 +5787,8 @@ def test_adding_a_task_still_works_before_the_migration_runs(auth_client, monkey
                      start_date="2026-08-30")]
 
     monkeypatch.setattr(pr, "get", lambda t, params=None, **k:
-                        [{"project_id": "p1", "name": "Office"}] if t == "projects" else [])
+                        [{"project_id": "p1", "name": "Office"}] if t == "projects"
+                        else ([{"id": "obj-7"}] if t == "objectives" else []))
     monkeypatch.setattr(pr, "post", fake_post)
     monkeypatch.setattr(pr, "_default_epic_id", lambda *a, **k: None)
 

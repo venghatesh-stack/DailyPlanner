@@ -1123,8 +1123,10 @@ def attachment_raw(msg_id):
         abort(404)
     m = rows[0]
     # Only members of the message's room may fetch its attachment bytes.
-    if m.get("room_id"):
-        _require_membership(m["room_id"])
+    # A message with no room is refused rather than served to anyone.
+    if not m.get("room_id"):
+        abort(404)
+    _require_membership(m["room_id"])
 
     try:
         service, _row = _drive_service_for(m["user_id"])

@@ -456,6 +456,8 @@ def restore_project_task(task_id):
 @projects_bp.route("/projects/<project_id>/tasks/add", methods=["POST"])
 @login_required
 def add_project_task(project_id):
+    if not _owns_project(project_id):
+        return "Project not found", 404
     text = request.form.get("task_text", "").strip()
     start_date = request.form.get("start_date") or user_today().isoformat()
 
@@ -499,7 +501,7 @@ def send_project_task_to_eisenhower():
 
     rows = get(
         "project_tasks",
-        params={"task_id": f"eq.{task_id}"}
+        params={"task_id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}"}
     )
 
     if not rows:
@@ -511,6 +513,7 @@ def send_project_task_to_eisenhower():
     params={
         "source_task_id": f"eq.{task_id}",
         "plan_date": f"eq.{plan_date}",
+        "user_id": f"eq.{session['user_id']}",
     }
 )
 
@@ -857,6 +860,10 @@ def update_task(task_id):
     for field in allowed_fields:
         if field in data:
             updates[field] = data[field]
+
+    bad = _foreign_link(updates)
+    if bad:
+        return jsonify({"error": f"{bad} not found"}), 404
 
     # 🔒 Safety: never allow task_text to be null
     if "task_text" in updates and updates["task_text"] is None:
@@ -1258,6 +1265,8 @@ def bulk_add_tasks():
 
     if not project_id:
         return jsonify({"error": "project_id missing"}), 400
+    if not _owns_project(project_id):
+        return jsonify({"error": "Project not found"}), 404
 
     if not tasks:
         return jsonify({"error": "no tasks provided"}), 400
@@ -1392,6 +1401,8 @@ def import_csv():
 
     if not project_id or not rows:
         return jsonify({"error": "project_id and rows required"}), 400
+    if not _owns_project(project_id):
+        return jsonify({"error": "Project not found"}), 404
 
     user_id = session["user_id"]
     max_order = get_max_order_index(project_id) or 0
@@ -1667,6 +1678,49 @@ def complete_task(task_id):
     )
 
     return {"ok": True}
+
+# ── Ownership of linked rows ─────────────────────────────────────────────
+# A task can name a project, goal, key result, initiative, epic and sprint.
+# All of those ids arrive from the client; none were checked, so a task
+# could be filed into someone else's project or pointed at their key
+# result — whose title the day board then printed on this user's screen.
+_LINK_TABLES = {
+    "project_id":    ("projects", "project_id"),
+    "objective_id":  ("objectives", "id"),
+    "key_result_id": ("key_results", "id"),
+    "initiative_id": ("initiatives", "id"),
+    "epic_id":       ("epics", "id"),
+    "sprint_id":     ("sprints", "id"),
+}
+
+
+def _owns_row(field, value):
+    table, col = _LINK_TABLES[field]
+    rows = get(table, params={
+        col: f"eq.{value}",
+        "user_id": f"eq.{session['user_id']}",
+        "select": col,
+        "limit": 1,
+    }) or []
+    return bool(rows)
+
+
+def _owns_project(project_id):
+    return bool(project_id) and _owns_row("project_id", project_id)
+
+
+def _foreign_link(fields):
+    """Name of the first link field whose id is not the caller's, else None.
+    Empty / null values are fine — they clear the link."""
+    for field, value in fields.items():
+        if field not in _LINK_TABLES:
+            continue
+        if value in (None, "") or str(value).strip().lower() in ("", "null", "none"):
+            continue
+        if not _owns_row(field, value):
+            return field
+    return None
+
 
 # ── Subtask ownership ────────────────────────────────────────────────────
 # project_subtasks has no user_id column, so ownership is the parent
@@ -1958,6 +2012,11 @@ def add_project_task_ajax(project_id):
     text = (data.get("task_text") or "").strip()
     if not text:
         return jsonify({"error": "Task text required"}), 400
+    if not _owns_project(project_id):
+        return jsonify({"error": "Project not found"}), 404
+    bad = _foreign_link({k: data.get(k) for k in ("objective_id", "initiative_id", "epic_id", "sprint_id")})
+    if bad:
+        return jsonify({"error": f"{bad} not found"}), 404
 
     priority = data.get("priority", "medium")
     start_date = data.get("start_date") or user_today().isoformat()

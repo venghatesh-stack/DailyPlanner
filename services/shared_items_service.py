@@ -67,9 +67,21 @@ def people(user_id):
     except Exception:
         logger.exception("shared_items: could not list people")
         return []
+    # When a family allowlist (CHAT_USER_EMAILS) is configured, only those
+    # people are offered — the same people chat and family tasks are for.
+    # It used to list every active account to anyone signed in. Without an
+    # allowlist the old behaviour stays (accounts are invite-only anyway),
+    # so sharing keeps working on installs that never set one.
+    try:
+        from routes.chat import _allowlist
+        family = _allowlist()
+    except Exception:
+        family = set()
     out = []
     for r in rows:
         if r["id"] == user_id or r.get("is_active") is False:
+            continue
+        if family and (r.get("email") or "").strip().lower() not in family:
             continue
         name = (r.get("display_name") or "").strip() or \
             (r.get("email") or "").split("@", 1)[0]

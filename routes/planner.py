@@ -469,6 +469,7 @@ def promoteuntimed():
     max_pos = get(
         "todo_matrix",
         params={
+            "user_id": f"eq.{user_id}",
             "plan_date": f"eq.{plan_date_str}",
             "quadrant": f"eq.{quadrant}",
             "is_deleted": "eq.false",
@@ -481,6 +482,7 @@ def promoteuntimed():
     existing = get(
         "todo_matrix",
         params={
+            "user_id": f"eq.{user_id}",
             "plan_date": f"eq.{plan_date_str}",
             "quadrant": f"eq.{quadrant}",
             "task_text": f"eq.{text}",

@@ -282,6 +282,7 @@ def save_day(plan_date, form):
                     existing = get(
                         "todo_matrix",
                         params={
+                            "user_id": f"eq.{user_id}",
                             "plan_date": f"eq.{plan_date}",
                             "quadrant": f"eq.{quadrant}",
                             "task_text": f"eq.{parsed['title']}",
@@ -293,6 +294,7 @@ def save_day(plan_date, form):
                         max_pos = get(
                         "todo_matrix",
                         params={
+                            "user_id": f"eq.{user_id}",
                             "plan_date": f"eq.{plan_date}",
                             "quadrant": f"eq.{quadrant}",
                             "is_deleted": "eq.false",
@@ -350,6 +352,7 @@ def save_day(plan_date, form):
                     existing = get(
                         "todo_matrix",
                         params={
+                            "user_id": f"eq.{user_id}",
                             "plan_date": f"eq.{task_date}",
                             "quadrant": f"eq.{quadrant}",
                             "task_text": f"eq.{parsed['title']}",
@@ -362,6 +365,7 @@ def save_day(plan_date, form):
                       max_pos = get(
                             "todo_matrix",
                             params={
+                                "user_id": f"eq.{user_id}",
                                 "plan_date": f"eq.{task_date}",
                                 "quadrant": f"eq.{quadrant}",
                                 "is_deleted": "eq.false",
@@ -413,6 +417,7 @@ def save_day(plan_date, form):
                     existing = get(
                         "recurring_slots",
                         params={
+                            "user_id": f"eq.{user_id}",
                             "title": f"eq.{parsed['title']}",
                             "start_slot": f"eq.{first_slot}",
                             "slot_count": f"eq.{slot_count}",

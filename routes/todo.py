@@ -1756,6 +1756,13 @@ def todo_set_project():
 
     if not task_id:
         return jsonify({"error": "Missing task id"}), 400
+    # The project must be the caller's too, or a task could be filed into
+    # someone else's project. An empty value clears the link.
+    if project_id and not get("projects", params={
+            "project_id": f"eq.{project_id}",
+            "user_id": f"eq.{session['user_id']}",
+            "select": "project_id", "limit": 1}):
+        return jsonify({"error": "Project not found"}), 404
 
     update(
         "todo_matrix",
@@ -1949,6 +1956,7 @@ def set_recurrence():
             "quadrant": f"eq.{task['quadrant']}",
             "start_date": f"eq.{task['plan_date']}",
             "is_active": "eq.true",
+            "user_id": f"eq.{session['user_id']}",
         },
     )
 
@@ -1962,6 +1970,9 @@ def set_recurrence():
     rule=post(
         "recurring_tasks",
         {
+            # user_id is NOT NULL on recurring_tasks; without it the insert
+            # failed and "repeat this task" never created a rule.
+            "user_id": session["user_id"],
             "quadrant": task["quadrant"],
             "task_text": task["task_text"],
             "recurrence": recurrence,

@@ -78,3 +78,74 @@ def test_subtask_toggle_still_works_for_the_owner(auth_client, writes, monkeypat
 def test_habit_reorder_filters_on_the_caller(auth_client, writes):
     auth_client.post("/api/habits/reorder", json={"habit_id": "h1", "position": 2})
     assert writes and writes[0][1].get("user_id") == ME
+
+
+# ── Reads (2026-10-11 read-side audit) ─────────────────────────────────
+
+def test_sending_someone_elses_project_task_to_the_matrix_is_refused(auth_client, monkeypatch):
+    import routes.projects as pr
+    asked = []
+    def fake_get(table, params=None, **kw):
+        asked.append((table, dict(params or {})))
+        return []      # scoped lookup finds nothing: not the caller's
+    monkeypatch.setattr(pr, "get", fake_get)
+    r = auth_client.post("/projects/tasks/send-to-eisenhower",
+                         json={"task_id": "t9", "plan_date": "2026-10-11"})
+    assert r.status_code == 404
+    assert asked[0][0] == "project_tasks" and asked[0][1].get("user_id") == ME
+
+
+def test_kr_labels_on_the_day_board_are_scoped(monkeypatch):
+    import services.agenda_service as ag
+    calls = []
+    monkeypatch.setattr(ag, "_safe_get", lambda table, params=None, **kw: calls.append((table, params)) or [])
+    ag._kr_label_map("u1", ["k1"], ["i1"])
+    assert calls and all(p.get("user_id") == "eq.u1" for _, p in calls)
+
+
+def test_a_task_cannot_be_linked_to_someone_elses_key_result(auth_client, writes, monkeypatch):
+    import routes.projects as pr
+    monkeypatch.setattr(pr, "get", lambda *a, **kw: [])   # the KR is not the caller's
+    r = auth_client.post("/projects/tasks/t1/update", json={"key_result_id": "k-other"})
+    assert r.status_code == 404
+    assert not writes
+
+
+def test_tasks_cannot_be_added_to_someone_elses_project(auth_client, monkeypatch):
+    import routes.projects as pr
+    monkeypatch.setattr(pr, "get", lambda *a, **kw: [])
+    posted = []
+    monkeypatch.setattr(pr, "post", lambda *a, **kw: posted.append(a) or [])
+    assert auth_client.post("/projects/p-other/tasks/add-ajax", json={"task_text": "x"}).status_code == 404
+    assert auth_client.post("/projects/tasks/bulk-add", json={"project_id": "p-other", "tasks": ["x"]}).status_code == 404
+    assert not posted
+
+
+def test_family_tasks_stay_out_of_search_for_non_family(auth_client, monkeypatch):
+    import routes.system as sysr
+    monkeypatch.delenv("CHAT_USER_EMAILS", raising=False)
+    tables = []
+    monkeypatch.setattr(sysr, "get", lambda table, params=None, **kw: tables.append(table) or [])
+    auth_client.get("/api/search?q=school")
+    assert "family_tasks" not in tables
+
+
+def test_people_picker_is_limited_to_the_family_when_one_is_set(monkeypatch):
+    import services.shared_items_service as sh
+    monkeypatch.setenv("CHAT_USER_EMAILS", "me@x.com,partner@x.com")
+    monkeypatch.setattr(sh, "get", lambda *a, **kw: [
+        {"id": "me", "email": "me@x.com", "display_name": "Me"},
+        {"id": "u2", "email": "partner@x.com", "display_name": "Partner"},
+        {"id": "u3", "email": "stranger@x.com", "display_name": "Stranger"},
+    ])
+    assert [p["name"] for p in sh.people("me")] == ["Partner"]
+
+
+def test_admin_is_not_the_whole_family_by_default(monkeypatch):
+    import routes.admin as adm
+    for k in ("ADMIN_EMAILS", "REGISTRATION_ALLOWLIST"):
+        monkeypatch.delenv(k, raising=False)
+    monkeypatch.setenv("CHAT_USER_EMAILS", "me@x.com,partner@x.com")
+    assert adm._admin_emails() == set()
+    monkeypatch.setenv("CHAT_USER_EMAILS", "me@x.com")
+    assert adm._admin_emails() == {"me@x.com"}

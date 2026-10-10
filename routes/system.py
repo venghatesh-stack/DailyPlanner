@@ -487,9 +487,12 @@ def global_search():
     except Exception:
         pass
 
-    # 9. Family tasks (shared across the family — filter by title only)
+    # 9. Family tasks (shared across the family — filter by title only).
+    # Same gate as /family-tasks itself: only people on the family
+    # allowlist may see them. Search used to return them to any account.
     try:
-        rows = get("family_tasks", params={
+        from routes.chat import user_allowed as _family_member
+        rows = [] if not _family_member() else get("family_tasks", params={
             "deleted_at": "is.null",
             "title": pattern,
             "select": "id,title,created_by_name",
