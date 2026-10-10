@@ -28,3 +28,7 @@ Then open:
 - Any page — skip-link appears on Tab; dark-mode muted text now passes WCAG AA; focus rings visible on keyboard.
 - `/health` heatmap — now actually respects both date bounds.
 - Top-right clock — shows your local timezone abbreviation, not `IST` hard-coded.
+
+## `redesign_2026-10-11.md`
+The Ink & Lime redesign pass: what changed, the two SQL migrations to run
+(in order), the security fix, and what is still open.
