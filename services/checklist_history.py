@@ -70,8 +70,11 @@ def _is_done(item, day_iso, tick_idx, times_by_item):
     return all(t in ticked for t in wanted)
 
 
-def load(user_id, end_date, days):
+def load(user_id, end_date, days, today=None):
     """Per-day adherence ending on `end_date` (inclusive).
+
+    `today` (a date) is the user's current day. It is not over yet, so an
+    unfinished today neither counts towards the streak nor breaks it.
 
     Returns a dict with `days` (newest first), `items` (per-item totals)
     and the overall counts. One query per table regardless of the window —
@@ -138,10 +141,17 @@ def load(user_id, end_date, days):
     # a weekend with no weekday items is not a failure.
     active = [d for d in out_days if d["due"]]
     # Streak counts back from the most recent day that had anything due.
+    # TODAY IS NOT OVER: with items still open this evening it used to read
+    # "0 days in a row" all day, every day, until the last tick — a streak
+    # that resets every morning measures nothing. An unfinished today is
+    # skipped; a finished today counts.
+    today_iso = today.isoformat() if today else None
     streak = 0
     for d in active:
         if d["missed"] == 0:
             streak += 1
+        elif d["date"] == today_iso:
+            continue
         else:
             break
 

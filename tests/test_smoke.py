@@ -2267,7 +2267,7 @@ def test_checklist_history_page(auth_client, monkeypatch):
         "items": [{"id": "i1", "name": "Drink water", "due": 14, "done": 2}],
         "total_due": 46, "total_done": 24, "pct": 52, "active_days": 3, "streak": 1,
     }
-    monkeypatch.setattr(cl.checklist_history, "load", lambda u, e, d: fake)
+    monkeypatch.setattr(cl.checklist_history, "load", lambda u, e, d, **kw: fake)
     html = auth_client.get("/checklist/history?days=14").get_data(as_text=True)
     assert "52%" in html and "24 of 46 ticked" in html
     assert "Drink water" in html and "2/14" in html
@@ -2283,7 +2283,7 @@ def test_history_window_is_bounded(auth_client, monkeypatch):
     import routes.checklist as cl
     seen = {}
     monkeypatch.setattr(cl.checklist_history, "load",
-                        lambda u, e, d: seen.setdefault("days", d) or
+                        lambda u, e, d, **kw: seen.setdefault("days", d) or
                         {"days": [], "items": [], "total_due": 0, "total_done": 0,
                          "pct": None, "active_days": 0, "streak": 0,
                          "start": "", "end": "", "window": d})

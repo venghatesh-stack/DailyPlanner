@@ -118,7 +118,7 @@
 
   /* Color picker */
   .color-section { margin-bottom: 24px; }
-  .color-section label {
+  .color-section legend {
     display: block;
     font-size: 13px;
     font-weight: 600;
@@ -138,7 +138,12 @@
     transition: all 0.15s;
   }
   .color-dot:hover { transform: scale(1.1); }
-  .color-dot.active { border-color: var(--np-text); box-shadow: 0 0 0 2px var(--np-surface); }
+  .color-dot { position: relative; display: inline-block; }
+  .color-dot input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+  .color-dot:has(input:checked) { border-color: var(--np-text); box-shadow: 0 0 0 2px var(--np-surface); }
+  .color-dot:has(input:focus-visible) { box-shadow: var(--ring); }
+  fieldset.color-section { border: 0; padding: 0; margin: 0 0 20px; }
+  fieldset.color-section legend { padding: 0; }
 
   /* Template chips */
   .template-section { margin-bottom: 24px; }
@@ -252,18 +257,42 @@
         <div class="char-count"><span id="desc-count">0</span>/500</div>
       </div>
 
-      <div class="color-section">
-        <label>Project Color</label>
+      {# Saved to projects.color (MIGRATION_PROJECT_COLOR.sql) and used for the
+         project's card and its Roadmap colour key. The old picker was a row
+         of <div>s that were never submitted. #}
+      <fieldset class="color-section">
+        <legend>Project colour</legend>
         <div class="color-picker">
-          <div class="color-dot active" style="background:var(--color-primary)" data-color="var(--color-primary)" onclick="pickColor(this)"></div>
-          <div class="color-dot" style="background:var(--color-primary)" data-color="var(--color-primary)" onclick="pickColor(this)"></div>
-          <div class="color-dot" style="background:var(--color-success-strong)" data-color="var(--color-success-strong)" onclick="pickColor(this)"></div>
-          <div class="color-dot" style="background:var(--color-warning)" data-color="var(--color-warning)" onclick="pickColor(this)"></div>
-          <div class="color-dot" style="background:var(--color-danger)" data-color="var(--color-danger)" onclick="pickColor(this)"></div>
-          <div class="color-dot" style="background:#ec4899" data-color="#ec4899" onclick="pickColor(this)"></div>
-          <div class="color-dot" style="background:var(--color-primary)" data-color="var(--color-primary)" onclick="pickColor(this)"></div>
+          <label class="color-dot" style="background:#4447e5" title="Indigo">
+            <input type="radio" name="color" value="#4447e5" checked>
+            <span class="visually-hidden">Indigo</span>
+          </label>
+          <label class="color-dot" style="background:#15161a" title="Ink">
+            <input type="radio" name="color" value="#15161a">
+            <span class="visually-hidden">Ink</span>
+          </label>
+          <label class="color-dot" style="background:#2f7d4f" title="Green">
+            <input type="radio" name="color" value="#2f7d4f">
+            <span class="visually-hidden">Green</span>
+          </label>
+          <label class="color-dot" style="background:#b7791f" title="Amber">
+            <input type="radio" name="color" value="#b7791f">
+            <span class="visually-hidden">Amber</span>
+          </label>
+          <label class="color-dot" style="background:#c2362f" title="Red">
+            <input type="radio" name="color" value="#c2362f">
+            <span class="visually-hidden">Red</span>
+          </label>
+          <label class="color-dot" style="background:#c2417f" title="Pink">
+            <input type="radio" name="color" value="#c2417f">
+            <span class="visually-hidden">Pink</span>
+          </label>
+          <label class="color-dot" style="background:#0f7c74" title="Teal">
+            <input type="radio" name="color" value="#0f7c74">
+            <span class="visually-hidden">Teal</span>
+          </label>
         </div>
-      </div>
+      </fieldset>
 
       <div class="template-section">
         <label>Quick Start Template</label>
@@ -296,10 +325,6 @@
     document.getElementById('desc-count').textContent = document.getElementById('proj-desc').value.length;
   }
 
-  function pickColor(el) {
-    document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
-    el.classList.add('active');
-  }
 
   function applyTemplate(type) {
     const name = document.getElementById('proj-name');

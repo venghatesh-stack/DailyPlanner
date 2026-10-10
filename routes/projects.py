@@ -149,6 +149,18 @@ def _default_epic_id(user_id, project_id):
     when the trio is already present)."""
     return _ensure_default_okr_trio(user_id, project_id)
 
+import re as _re_color
+
+#: A project colour is a plain hex. It goes into inline styles, so nothing
+#: else (no url(), no var(), no expressions) is ever accepted or rendered.
+_PROJECT_COLOR_RE = _re_color.compile(r"#[0-9a-fA-F]{6}")
+
+
+def _clean_project_color(value):
+    value = (value or "").strip()
+    return value.lower() if _PROJECT_COLOR_RE.fullmatch(value) else None
+
+
 @projects_bp.route("/projects")
 @login_required
 def projects():
@@ -164,6 +176,10 @@ def projects():
         params["is_archived"] = "eq.false"
 
     projects = get("projects", params=params) or []
+    # The card puts the colour straight into a style attribute, so only a
+    # plain #rrggbb is let through — whatever is in the column.
+    for p in projects:
+        p["color"] = _clean_project_color(p.get("color"))
 
     # Batch-fetch task counts for all projects in one query
     if projects:
@@ -1190,15 +1206,21 @@ def create_project():
                 return jsonify({"error": "Give the project a name first"}), 400
             return "Project name is required", 400
 
+        raw_color = (data.get("color") if wants_json else request.form.get("color")) or ""
+        color = _clean_project_color(raw_color)
+
         user_id = session.get("user_id")
-        rows = post(
-            "projects",
-            {
-                "name": name,
-                "description": description or None,
-                "user_id": user_id,
-            },
-        )
+        payload = {
+            "name": name,
+            "description": description or None,
+            "user_id": user_id,
+        }
+        # projects.color comes from MIGRATION_PROJECT_COLOR.sql. Before it
+        # runs, post() strips the unknown column and retries, so creating a
+        # project never fails over a colour.
+        if color:
+            payload["color"] = color
+        rows = post("projects", payload)
         # Provision the default Inbox > Catch-all > Inbox > Inbox trio
         # so tasks added without an explicit epic have somewhere to go.
         new_project_id = (rows or [{}])[0].get("project_id") if rows else None
@@ -1214,6 +1236,7 @@ def create_project():
                 "project_id": new_project_id,
                 "name": row.get("name") or name,
                 "description": row.get("description"),
+                "color": color,
                 "is_archived": False,
                 "task_count": 0, "done_count": 0, "open_count": 0,
                 "overdue_count": 0, "next_due": None, "completion_pct": 0,

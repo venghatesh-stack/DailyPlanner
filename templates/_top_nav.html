@@ -473,17 +473,19 @@
   width:288px;
   height:100%;
   background:var(--color-surface);
-  box-shadow:4px 0 28px light-dark(rgba(36,33,28,.18), rgba(0,0,0,.55));
+  /* Shadow only while open: a 28px blur on a drawer parked at -100% still
+     bled a grey band down the left edge of every page. */
+  box-shadow:none;
   padding:18px 14px calc(24px + env(safe-area-inset-bottom,0));
   transform:translateX(-100%);
-  transition:transform .25s ease;
+  transition:transform .25s ease, box-shadow .25s ease;
   z-index:1100;
   overflow-y:auto;
   -webkit-overflow-scrolling:touch;
   display:flex;
   flex-direction:column;
 }
-.sidebar.open{transform:translateX(0);}
+.sidebar.open{transform:translateX(0);box-shadow:4px 0 28px light-dark(rgba(21,22,26,.18), rgba(0,0,0,.55));}
 @media (max-width:480px){
   /* Leave a deliberate strip of overlay showing: it tells you there is a
      page behind this and that tapping there returns to it. A drawer that

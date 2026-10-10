@@ -381,7 +381,7 @@
          data-pct="{{ pct }}" data-tasks="{{ p.task_count or 0 }}" data-idx="{{ loop.index0 }}">
       <a href="/projects/{{ p.project_id }}/tasks" class="project-card" data-project-id="{{ p.project_id }}">
         <div class="card-color-bar"
-             style="{% if late %}background:var(--pl-danger){% elif pct == 100 and p.task_count %}background:var(--pl-success){% endif %}"></div>
+             style="{% if late %}background:var(--pl-danger){% elif pct == 100 and p.task_count %}background:var(--pl-success){% elif p.color %}background:{{ p.color }}{% endif %}"></div>
 
         <div class="card-header">
           <div class="card-name">

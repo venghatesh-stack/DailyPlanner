@@ -318,7 +318,7 @@ def checklist_history_page():
     days = max(7, min(checklist_history.MAX_DAYS, days))
 
     end = _requested_date()
-    data = checklist_history.load(session["user_id"], end, days)
+    data = checklist_history.load(session["user_id"], end, days, today=user_today())
     return render_template("checklist_history.html",
                            data=data,
                            days=days,
