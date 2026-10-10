@@ -582,7 +582,10 @@ def schedule_untimed():
     # Insert / update daily slots
     # -------------------------------------------------
     post(
-        "daily_slots?on_conflict=plan_date,slot",
+        # Same conflict target as every other daily_slots upsert: the unique
+        # key is (user_id, plan_date, slot), and naming only two of its
+        # columns makes PostgREST reject the upsert outright.
+        "daily_slots?on_conflict=user_id,plan_date,slot",
         payload,
         prefer="resolution=merge-duplicates",
     )

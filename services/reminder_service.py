@@ -8,9 +8,11 @@ logger = logging.getLogger("daily_plan")
 def check_reminders():
     now_iso = datetime.now(timezone.utc).isoformat()
 
+    # One filter. The dict used to name "reminder_at" twice, so the second
+    # ("not.is.null") silently replaced the first and EVERY set reminder —
+    # future ones included — was cleared. lte already excludes NULLs.
     rows = get("inbox_links", params={
         "reminder_at": f"lte.{now_iso}",
-        "reminder_at": "not.is.null",
         "select": "id,url,title",
     }) or []
 
