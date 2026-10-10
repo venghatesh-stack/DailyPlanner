@@ -42,7 +42,7 @@
   --sm-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:'Inter',system-ui,sans-serif; background:var(--sm-bg); color:var(--sm-text); min-height:100vh; }
+body { font-family:'Plus Jakarta Sans',system-ui,sans-serif; background:var(--sm-bg); color:var(--sm-text); min-height:100vh; }
 .hidden { display:none!important; }
 
 .summary-app { max-width:960px; margin:0 auto; padding:16px 20px 48px; }

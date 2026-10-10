@@ -63,7 +63,7 @@
             padding: "10px 20px",
             borderRadius: "12px",
             fontSize: "14px",
-            fontFamily: "'Inter', system-ui, sans-serif",
+            fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
             fontWeight: "500",
             display: "flex",
             alignItems: "center",

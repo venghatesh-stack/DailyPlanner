@@ -14,7 +14,7 @@
 <style>
 :root{--pf-bg:var(--color-bg);--pf-surface:var(--color-surface);--pf-text:var(--color-text);--pf-text2:var(--color-text-secondary);--pf-text3:var(--color-text-muted);--pf-border:var(--color-border);--pf-primary:var(--color-primary);--pf-primary-light:var(--color-primary-light);--pf-success:var(--color-success);--pf-danger:var(--color-danger);--pf-shadow:var(--shadow-sm);}
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Inter',system-ui,sans-serif;background:var(--pf-bg);color:var(--pf-text);min-height:100vh;}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--pf-bg);color:var(--pf-text);min-height:100vh;}
 .hidden{display:none!important;}
 .pf-app{max-width:1100px;margin:0 auto;padding:16px 20px 48px;}
 
@@ -1042,7 +1042,7 @@ function delHolding(id){
   let gone=false;const t=setTimeout(async()=>{await fetch(`/api/portfolio/holdings/${id}`,{method:'DELETE'});gone=true;loadSummary();},4000);
   const old=document.getElementById("undo-t");if(old)old.remove();
   const toast=document.createElement("div");toast.id="undo-t";
-  Object.assign(toast.style,{position:"fixed",bottom:"24px",left:"50%",transform:"translateX(-50%)",background:"rgba(30,30,30,.9)",color:"var(--color-surface)",padding:"10px 16px",borderRadius:"10px",fontSize:"14px",fontFamily:"'Inter',system-ui",display:"flex",alignItems:"center",gap:"12px",zIndex:"9999",boxShadow:"0 4px 16px rgba(0,0,0,.25)"});
+  Object.assign(toast.style,{position:"fixed",bottom:"24px",left:"50%",transform:"translateX(-50%)",background:"rgba(30,30,30,.9)",color:"var(--color-surface)",padding:"10px 16px",borderRadius:"10px",fontSize:"14px",fontFamily:"'Plus Jakarta Sans',system-ui",display:"flex",alignItems:"center",gap:"12px",zIndex:"9999",boxShadow:"0 4px 16px rgba(0,0,0,.25)"});
   toast.innerHTML='<span>Holding deleted</span><button style="background:none;border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 12px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Undo</button>';
   toast.querySelector("button").onclick=()=>{clearTimeout(t);if(!gone){loadHoldings();showToast("Restored","success");}toast.remove();};
   document.body.appendChild(toast);setTimeout(()=>{if(toast.parentNode)toast.remove();},4500);

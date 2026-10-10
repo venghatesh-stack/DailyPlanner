@@ -6,7 +6,7 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>Annotate — {{ file_name }}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='design-system.css') }}">
 <script src="https://unpkg.com/feather-icons"></script>
 <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
@@ -17,7 +17,7 @@
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 
 <style>
-  body { margin: 0; background: #1f2937; color: #f3f4f6; font-family: var(--font-family, "Inter", system-ui); }
+  body { margin: 0; background: #1f2937; color: #f3f4f6; font-family: var(--font-family, "Plus Jakarta Sans", system-ui); }
 
   /* Sticky toolbar — single row on desktop, wraps on narrow screens. */
   .ann-bar {

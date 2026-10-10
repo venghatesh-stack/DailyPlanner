@@ -11,8 +11,8 @@
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "any",
-  "background_color": "#f7f8fa",
-  "theme_color": "#6366f1",
+  "background_color": "#f2f2ef",
+  "theme_color": "#15161a",
   "prefer_related_applications": false,
   "launch_handler": {
     "client_mode": ["navigate-existing", "auto"]

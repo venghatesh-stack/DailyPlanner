@@ -1,3 +1,11 @@
+/* Plus Jakarta Sans — the 2026-10 redesign's single typeface. Imported here
+   rather than in each template so all ~70 pages that load the design system
+   get it, including the ones that never had a font <link> and were falling
+   back to the OS face. fonts.googleapis.com is already allowed by the CSP
+   (middleware/security.py). display=swap: text shows at once in the
+   fallback and swaps when the face arrives. */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
 /* ================================================
    DAILYPLANNER DESIGN SYSTEM
    Global CSS custom properties + base resets.
@@ -24,7 +32,23 @@
 
 :root {
     /* ══════════════════════════════════════════════════════════════════
-       PALETTE — "Ink & Marigold"
+       PALETTE — "Ink & Lime" (2026-10 redesign)
+
+       What changed from "Ink & Marigold", and why:
+       - The FILL is now near-black ink (#15161a) with a white label, and
+         in dark mode it inverts to lime (#d7f35b) with an ink label. A
+         black primary button reads as "the one thing to press" on a pale
+         ground without needing saturation; lime in dark mode does the
+         same job on charcoal.
+       - The text-safe accent (--color-primary-ink: links, active nav,
+         focus ring) is a brighter indigo, kept apart from the fill.
+       - The ground moved from warm paper to a neutral stone (#f2f2ef) so
+         the lime and indigo carry without a warm cast.
+       Everything below is still measured by tests/test_palette_contrast.py.
+
+       Original notes on the structure follow; the hex values they quote
+       are the previous palette's.
+
 
        Every value is written as `light-dark(<light>, <dark>)`, preceded
        by the plain light value on its own line. Two reasons:
@@ -59,22 +83,23 @@
        is the INK — the indigo you may set as text or an icon on a page
        surface. In dark mode a fill light enough to read as text would
        fail under its own white label, so the two part company. */
-    --color-primary: #424aa8;
-    --color-primary: light-dark(#424aa8, #5b63c9);
-    --color-primary-hover: #373d93;
-    --color-primary-hover: light-dark(#373d93, #6a72d6);
-    --color-primary-active: #2e337d;
-    --color-primary-active: light-dark(#2e337d, #7a82e0);
-    --color-primary-light: #eceef9;          /* tinted surface */
-    --color-primary-light: light-dark(#eceef9, #232749);
-    --color-primary-border: #ccd2f0;
-    --color-primary-border: light-dark(#ccd2f0, #343a6b);
-    --color-primary-ring: rgba(66, 74, 168, 0.22);
-    --color-primary-ring: light-dark(rgba(66, 74, 168, 0.22), rgba(123, 131, 228, 0.34));
+    --color-primary: #15161a;
+    --color-primary: light-dark(#15161a, #d7f35b);
+    --color-primary-hover: #2c2e34;
+    --color-primary-hover: light-dark(#2c2e34, #c8e54a);
+    --color-primary-active: #000000;
+    --color-primary-active: light-dark(#000000, #b9d63c);
+    --color-primary-light: #ececfd;
+    --color-primary-light: light-dark(#ececfd, #24264a);
+    --color-primary-border: #d3d4f8;
+    --color-primary-border: light-dark(#d3d4f8, #3a3d73);
+    --color-primary-ring: rgba(68, 71, 229, 0.24);
+    --color-primary-ring: light-dark(rgba(68, 71, 229, 0.24), rgba(176, 178, 248, 0.34));
     --color-on-primary: #ffffff;
+    --color-on-primary: light-dark(#ffffff, #15161a);
     /* Text-safe ink. 9.3:1 on paper, 6.7:1 on a dark card. */
-    --color-primary-ink: #373d93;
-    --color-primary-ink: light-dark(#373d93, #9ba1f0);
+    --color-primary-ink: #3a3dd0;
+    --color-primary-ink: light-dark(#3a3dd0, #b0b2f8);
     --color-primary-on-tint: var(--color-primary-ink);
 
     /* ── Brick: late, destructive ───────────────────────────────────── */
@@ -170,42 +195,42 @@
 
        Dark mode is the same idea inverted: a warm charcoal, not
        blue-black, so the cool ink still reads as the accent. */
-    --color-bg: #f6f5f2;
-    --color-bg: light-dark(#f6f5f2, #1a1816);
+    --color-bg: #f2f2ef;
+    --color-bg: light-dark(#f2f2ef, #0e0f12);
     --color-surface: #ffffff;
-    --color-surface: light-dark(#ffffff, #232120);
-    --color-surface-secondary: #f1efea;
-    --color-surface-secondary: light-dark(#f1efea, #2c2926);
+    --color-surface: light-dark(#ffffff, #1a1b20);
+    --color-surface-secondary: #f2f2ef;
+    --color-surface-secondary: light-dark(#f2f2ef, #222329);
     --color-surface-elevated: #ffffff;
-    --color-surface-elevated: light-dark(#ffffff, #2c2926);
-    --color-surface-sunken: #e9e6e0;
-    --color-surface-sunken: light-dark(#e9e6e0, #100f0e);
+    --color-surface-elevated: light-dark(#ffffff, #222329);
+    --color-surface-sunken: #e4e4df;
+    --color-surface-sunken: light-dark(#e4e4df, #08090b);
 
-    --color-text: #24211c;                   /* 14.7:1 on the page */
-    --color-text: light-dark(#24211c, #f3f0ea);
-    --color-text-secondary: #5d574e;         /* 6.6:1 */
-    --color-text-secondary: light-dark(#5d574e, #cac4b8);
-    --color-text-muted: #6b655b;             /* 5.3:1 — AA at any size */
-    --color-text-muted: light-dark(#6b655b, #a39d91);
-    --color-text-disabled: #9b958b;
-    --color-text-disabled: light-dark(#9b958b, #7a746a);
+    --color-text: #15161a;
+    --color-text: light-dark(#15161a, #f2f2ef);
+    --color-text-secondary: #4a4d55;
+    --color-text-secondary: light-dark(#4a4d55, #c4c6cc);
+    --color-text-muted: #5b5e66;
+    --color-text-muted: light-dark(#5b5e66, #9ea1a9);
+    --color-text-disabled: #9a9ca3;
+    --color-text-disabled: light-dark(#9a9ca3, #6b6e76);
     /* Text for an INVERTED surface, i.e. on top of --color-text. Dark
        mode must flip it: the tooltip is `background: var(--color-text)`
        with this on top, and when both were near-white the tooltip was
        invisible on every dark-mode page. */
     --color-text-inverse: #ffffff;
-    --color-text-inverse: light-dark(#ffffff, #1a1816);
+    --color-text-inverse: light-dark(#ffffff, #15161a);
 
-    --color-border: #e3e0d9;
-    --color-border: light-dark(#e3e0d9, #38342f);
-    --color-border-strong: #cfcbc2;
-    --color-border-strong: light-dark(#cfcbc2, #4b463f);
-    --color-border-light: #eeece7;
-    --color-border-light: light-dark(#eeece7, #2a2724);
-    --color-overlay: rgba(36, 33, 28, 0.45);
-    --color-overlay: light-dark(rgba(36, 33, 28, 0.45), rgba(0, 0, 0, 0.66));
-    --color-backdrop: rgba(36, 33, 28, 0.55);
-    --color-backdrop: light-dark(rgba(36, 33, 28, 0.55), rgba(0, 0, 0, 0.76));
+    --color-border: #d9d9d3;
+    --color-border: light-dark(#d9d9d3, #2c2e34);
+    --color-border-strong: #c9cac4;
+    --color-border-strong: light-dark(#c9cac4, #3a3d44);
+    --color-border-light: #ecece9;
+    --color-border-light: light-dark(#ecece9, #222329);
+    --color-overlay: rgba(21, 22, 26, 0.45);
+    --color-overlay: light-dark(rgba(21, 22, 26, 0.45), rgba(0, 0, 0, 0.66));
+    --color-backdrop: rgba(21, 22, 26, 0.55);
+    --color-backdrop: light-dark(rgba(21, 22, 26, 0.55), rgba(0, 0, 0, 0.76));
     /* Links take the ink, not the fill, so they stay legible in dark. */
     --color-link: var(--color-primary-ink);
 
@@ -216,21 +241,21 @@
     --color-q-do:        var(--color-danger);
     --color-q-schedule:  var(--color-primary);
     --color-q-delegate:  var(--color-warning);
-    --color-q-eliminate: #6b655b;
-    --color-q-eliminate: light-dark(#6b655b, #a39d91);
+    --color-q-eliminate: #5b5e66;
+    --color-q-eliminate: light-dark(#5b5e66, #9ea1a9);
 
     /* ── Typography ────────────────────────────────── */
-    --font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-family-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
     /* ── The data voice ─────────────────────────────────────────────────
        Time IS this app's subject: clocks, countdowns, durations, slot
-       times, prep minutes, streak counts, money. Inter sets those in the
+       times, prep minutes, streak counts, money. A proportional face sets them in the
        same voice as a button label, so a column of times has to be read
        rather than scanned. IBM Plex Mono gives every quantity a fixed
        advance width and a ledger-like register, which means times line
        up down a column and a changing clock no longer reflows its
        neighbours. Used ONLY for quantities — never for prose. */
-    --font-family-data: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --font-family-data: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
     --font-size-2xs: 10px;
     --font-size-xs:  11px;
@@ -275,27 +300,27 @@
     /* ── Radius ────────────────────────────────────── */
     --radius-xs: 4px;
     --radius-sm: 6px;
-    --radius-md: 10px;
-    --radius-lg: 14px;
-    --radius-xl: 18px;
-    --radius-2xl: 24px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 22px;
+    --radius-2xl: 28px;
     --radius-full: 999px;
 
     /* ── Shadows / elevation ─────────────────────────────────────────────
        Tinted with the ink-brown of the text rather than slate blue. A
        blue-black shadow on a warm ground is the single easiest way to
        make a warm palette look dirty. */
-    --shadow-xs: 0 1px 2px rgba(36, 33, 28, 0.05);
-    --shadow-sm: 0 1px 3px rgba(36, 33, 28, 0.07), 0 1px 2px rgba(36, 33, 28, 0.04);
-    --shadow-md: 0 4px 12px rgba(36, 33, 28, 0.09), 0 2px 4px rgba(36, 33, 28, 0.05);
-    --shadow-lg: 0 12px 28px rgba(36, 33, 28, 0.13), 0 4px 8px rgba(36, 33, 28, 0.06);
-    --shadow-xl: 0 24px 56px rgba(36, 33, 28, 0.19), 0 6px 12px rgba(36, 33, 28, 0.07);
-    --shadow-inset: inset 0 1px 2px rgba(36, 33, 28, 0.06);
-    --shadow-xs: light-dark(0 1px 2px rgba(36, 33, 28, 0.05), 0 1px 2px rgba(0, 0, 0, 0.45));
-    --shadow-sm: light-dark(0 1px 3px rgba(36, 33, 28, 0.07), 0 1px 3px rgba(0, 0, 0, 0.45));
-    --shadow-md: light-dark(0 4px 12px rgba(36, 33, 28, 0.09), 0 4px 12px rgba(0, 0, 0, 0.55));
-    --shadow-lg: light-dark(0 12px 28px rgba(36, 33, 28, 0.13), 0 12px 28px rgba(0, 0, 0, 0.6));
-    --shadow-xl: light-dark(0 24px 56px rgba(36, 33, 28, 0.19), 0 24px 56px rgba(0, 0, 0, 0.66));
+    --shadow-xs: 0 1px 2px rgba(21, 22, 26, 0.05);
+    --shadow-sm: 0 1px 3px rgba(21, 22, 26, 0.07), 0 1px 2px rgba(21, 22, 26, 0.04);
+    --shadow-md: 0 4px 12px rgba(21, 22, 26, 0.09), 0 2px 4px rgba(21, 22, 26, 0.05);
+    --shadow-lg: 0 12px 28px rgba(21, 22, 26, 0.13), 0 4px 8px rgba(21, 22, 26, 0.06);
+    --shadow-xl: 0 24px 56px rgba(21, 22, 26, 0.19), 0 6px 12px rgba(21, 22, 26, 0.07);
+    --shadow-inset: inset 0 1px 2px rgba(21, 22, 26, 0.06);
+    --shadow-xs: light-dark(0 1px 2px rgba(21, 22, 26, 0.05), 0 1px 2px rgba(0, 0, 0, 0.45));
+    --shadow-sm: light-dark(0 1px 3px rgba(21, 22, 26, 0.07), 0 1px 3px rgba(0, 0, 0, 0.45));
+    --shadow-md: light-dark(0 4px 12px rgba(21, 22, 26, 0.09), 0 4px 12px rgba(0, 0, 0, 0.55));
+    --shadow-lg: light-dark(0 12px 28px rgba(21, 22, 26, 0.13), 0 12px 28px rgba(0, 0, 0, 0.6));
+    --shadow-xl: light-dark(0 24px 56px rgba(21, 22, 26, 0.19), 0 24px 56px rgba(0, 0, 0, 0.66));
 
     /* ── Motion ────────────────────────────────────── */
     --motion-duration-fast: 120ms;
@@ -345,6 +370,16 @@ html.dark { color-scheme: dark; }
    otherwise native form widgets (checkboxes, date pickers) keep
    rendering with dark internals because color-scheme allows both. */
 html.light { color-scheme: light; }
+
+/* Redesign base: one face, bold tight headings. Pages that set their own
+   font-family still win (they now name Plus Jakarta Sans too). */
+body {
+    font-family: var(--font-family);
+}
+h1, h2 {
+    letter-spacing: -0.02em;
+}
+h1 { font-weight: 800; }
 
 /* Universal focus-visible — visible to keyboard, hidden to mouse. */
 *:focus { outline: none; }
@@ -471,7 +506,10 @@ pre, code { overflow-x: auto; max-width: 100%; }
    THE DATA VOICE
    ═══════════════════════════════════════════════════════════════════════
    One rule, applied narrowly: a QUANTITY is set in --font-family-data
-   with fixed-width figures; everything else stays in Inter.
+   with fixed-width figures. Since the 2026-10 redesign the data voice is
+   Plus Jakarta Sans with tabular figures rather than a mono face: the
+   columns still line up (that is what tabular-nums does), and the numbers
+   stop looking like a different app from the labels around them.
 
    Why this app in particular. Nearly every screen here is a column of
    times and counts — slot times on the board, the live clock, countdowns

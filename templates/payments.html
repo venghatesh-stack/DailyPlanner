@@ -23,7 +23,7 @@ html.dark{
   --rc-shadow:0 1px 3px rgba(0,0,0,0.2);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Inter',system-ui,sans-serif;background:var(--rc-bg);color:var(--rc-text);min-height:100vh;}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--rc-bg);color:var(--rc-text);min-height:100vh;}
 .hidden{display:none!important;}
 .rc-app{max-width:1000px;margin:0 auto;padding:16px 20px 48px;}
 
@@ -480,7 +480,7 @@ function esc(s){const d=document.createElement("div");d.textContent=String(s||""
 function showUndo(msg,onUndo){
   const old=document.getElementById("undo-t");if(old)old.remove();
   const t=document.createElement("div");t.id="undo-t";
-  Object.assign(t.style,{position:"fixed",bottom:"24px",left:"50%",transform:"translateX(-50%)",background:"rgba(30,30,30,.9)",color:"var(--color-surface)",padding:"10px 16px",borderRadius:"10px",fontSize:"14px",fontFamily:"'Inter',system-ui",display:"flex",alignItems:"center",gap:"12px",zIndex:"9999",boxShadow:"0 4px 16px rgba(0,0,0,.25)"});
+  Object.assign(t.style,{position:"fixed",bottom:"24px",left:"50%",transform:"translateX(-50%)",background:"rgba(30,30,30,.9)",color:"var(--color-surface)",padding:"10px 16px",borderRadius:"10px",fontSize:"14px",fontFamily:"'Plus Jakarta Sans',system-ui",display:"flex",alignItems:"center",gap:"12px",zIndex:"9999",boxShadow:"0 4px 16px rgba(0,0,0,.25)"});
   t.innerHTML=`<span>${msg}</span><button style="background:none;border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 12px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Undo</button>`;
   t.querySelector("button").onclick=()=>{onUndo();t.remove();};
   document.body.appendChild(t);setTimeout(()=>{if(t.parentNode)t.remove();},4500);

@@ -22,7 +22,7 @@
 * { box-sizing: border-box; }
 body {
   margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   background: var(--cl-bg);
   color: var(--cl-text);
   min-height: 100vh;
