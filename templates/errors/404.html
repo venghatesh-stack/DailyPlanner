@@ -3,43 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>404 — Page Not Found</title>
+    <title>404 — Page not found</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* Self-contained on purpose: an error page must render even when
+           the stylesheet or the app around it is what failed. Colours are
+           the redesign's Ink & Lime values, with a dark variant. */
+        :root { color-scheme: light dark; --bg:#f2f2ef; --card:#ffffff; --ink:#15161a; --sub:#4a4d55; --link:#3a3dd0; --on:#ffffff; --badge:#15161a; --badge-ink:#d7f35b; }
+        @media (prefers-color-scheme: dark) {
+            :root { --bg:#0e0f12; --card:#1a1b20; --ink:#f2f2ef; --sub:#c4c6cc; --link:#b0b2f8; --on:#15161a; --badge:#d7f35b; --badge-ink:#15161a; }
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #f0f2f5;
-            color: #111827;
-            text-align: center;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--bg); color: var(--ink);
+            padding: 24px;
         }
-        .error-page { max-width: 400px; padding: 20px; }
-        .error-code { font-size: 80px; font-weight: 700; color: #2563eb; line-height: 1; }
-        .error-title { font-size: 22px; font-weight: 600; margin: 12px 0 8px; }
-        .error-desc { font-size: 15px; color: #6b7280; margin-bottom: 24px; }
+        .error-page { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px; }
+        .error-mark { width: 40px; height: 40px; border-radius: 12px; background: var(--badge); color: var(--badge-ink);
+                      display: flex; align-items: center; justify-content: center; font-weight: 800; margin-bottom: 28px; }
+        .error-code { font-size: 88px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+        .error-title { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; }
+        .error-desc { font-size: 15px; line-height: 1.55; color: var(--sub); margin-bottom: 10px; }
         .error-link {
-            display: inline-block;
-            padding: 10px 24px;
-            background: #2563eb;
-            color: #fff;
-            border-radius: 10px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 14px;
+            display: flex; align-items: center; justify-content: center;
+            height: 52px; border-radius: 16px; text-decoration: none;
+            font-weight: 700; font-size: 15px; border: 0; cursor: pointer; font-family: inherit;
+            background: var(--card); color: var(--ink);
         }
-        .error-link:hover { background: #1d4ed8; }
+        .error-link--primary { background: var(--ink); color: var(--on); }
+        .error-small { text-align: center; font-size: 14px; font-weight: 700; color: var(--link); text-decoration: none; margin-top: 6px; }
+        .error-small:hover, .error-link:hover { opacity: .9; }
     </style>
 </head>
 <body>
-    <div class="error-page">
-        <div class="error-code">404</div>
-        <div class="error-title">Page not found</div>
-        <p class="error-desc">The page you're looking for doesn't exist or has been moved.</p>
-        <a href="/" class="error-link">Go to Planner</a>
-    </div>
+    <main class="error-page">
+        <div class="error-mark" aria-hidden="true">D</div>
+        <div class="error-code" aria-hidden="true">404</div>
+        <h1 class="error-title">This page doesn’t exist</h1>
+        <p class="error-desc">The link may be old, or the item was moved to Trash. Nothing you saved is affected.</p>
+        <a href="/" class="error-link error-link--primary">Go to Today</a>
+        <button type="button" class="error-link" onclick="history.length > 1 ? history.back() : location.assign('/')">Go back</button>
+        <a href="/archive" class="error-small">Look in Archive</a>
+    </main>
 </body>
 </html>

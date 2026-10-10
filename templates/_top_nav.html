@@ -62,6 +62,9 @@
 /* ── Top header bar ── */
 .top-context{
   width:100%;
+  /* border-box: width:100% plus the side padding below used to push the
+     avatar 14px past the right edge of the window. */
+  box-sizing:border-box;
   padding:8px 14px;
   display:flex;
   align-items:center;
@@ -869,6 +872,13 @@ button.nav-group-title:hover{background:var(--color-surface-secondary);color:var
         Day
       </a>
 
+      <!-- Half-hour slots for one day on a time axis. The page existed
+           (/timeline/day) but nothing linked to it. -->
+      <a href="/timeline/day" data-match="^/timeline/day" title="Day timeline — today's half-hour slots on one time axis, with what is closed, in progress and deferred">
+        <i data-feather="clock"></i>
+        Day timeline
+      </a>
+
       <a href="/calendar" data-match="^/calendar" title="Calendar — day and week view">
         <i data-feather="calendar"></i>
         Calendar
@@ -1120,6 +1130,17 @@ button.nav-group-title:hover{background:var(--color-surface-secondary);color:var
         Usage &amp; Backup
       </a>
       {% endif %}
+      <a href="{{ url_for('settings.settings_page') }}" data-match="^/settings" title="Settings — theme, reminders, connected apps, sign-in history">
+        <i data-feather="settings"></i>
+        Settings
+      </a>
+      <!-- Changes saved while offline wait here until they upload. Only
+           reachable from the offline banner before, so a stuck queue had
+           no way in once the banner was dismissed. -->
+      <a href="/pending" data-match="^/pending" title="Pending sync — changes saved on this device that have not uploaded yet">
+        <i data-feather="upload-cloud"></i>
+        Pending sync
+      </a>
       <a href="javascript:void(0)" onclick="openHelpModal(); closeSidebar();">
         <i data-feather="help-circle"></i>
         Help &amp; shortcuts

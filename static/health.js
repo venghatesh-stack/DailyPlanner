@@ -267,8 +267,10 @@ function updateHealthScore(data) {
   // streakScore: 0-15
   const streakScore = Math.min(streak * 1.5, 15);
 
-  // weightScore: constant 10
-  const weightScore = 10;
+  // weightScore: 0-10, earned by having a weight on record. It used to be
+  // a constant 10, which meant a blank day still scored 10 and the score
+  // could never reach 0 — it rewarded nothing.
+  const weightScore = data.weight ? 10 : 0;
 
   const total = Math.round(habitScore + energyScore + moodScore + streakScore + weightScore);
   el.textContent = total;
