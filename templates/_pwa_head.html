@@ -13,14 +13,15 @@
 <meta name="theme-color" content="#0e0f12" media="(prefers-color-scheme: dark)">
 
 {# ── Type ────────────────────────────────────────────────────────────────
-   Loaded here rather than per page: this partial is in every page's
-   <head>, so a page can never ship without its own typefaces again (ten
-   of them were falling back to system-ui). Inter sets the interface;
-   IBM Plex Mono sets quantities only — see --font-family-data. Two
-   weights of each, which is all the app uses. #}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap">
+   Loaded here because this partial is in every page's <head>. Since the
+   2026-10 redesign the app uses ONE self-hosted variable font (Plus Jakarta
+   Sans, numbers included), declared in design-system.css and
+   fonts/fonts.css. Preloading it means the browser starts the download
+   with the HTML instead of after parsing the stylesheet.
+   There is deliberately no Google Fonts stylesheet here any more: it was a
+   render-blocking request to a third party on every page, and the face it
+   loaded (IBM Plex Mono) is no longer used. #}
+<link rel="preload" href="/static/fonts/plus-jakarta-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">

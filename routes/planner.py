@@ -912,8 +912,13 @@ def _first_run_steps(user_id):
     "In use" = any task anywhere (project tasks, the matrix or the Quick
     Bucket). Each step is ticked independently so the card shrinks as
     the person goes."""
+    # Once an account has a task it never goes back to being new, so
+    # remember that in the session and skip the queries from then on.
+    if session.get("onboarded"):
+        return None
     has_task = any(_has_any(t, user_id) for t in ("project_tasks", "todo_matrix", "quick_bucket"))
     if has_task:
+        session["onboarded"] = True
         return None
     return {
         "task": has_task,

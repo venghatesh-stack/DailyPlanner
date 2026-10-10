@@ -16,7 +16,7 @@
    route at /service-worker.js is served with no-cache (app.py), so a
    new version is picked up on the next page load. */
 
-const CACHE_VERSION = "v282-2026-10-11-share-burndown-firstrun"
+const CACHE_VERSION = "v283-2026-10-11-self-hosted-font"
 const STATIC_CACHE = `dp-static-${CACHE_VERSION}`;
 const PAGES_CACHE  = `dp-pages-${CACHE_VERSION}`;
 const OFFLINE_URL  = "/offline";
@@ -43,6 +43,10 @@ const PRECACHE_URLS = [
   // when the screen is off, and fetching it at that moment is exactly when
   // the network is least likely to be there.
   "/static/audio-keepalive.wav",
+  // The app's one typeface (self-hosted since the redesign). Precached so
+  // no page ever waits for it.
+  "/static/fonts/plus-jakarta-sans-latin-wght-normal.woff2",
+  "/static/fonts/plus-jakarta-sans-latin-ext-wght-normal.woff2",
 ];
 
 self.addEventListener("install", (event) => {
