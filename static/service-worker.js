@@ -16,7 +16,7 @@
    route at /service-worker.js is served with no-cache (app.py), so a
    new version is picked up on the next page load. */
 
-const CACHE_VERSION = "v283-2026-10-11-self-hosted-font"
+const CACHE_VERSION = "v284-2026-10-11-fresh-window-vendor"
 const STATIC_CACHE = `dp-static-${CACHE_VERSION}`;
 const PAGES_CACHE  = `dp-pages-${CACHE_VERSION}`;
 const OFFLINE_URL  = "/offline";
@@ -298,6 +298,10 @@ self.addEventListener("fetch", (event) => {
   // there is nothing to buy by serving them stale. Images, fonts and the
   // keep-alive audio keep stale-while-revalidate: they are big, they do
   // not change, and being a version behind on an icon costs nothing.
+  if (url.pathname.startsWith("/static/js/vendor/") || url.pathname.startsWith("/static/fonts/")) {
+    event.respondWith(cacheForever(req, STATIC_CACHE));
+    return;
+  }
   if (url.pathname.startsWith("/static/") || url.pathname === "/manifest.json") {
     const isCode = /\.(?:js|css)$/i.test(url.pathname) ||
                    url.pathname === "/manifest.json";
@@ -360,8 +364,56 @@ async function cacheFirst(req, cacheName) {
   }
 }
 
+/* ── FRESH FOR A FEW MINUTES ──────────────────────────────────────────
+   Revalidating every script and stylesheet on every page meant a 304
+   round trip per file per navigation — a dozen requests before a page
+   could run, on each click. That was the price of "never a build behind".
+
+   Most of that buys nothing: within one sitting the files do not change.
+   So a copy this worker revalidated less than CODE_FRESH_MS ago is served
+   straight from the cache; older than that, the network-first revalidation
+   below runs exactly as before. A deploy is still picked up immediately:
+   it ships a new CACHE_VERSION, the browser installs the new worker on the
+   next navigation, and activate() deletes every old cache. The window only
+   matters for a deploy that forgot to bump the version — then it is at
+   most this many minutes, not "until the next reload". */
+const CODE_FRESH_MS = 5 * 60 * 1000;
+const FETCHED_AT = "x-dp-fetched-at";
+
+function stamped(res) {
+  // Responses are immutable; copy it with the time we fetched it.
+  const headers = new Headers(res.headers);
+  headers.set(FETCHED_AT, String(Date.now()));
+  return res.clone().blob().then((body) => new Response(body, {
+    status: res.status, statusText: res.statusText, headers,
+  }));
+}
+
+/* Files whose NAME carries their version (static/js/vendor/feather-4.29.2…,
+   static/fonts/…woff2) never change under the same URL, so once cached
+   they are served from the cache with no network at all. */
+async function cacheForever(req, cacheName) {
+  const cache = await caches.open(cacheName);
+  const hit = await cache.match(req);
+  if (hit) return hit;
+  try {
+    const res = await fetch(req);
+    if (res && res.ok && res.type === "basic") {
+      cache.put(req, res.clone()).catch(() => {});
+    }
+    return res;
+  } catch (_) {
+    return new Response("", { status: 503, statusText: "Offline" });
+  }
+}
+
 async function networkFirst(req, cacheName, revalidate) {
   const cache = await caches.open(cacheName);
+  if (revalidate) {
+    const hit = await cache.match(req);
+    const at = hit && Number(hit.headers.get(FETCHED_AT) || 0);
+    if (hit && at && Date.now() - at < CODE_FRESH_MS) return hit;
+  }
   try {
     /* ── "NETWORK FIRST" WAS NOT REACHING THE NETWORK ──────────────────
        Flask serves /static with SEND_FILE_MAX_AGE_DEFAULT = 30 days, so
@@ -381,7 +433,9 @@ async function networkFirst(req, cacheName, revalidate) {
     const res = await fetch(revalidate ? new Request(req, { cache: "no-cache" })
                                        : req);
     if (res && res.ok && res.type === "basic") {
-      cache.put(req, res.clone()).catch(() => {});
+      (revalidate ? stamped(res) : Promise.resolve(res.clone()))
+        .then((copy) => cache.put(req, copy))
+        .catch(() => {});
       trimCache(cacheName);
     }
     return res;
