@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<title>Weekly check-in — DailyPlanner</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='design-system.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/goals_checkin.css') }}">
+<script src="https://unpkg.com/feather-icons"></script>
+<script src="{{ url_for('static', filename='js/global.js') }}"></script>
+<script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+{% include "_pwa_head.html" %}
+</head>
+<body>
+<div class="nav-icons">{% include "_top_nav.html" %}</div>
+
+{#
+  WEEKLY CHECK-IN (2026-10 redesign — "Weekly check-in" artboards).
+
+  Every key result kept by hand, on one screen, so updating them takes two
+  minutes instead of never happening. Key results filled in from tasks are
+  listed but not asked about. Data: GET/POST /api/goals/check-in in
+  routes/goals.py. "Last updated" and the history need
+  MIGRATION_KR_CHECKINS.sql; without it values still save.
+#}
+<main id="main" class="ci-app">
+  <header class="ci-head">
+    <a class="ci-back" href="/goals" aria-label="Back to goals">
+      <i data-feather="chevron-left" aria-hidden="true"></i>
+    </a>
+    <div class="ci-head-text">
+      <h1>Weekly check-in</h1>
+      <p class="ci-sub" id="ci-sub">Loading your key results…</p>
+    </div>
+  </header>
+
+  <form id="ci-form" class="ci-form" novalidate>
+    <div id="ci-goals" class="ci-goals" aria-live="polite"></div>
+
+    <div class="ci-empty" id="ci-empty" hidden>
+      <h2>Nothing to check in on</h2>
+      <p>Goals count their linked tasks on their own. Add a key result to a goal
+         when you want to track a number of your own, like a time, a count or
+         an amount, and it will show up here every week.</p>
+      <a class="ci-btn ci-btn--primary" href="/goals">Go to goals</a>
+    </div>
+
+    <footer class="ci-foot" id="ci-foot" hidden>
+      <span class="ci-foot-note">A value you leave unchanged still counts as checked.</span>
+      <a class="ci-btn" href="/goals">Cancel</a>
+      <button type="submit" class="ci-btn ci-btn--primary" id="ci-save">Save check-in</button>
+    </footer>
+  </form>
+</main>
+
+<script src="{{ url_for('static', filename='js/goals_checkin.js') }}"></script>
+<script>if (window.feather) feather.replace();</script>
+</body>
+</html>

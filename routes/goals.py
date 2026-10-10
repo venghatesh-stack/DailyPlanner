@@ -821,16 +821,216 @@ def update_key_result(kr_id):
     if patch.get("is_deleted") is False:
         patch["deleted_at"] = None
 
+    # A new current value is a check-in, wherever it was typed. Stamp it
+    # and keep the history, so "last updated 9 days ago" on /goals/check-in
+    # is true for edits made inline on /goals too.
+    previous = None
+    if "current_value" in patch:
+        patch["last_checked_at"] = _now_iso()
+        previous = _kr_snapshot(session["user_id"], kr_id)
+
     update(
         "key_results",
         params={"id": f"eq.{kr_id}", "user_id": f"eq.{session['user_id']}"},
         json=patch,
     )
+    if "current_value" in patch:
+        _log_checkin(session["user_id"], kr_id,
+                     (previous or {}).get("objective_id"),
+                     patch["current_value"],
+                     (previous or {}).get("current_value"),
+                     None)
     # If we just turned auto_progress on, recompute immediately so the
     # KR's current_value reflects today's task completions.
     if patch.get("auto_progress") is True:
         recompute_kr_auto_progress(session["user_id"], kr_id)
     return jsonify({"status": "ok"})
+
+
+# ──────────────────────────────────────────────────────────────────────
+# WEEKLY CHECK-IN
+#
+# One screen that walks every key result you have to update by hand, so
+# the numbers get touched once a week instead of never. Measured before
+# this existed: 0 of 28 key results had ever moved. The check-in does not
+# make anyone keep key results — goals still count their tasks first
+# (see list_objectives) — it makes the ones you DO keep cheap to update.
+#
+# Key results with auto_progress are shown but not asked about: their
+# value comes from linked tasks, so typing over it would be overwritten by
+# the next task toggle.
+#
+# Needs MIGRATION_KR_CHECKINS.sql for "last updated" and the history.
+# Without it the check-in still saves values; the timestamp column is
+# stripped by update()'s PGRST204 retry and the history insert is skipped.
+# ──────────────────────────────────────────────────────────────────────
+
+#: A hand-kept key result untouched for this long is flagged on the
+#: check-in screen. A week, because the check-in is weekly.
+_CHECKIN_STALE_DAYS = 7
+
+
+def _parse_ts(value):
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _kr_snapshot(user_id, kr_id):
+    """The row as it is before an update — for previous_value. Never raises."""
+    try:
+        rows = get("key_results", params={
+            "id": f"eq.{kr_id}",
+            "user_id": f"eq.{user_id}",
+            "select": "id,objective_id,current_value",
+        }) or []
+        return rows[0] if rows else None
+    except Exception as e:                                  # noqa: BLE001
+        logger.warning("kr snapshot failed: %s", e)
+        return None
+
+
+def _log_checkin(user_id, kr_id, objective_id, value, previous_value, note):
+    """Append one history row. Best-effort: a missing kr_checkins table
+    (migration not run yet) must cost the history, not the save."""
+    try:
+        post("kr_checkins", {
+            "user_id": user_id,
+            "key_result_id": kr_id,
+            "objective_id": objective_id,
+            "value": value,
+            "previous_value": previous_value,
+            "note": note or None,
+        })
+    except Exception as e:                                  # noqa: BLE001
+        logger.info("kr_checkins insert skipped (run MIGRATION_KR_CHECKINS.sql?): %s", e)
+
+
+@goals_bp.route("/goals/check-in")
+@login_required
+def checkin_page():
+    return render_template("goals_checkin.html")
+
+
+@goals_bp.route("/api/goals/check-in", methods=["GET"])
+@login_required
+def checkin_data():
+    """Active goals that have key results, each key result with what the
+    check-in needs: current value, unit, direction, whether it is filled
+    in from tasks, and how long since it last moved."""
+    user_id = session["user_id"]
+    objectives = get("objectives", params={
+        "user_id": f"eq.{user_id}",
+        "is_deleted": "eq.false",
+        "status": "eq.active",
+        "select": "id,title,target_date,is_default",
+        "order": "order_index.asc,created_at.asc",
+        "limit": 500,
+    }) or []
+    objectives = [o for o in objectives if not o.get("is_default")]
+    if not objectives:
+        return jsonify({"goals": [], "to_update": 0, "stale_days": _CHECKIN_STALE_DAYS})
+
+    krs = get("key_results", params={
+        "user_id": f"eq.{user_id}",
+        "objective_id": f"in.({','.join(o['id'] for o in objectives)})",
+        "is_deleted": "eq.false",
+        "select": "*",
+        "order": "order_index.asc,created_at.asc",
+        "limit": 5000,
+    }) or []
+
+    now = datetime.now(timezone.utc)
+    goals, to_update = [], 0
+    for o in objectives:
+        mine = [k for k in krs if k.get("objective_id") == o["id"] and not k.get("is_default")]
+        if not mine:
+            continue
+        rows = []
+        for k in mine:
+            checked = _parse_ts(k.get("last_checked_at"))
+            days = (now - checked).days if checked else None
+            auto = bool(k.get("auto_progress"))
+            if not auto:
+                to_update += 1
+            rows.append({
+                "id": k["id"],
+                "title": k.get("title"),
+                "unit": k.get("unit") or "",
+                "direction": k.get("direction") or "up",
+                "start_value": k.get("start_value"),
+                "current_value": k.get("current_value"),
+                "target_value": k.get("target_value"),
+                "progress": round(_kr_progress(k)),
+                "auto": auto,
+                "last_checked_at": k.get("last_checked_at"),
+                "days_since": days,
+                "stale": (not auto) and days is not None and days >= _CHECKIN_STALE_DAYS,
+            })
+        goals.append({
+            "id": o["id"],
+            "title": o.get("title"),
+            "target_date": o.get("target_date"),
+            "progress": round(sum(r["progress"] for r in rows) / len(rows)),
+            "key_results": rows,
+        })
+    return jsonify({"goals": goals, "to_update": to_update,
+                    "stale_days": _CHECKIN_STALE_DAYS})
+
+
+@goals_bp.route("/api/goals/check-in", methods=["POST"])
+@login_required
+def checkin_save():
+    """Body: {"entries": [{"key_result_id", "value"}], "notes": {objective_id: text}}.
+
+    Only key results that belong to this user and are kept by hand are
+    written. A value equal to the current one still counts as checked —
+    "no change" is an answer, and it resets the stale flag."""
+    user_id = session["user_id"]
+    data = request.get_json(force=True) or {}
+    entries = data.get("entries") or []
+    notes = data.get("notes") or {}
+    if not isinstance(entries, list) or not entries:
+        return jsonify({"error": "nothing to save"}), 400
+
+    cleaned = []
+    for e in entries:
+        kr_id = (e or {}).get("key_result_id")
+        try:
+            value = float((e or {}).get("value"))
+        except (TypeError, ValueError):
+            return jsonify({"error": "every value must be a number"}), 400
+        if kr_id:
+            cleaned.append((str(kr_id), value))
+    if not cleaned:
+        return jsonify({"error": "nothing to save"}), 400
+
+    ids = ",".join(k for k, _ in cleaned)
+    owned = get("key_results", params={
+        "user_id": f"eq.{user_id}",
+        "id": f"in.({ids})",
+        "is_deleted": "eq.false",
+        "select": "id,objective_id,current_value,auto_progress",
+    }) or []
+    by_id = {k["id"]: k for k in owned}
+
+    saved = 0
+    stamp = _now_iso()
+    for kr_id, value in cleaned:
+        k = by_id.get(kr_id)
+        if not k or k.get("auto_progress"):
+            continue
+        update("key_results",
+               params={"id": f"eq.{kr_id}", "user_id": f"eq.{user_id}"},
+               json={"current_value": value, "last_checked_at": stamp})
+        note = notes.get(k.get("objective_id")) if isinstance(notes, dict) else None
+        _log_checkin(user_id, kr_id, k.get("objective_id"), value,
+                     k.get("current_value"), (note or "").strip()[:2000] or None)
+        saved += 1
+    return jsonify({"status": "ok", "saved": saved})
 
 
 @goals_bp.route("/api/key-results/<kr_id>", methods=["DELETE"])

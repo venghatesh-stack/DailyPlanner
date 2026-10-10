@@ -216,7 +216,7 @@ function renderObjectives() {
 }
 
 function renderObjectiveCard(o, hideProjectBadge) {
-  const color = o.color || "#424aa8";
+  const color = o.color || "#4447e5";
   const progress = Math.round(o._progress || 0);
   const statusClass = o.status && o.status !== "active" ? o.status : "";
   const bucket = goalBucket(o);
@@ -438,10 +438,25 @@ function quickAddKeydown(e) {
    buttons back. The only change is where it is rendered: inside a
    <details> on the row rather than always open underneath it. */
 
+/* "· updated 9 days ago" after a key result's targets, from
+   key_results.last_checked_at (MIGRATION_KR_CHECKINS.sql). Empty when the
+   column is missing or the value is filled in from tasks. A hand-kept
+   number that has not moved in a week is marked, because that is the
+   signal the weekly check-in exists to act on. */
+function krSince(kr) {
+  if (!kr.last_checked_at || kr.auto_progress) return "";
+  const days = Math.floor((Date.now() - new Date(kr.last_checked_at).getTime()) / 86400000);
+  if (Number.isNaN(days) || days < 0) return "";
+  const txt = days === 0 ? "updated today" : days === 1 ? "updated yesterday" : `updated ${days} days ago`;
+  return days >= 7
+    ? ` · <a class="kr-stale" href="/goals/check-in" title="Update it in the weekly check-in">${txt}</a>`
+    : ` · ${txt}`;
+}
+
 function renderKr(o, kr) {
   const progress = Math.round(kr._progress || 0);
   const unit = kr.unit || "";
-  const color = o.color || "#10b981";
+  const color = o.color || "#4447e5";
   const initiatives = kr.initiatives || [];
 
   return `
@@ -450,7 +465,7 @@ function renderKr(o, kr) {
         <div>
           <div class="kr-title">${esc(kr.title)}</div>
           <div class="kr-meta">
-            Start ${fmtNum(kr.start_value)}${esc(unit)} · Target ${fmtNum(kr.target_value)}${esc(unit)}
+            Start ${fmtNum(kr.start_value)}${esc(unit)} · Target ${fmtNum(kr.target_value)}${esc(unit)}${krSince(kr)}
           </div>
         </div>
         <div class="kr-progress-group">

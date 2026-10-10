@@ -29,9 +29,13 @@
   <header class="goals-header">
     <div class="goals-header-text">
       <h1>Goals</h1>
-      <p class="goals-sub">A goal is a sentence and a date. Drag the bar to say how far along it is.</p>
+      <p class="goals-sub">A goal is a sentence and a date. Progress counts its linked tasks — drag the bar to override.</p>
     </div>
     <div class="goals-header-actions">
+      {# The weekly pass over every hand-kept key result. #}
+      <a href="/goals/check-in" class="goals-checkin-link" title="Update every key result you keep by hand, in one go">
+        <i data-feather="check-circle" aria-hidden="true"></i> Weekly check-in
+      </a>
       <select id="project-filter" class="project-filter" onchange="loadGoals()"
               aria-label="Filter by project">
         <option value="">All projects</option>
