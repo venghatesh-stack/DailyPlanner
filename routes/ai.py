@@ -73,7 +73,7 @@ def reflection_summary():
 
 
 groq = OpenAI(
-    api_key=os.environ.get("GROQ_API_KEY", ""),
+    api_key=os.environ.get("GROQ_API_KEY") or "not-set",
     base_url="https://api.groq.com/openai/v1"
 )
 
