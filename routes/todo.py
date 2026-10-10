@@ -473,11 +473,14 @@ def toggle_todo_done():
     rows = get(
         "todo_matrix",
         params={
-            "id": f"eq.{task_id}",
+            "id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}",
             "select": "source_task_id,recurring_id,plan_date,quadrant,task_text,category,subcategory,project_id",
         },
     )
     task_row = rows[0] if rows else None
+    if task_row is None:
+        # Scoped to the caller above: no row means not theirs (or gone).
+        return jsonify({"error": "Task not found"}), 404
 
     # 2️⃣ Update Eisenhower task — soft-delete flips is_deleted too
     todo_patch = {"is_done": is_done, "status": status}
@@ -488,7 +491,7 @@ def toggle_todo_done():
         todo_patch["is_deleted"] = False
     update(
         "todo_matrix",
-        params={"id": f"eq.{task_id}"},
+        params={"id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}"},
         json=todo_patch,
     )
 
@@ -500,13 +503,13 @@ def toggle_todo_done():
             if is_soft_delete:
                 update(
                     "project_tasks",
-                    params={"task_id": f"eq.{source_task_id}"},
+                    params={"task_id": f"eq.{source_task_id}", "user_id": f"eq.{session['user_id']}"},
                     json={"status": "deleted", "is_eliminated": True},
                 )
             elif is_done:
                 update(
                     "project_tasks",
-                    params={"task_id": f"eq.{source_task_id}"},
+                    params={"task_id": f"eq.{source_task_id}", "user_id": f"eq.{session['user_id']}"},
                     json={"status": status},
                 )
 
@@ -977,7 +980,7 @@ def move_eisenhower_task():
 
     update(
         "todo_matrix",
-        params={"id": f"eq.{task_id}"},
+        params={"id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}"},
         json={"quadrant": quadrant}
     )
 
@@ -1718,22 +1721,24 @@ def todo_autosave():
     if "project_id" in data:
         update(
             "todo_matrix",
-            params={"id": f"eq.{task_id}"},
+            params={"id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}"},
             json={"project_id": data["project_id"]},
         )
 
     # 🔁 Sync completion back to project task (if linked)
     if "is_done" in data:
-        row = get(
+        # get() has no `single` argument — passing one raised a TypeError,
+        # so this sync to the linked project task never ran.
+        found = get(
             "todo_matrix",
-            params={"id": f"eq.{task_id}"},
-            single=True
-        )
+            params={"id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}", "select": "source_task_id"},
+        ) or []
+        row = found[0] if found else None
 
         if row and row.get("source_task_id"):
             update(
                 "project_tasks",
-                params={"task_id": f"eq.{row['source_task_id']}"},
+                params={"task_id": f"eq.{row['source_task_id']}", "user_id": f"eq.{session['user_id']}"},
                 json={
                     "status": "done" if data["is_done"] else "open"
                 }
@@ -1754,7 +1759,7 @@ def todo_set_project():
 
     update(
         "todo_matrix",
-        params={"id": f"eq.{task_id}"},
+        params={"id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}"},
         json={"project_id": project_id},
     )
 
@@ -1929,7 +1934,10 @@ def set_recurrence():
         return ("", 204)
 
     # Load the task instance
-    task = get("todo_matrix", params={"id": f"eq.{task_id}"})[0]
+    found = get("todo_matrix", params={"id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}"}) or []
+    if not found:
+        return jsonify({"error": "Task not found"}), 404
+    task = found[0]
 
     # ----------------------------
     # FIX 3: prevent duplicate rules
@@ -1975,7 +1983,7 @@ def set_recurrence():
     )
     update(
     "todo_matrix",
-    params={"id": f"eq.{task_id}"},
+    params={"id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}"},
     json={"recurring_id": rule[0]["id"]},
     )
 
@@ -1988,10 +1996,13 @@ def delete_recurring():
     task_id = data["task_id"]
 
     # Load the task instance for TODAY
-    task = get(
+    found = get(
         "todo_matrix",
-        params={"id": f"eq.{task_id}"},
-    )[0]
+        params={"id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}"},
+    ) or []
+    if not found:
+        return jsonify({"error": "Task not found"}), 404
+    task = found[0]
 
     recurring_id = task.get("recurring_id")
     if not recurring_id:
@@ -2002,12 +2013,12 @@ def delete_recurring():
 
     update(
         "recurring_tasks",
-        params={"id": f"eq.{recurring_id}"},
+        params={"id": f"eq.{recurring_id}", "user_id": f"eq.{session['user_id']}"},
         json={"end_date": str(end_date)},
     )
 
     # Also remove TODAY's instance
-    update("todo_matrix", params={"id": f"eq.{task_id}"}, json={"is_deleted": True})
+    update("todo_matrix", params={"id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}"}, json={"is_deleted": True})
 
     return ("", 204)
 

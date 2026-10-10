@@ -118,7 +118,7 @@ def reorder_habit():
 
     update(
         "habit_master",
-        params={"id": f"eq.{data['habit_id']}"},
+        params={"id": f"eq.{data['habit_id']}", "user_id": f"eq.{session['user_id']}"},
         json={"position": data["position"]}
     )
 

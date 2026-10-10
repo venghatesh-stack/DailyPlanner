@@ -250,7 +250,7 @@ def set_project_sort(project_id):
 
     update(
         "projects",
-        params={"project_id": f"eq.{project_id}"},
+        params={"project_id": f"eq.{project_id}", "user_id": f"eq.{session['user_id']}"},
         json={"default_sort": sort}
     )
 
@@ -593,7 +593,7 @@ def update_project_task_status():
                     next_due = next_date + timedelta(days=duration_days)
                     update(
                         "project_tasks",
-                        params={"task_id": f"eq.{task_id}"},
+                        params={"task_id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}"},
                         json={
                             "start_date": next_date.isoformat(),
                             "due_date": next_due.isoformat(),
@@ -764,6 +764,7 @@ def unsend_task_from_eisenhower():
     params = {
         "source_task_id": f"eq.{task_id}",
         "is_deleted": "eq.false",
+        "user_id": f"eq.{session['user_id']}",
     }
 
     # Optional safety: only today & future
@@ -813,7 +814,7 @@ def update_project_task_date():
 
     update(
         "project_tasks",
-        params={"task_id": f"eq.{task_id}"},
+        params={"task_id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}"},
         json={"revised_due_date": new_date},
     )
     logger.info(f"👉 task_id={task_id}, revised_due_date={new_date}")
@@ -880,7 +881,7 @@ def update_task(task_id):
 
     update(
         "project_tasks",
-        params={"task_id": f"eq.{task_id}"},
+        params={"task_id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}"},
         json=updates
     )
 
@@ -901,6 +902,7 @@ def update_task_duration():
         "project_tasks",
         params={
             "task_id": f"eq.{task_id}",
+            "user_id": f"eq.{session['user_id']}",
             "select": "start_date",
         },
     )
@@ -916,7 +918,7 @@ def update_task_duration():
     # 3️⃣ Persist everything
     update(
         "project_tasks",
-        params={"task_id": f"eq.{task_id}"},
+        params={"task_id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}"},
         json={
             "duration_days": duration_days,
             "due_date": due_date.isoformat(),
@@ -935,7 +937,7 @@ def update_delegation():
 
     update(
         "project_tasks",
-        params={"task_id": f"eq.{data['id']}"},
+        params={"task_id": f"eq.{data['id']}", "user_id": f"eq.{session['user_id']}"},
         json={
             "delegated_to": data.get("delegated_to")
         }
@@ -953,7 +955,7 @@ def eliminate_task():
 
     update(
         "project_tasks",
-        params={"task_id": f"eq.{task_id}"},
+        params={"task_id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}"},
         json={
             "is_eliminated": True,
             "elimination_reason": reason,
@@ -969,7 +971,7 @@ def update_due_time():
 
     update(
         "project_tasks",
-        params={"task_id": f"eq.{data['id']}"},
+        params={"task_id": f"eq.{data['id']}", "user_id": f"eq.{session['user_id']}"},
         json={
             "due_time": data.get("due_time")
         }
@@ -998,7 +1000,7 @@ def update_task_planning():
 
     update(
         "project_tasks",
-        params={"task_id": f"eq.{task_id}"},
+        params={"task_id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}"},
         json={
             "start_date": str(start),
             "duration_days": days,
@@ -1038,7 +1040,7 @@ def update_planned():
     data = request.get_json()
     update(
         "project_tasks",
-        params={"task_id": f"eq.{data['task_id']}"},
+        params={"task_id": f"eq.{data['task_id']}", "user_id": f"eq.{session['user_id']}"},
         json={"planned_hours": data["planned_hours"]}
     )
     return "", 204
@@ -1050,7 +1052,7 @@ def update_actual():
     data = request.get_json()
     update(
         "project_tasks",
-        params={"task_id": f"eq.{data['task_id']}"},
+        params={"task_id": f"eq.{data['task_id']}", "user_id": f"eq.{session['user_id']}"},
         json={"actual_hours": data["actual_hours"]}
     )
     return "", 204
@@ -1063,7 +1065,7 @@ def update_priority():
 
     update(
         "project_tasks",
-        params={"task_id": f"eq.{task_id}"},
+        params={"task_id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}"},
         json={
             "priority": priority,
             "priority_rank": PRIORITY_MAP.get(priority, 2)
@@ -1476,7 +1478,7 @@ def toggle_pin():
 
     update(
         "project_tasks",
-        params={"task_id": f"eq.{task_id}"},
+        params={"task_id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}"},
         json={"is_pinned": bool(is_pinned)}
     )
 
@@ -1496,6 +1498,7 @@ def reorder_tasks():
         "project_tasks",
         params={
             "task_id": f"in.({dragged},{target})",
+            "user_id": f"eq.{session['user_id']}",
             "select": "task_id,order_index,due_date,priority_rank,is_pinned"
         }
     )
@@ -1513,12 +1516,12 @@ def reorder_tasks():
     # 🔄 swap order_index
     update(
         "project_tasks",
-        params={"task_id": f"eq.{a['task_id']}"},
+        params={"task_id": f"eq.{a['task_id']}", "user_id": f"eq.{session['user_id']}"},
         json={"order_index": b["order_index"]}
     )
     update(
         "project_tasks",
-        params={"task_id": f"eq.{b['task_id']}"},
+        params={"task_id": f"eq.{b['task_id']}", "user_id": f"eq.{session['user_id']}"},
         json={"order_index": a["order_index"]}
     )
 
@@ -1563,7 +1566,7 @@ def schedule_project_task(task_id):
 
     update(
         "project_tasks",
-        params={"task_id": f"eq.{task_id}"},
+        params={"task_id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}"},
         json={
             "plan_date": data["plan_date"],
             "start_time": data["start_time"],
@@ -1579,6 +1582,7 @@ def get_single_project_task(task_id):
         "project_tasks",
         params={
             "task_id": f"eq.{task_id}",
+            "user_id": f"eq.{session['user_id']}",
             "select": "*"
         }
     )
@@ -1646,7 +1650,7 @@ def update_project_task(task_id):
 
     update(
         "project_tasks",
-        params={"task_id": f"eq.{task_id}"},
+        params={"task_id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}"},
         json=update_payload
     )
 
@@ -1658,15 +1662,42 @@ def update_project_task(task_id):
 def complete_task(task_id):
     update(
         "project_tasks",
-        params={"task_id": f"eq.{task_id}"},
+        params={"task_id": f"eq.{task_id}", "user_id": f"eq.{session['user_id']}"},
         json={"is_completed": True}
     )
 
     return {"ok": True}
 
+# ── Subtask ownership ────────────────────────────────────────────────────
+# project_subtasks has no user_id column, so ownership is the parent
+# task's. Every subtask route used to act on whatever id it was given —
+# list, add, toggle and delete all worked across users.
+def _owns_task(task_id):
+    if not task_id:
+        return False
+    rows = get("project_tasks", params={
+        "task_id": f"eq.{task_id}",
+        "user_id": f"eq.{session['user_id']}",
+        "select": "task_id",
+    }) or []
+    return bool(rows)
+
+
+def _owns_subtask(sub_id):
+    if not sub_id:
+        return False
+    rows = get("project_subtasks", params={
+        "id": f"eq.{sub_id}",
+        "select": "parent_task_id",
+    }) or []
+    return bool(rows) and _owns_task(rows[0].get("parent_task_id"))
+
+
 @projects_bp.route("/subtask/list/<task_id>")
 @login_required
 def list_subtasks(task_id):
+    if not _owns_task(task_id):
+        return jsonify([])
     params = {
         "parent_task_id": f"eq.{task_id}",
         "select": "id,title,is_done",
@@ -1696,6 +1727,8 @@ def add_subtask():
 
     task_id = data.get("task_id")
     project_id = data.get("project_id")
+    if not _owns_task(task_id):
+        return jsonify({"error": "Task not found"}), 404
 
     # IMPORTANT: Run this SQL in Supabase to fix FK (points to todo_matrix instead of project_tasks):
     #   ALTER TABLE project_subtasks DROP CONSTRAINT project_subtasks_parent_task_id_fkey;
@@ -1723,7 +1756,9 @@ def add_subtask():
 @projects_bp.route("/subtask/toggle", methods=["POST"])
 @login_required
 def toggle_subtask():
-    data = request.get_json(force=True)
+    data = request.get_json(force=True) or {}
+    if not _owns_subtask(data.get("id")):
+        return jsonify({"error": "Subtask not found"}), 404
 
     update(
         "project_subtasks",
@@ -1753,6 +1788,8 @@ def delete_subtask():
     sub_id = data.get("id")
     if not sub_id:
         return jsonify({"error": "Subtask id required"}), 400
+    if not _owns_subtask(sub_id):
+        return jsonify({"error": "Subtask not found"}), 404
 
     try:
         update(
