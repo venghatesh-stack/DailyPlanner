@@ -873,6 +873,14 @@ def summary():
     # Today flag (used by template to show a "TODAY" pill)
     is_today = (plan_date == user_today())
 
+    # FIRST RUN (2026-10 redesign, "Today, first day"). A brand-new account
+    # used to land on "Nothing on the board yet" with no idea where to
+    # start. Only checked when today's board is empty, so a normal day
+    # costs nothing extra.
+    onboarding = None
+    if not (dashboard or {}).get("today_items"):
+        onboarding = _first_run_steps(user_id)
+
     # Compute prev/next date for navigation
     prev_date = (plan_date - timedelta(days=1)).isoformat()
     next_date = (plan_date + timedelta(days=1)).isoformat()
@@ -887,7 +895,33 @@ def summary():
         prev_date=prev_date,
         next_date=next_date,
         task_categories=TASK_CATEGORIES,
+        onboarding=onboarding,
     )
+
+
+def _has_any(table, user_id):
+    try:
+        return bool(get(table, params={"user_id": f"eq.{user_id}", "select": "user_id", "limit": 1}))
+    except Exception:                                       # noqa: BLE001
+        return True       # unknown → assume set up; never nag on an error
+
+
+def _first_run_steps(user_id):
+    """The three first steps, or None once the account is clearly in use.
+
+    "In use" = any task anywhere (project tasks, the matrix or the Quick
+    Bucket). Each step is ticked independently so the card shrinks as
+    the person goes."""
+    has_task = any(_has_any(t, user_id) for t in ("project_tasks", "todo_matrix", "quick_bucket"))
+    if has_task:
+        return None
+    return {
+        "task": has_task,
+        "calendar": _has_any("user_google_tokens", user_id),
+        "checklist": _has_any("checklist_items", user_id),
+    }
+
+
 def get_plans_for_date(plan_date):
     return [
         p for p in session.get("plans", [])

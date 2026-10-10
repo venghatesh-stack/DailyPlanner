@@ -771,8 +771,44 @@
       const pct = Math.round((j.pct || 0) * 100);
       if (nums) nums.textContent = `${j.done} / ${j.total} · ${pct}%`;
       if (fill) fill.style.width = `${pct}%`;
-      if (spark && j.by_day) renderSparkline(spark, j.by_day);
+      // A sprint with both dates gets a real burndown over its own days;
+      // without dates there is no "ideal", so the 14-day bars remain.
+      if (spark && j.burndown) renderBurndown(spark, j.burndown);
+      else if (spark && j.by_day) renderSparkline(spark, j.by_day);
     } catch (_) {}
+  }
+
+  function renderBurndown(svg, bd) {
+    // 100x20 viewBox. Dashed line = ideal (total → 0 on the last day);
+    // solid line = tasks still open at the end of each day, up to today.
+    svg.innerHTML = "";
+    const NS = "http://www.w3.org/2000/svg";
+    const days = bd.days || [];
+    const n = Math.max(1, days.length - 1);
+    const max = Math.max(1, bd.total || 0);
+    const xy = (i, v) => `${(i / n * 100).toFixed(2)},${(19 - (v / max) * 18).toFixed(2)}`;
+    const ideal = document.createElementNS(NS, "polyline");
+    ideal.setAttribute("points", days.map((d, i) => xy(i, d.ideal)).join(" "));
+    ideal.setAttribute("fill", "none");
+    ideal.setAttribute("stroke", "var(--color-text-muted, #5b5e66)");
+    ideal.setAttribute("stroke-width", "1");
+    ideal.setAttribute("stroke-dasharray", "2 2");
+    svg.appendChild(ideal);
+    const actual = days.map((d, i) => d.remaining == null ? null : xy(i, d.remaining)).filter(Boolean);
+    if (actual.length) {
+      const line = document.createElementNS(NS, "polyline");
+      line.setAttribute("points", actual.join(" "));
+      line.setAttribute("fill", "none");
+      line.setAttribute("stroke", "var(--ptv2-primary, currentColor)");
+      line.setAttribute("stroke-width", "2");
+      line.setAttribute("stroke-linejoin", "round");
+      svg.appendChild(line);
+    }
+    const last = [...days].reverse().find((d) => d.remaining != null);
+    const t = document.createElementNS(NS, "title");
+    t.textContent = `Burndown ${bd.starts_on} → ${bd.ends_on}: ` +
+      (last ? `${last.remaining} of ${bd.total} open on ${last.date}, ideal ${Math.round(last.ideal)}` : "sprint not started");
+    svg.appendChild(t);
   }
 
   function renderSparkline(svg, points) {

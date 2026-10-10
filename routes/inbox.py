@@ -138,18 +138,96 @@ def share_target():
     # don't see noise.
     desc = (raw_text if raw_text and raw_text != candidate else raw_title)[:500]
 
-    try:
-        meta = fetch_meta(candidate)
+    # TWO STEPS (2026-10 redesign, "Share to Inbox" sheet). A share used to
+    # be saved the instant it arrived, with whatever labels and category
+    # the heuristics guessed, and always to the Inbox. Now the first hit
+    # shows a short confirm page — preview, category, labels, and where it
+    # goes (Inbox / TravelReads / References) — and the form on that page
+    # posts back here with confirm=1 to save.
+    if request.form.get("confirm") != "1":
+        try:
+            meta = fetch_meta(candidate)
+        except Exception:
+            logger.exception("share_target: metadata fetch failed for %s", candidate)
+            meta = {}
         title = meta.get("title") or raw_title or candidate
         description = desc or meta.get("description") or ""
         content_type = detect_type(candidate)
-        category = auto_categorize(candidate, title, description)
         duration_seconds = int(meta.get("duration_seconds") or 0)
-        labels = auto_label(candidate, title, description, content_type, duration_seconds)
+        try:
+            category = auto_categorize(candidate, title, description)
+            labels = auto_label(candidate, title, description, content_type, duration_seconds)
+        except Exception:
+            category, labels = "General", []
+        return render_template(
+            "inbox_share.html",
+            url=candidate,
+            domain=_share_domain(candidate),
+            title=title,
+            description=description,
+            category=category,
+            labels=list(labels or []),
+            known_labels=sorted(KNOWN_LABELS),
+            duration_seconds=duration_seconds,
+            content_type=content_type,
+        )
+
+    # Step 2 — the confirm form. inbox_bp is CSRF-exempt because Android's
+    # share sheet cannot send a token, but this form comes from our own
+    # page, so its token is checked here.
+    try:
+        from flask_wtf.csrf import validate_csrf
+        validate_csrf(request.form.get("csrf_token"))
+    except Exception:
+        return ("This page expired — share the link again.", 400)
+
+    f = request.form
+    title = (f.get("title") or candidate).strip()[:240]
+    description = (f.get("description") or "").strip()[:600]
+    category = (f.get("category") or "General").strip()[:60] or "General"
+    labels = [l for l in f.getlist("labels") if l in KNOWN_LABELS]
+    destination = f.get("destination") or "inbox"
+    content_type = detect_type(candidate)
+    try:
+        duration_seconds = max(0, int(f.get("duration_seconds") or 0))
+    except ValueError:
+        duration_seconds = 0
+    user_id = session["user_id"]
+
+    try:
+        if destination == "travel":
+            row = {
+                "user_id": user_id,
+                "url": candidate,
+                "title": title,
+                "description": description,
+                "source": _share_domain(candidate),
+                "kind": "video" if content_type == "video" else "article",
+                "priority": "high" if "priority" in labels else "medium",
+                "status": "queued",
+            }
+            if duration_seconds:
+                row["duration_minutes"] = max(1, round(duration_seconds / 60))
+            post("travel_reads", row)
+            flash("Saved to TravelReads.", "success")
+            return redirect("/travel-reads")
+
+        if destination == "references":
+            import bleach
+            post("reference_links", {
+                "user_id": user_id,
+                "title": title,
+                "description": bleach.clean(description, tags=[], strip=True),
+                "url": candidate,
+                "tags": [],
+                "category": category,
+            })
+            flash("Saved to References.", "success")
+            return redirect("/references")
 
         row = {
             "id": str(uuid.uuid4()),
-            "user_id": session["user_id"],
+            "user_id": user_id,
             "url": candidate,
             "title": title,
             "description": description,
@@ -158,13 +236,10 @@ def share_target():
             "status": "Unread",
             "labels": labels,
         }
-        if meta.get("published_at"):
-            row["published_at"] = meta["published_at"]
         if duration_seconds:
             row["duration_seconds"] = duration_seconds
-        # Share-target POSTs from Android may be replayed by the Web
-        # Share Target flow; dedupe via X-Client-Id if the manifest
-        # sender (typically Chrome) provided one.
+        # Share-target POSTs from Android may be replayed by the Web Share
+        # Target flow; dedupe via X-Client-Id if the sender provided one.
         share_client_id = request.headers.get("X-Client-Id") or None
         if share_client_id:
             row["client_id"] = share_client_id
@@ -176,14 +251,20 @@ def share_target():
         else:
             post("inbox_links", row)
     except Exception:
-        # Don't 500 the share intent — the user is mid-flow in another
-        # app and a stack trace helps nobody. Log and land them in the
-        # inbox so they can retry manually if needed.
+        # Don't 500 the share — land them somewhere they can retry.
         logger.exception("share_target failed for url=%s", candidate)
         try: flash("Couldn't save that link — try again from the inbox.", "error")
         except Exception: pass
 
     return redirect(url_for("inbox_bp.inbox_page"))
+
+
+def _share_domain(url):
+    try:
+        from urllib.parse import urlparse
+        return (urlparse(url).hostname or "").replace("www.", "")
+    except Exception:
+        return ""
 
 
 @inbox_bp.route("/api/inbox", methods=["POST"])

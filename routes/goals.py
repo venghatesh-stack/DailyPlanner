@@ -1346,46 +1346,80 @@ def sprint_stats(sprint_id):
         done:  <int>,                 # status = done
         open:  <int>,                 # total - done
         pct:   <float>,               # done / total
-        by_day: [{date, done}, …]     # last 14 days, completion counts
+        by_day: [{date, done}, …],    # last 14 days, completion counts
+        burndown: null | {            # only when the sprint has both dates
+          starts_on, ends_on, total,
+          days: [{date, remaining, ideal}, …]   # remaining is null after today
+        }
       }
 
-    Used by the sprint manager to render a tiny progress bar and a
-    14-day burndown sparkline. Cheap — 1 query for the row set,
-    bucketing done in Python.
+    by_day feeds the old 14-day bars. burndown is the real chart: tasks
+    still open at the end of each day of the sprint, against a straight
+    line from the total down to zero on the last day.
+
+    "When was it finished" is project_tasks.completed_at
+    (MIGRATION_TASK_COMPLETED_AT.sql, kept by a trigger). Before that runs,
+    updated_at stands in — it moves when a finished task is edited, which
+    is exactly why completed_at was added.
     """
-    from datetime import datetime as _dt, timedelta as _td, timezone as _tz
+    from datetime import date as _date, datetime as _dt, timedelta as _td, timezone as _tz
     user_id = session["user_id"]
-    rows = get(
-        "project_tasks",
-        params={
-            "user_id":       f"eq.{user_id}",
-            "sprint_id":     f"eq.{sprint_id}",
-            "is_eliminated": "eq.false",
-            "select":        "task_id,status,updated_at,created_at",
-            "limit":         1000,
-        },
-    ) or []
+    base = {
+        "user_id":       f"eq.{user_id}",
+        "sprint_id":     f"eq.{sprint_id}",
+        "is_eliminated": "eq.false",
+        "limit":         1000,
+    }
+    try:
+        rows = get("project_tasks", params=dict(base, select="task_id,status,updated_at,created_at,completed_at")) or []
+    except Exception as e:                                  # noqa: BLE001
+        # get() has no PGRST204 retry: a missing completed_at column is a
+        # hard 400. Fall back to the columns every install has.
+        logger.info("sprint_stats: retrying without completed_at (%s)", e)
+        rows = get("project_tasks", params=dict(base, select="task_id,status,updated_at,created_at")) or []
+
     total = len(rows)
     done = sum(1 for r in rows if r.get("status") == "done")
     pct = (done / total) if total else 0.0
 
-    # Bucket done tasks by date (last 14d). updated_at is a reasonable
-    # proxy for "completed at" for tasks that are currently done.
+    def finished_on(r):
+        ts = r.get("completed_at") or r.get("updated_at") or r.get("created_at") or ""
+        return ts[:10] if ts else None
+
     today = _dt.now(_tz.utc).date()
     days = [(today - _td(days=i)).isoformat() for i in range(13, -1, -1)]
     bucket = {d: 0 for d in days}
     for r in rows:
-        if r.get("status") != "done":
-            continue
-        ts = r.get("updated_at") or r.get("created_at") or ""
-        if not ts:
-            continue
+        if r.get("status") == "done":
+            d = finished_on(r)
+            if d in bucket:
+                bucket[d] += 1
+
+    burndown = None
+    sprint = get("sprints", params={
+        "id": f"eq.{sprint_id}", "user_id": f"eq.{user_id}",
+        "select": "starts_on,ends_on", "limit": 1,
+    }) or []
+    if sprint and sprint[0].get("starts_on") and sprint[0].get("ends_on"):
         try:
-            d = ts[:10]  # YYYY-MM-DD prefix
-        except Exception:
-            continue
-        if d in bucket:
-            bucket[d] += 1
+            start = _date.fromisoformat(sprint[0]["starts_on"][:10])
+            end = _date.fromisoformat(sprint[0]["ends_on"][:10])
+        except ValueError:
+            start = end = None
+        if start and end and end >= start and (end - start).days <= 120:
+            span = (end - start).days
+            finished = sorted(d for d in (finished_on(r) for r in rows if r.get("status") == "done") if d)
+            pts = []
+            for i in range(span + 1):
+                day = start + _td(days=i)
+                iso = day.isoformat()
+                remaining = None
+                if day <= today:
+                    remaining = total - sum(1 for d in finished if d <= iso)
+                ideal = round(total * (1 - (i / span if span else 1)), 2)
+                pts.append({"date": iso, "remaining": remaining, "ideal": ideal})
+            burndown = {"starts_on": start.isoformat(), "ends_on": end.isoformat(),
+                        "total": total, "days": pts}
 
     return jsonify({
         "total": total,
@@ -1393,6 +1427,7 @@ def sprint_stats(sprint_id):
         "open":  total - done,
         "pct":   round(pct, 3),
         "by_day": [{"date": d, "done": bucket[d]} for d in days],
+        "burndown": burndown,
     })
 
 

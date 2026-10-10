@@ -156,3 +156,31 @@ def test_editing_a_title_alone_is_not_a_check_in(auth_client, monkeypatch):
     auth_client.patch("/api/key-results/k3", json={"title": "p95 time"})
     assert "last_checked_at" not in updates[0]
     assert not posts
+
+
+def test_sprint_stats_return_a_burndown_over_the_sprint_dates(auth_client, monkeypatch):
+    import routes.goals as goals
+    from datetime import date, timedelta
+    today = date.today()
+    start, end = today - timedelta(days=2), today + timedelta(days=2)
+    tasks = [
+        {"task_id": "a", "status": "done", "completed_at": f"{start.isoformat()}T10:00:00Z", "updated_at": f"{today.isoformat()}T09:00:00Z"},
+        {"task_id": "b", "status": "done", "completed_at": f"{(start + timedelta(days=1)).isoformat()}T10:00:00Z"},
+        {"task_id": "c", "status": "open"},
+        {"task_id": "d", "status": "open"},
+    ]
+    monkeypatch.setattr(goals, "get", lambda table, params=None, **kw:
+                        tasks if table == "project_tasks"
+                        else [{"starts_on": start.isoformat(), "ends_on": end.isoformat()}])
+    bd = auth_client.get("/api/sprints/s1/stats").get_json()["burndown"]
+    days = bd["days"]
+    assert len(days) == 5 and bd["total"] == 4
+    assert [d["remaining"] for d in days] == [3, 2, 2, None, None], \
+        "completed_at decides the day — not updated_at — and the future is unknown"
+    assert days[0]["ideal"] == 4 and days[-1]["ideal"] == 0
+
+
+def test_sprint_stats_without_dates_have_no_burndown(auth_client, monkeypatch):
+    import routes.goals as goals
+    monkeypatch.setattr(goals, "get", lambda table, params=None, **kw: [] if table == "sprints" else [{"task_id": "a", "status": "open"}])
+    assert auth_client.get("/api/sprints/s1/stats").get_json()["burndown"] is None

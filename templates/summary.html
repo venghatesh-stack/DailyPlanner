@@ -1132,6 +1132,28 @@
         </tbody>
       </table>
     </div>
+    {% elif onboarding %}
+      {# First run — three steps, each ticked as it is done. #}
+      <div class="md-first-run">
+        <h3 class="md-first-run-title">Welcome — three small steps get your day going</h3>
+        <ol class="md-first-run-steps">
+          <li class="{{ 'is-done' if onboarding.task }}">
+            <span class="md-fr-num" aria-hidden="true">1</span>
+            <span class="md-fr-text"><b>Add your first task</b><small>Type “Renew car insurance @15m” — it lands in today’s list.</small></span>
+            <a class="md-fr-go" href="/quick-bucket">Add a task</a>
+          </li>
+          <li class="{{ 'is-done' if onboarding.calendar }}">
+            <span class="md-fr-num" aria-hidden="true">2</span>
+            <span class="md-fr-text"><b>Connect Google Calendar</b><small>Meetings appear in your day and block focus time.</small></span>
+            {% if onboarding.calendar %}<span class="md-fr-done">Connected</span>{% else %}<a class="md-fr-go" href="/google-login">Connect</a>{% endif %}
+          </li>
+          <li class="{{ 'is-done' if onboarding.checklist }}">
+            <span class="md-fr-num" aria-hidden="true">3</span>
+            <span class="md-fr-text"><b>Set up a daily checklist</b><small>Morning and evening routines, with optional reminders.</small></span>
+            {% if onboarding.checklist %}<span class="md-fr-done">Done</span>{% else %}<a class="md-fr-go" href="/checklist">Set up</a>{% endif %}
+          </li>
+        </ol>
+      </div>
     {% else %}
       <div class="empty-msg">Nothing on the board yet — add a task or schedule a meeting to get started.</div>
     {% endif %}

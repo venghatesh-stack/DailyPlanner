@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<title>Save a link — DailyPlanner</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='design-system.css') }}">
+{% include "_pwa_head.html" %}
+<style>
+  {# The "Share to Inbox" sheet from the 2026-10 redesign. Shown when a
+     link arrives from another app's share menu, so it is a whole page
+     rather than an overlay: there is nothing behind it to return to. #}
+  body { margin: 0; background: var(--color-bg); color: var(--color-text); }
+  .sh-app { max-width: 560px; margin: 0 auto; padding: var(--space-5) var(--space-4) 40px;
+            display: flex; flex-direction: column; gap: var(--space-4); }
+  .sh-head { display: flex; align-items: center; gap: var(--space-3); }
+  .sh-mark { width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+             background: var(--color-primary); color: var(--color-on-primary);
+             display: flex; align-items: center; justify-content: center; font-weight: 800; }
+  .sh-head h1 { margin: 0; font-size: var(--font-size-xl); }
+  .sh-head p { margin: 2px 0 0; font-size: var(--font-size-sm); color: var(--color-text-secondary); }
+  .sh-card { background: var(--color-surface); border-radius: var(--radius-2xl); padding: var(--space-4);
+             display: flex; flex-direction: column; gap: var(--space-3); }
+  .sh-domain { font-size: var(--font-size-xs); font-weight: 700; color: var(--color-text-secondary); }
+  .sh-field { display: flex; flex-direction: column; gap: var(--space-1); }
+  .sh-field > span, .sh-legend { font-size: var(--font-size-xs); font-weight: 700; color: var(--color-text-secondary); }
+  .sh-field input, .sh-field textarea {
+    font: inherit; font-size: var(--font-size-base); color: var(--color-text);
+    background: var(--color-surface); border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-lg); padding: 10px 12px; box-sizing: border-box; width: 100%;
+  }
+  .sh-field input.sh-title { font-weight: 700; }
+  .sh-field textarea { resize: vertical; min-height: 64px; }
+  fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+  .sh-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .sh-chip { position: relative; }
+  .sh-chip input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+  .sh-chip span { display: inline-flex; align-items: center; height: 38px; padding: 0 14px;
+                  border-radius: 999px; background: var(--color-surface-secondary);
+                  font-size: var(--font-size-sm); font-weight: 600; }
+  .sh-chip input:checked + span { background: var(--color-primary); color: var(--color-on-primary); font-weight: 700; }
+  .sh-chip input:focus-visible + span { box-shadow: var(--ring); }
+  .sh-dest { display: flex; flex-direction: column; background: var(--color-surface); border-radius: var(--radius-2xl); overflow: hidden; }
+  .sh-dest label { display: flex; align-items: center; gap: var(--space-3); padding: 12px 16px; cursor: pointer; }
+  .sh-dest label + label { border-top: 1px solid var(--color-border-light); }
+  .sh-dest input { width: 20px; height: 20px; margin: 0; accent-color: var(--color-primary); flex-shrink: 0; }
+  .sh-dest b { display: block; font-size: var(--font-size-base); }
+  .sh-dest small { display: block; font-size: var(--font-size-xs); color: var(--color-text-secondary); }
+  .sh-actions { display: flex; gap: var(--space-3); }
+  .sh-btn { flex: 1; height: 52px; border-radius: var(--radius-xl); border: 0; font: inherit; font-weight: 700;
+            font-size: var(--font-size-base); display: inline-flex; align-items: center; justify-content: center;
+            text-decoration: none; cursor: pointer; background: var(--color-surface); color: var(--color-text); }
+  .sh-btn--primary { flex: 2; background: var(--color-primary); color: var(--color-on-primary); }
+</style>
+</head>
+<body>
+<main id="main" class="sh-app">
+  <header class="sh-head">
+    <span class="sh-mark" aria-hidden="true">D</span>
+    <div>
+      <h1>Save to DailyPlanner</h1>
+      <p>Shared from another app — check it, then save.</p>
+    </div>
+  </header>
+
+  <form method="post" action="{{ url_for('inbox_bp.share_target') }}" class="sh-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="confirm" value="1">
+    <input type="hidden" name="url" value="{{ url }}">
+    <input type="hidden" name="duration_seconds" value="{{ duration_seconds or 0 }}">
+
+    <div class="sh-card">
+      <span class="sh-domain">{{ domain }}{% if content_type == 'video' %} · Video{% endif %}{% if duration_seconds %} · {{ (duration_seconds // 60) or 1 }} min{% endif %}</span>
+      <label class="sh-field">
+        <span>Title</span>
+        <input class="sh-title" name="title" value="{{ title }}" maxlength="240" required>
+      </label>
+      <label class="sh-field">
+        <span>Note (optional)</span>
+        <textarea name="description" maxlength="600" rows="3">{{ description }}</textarea>
+      </label>
+      <label class="sh-field">
+        <span>Category</span>
+        <input name="category" value="{{ category }}" maxlength="60">
+      </label>
+      <fieldset>
+        <legend class="sh-legend">Labels</legend>
+        <div class="sh-chips">
+          {% for l in known_labels %}
+          <label class="sh-chip">
+            <input type="checkbox" name="labels" value="{{ l }}" {% if l in labels %}checked{% endif %}>
+            <span>{{ l }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+    </div>
+
+    <fieldset class="sh-dest" style="margin-top: var(--space-4)">
+      <legend class="visually-hidden">Save to</legend>
+      <label>
+        <input type="radio" name="destination" value="inbox" checked>
+        <span><b>Inbox</b><small>Read later. Drivable items also join the Drive queue.</small></span>
+      </label>
+      <label>
+        <input type="radio" name="destination" value="travel">
+        <span><b>TravelReads</b><small>Your queue for the road.</small></span>
+      </label>
+      <label>
+        <input type="radio" name="destination" value="references">
+        <span><b>References</b><small>Keep it in your library with the category above.</small></span>
+      </label>
+    </fieldset>
+
+    <div class="sh-actions" style="margin-top: var(--space-4)">
+      <a class="sh-btn" href="{{ url_for('inbox_bp.inbox_page') }}">Cancel</a>
+      <button type="submit" class="sh-btn sh-btn--primary">Save</button>
+    </div>
+  </form>
+</main>
+</body>
+</html>

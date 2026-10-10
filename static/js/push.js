@@ -83,7 +83,25 @@
   }
 
   // ── UI wiring used by the checklist page ─────────
-  async function init({ statusEl, statusOkEl, enableBtn, disableBtn, testBtn }) {
+  /* "Not now" on the reminders prompt is remembered per device (push is
+     per device too) for SNOOZE_DAYS, so the card stops reappearing on
+     every visit. localStorage can be unavailable (private mode); then the
+     prompt simply shows as before. */
+  const SNOOZE_KEY = "dp.pushPrompt.snoozedUntil";
+  const SNOOZE_DAYS = 14;
+  function snoozed() {
+    try { return Number(localStorage.getItem(SNOOZE_KEY) || 0) > Date.now(); }
+    catch (_) { return false; }
+  }
+  function setSnooze(on) {
+    try {
+      if (on) localStorage.setItem(SNOOZE_KEY, String(Date.now() + SNOOZE_DAYS * 86400000));
+      else localStorage.removeItem(SNOOZE_KEY);
+    } catch (_) { /* storage blocked: nothing to remember */ }
+  }
+
+  async function init({ statusEl, statusOkEl, enableBtn, disableBtn, testBtn,
+                        notNowBtn, snoozedEl, unsnoozeBtn }) {
     const supported = "serviceWorker" in navigator && "PushManager" in window;
 
     async function refresh() {
@@ -96,8 +114,10 @@
       }
       const sub = await currentSubscription();
       const on = Boolean(sub) && Notification.permission === "granted";
-      statusEl.hidden = on;
+      const quiet = !on && snoozed();
+      statusEl.hidden = on || quiet;
       statusOkEl.hidden = !on;
+      if (snoozedEl) snoozedEl.hidden = !quiet;
 
       /* SELF-HEAL THE SERVER'S COPY.
          This used to check only whether the BROWSER holds a subscription,
@@ -141,12 +161,24 @@
       enableBtn.disabled = true;
       try {
         await subscribe();
+        setSnooze(false);
         await refresh();
       } catch (err) {
         alert(err.message || "Could not enable notifications.");
       } finally {
         enableBtn.disabled = false;
       }
+    });
+
+    notNowBtn?.addEventListener("click", async () => {
+      setSnooze(true);
+      await refresh();
+    });
+
+    unsnoozeBtn?.addEventListener("click", async () => {
+      setSnooze(false);
+      await refresh();
+      enableBtn?.focus();
     });
 
     disableBtn?.addEventListener("click", async () => {

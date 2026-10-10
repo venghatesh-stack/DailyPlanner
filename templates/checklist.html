@@ -90,13 +90,23 @@
       <span class="cl-pomo-hint">▶ on each item starts a Pomodoro of this length.</span>
     </section>
 
+    {# The reminders pre-prompt (2026-10 redesign). Says exactly what will
+       be sent before the browser asks for permission, and "Not now" is
+       remembered on this device for 14 days instead of the card coming
+       back on every visit. #}
     <section class="cl-push-status" id="cl-push-status" hidden>
       <div class="cl-push-text">
         <strong>Reminders are off on this device.</strong>
-        <span class="cl-push-hint">Enable to get a push when each item is due. On iPhone, add this site to your Home Screen first.</span>
+        <span class="cl-push-hint">Turn them on to get a push for checklist items at the times you set, Day Board announcements you schedule, family tasks assigned to you, and chat messages. No marketing, no daily digest. On iPhone, add this site to your Home Screen first.</span>
       </div>
-      <button type="button" class="cl-btn cl-btn-primary" id="cl-push-enable">Enable reminders</button>
+      <div class="cl-push-actions">
+        <button type="button" class="cl-btn cl-btn-ghost" id="cl-push-notnow">Not now</button>
+        <button type="button" class="cl-btn cl-btn-primary" id="cl-push-enable">Turn on reminders</button>
+      </div>
     </section>
+    <p class="cl-push-snoozed" id="cl-push-snoozed" hidden>
+      Reminders are off on this device. <button type="button" class="cl-link-btn" id="cl-push-unsnooze">Turn on</button>
+    </p>
 
     <section class="cl-push-status cl-push-status-ok" id="cl-push-status-ok" hidden>
       <div class="cl-push-text">

@@ -748,6 +748,9 @@
         enableBtn:   $("#cl-push-enable"),
         disableBtn:  $("#cl-push-disable"),
         testBtn:     $("#cl-push-test"),
+        notNowBtn:   $("#cl-push-notnow"),
+        snoozedEl:   $("#cl-push-snoozed"),
+        unsnoozeBtn: $("#cl-push-unsnooze"),
       });
     }
 

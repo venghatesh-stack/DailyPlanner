@@ -274,6 +274,12 @@
       loadEffortSummary();
     } catch (err) {
       toast(err.message || "Could not load", "error");
+      // Don't leave the loading skeleton up forever on a failed load.
+      const wrap = $("#qb-groups");
+      if (wrap && wrap.getAttribute("aria-busy") === "true") {
+        wrap.removeAttribute("aria-busy");
+        wrap.innerHTML = '<div class="qb-empty">Couldn’t load your bucket. Pull to refresh or try again in a moment.</div>';
+      }
     }
   };
 
@@ -557,6 +563,7 @@
     renderTop5();
     const wrap = $("#qb-groups");
     const empty = $("#qb-empty");
+    wrap.removeAttribute("aria-busy");
     if (!items.length) {
       wrap.innerHTML = "";
       empty.removeAttribute("hidden");

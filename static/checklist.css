@@ -445,3 +445,10 @@ body {
 .cl-btn-ghost:hover { background: var(--cl-bg); }
 .cl-btn-danger { background: transparent; color: var(--cl-danger); border-color: transparent; }
 .cl-btn-danger:hover { background: rgba(239, 68, 68, 0.08); }
+
+/* Reminders prompt snoozed with "Not now": one quiet line instead of the card. */
+.cl-push-snoozed { margin: 0 0 12px; font-size: 13px; color: var(--color-text-secondary); }
+.cl-push-snoozed[hidden] { display: none; }
+.cl-link-btn { background: none; border: 0; padding: 0; font: inherit; font-weight: 700;
+               color: var(--color-primary-ink); cursor: pointer; text-decoration: underline; }
+.cl-push-status .cl-push-actions { flex-wrap: wrap; justify-content: flex-end; }

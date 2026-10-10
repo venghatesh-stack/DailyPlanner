@@ -617,6 +617,14 @@
   .qb-icon-btn:hover { background: var(--color-surface-secondary, #f3f4f6); color: var(--color-danger-on-tint); border-color: var(--color-border); }
   .qb-icon-btn svg { width: 14px; height: 14px; }
 
+  .qb-skeleton { display: flex; flex-direction: column; gap: 10px; padding: 4px 0 12px; }
+  .qb-sk-head, .qb-sk-row { display: block; border-radius: 12px;
+    background: linear-gradient(90deg, var(--color-surface-sunken) 0%, var(--color-surface-secondary) 50%, var(--color-surface-sunken) 100%);
+    background-size: 200% 100%; animation: qb-sk 1.4s ease-in-out infinite; }
+  .qb-sk-head { width: 30%; height: 14px; margin-top: 8px; }
+  .qb-sk-row { height: 48px; }
+  @keyframes qb-sk { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+  @media (prefers-reduced-motion: reduce) { .qb-sk-head, .qb-sk-row { animation: none; } }
   .qb-empty {
     padding: 24px; text-align: center;
     color: var(--color-text-secondary); font-size: 13px;
@@ -1241,7 +1249,18 @@
     </button>
   </div>
 
-  <div id="qb-groups"></div>
+  {# Loading state (2026-10 redesign): grey placeholder rows in the shape
+     of the list, replaced by render() on first load — instead of a blank
+     gap that looked like an empty bucket. #}
+  <div id="qb-groups" aria-busy="true">
+    <div class="qb-skeleton" aria-hidden="true">
+      <span class="qb-sk-head"></span>
+      <span class="qb-sk-row"></span><span class="qb-sk-row"></span><span class="qb-sk-row"></span>
+      <span class="qb-sk-head"></span>
+      <span class="qb-sk-row"></span><span class="qb-sk-row"></span>
+    </div>
+    <span class="visually-hidden" role="status">Loading your bucket…</span>
+  </div>
   <div id="qb-empty" class="qb-empty" hidden>Nothing in the bucket — add one above.</div>
 </main>
 

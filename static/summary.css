@@ -1091,19 +1091,19 @@ html.dark .md-recap-card    .md-card-body .md-table-wrap {
   :root,
   html.dark,
   [data-theme="dark"] {
-    --bg-base: #f6f5f2 !important;
+    --bg-base: #f2f2ef !important;
     --bg-surface: #ffffff !important;
-    --bg-subtle: #f1efea !important;
-    --text-primary: #24211c !important;       /* 18.5:1 on white */
-    --text-secondary: #5d574e !important;     /*  9.5:1 on white */
-    --text-muted: #6b655b !important;         /*  4.6:1 on white (AA) */
-    --accent-primary: #424aa8 !important;
-    --accent-primary-hover: #373d93 !important;
+    --bg-subtle: #f2f2ef !important;
+    --text-primary: #15161a !important;       /* 18.5:1 on white */
+    --text-secondary: #4a4d55 !important;     /*  9.5:1 on white */
+    --text-muted: #5b5e66 !important;         /*  4.6:1 on white (AA) */
+    --accent-primary: #15161a !important;
+    --accent-primary-hover: #2c2e34 !important;
     --accent-secondary: #855209 !important;
     --success: #2f7d4f !important;
     --warning: #9a6214 !important;
     --danger: #c2362f !important;
-    --border: #e3e0d9 !important;
+    --border: #d9d9d3 !important;
     --shadow-card: 0 1px 2px rgba(26,22,19,.05), 0 2px 8px rgba(26,22,19,.04) !important;
 
     /* Re-bind the design-system token set too. Without this, components
@@ -1112,28 +1112,30 @@ html.dark .md-recap-card    .md-card-body .md-table-wrap {
        values — which on a forced-white surface means light text on
        white = invisible. Mapping them onto the earthy palette above
        keeps the entire daily view legible regardless of OS dark-mode. */
-    --color-bg: #f6f5f2 !important;
+    --color-bg: #f2f2ef !important;
     --color-surface: #ffffff !important;
-    --color-surface-secondary: #f1efea !important;
+    --color-surface-secondary: #f2f2ef !important;
     --color-surface-elevated: #ffffff !important;
-    --color-surface-sunken: #e9e6e0 !important;
-    --color-text: #24211c !important;
-    --color-text-secondary: #5d574e !important;
-    --color-text-muted: #6b655b !important;
-    --color-text-tertiary: #6b655b !important;
-    --color-border: #e3e0d9 !important;
-    --color-border-strong: #cfcbc2 !important;
-    --color-border-light: #eeece7 !important;
-    --color-primary: #424aa8 !important;
-    --color-primary-ink: #373d93 !important;
-    --color-primary-light: #eceef9 !important;
+    --color-surface-sunken: #e4e4df !important;
+    --color-text: #15161a !important;
+    --color-text-secondary: #4a4d55 !important;
+    --color-text-muted: #5b5e66 !important;
+    --color-text-tertiary: #5b5e66 !important;
+    --color-border: #d9d9d3 !important;
+    --color-border-strong: #c9cac4 !important;
+    --color-border-light: #ecece9 !important;
+    --color-primary: #15161a !important;
+    --color-primary-hover: #2c2e34 !important;
+    --color-on-primary: #ffffff !important;
+    --color-primary-ink: #3a3dd0 !important;
+    --color-primary-light: #ececfd !important;
     --color-text-inverse: #ffffff !important;
     /* Status text-on-tint colors used by chips, pills, peek-timer-
        running etc. Pinned at the WCAG-AA pairings we standardised on. */
     --color-success-on-tint: #1f5c39 !important;
     --color-warning-on-tint: #855209 !important;
     --color-danger-on-tint:  #95251f !important;
-    --color-info-on-tint:    #373d93 !important;
+    --color-info-on-tint:    #3a3dd0 !important;
   }
 
   body {
@@ -1938,3 +1940,24 @@ html.dark .md-recap-card    .md-card-body .md-table-wrap {
 }
 .dt-check-done svg { width: 12px; height: 12px; }
 
+
+/* ═══════════ FIRST RUN (2026-10 redesign) ═══════════ */
+.md-first-run { padding: 4px 0; }
+.md-first-run-title { margin: 0 0 12px; font-size: 16px; font-weight: 800; letter-spacing: -0.01em; }
+.md-first-run-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.md-first-run-steps li { display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+  border-radius: 16px; background: var(--color-surface-secondary); }
+.md-first-run-steps li.is-done { opacity: .65; }
+.md-fr-num { width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: 13px; font-weight: 800; background: var(--color-primary); color: var(--color-on-primary); }
+.md-first-run-steps li.is-done .md-fr-num { background: var(--color-success); color: var(--color-on-success); }
+.md-fr-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.md-fr-text b { font-size: 14px; }
+.md-fr-text small { font-size: 12px; color: var(--color-text-secondary); }
+.md-fr-go { flex-shrink: 0; min-height: 40px; padding: 0 14px; border-radius: 12px; display: inline-flex; align-items: center;
+  background: var(--color-primary); color: var(--color-on-primary); font-size: 13px; font-weight: 700; text-decoration: none; }
+.md-fr-done { flex-shrink: 0; font-size: 12px; font-weight: 700; color: var(--color-success-on-tint); }
+@media (max-width: 480px) {
+  .md-first-run-steps li { flex-wrap: wrap; }
+  .md-fr-go { margin-left: 40px; }
+}
