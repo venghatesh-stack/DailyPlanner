@@ -3687,6 +3687,11 @@ def _pdf_register_fonts(pdf):
         try:
             pdf.add_font("dj", "", regular)
             pdf.add_font("dj", "B", bold if os.path.exists(bold) else regular)
+            # Markdown rendering treats "__x__" as italics; there is no
+            # italic file to hand, so italics fall back to the upright face
+            # instead of failing on text like Kafka's __consumer_offsets.
+            pdf.add_font("dj", "I", regular)
+            pdf.add_font("dj", "BI", bold if os.path.exists(bold) else regular)
             pdf.add_font("djm", "", mono)
             return "dj", "djm", True
         except Exception as exc:                      # pragma: no cover
