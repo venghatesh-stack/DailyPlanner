@@ -3081,6 +3081,46 @@ def _deep_list():
     return out
 
 
+@interview_prep_bp.route("/interview-prep/design/<slug>/summary", methods=["GET"])
+@login_required
+def sd_deep_summary(slug):
+    """A design's 5-page summary: what to explain to the interviewer."""
+    from flask import abort
+    d = sd_deep_bank.BY_SLUG.get(slug)
+    md = sd_deep_bank.summary_text(slug) if d else None
+    if not md:
+        abort(404)
+    order = [x["slug"] for x in sd_deep_bank.DESIGNS if sd_deep_bank.summary_text(x["slug"])]
+    i = order.index(slug) if slug in order else -1
+    nav = {
+        "prev": sd_deep_bank.BY_SLUG[order[i - 1]] if i > 0 else None,
+        "next": sd_deep_bank.BY_SLUG[order[i + 1]] if 0 <= i < len(order) - 1 else None,
+    }
+    return render_template("sd_summary.html", d=d, content=md, nav=nav,
+                           count=len(order), index=i + 1)
+
+
+@interview_prep_bp.route("/interview-prep/design/<slug>/summary.pdf", methods=["GET"])
+@login_required
+def sd_deep_summary_pdf(slug):
+    """The summary as a PDF: five A4 pages at 10.5pt; ?fs=14 for large text."""
+    from flask import abort
+    d = sd_deep_bank.BY_SLUG.get(slug)
+    md = sd_deep_bank.summary_text(slug) if d else None
+    if not md:
+        abort(404)
+    raw = (request.args.get("fs") or "").strip()
+    try:
+        pt = float(raw) if raw else 10.5
+    except ValueError:
+        pt = 10.5
+    try:
+        pdf = _guide_pdf_bytes(d["title"] + " - 5-page summary", md, body_pt=pt)
+    except ImportError:
+        return redirect(f"/interview-prep/design/{slug}/summary")
+    return _pdf_response(pdf, f"{slug}-5-page-summary.pdf")
+
+
 @interview_prep_bp.route("/api/sd-deep", methods=["GET"])
 @login_required
 def sd_deep_list():

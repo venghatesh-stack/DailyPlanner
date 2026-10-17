@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{ d.title }}: 5-page summary — DailyPlanner</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='design-system.css') }}">
+<script src="/static/js/vendor/feather-4.29.2.min.js"></script>
+<script src="{{ url_for('static', filename='js/global.js') }}"></script>
+<script src="/static/js/vendor/marked-12.0.2.min.js"></script>
+<style>
+  body { background: var(--color-bg); color: var(--color-text); font-family: var(--font-family); margin: 0; }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 16px 18px 80px; }
+  .bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 6px 0 14px; }
+  .bar a { font-size: 13px; font-weight: 700; text-decoration: none; padding: 7px 13px; border-radius: 999px; border: 1px solid var(--color-border); color: var(--color-text); background: var(--color-surface); }
+  .bar a.primary { background: var(--color-primary); color: var(--color-on-primary); border-color: transparent; }
+  .bar .sp { flex: 1; }
+  .md { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px; padding: 22px 26px; line-height: 1.62; font-size: 15.5px; }
+  .md h1 { font-size: 25px; font-weight: 900; letter-spacing: -.02em; margin: 4px 0 10px; }
+  .md h2 { font-size: 20px; font-weight: 800; margin: 28px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--color-border); }
+  .md h3 { font-size: 16.5px; font-weight: 800; margin: 18px 0 6px; }
+  .md p { margin: 10px 0; } .md ul, .md ol { margin: 10px 0; padding-left: 24px; } .md li { margin: 5px 0; }
+  .md code { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 5px; padding: 1px 5px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; }
+  .md pre { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 10px; padding: 12px 14px; overflow-x: auto; }
+  .md pre code { background: none; border: none; padding: 0; font-size: 12.5px; line-height: 1.4; white-space: pre; }
+  .md blockquote { border-left: 4px solid var(--color-primary); margin: 12px 0; padding: 6px 14px; background: var(--color-bg); border-radius: 0 8px 8px 0; }
+  .pager { display: flex; justify-content: space-between; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .pager a { font-size: 13.5px; font-weight: 700; text-decoration: none; color: var(--color-text); padding: 10px 14px; border-radius: 12px; border: 1px solid var(--color-border); background: var(--color-surface); max-width: 48%; }
+  .count { font-size: 12.5px; color: var(--color-text-secondary); }
+  @media print { .nav-icons, .bar, .pager { display: none; } .md { border: none; padding: 0; } body { background: #fff; } }
+</style>
+{% include "_pwa_head.html" %}
+</head>
+<body>
+<div class="nav-icons">{% include "_top_nav.html" %}</div>
+<div class="wrap">
+  <div class="bar">
+    <a href="/interview-prep/design">← All designs</a>
+    <a href="/interview-prep/design/{{ d.slug }}">Full deep dive</a>
+    <span class="sp"></span>
+    <span class="count">{{ index }} of {{ count }}</span>
+    <a class="primary" href="/interview-prep/design/{{ d.slug }}/summary.pdf" target="_blank" rel="noopener" title="Five A4 pages, to print or read on a laptop">⤓ PDF · 5 pages</a>
+    <a href="/interview-prep/design/{{ d.slug }}/summary.pdf?fs=14" target="_blank" rel="noopener" title="14pt text for reading on a phone">Large-text PDF</a>
+  </div>
+  <article class="md" id="md-out">Loading…</article>
+  <div class="pager">
+    {% if nav.prev %}<a href="/interview-prep/design/{{ nav.prev.slug }}/summary">← {{ nav.prev.title }}</a>{% else %}<span></span>{% endif %}
+    {% if nav.next %}<a href="/interview-prep/design/{{ nav.next.slug }}/summary">{{ nav.next.title }} →</a>{% endif %}
+  </div>
+</div>
+<script>
+  const MD = {{ content|tojson }};
+  try { document.getElementById("md-out").innerHTML = marked.parse(MD); }
+  catch (e) { document.getElementById("md-out").textContent = MD; }
+  if (window.feather) feather.replace();
+</script>
+</body>
+</html>

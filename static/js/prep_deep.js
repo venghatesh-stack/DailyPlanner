@@ -150,7 +150,10 @@
       '<p class="q-sum">' + esc(d.summary) + "</p>" +
       '<div class="dd-chips">' + d.concepts.slice(0, 5).map(function (c) {
         return '<span class="dd-chip">' + esc(c.replace(/\s*\(.*\)\s*$/, "")) + "</span>"; }).join("") +
-      (d.concepts.length > 5 ? '<span class="dd-chip more">+' + (d.concepts.length - 5) + "</span>" : "") + "</div></div>" +
+      (d.concepts.length > 5 ? '<span class="dd-chip more">+' + (d.concepts.length - 5) + "</span>" : "") + "</div>" +
+      (d.has_summary ? '<div class="dd-sum-links"><a class="btn sm" href="/interview-prep/design/' + d.slug + '/summary">📄 5-page summary</a>' +
+        '<a class="btn sm ghost" href="/interview-prep/design/' + d.slug + '/summary.pdf" target="_blank" rel="noopener">PDF</a></div>' : "") +
+      "</div>" +
       '<div class="q-body"></div></div>';
   }
 
@@ -306,6 +309,7 @@
       PrepScheduler.button("sddeep", d.title, meta.id, d.minutes) + "</span></div>" +
       '<nav class="dd-nav" aria-label="Sections">' + SECTIONS.map(function (s) {
         return '<a href="#dd-' + s[0] + '" data-sec="' + s[0] + '">' + s[1] + "</a>"; }).join("") +
+      (meta.has_summary ? '<a class="dl" href="/interview-prep/design/' + d.slug + '/summary">📄 5-page summary</a>' : "") +
       '<a class="dl" href="/interview-prep/design/' + d.slug + '/pdf" target="_blank" rel="noopener">PDF</a></nav>' +
       '<div class="q-body">' + body + "</div></div>";
     panelState();

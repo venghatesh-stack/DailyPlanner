@@ -16,6 +16,21 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DIR = os.path.join(HERE, "sd_deep")
+#: One 5-page summary per design: sd_deep/summaries/<slug>.md
+SUMMARY_DIR = os.path.join(DIR, "summaries")
+
+
+def summary_path(slug):
+    return os.path.join(SUMMARY_DIR, slug + ".md")
+
+
+def summary_text(slug):
+    """The design's 5-page summary (Markdown), or None if it has none yet."""
+    try:
+        with open(summary_path(slug), encoding="utf-8") as fh:
+            return fh.read()
+    except OSError:
+        return None
 
 GROUPS = {
     "classic": "Core classic products",
@@ -173,6 +188,7 @@ def summary_list():
         "counts": {"concepts": len(d["concepts"]), "quiz": len(d["quiz"]),
                    "edge_cases": len(d["edge_cases"])},
         "concepts": [c["name"] for c in d["concepts"]],
+        "has_summary": os.path.exists(summary_path(d["slug"])),
     } for d in DESIGNS]
 
 
