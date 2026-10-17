@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='design-system.css') }}">
 <script src="/static/js/vendor/feather-4.29.2.min.js"></script>
 <script src="{{ url_for('static', filename='js/global.js') }}"></script>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="/static/js/vendor/marked-12.0.2.min.js"></script>
 <style>
   body { background: var(--color-bg); color: var(--color-text); font-family: var(--font-family); margin: 0; }
   .wrap { max-width: 820px; margin: 0 auto; padding: 16px 18px 80px; }
@@ -44,7 +44,7 @@
     {% for g in guides %}
       <a href="/interview-prep/guides/{{ g.slug }}" class="{{ 'on' if g.slug == slug else '' }}">{{ g.title }}</a>
     {% endfor %}
-    <a href="javascript:window.print()" class="print-btn" title="Save as PDF / print">⤓ PDF</a>
+    <a href="/interview-prep/guides/{{ slug }}/pdf" class="print-btn" title="Download as PDF (large, phone-friendly text)" target="_blank" rel="noopener">⤓ PDF</a>
   </div>
   <div class="md" id="md-out">Loading…</div>
 </div>

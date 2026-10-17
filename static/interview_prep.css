@@ -691,3 +691,11 @@ html.fa-noscroll, html.fa-noscroll body { overflow: hidden; }
 /* The list too: 70 cards of summaries and chips cost ~750 ms of first layout
    (CPU slowed 4x) before any of it could be tapped; cards off screen now wait. */
 #dd-list > .dd-card { content-visibility: auto; contain-intrinsic-size: auto 190px; }
+
+/* System design: the 5-page summary card at the top of the tab */
+.sd-summary-card { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between;
+  margin: 0 0 14px; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--color-border); background: var(--color-surface); }
+.sd-summary-card b { display: block; font-size: 15px; margin-bottom: 2px; }
+.sd-summary-card span { font-size: 13.5px; color: var(--color-text-secondary); }
+.sd-summary-card > div:first-child { flex: 1 1 280px; }
+.sd-summary-act { display: flex; gap: 8px; }

@@ -311,6 +311,8 @@ _GUIDES = {
                "AI SDE Interview Plan (Amazon/Google)"),
     "system-design": ("SYSTEM_DESIGN_ECOMMERCE_BANK.md",
                       "System Design Bank (reference)"),
+    "system-design-summary": ("SYSTEM_DESIGN_5_PAGE_SUMMARY.md",
+                              "System design in 5 pages"),
 }
 
 
@@ -1961,6 +1963,138 @@ def guides(slug=None):
         "prep_guide.html", content=content, title=title, slug=slug,
         guides=[{"slug": s, "title": t} for s, (_, t) in _GUIDES.items()],
     )
+
+
+def _guide_text(slug):
+    """(title, markdown) of a shipped guide, or (None, None)."""
+    import os
+    from flask import current_app
+    entry = _GUIDES.get(slug)
+    if not entry:
+        return None, None
+    filename, title = entry
+    for path in (os.path.join(current_app.root_path, filename), os.path.join(os.getcwd(), filename)):
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                return title, f.read()
+    return title, None
+
+
+#: Guides are short documents read on a phone: 14pt body by default (the
+#: banks' 26pt default suits one-entry-per-page exports, not a 5-page read).
+_GUIDE_PDF_PT = 14
+
+
+def _guide_pdf_bytes(title, md, body_pt=_GUIDE_PDF_PT):
+    """A shipped Markdown guide as a PDF: headings, paragraphs, bullet and
+    numbered lists, **bold** lead-ins, block quotes and code fences. Raises
+    ImportError if fpdf2 isn't installed."""
+    from fpdf import FPDF
+    from fpdf.enums import XPos, YPos
+    NX, NY = XPos.LMARGIN, YPos.NEXT
+    body_pt = max(9, min(_PDF_MAX_PT, float(body_pt or _GUIDE_PDF_PT)))
+    MARGIN = 14
+    pdf = FPDF(format="A4")
+    pdf.set_auto_page_break(auto=True, margin=MARGIN)
+    pdf.set_margins(MARGIN, MARGIN, MARGIN)
+    SANS, MONO, unicode_ok = _pdf_register_fonts(pdf)
+    txt = (lambda t: t or "") if unicode_ok else _latin1
+    pdf.set_title(title or "Interview prep guide")
+    pdf.set_lang("en")
+    pdf.add_page()
+
+    def lh(size, k=1.32):
+        return size * 0.3528 * k
+
+    def para(text, size=body_pt, style="", indent=0, gap=1.6, bullet=None):
+        text = re.sub(r"`([^`]+)`", r"\1", text.strip())
+        pdf.set_font(SANS, style, size)
+        if bullet:
+            pdf.set_x(MARGIN + indent)
+            bw = pdf.get_string_width(bullet + " ") + 1
+            y = pdf.get_y()
+            pdf.cell(bw, lh(size), txt(bullet))
+            pdf.set_xy(MARGIN + indent + bw, y)
+            pdf.multi_cell(pdf.w - MARGIN - (MARGIN + indent + bw), lh(size), txt(text),
+                           markdown=True, align="L", new_x=NX, new_y=NY)
+        else:
+            pdf.set_x(MARGIN + indent)
+            pdf.multi_cell(pdf.w - MARGIN - (MARGIN + indent), lh(size), txt(text),
+                           markdown=True, align="L", new_x=NX, new_y=NY)
+        pdf.ln(gap)
+
+    lines = md.replace("\r", "").split("\n")
+    i, buf = 0, []
+    seen_h2 = False
+
+    def flush():
+        if buf:
+            para(" ".join(x.strip() for x in buf))
+            buf.clear()
+
+    while i < len(lines):
+        line = lines[i]
+        st = line.strip()
+        if st.startswith("```"):
+            flush()
+            code = []
+            i += 1
+            while i < len(lines) and not lines[i].strip().startswith("```"):
+                code.append(lines[i]); i += 1
+            pdf.set_font(MONO, "", body_pt * 0.72)
+            pdf.set_fill_color(242, 242, 238)
+            pdf.multi_cell(0, lh(body_pt * 0.72, 1.25), txt("\n".join(code)), fill=True, new_x=NX, new_y=NY)
+            pdf.ln(2)
+        elif not st:
+            flush()
+        elif st.startswith("# "):
+            flush(); para(st[2:], size=body_pt * 1.7, style="B", gap=2.5)
+        elif st.startswith("## "):
+            flush()
+            # A guide whose sections are its pages ("## Page 2. ...") starts
+            # each on a fresh page; otherwise only avoid an orphaned heading.
+            if (re.match(r"^## Page \d", st) and seen_h2) or pdf.get_y() > pdf.h - MARGIN - lh(body_pt) * 6:
+                pdf.add_page()
+            seen_h2 = True
+            pdf.ln(2)
+            para(st[3:], size=body_pt * 1.25, style="B", gap=1)
+            pdf.set_draw_color(200, 200, 195)
+            pdf.line(MARGIN, pdf.get_y(), pdf.w - MARGIN, pdf.get_y())
+            pdf.ln(2.5)
+        elif st.startswith("### "):
+            flush(); para(st[4:], size=body_pt * 1.08, style="B", gap=1)
+        elif re.match(r"^[-*]\s+", st):
+            flush(); para(re.sub(r"^[-*]\s+", "", st), indent=2, bullet="\u2022" if unicode_ok else "-", gap=1.2)
+        elif re.match(r"^\d+[.)]\s+", st):
+            flush(); n = re.match(r"^(\d+)[.)]\s+", st).group(1)
+            para(re.sub(r"^\d+[.)]\s+", "", st), indent=2, bullet=n + ".", gap=1.2)
+        elif st.startswith("> "):
+            flush(); para(st[2:], indent=4, gap=1.6)
+        else:
+            buf.append(line)
+        i += 1
+    flush()
+    return bytes(pdf.output())
+
+
+@interview_prep_bp.route("/interview-prep/guides/<slug>/pdf", methods=["GET"])
+@login_required
+def guide_pdf(slug):
+    """A shipped guide as a PDF (14pt body by default; ?fs= to change)."""
+    from flask import abort
+    title, md = _guide_text(slug)
+    if not md:
+        abort(404)
+    raw = (request.args.get("fs") or "").strip()
+    try:
+        pt = float(raw) if raw else _GUIDE_PDF_PT
+    except ValueError:
+        pt = _GUIDE_PDF_PT
+    try:
+        pdf = _guide_pdf_bytes(title, md, body_pt=pt)
+    except ImportError:
+        return redirect(f"/interview-prep/guides/{slug}")
+    return _pdf_response(pdf, slug + ".pdf")
 
 
 @interview_prep_bp.route("/api/interview-prep", methods=["GET"])

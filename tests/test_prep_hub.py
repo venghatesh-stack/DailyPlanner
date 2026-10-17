@@ -867,3 +867,15 @@ def test_key_kind_reads_new_and_legacy_keys():
     assert ts.key_kind("sb_secret_x") == "secret" and ts.key_kind("sb_publishable_x") == "public"
     assert ts.key_kind(jwt("service_role")) == "secret" and ts.key_kind(jwt("anon")) == "public"
     assert ts.key_kind("garbage") == "unknown"
+
+
+def test_system_design_five_page_summary(auth_client):
+    html = auth_client.get("/interview-prep/guides/system-design-summary").get_data(as_text=True)
+    assert "System design in 5 pages" in html and "Page 3. The pattern behind each family" in html
+    tab = auth_client.get("/interview-prep/design").get_data(as_text=True)
+    assert "/interview-prep/guides/system-design-summary" in tab
+    r = auth_client.get("/interview-prep/guides/system-design-summary/pdf?fs=10.5")
+    if r.status_code == 200 and r.mimetype == "application/pdf":
+        import re
+        assert len(re.findall(rb"/Type\s*/Page\b", r.data)) == 5
+    assert auth_client.get("/interview-prep/guides/nope/pdf").status_code == 404
