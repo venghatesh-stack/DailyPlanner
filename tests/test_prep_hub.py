@@ -879,3 +879,22 @@ def test_system_design_five_page_summary(auth_client):
         import re
         assert len(re.findall(rb"/Type\s*/Page\b", r.data)) == 5
     assert auth_client.get("/interview-prep/guides/nope/pdf").status_code == 404
+
+
+def test_deep_dive_five_page_summaries(auth_client):
+    import os, re
+    import sd_deep_bank
+    have = [d["slug"] for d in sd_deep_bank.DESIGNS if os.path.exists(sd_deep_bank.summary_path(d["slug"]))]
+    assert "uber" in have
+    lst = auth_client.get("/api/sd-deep").get_json()
+    items = lst.get("designs") or lst.get("items") or []
+    assert any(x.get("has_summary") for x in items if x.get("slug") == "uber")
+    html = auth_client.get("/interview-prep/design/uber/summary").get_data(as_text=True)
+    assert "5-page summary" in html and "Page 5. Say it in the interview" in html
+    r = auth_client.get("/interview-prep/design/uber/summary.pdf")
+    if r.mimetype == "application/pdf":
+        assert len(re.findall(rb"/Type\s*/Page\b", r.data)) == 5
+    for slug in have:  # every shipped summary keeps the 5-page shape
+        md = sd_deep_bank.summary_text(slug)
+        assert [int(n) for n in re.findall(r"^## Page (\d)\. ", md, re.M)] == [1, 2, 3, 4, 5], slug
+    assert auth_client.get("/interview-prep/design/not-a-design/summary").status_code == 404
