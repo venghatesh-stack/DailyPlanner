@@ -911,3 +911,12 @@ def test_system_design_phrases_guide(auth_client):
     assert b"/interview-prep/guides/system-design-phrases" in r.data
     r = client.get("/interview-prep/design/uber/summary")
     assert b"system-design-phrases" in r.data
+
+
+def test_chanakya_niti_guide(auth_client):
+    client = auth_client
+    r = client.get("/interview-prep/guides/chanakya-niti")
+    assert r.status_code == 200 and b"Kah kalah" in r.data
+    r = client.get("/interview-prep/guides/chanakya-niti/pdf")
+    assert r.status_code == 200 and r.data[:4] == b"%PDF"
+    assert b"/interview-prep/guides/chanakya-niti" in client.get("/interview-prep").data

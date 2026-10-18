@@ -315,6 +315,8 @@ _GUIDES = {
                               "System design in 5 pages"),
     "system-design-phrases": ("SYSTEM_DESIGN_PHRASES.md",
                               "System design: what to say, step by step"),
+    "chanakya-niti": ("CHANAKYA_NITI_GUIDE.md",
+                      "Chanakya Niti: a detailed guide"),
 }
 
 
@@ -1993,6 +1995,7 @@ def _guide_pdf_bytes(title, md, body_pt=_GUIDE_PDF_PT):
     ImportError if fpdf2 isn't installed."""
     from fpdf import FPDF
     from fpdf.enums import XPos, YPos
+    from fpdf.fonts import FontFace
     NX, NY = XPos.LMARGIN, YPos.NEXT
     body_pt = max(9, min(_PDF_MAX_PT, float(body_pt or _GUIDE_PDF_PT)))
     MARGIN = 14
@@ -2008,8 +2011,12 @@ def _guide_pdf_bytes(title, md, body_pt=_GUIDE_PDF_PT):
     def lh(size, k=1.32):
         return size * 0.3528 * k
 
+    def italics(text):
+        # Markdown *italic* -> fpdf2's __italic__ (its markup has no single *).
+        return re.sub(r"(?<![*\w])\*(?!\*)([^*\n]+?)(?<!\s)\*(?![*\w])", r"__\1__", text)
+
     def para(text, size=body_pt, style="", indent=0, gap=1.6, bullet=None):
-        text = re.sub(r"`([^`]+)`", r"\1", text.strip())
+        text = italics(re.sub(r"`([^`]+)`", r"\1", text.strip()))
         pdf.set_font(SANS, style, size)
         if bullet:
             pdf.set_x(MARGIN + indent)
@@ -2070,8 +2077,32 @@ def _guide_pdf_bytes(title, md, body_pt=_GUIDE_PDF_PT):
         elif re.match(r"^\d+[.)]\s+", st):
             flush(); n = re.match(r"^(\d+)[.)]\s+", st).group(1)
             para(re.sub(r"^\d+[.)]\s+", "", st), indent=2, bullet=n + ".", gap=1.2)
+        elif st.startswith("|") and st.endswith("|"):
+            flush()
+            rows = []
+            while i < len(lines) and lines[i].strip().startswith("|"):
+                cells = [c.strip() for c in lines[i].strip().strip("|").split("|")]
+                if not all(re.fullmatch(r":?-{2,}:?", c) for c in cells):
+                    rows.append(cells)
+                i += 1
+            i -= 1
+            if rows:
+                ncol = max(len(r) for r in rows)
+                tsize = body_pt * 0.82
+                pdf.set_font(SANS, "", tsize)
+                pdf.set_draw_color(205, 205, 200)
+                with pdf.table(markdown=True, text_align="LEFT", line_height=lh(tsize),
+                               padding=1.2, first_row_as_headings=True,
+                               headings_style=FontFace(emphasis="BOLD", fill_color=(240, 240, 234))) as tb:
+                    for r in rows:
+                        row = tb.row()
+                        for c in (r + [""] * ncol)[:ncol]:
+                            row.cell(txt(italics(re.sub(r"`([^`]+)`", r"\1", c))))
+                pdf.ln(2.5)
+        elif st == ">":
+            flush()
         elif st.startswith("> "):
-            flush(); para(st[2:], indent=4, gap=1.6)
+            flush(); para(st[2:], indent=4, gap=0.6)
         else:
             buf.append(line)
         i += 1
