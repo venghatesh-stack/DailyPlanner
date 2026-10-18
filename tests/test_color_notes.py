@@ -242,3 +242,31 @@ def test_scheduler_calls_color_note_reminders():
     import inspect
     from services import push_scheduler
     assert "color_note_reminders.fire(user_id, now_local)" in inspect.getsource(push_scheduler.tick)
+
+
+def test_pin_to_notification_bar(auth_client, notes, monkeypatch):
+    from services import push_service
+    sent = []
+    monkeypatch.setattr(push_service, "send_to_user", lambda uid, **kw: sent.append(kw) or (1, 0))
+    nid = auth_client.post("/api/color-notes", json={"kind": "checklist", "title": "Shop",
+                                                      "items": [{"text": "Milk"}, {"text": "Eggs", "done": True}]}).get_json()["item"]["id"]
+    j = auth_client.post(f"/api/color-notes/{nid}/notify", json={"on": True}).get_json()
+    assert j["on"] is True and j["sent"] == 1 and j["item"]["notify_pinned"] is True
+    kw = sent[-1]
+    assert kw["title"] == "\U0001F4CC Shop" and kw["body"] == "☐ Milk\n☑ 1 done"
+    assert kw["tag"] == f"cnote-pin-{nid}" and kw["extra"]["silent"] is True and kw["extra"]["requireInteraction"] is True
+    # Off: no push, flag cleared. Trash also clears it.
+    j = auth_client.post(f"/api/color-notes/{nid}/notify", json={"on": False}).get_json()
+    assert j["item"]["notify_pinned"] is False and len(sent) == 1
+    auth_client.post(f"/api/color-notes/{nid}/notify", json={"on": True})
+    assert auth_client.post(f"/api/color-notes/{nid}/trash").get_json()["item"]["notify_pinned"] is False
+    assert auth_client.post(f"/api/color-notes/{nid}/notify", json={"on": True}).status_code == 409
+
+
+def test_shade_text_limits():
+    from routes.color_notes import shade_text
+    many = [{"text": f"item {i}"} for i in range(14)]
+    out = shade_text({"kind": "checklist", "items": many})
+    assert out.count("☐") == 10 and out.endswith("+4 more")
+    assert shade_text({"kind": "text", "body": ""}) == "Tap to open"
+    assert len(shade_text({"kind": "text", "body": "x" * 1000})) == 400

@@ -28,6 +28,7 @@ create table if not exists color_notes (
   remind_at        timestamptz,
   remind_repeat    text not null default 'none',      -- none|daily|weekly|monthly|yearly
   last_reminded_at timestamptz,
+  notify_pinned    boolean not null default false,       -- shown in the notification shade
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now(),
   deleted_at       timestamptz,
@@ -41,5 +42,8 @@ create index if not exists color_notes_user_idx
 create index if not exists color_notes_remind_idx
   on color_notes (user_id, remind_at)
   where remind_at is not null and deleted_at is null and purged_at is null;
+
+-- Added after the first version (safe if the table already exists):
+alter table color_notes add column if not exists notify_pinned boolean not null default false;
 
 alter table color_notes enable row level security;

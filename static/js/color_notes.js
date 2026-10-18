@@ -76,6 +76,31 @@
     return j;
   }
 
+  // ── notification-shade pin (the closest a web app gets to a widget) ──
+  function closeShade(id) {
+    if (!("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.ready.then(r => r.getNotifications({ tag: "cnote-pin-" + id }))
+      .then(ns => ns.forEach(n => n.close())).catch(() => {});
+  }
+  async function shade(id, on, quiet) {
+    try {
+      if (on && window.ClPush && "Notification" in window) {
+        const sub = await ClPush.currentSubscription();
+        if (!sub || Notification.permission !== "granted") await ClPush.subscribe();
+      }
+      const j = await api("/api/color-notes/" + encodeURIComponent(id) + "/notify", { on: on });
+      if (j.item) upsert(j.item);
+      if (!on) closeShade(id);
+      if (!quiet && window.showToast) {
+        if (on && !j.sent) showToast("Pinned, but no device has notifications turned on.", "warning");
+        else showToast(on ? "Pinned to your notification bar" : "Removed from the notification bar", "success");
+      }
+      render();
+    } catch (e) {
+      if (!quiet && window.showToast) showToast(e.message, "error");
+    }
+  }
+
   function byId(id) { return state.notes.find(n => n.id === id); }
   function upsert(note) {
     const i = state.notes.findIndex(n => n.id === note.id);
@@ -135,6 +160,7 @@
       meta.push('<span class="cn-chip' + (late ? " late" : "") + '">' + icon("bell") + esc(whenLabel(n.remind_at)) +
         (REPEAT_LABEL[n.remind_repeat] ? " · " + REPEAT_LABEL[n.remind_repeat] : "") + "</span>");
     }
+    if (n.notify_pinned && !n.deleted_at) meta.push('<span class="cn-chip" title="Shown in your notification bar">' + icon("smartphone") + "Bar</span>");
     if (n.kind === "checklist" && items.length) meta.push("<span>" + items.filter(i => i.done).length + "/" + items.length + "</span>");
     meta.push("<span>" + esc(state.tab === "trash" ? "Deleted " + ago(n.deleted_at) : ago(n.updated_at)) + "</span>");
     return '<div class="cn-card cn-c-' + esc(n.color || "yellow") + '" role="button" tabindex="0" data-id="' + esc(n.id) +
@@ -295,7 +321,7 @@
       if (window.showToast) showToast(e.message, "error");
       load();
     }
-    if (action === "trash") snack("Moved to Trash", () => doAction(id, "restore"));
+    if (action === "trash") { if (n.notify_pinned) { n.notify_pinned = false; closeShade(id); } snack("Moved to Trash", () => doAction(id, "restore")); }
   }
 
   // ── editor ───────────────────────────────────────────────────────────
@@ -346,6 +372,7 @@
       ? mi("restore", "rotate-ccw", "Restore") + mi("purge", "trash-2", "Delete forever", "danger")
       : mi("convert", n.kind === "checklist" ? "file-text" : "check-square", n.kind === "checklist" ? "Convert to text note" : "Convert to checklist") +
         (n.kind === "checklist" ? mi("uncheck", "square", "Uncheck all") + mi("clear-done", "x-square", "Delete checked items") : "") +
+        (n.id ? mi("shade", "smartphone", n.notify_pinned ? "Remove from notification bar" : "Pin to notification bar") : "") +
         mi("archive", "archive", n.is_archived ? "Move out of Archive" : "Archive") +
         mi("share", "share-2", "Share or copy") +
         mi("trash", "trash-2", "Move to Trash", "danger");
@@ -387,6 +414,7 @@
   }
 
   function change(fields) {
+    if ("title" in fields || "body" in fields || "items" in fields || "kind" in fields) editor.changedContent = true;
     Object.assign(editor.note, fields);
     Object.assign(editor.dirty, fields);
     $("#cn-saved").textContent = "Editing…";
@@ -431,7 +459,10 @@
   async function closeEditor(fromPop) {
     if (!editor.note) return;
     const n = editor.note;
+    const changed = editor.changedContent;
+    editor.changedContent = false;
     await flush();
+    if (changed && n.id && n.notify_pinned && !n.deleted_at) shade(n.id, true, true);
     sheet.hidden = true;
     $("#cn-scrim").hidden = true;
     closePops();
@@ -479,6 +510,10 @@
       change({ is_archived: val });
       await closeEditor();
       snack(val ? "Archived" : "Moved out of Archive", () => patch(n.id, { is_archived: !val }));
+    } else if (act === "shade") {
+      await flush();
+      await shade(n.id, !n.notify_pinned);
+      if (editor.note) { editor.note.notify_pinned = (byId(n.id) || {}).notify_pinned; paintEditor(); }
     } else if (act === "share") {
       const text = (n.title ? n.title + "\n\n" : "") + (n.kind === "checklist" ? (n.items || []).map(i => (i.done ? "☑ " : "☐ ") + i.text).join("\n") : n.body || "");
       try {
@@ -555,7 +590,7 @@
     if (tick && !n.deleted_at) {
       e.stopPropagation();
       const items = (n.items || []).map(i => i.id === tick.dataset.tick ? Object.assign({}, i, { done: !i.done }) : i);
-      patch(n.id, { items: items });
+      patch(n.id, { items: items }).then(() => { if (n.notify_pinned) shade(n.id, true, true); });
       return;
     }
     openEditor(Object.assign({}, n, { items: (n.items || []).map(i => Object.assign({}, i)) }), { focus: false });

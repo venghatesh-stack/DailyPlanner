@@ -40,7 +40,10 @@ MAX_BODY = 100_000
 MAX_ITEMS = 500
 MAX_ITEM_TEXT = 2_000
 FIELDS = ("id,kind,title,body,items,color,is_pinned,is_archived,remind_at,remind_repeat,"
-          "last_reminded_at,created_at,updated_at,deleted_at")
+          "last_reminded_at,notify_pinned,created_at,updated_at,deleted_at")
+# A note in the notification shade: silent, no vibration, replaced in place
+# when refreshed, and kept until dismissed (same as the pinned Day Board).
+SHADE = {"silent": True, "renotify": False, "vibrate": [], "requireInteraction": True}
 
 
 def _now():
@@ -192,7 +195,7 @@ def _set(note_id, fields):
 @color_notes_bp.route("/api/color-notes/<note_id>/trash", methods=["POST"])
 @login_required
 def trash_note(note_id):
-    return _set(note_id, {"deleted_at": _now(), "is_pinned": False})
+    return _set(note_id, {"deleted_at": _now(), "is_pinned": False, "notify_pinned": False})
 
 
 @color_notes_bp.route("/api/color-notes/<note_id>/restore", methods=["POST"])
@@ -222,3 +225,45 @@ def empty_trash():
     update(TABLE, {"user_id": f"eq.{user_id}", "deleted_at": "not.is.null", "purged_at": "is.null"},
            {"purged_at": _now(), "remind_at": None})
     return jsonify({"ok": True})
+
+
+def shade_text(note, limit=400):
+    """What the pinned notification shows: the text, or one line per open item."""
+    if note.get("kind") == "checklist":
+        items = [i for i in (note.get("items") or []) if (i.get("text") or "").strip()]
+        open_items = [i for i in items if not i.get("done")]
+        lines = ["\u2610 " + i["text"].strip() for i in open_items[:10]]
+        if len(open_items) > 10:
+            lines.append(f"+{len(open_items) - 10} more")
+        done = len(items) - len(open_items)
+        if done:
+            lines.append(f"\u2611 {done} done")
+        text = "\n".join(lines) or "All items checked"
+    else:
+        text = (note.get("body") or "").strip() or "Tap to open"
+    return text if len(text) <= limit else text[: limit - 1].rstrip() + "\u2026"
+
+
+@color_notes_bp.route("/api/color-notes/<note_id>/notify", methods=["POST"])
+@login_required
+def notify_pin(note_id):
+    """Pin a note to the notification shade (on) or stop showing it (off).
+    Calling it again with on=true refreshes the notification in place."""
+    from services import push_service
+    user_id = session["user_id"]
+    note = _one(user_id, note_id)
+    if not note:
+        return jsonify({"error": "Note not found"}), 404
+    on = bool((request.get_json(silent=True) or {}).get("on", True))
+    if on and note.get("deleted_at"):
+        return jsonify({"error": "Restore the note first"}), 409
+    update(TABLE, {"id": f"eq.{note_id}", "user_id": f"eq.{user_id}"}, {"notify_pinned": on})
+    sent = failed = 0
+    if on:
+        title = (note.get("title") or "").strip() or "Note"
+        sent, failed = push_service.send_to_user(
+            user_id, title=f"\U0001F4CC {title}", body=shade_text(note),
+            url=f"/color-notes?open={note_id}", tag=f"cnote-pin-{note_id}",
+            extra=SHADE, urgency="normal")
+    return jsonify({"item": _one(user_id, note_id), "on": on, "sent": sent, "failed": failed,
+                    "tag": f"cnote-pin-{note_id}"})
