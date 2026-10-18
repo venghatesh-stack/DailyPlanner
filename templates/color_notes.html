@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<title>Color Notes — DailyPlanner</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='design-system.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='color_notes.css') }}">
+<script src="/static/js/vendor/feather-4.29.2.min.js"></script>
+<script src="{{ url_for('static', filename='js/global.js') }}"></script>
+<script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+<style>body { background: var(--color-bg); color: var(--color-text); font-family: var(--font-family); margin: 0; }</style>
+{% include "_pwa_head.html" %}
+</head>
+<body>
+<div class="nav-icons">{% include "_top_nav.html" %}</div>
+
+<main class="cn-app" id="cn" data-colors="{{ colors|join(',') }}">
+  <header class="cn-head">
+    <div>
+      <h1>Color Notes</h1>
+      <p class="cn-sub" id="cn-sub">Sticky notes and checklists, in colour.</p>
+    </div>
+    <div class="cn-tools">
+      <button type="button" class="cn-btn icon" id="cn-layout" title="Switch between grid and list" aria-label="Switch between grid and list"><i data-feather="list"></i></button>
+      <label class="sr-only" for="cn-sort" style="position:absolute;left:-9999px">Sort notes</label>
+      <select class="cn-select" id="cn-sort" aria-label="Sort notes">
+        <option value="updated">Last edited</option>
+        <option value="created">Date created</option>
+        <option value="title">Title A–Z</option>
+        <option value="color">Colour</option>
+        <option value="reminder">Reminder time</option>
+      </select>
+    </div>
+  </header>
+
+  <div class="cn-banner" id="cn-migrate" hidden>
+    <span>Color Notes needs its table. Run <b>MIGRATION_COLOR_NOTES.sql</b> in the Supabase SQL editor, then reload.</span>
+  </div>
+
+  <div class="cn-search">
+    <i data-feather="search"></i>
+    <input type="search" id="cn-q" placeholder="Search notes" aria-label="Search notes" autocomplete="off">
+  </div>
+  <div style="height:10px"></div>
+
+  <div class="cn-tabs" role="group" aria-label="Show">
+    <button type="button" data-tab="notes" aria-pressed="true">Notes <span class="n" id="cn-n-notes"></span></button>
+    <button type="button" data-tab="calendar" aria-pressed="false">Calendar</button>
+    <button type="button" data-tab="archive" aria-pressed="false">Archive <span class="n" id="cn-n-archive"></span></button>
+    <button type="button" data-tab="trash" aria-pressed="false">Trash <span class="n" id="cn-n-trash"></span></button>
+  </div>
+
+  <div class="cn-colors" id="cn-colors" role="group" aria-label="Filter by colour">
+    <button type="button" class="cn-dot-all" data-color="" aria-pressed="true">All colours</button>
+    {% for c in colors %}<button type="button" class="cn-dot cn-c-{{ c }}" data-color="{{ c }}" aria-pressed="false" title="{{ c|capitalize }} notes" aria-label="Show {{ c }} notes"></button>{% endfor %}
+  </div>
+
+  <div id="cn-trashbar" class="cn-banner" hidden>
+    <span>Notes in Trash can be restored. Deleting forever removes them from every list.</span>
+    <button type="button" class="cn-btn danger" id="cn-empty-trash">Empty Trash</button>
+  </div>
+
+  <section id="cn-calendar" hidden></section>
+  <div class="cn-grid" id="cn-grid" aria-live="polite"></div>
+</main>
+
+<div class="cn-fab" id="cn-fab">
+  <div class="cn-fab-menu" id="cn-fab-menu">
+    <button type="button" class="cn-btn" data-new="checklist"><i data-feather="check-square"></i>Checklist</button>
+    <button type="button" class="cn-btn" data-new="text"><i data-feather="file-text"></i>Text note</button>
+  </div>
+  <button type="button" class="cn-fab-main" id="cn-fab-main" aria-label="New note" aria-expanded="false" title="New note (N)"><i data-feather="plus"></i></button>
+</div>
+
+<!-- Editor -->
+<div class="cn-scrim" id="cn-scrim" hidden></div>
+<section class="cn-sheet" id="cn-sheet" role="dialog" aria-modal="true" aria-label="Edit note" hidden>
+  <div class="cn-bar">
+    <button type="button" class="cn-ib" id="cn-back" aria-label="Done" title="Done"><i data-feather="arrow-left"></i></button>
+    <span class="sp"></span>
+    <span class="cn-saved" id="cn-saved" aria-live="polite"></span>
+    <button type="button" class="cn-ib" id="cn-pin" aria-pressed="false" aria-label="Pin to top" title="Pin to top"><i data-feather="bookmark"></i></button>
+    <button type="button" class="cn-ib" id="cn-bell" aria-label="Reminder" title="Reminder"><i data-feather="bell"></i></button>
+    <div style="position:relative">
+      <button type="button" class="cn-ib" id="cn-paint" aria-label="Colour" title="Colour" aria-expanded="false"><i data-feather="droplet"></i></button>
+      <div class="cn-pop" id="cn-paint-pop" hidden>
+        <div class="cn-swatches">
+          {% for c in colors %}<button type="button" class="cn-dot cn-c-{{ c }}" data-paint="{{ c }}" aria-label="{{ c|capitalize }}" title="{{ c|capitalize }}"></button>{% endfor %}
+        </div>
+      </div>
+    </div>
+    <div style="position:relative">
+      <button type="button" class="cn-ib" id="cn-more" aria-label="More" title="More" aria-expanded="false"><i data-feather="more-vertical"></i></button>
+      <div class="cn-pop cn-menu" id="cn-more-pop" hidden></div>
+    </div>
+  </div>
+  <div class="cn-body" id="cn-body">
+    <button type="button" class="cn-remind-row" id="cn-remind-row" hidden><i data-feather="bell"></i><span></span></button>
+    <input class="cn-title" id="cn-title" placeholder="Title" maxlength="300" aria-label="Title">
+    <textarea class="cn-textarea" id="cn-text" placeholder="Note" aria-label="Note"></textarea>
+    <div id="cn-list" hidden></div>
+    <p class="cn-info" id="cn-info"></p>
+  </div>
+</section>
+
+<!-- Reminder -->
+<div class="cn-dlg-scrim" id="cn-rem-scrim" hidden></div>
+<div class="cn-dlg" id="cn-rem" role="dialog" aria-modal="true" aria-labelledby="cn-rem-h" hidden>
+  <h2 id="cn-rem-h">Reminder</h2>
+  <div class="cn-quick" id="cn-rem-quick">
+    <button type="button" data-q="later">Later today</button>
+    <button type="button" data-q="evening">This evening</button>
+    <button type="button" data-q="tomorrow">Tomorrow morning</button>
+    <button type="button" data-q="week">Next week</button>
+  </div>
+  <div class="cn-two">
+    <label class="cn-field">Date <input type="date" id="cn-rem-date"></label>
+    <label class="cn-field">Time <input type="time" id="cn-rem-time"></label>
+  </div>
+  <label class="cn-field">Repeat
+    <select id="cn-rem-repeat">
+      <option value="none">Does not repeat</option>
+      <option value="daily">Every day</option>
+      <option value="weekly">Every week</option>
+      <option value="monthly">Every month</option>
+      <option value="yearly">Every year</option>
+    </select>
+  </label>
+  <p class="cn-hint" id="cn-rem-push" hidden>Notifications are off on this device. <button type="button" id="cn-rem-enable">Turn them on</button> to get the reminder even when the app is closed.</p>
+  <div class="cn-dlg-actions">
+    <button type="button" class="cn-btn danger" id="cn-rem-clear">Remove</button>
+    <span style="flex:1"></span>
+    <button type="button" class="cn-btn" id="cn-rem-cancel">Cancel</button>
+    <button type="button" class="cn-btn primary" id="cn-rem-save">Save</button>
+  </div>
+</div>
+
+<div class="cn-snack" id="cn-snack" role="status" hidden><span></span><button type="button">Undo</button></div>
+
+<script src="{{ url_for('static', filename='js/color_notes.js') }}"></script>
+</body>
+</html>

@@ -82,6 +82,7 @@ def create_app():
     from routes.quotes import quotes_bp
     from routes.mythology import mythology_bp
     from routes.grocery import grocery_bp
+    from routes.color_notes import color_notes_bp
     from routes.travel_reads import travel_reads_bp
     from routes.shared import shared_bp
     from routes.tasks_bucket import tasks_bucket_bp
@@ -133,6 +134,7 @@ def create_app():
     app.register_blueprint(quotes_bp)
     app.register_blueprint(mythology_bp)
     app.register_blueprint(grocery_bp)
+    app.register_blueprint(color_notes_bp)
     app.register_blueprint(travel_reads_bp)
     app.register_blueprint(shared_bp)
     app.register_blueprint(tasks_bucket_bp)
@@ -229,6 +231,7 @@ def create_app():
     csrf.exempt(quotes_bp)
     csrf.exempt(mythology_bp)
     csrf.exempt(grocery_bp)
+    csrf.exempt(color_notes_bp)
     csrf.exempt(travel_reads_bp)
     csrf.exempt(shared_bp)
     csrf.exempt(tasks_bucket_bp)

@@ -30,6 +30,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from requests.exceptions import HTTPError
 
 from services import announcer_push
+from services import color_note_reminders
 from services import loud
 from services import push_service
 from services import review_reminders
@@ -336,6 +337,13 @@ def tick():
                             at=a_time, failed=failed)
             except Exception:
                 logger.debug("announcement push skipped for %s", user_id,
+                             exc_info=True)
+
+            # Color Notes reminders (one-off or repeating).
+            try:
+                color_note_reminders.fire(user_id, now_local)
+            except Exception:
+                logger.debug("color note reminder skipped for %s", user_id,
                              exc_info=True)
 
             # Spaced-repetition reviews due on Random thoughts (08:00, 20:00).

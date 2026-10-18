@@ -105,6 +105,12 @@
       "short_name": "Inbox",
       "url": "/inbox",
       "icons": [{ "src": "/static/icons/shortcuts/inbox.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "New color note",
+      "short_name": "Note",
+      "url": "/color-notes?new=text",
+      "icons": [{ "src": "/static/icons/shortcuts/colornote.png", "sizes": "192x192", "type": "image/png" }]
     }
   ],
   "file_handlers": [

@@ -930,6 +930,11 @@ button.nav-group-title:hover{background:var(--color-surface-secondary);color:var
         Notes
       </a>
 
+      <a href="/color-notes" data-match="^/color-notes" title="Color Notes — coloured sticky notes and checklists with reminders">
+        <i data-feather="layers"></i>
+        Color Notes
+      </a>
+
       <a href="/archive" data-match="^/archive" title="Archive — everything you have finished, grouped by the day you finished it">
         <i data-feather="archive"></i>
         Archive
@@ -2856,6 +2861,32 @@ const HELP_PAGES = [
           "Change the date range with the Week / Month / Quarter / Year buttons in the top-right.",
           "Financial tab opportunistically loads when the vault is unlocked — the overview tab never forces a vault challenge.",
           "Stuck high-priority tasks = oldest unfinished items tagged high priority. Pay them down before taking on new work."
+        ]
+      }
+    ]
+  },
+  {
+    match: /^\/color-notes/,
+    title: "Color Notes — sticky notes and checklists",
+    lead: "Quick coloured notes, like the ColorNote app. Each note is either free text or a checklist, and can have a reminder that arrives as a notification.",
+    sections: [
+      {
+        title: "Basics",
+        items: [
+          "Tap <b>+</b> and pick <b>Text note</b> or <b>Checklist</b>. Notes save by themselves as you type.",
+          "Change a note's colour with the 💧 button, and filter the board by colour with the dots at the top.",
+          "<b>Pin</b> keeps a note at the top. Sort by last edited, date created, title, colour or reminder time.",
+          "Tick checklist items right on the card without opening the note. Checked items move to the bottom.",
+          "In a checklist, <b>Enter</b> adds the next item, <b>Backspace</b> on an empty item removes it, and pasting several lines makes one item per line."
+        ]
+      },
+      {
+        title: "Reminders, archive and trash",
+        items: [
+          "The 🔔 button sets a reminder date and time, once or repeating every day, week, month or year. It arrives as a phone notification, even when the app is closed, if notifications are on.",
+          "<b>Calendar</b> shows which days have notes (by reminder and by date created). Tap a day to see them, or add a note with a reminder for that day.",
+          "<b>Archive</b> hides a note without deleting it. <b>Trash</b> keeps deleted notes until you restore them or delete them forever.",
+          "Keys: <code>N</code> new note, <code>L</code> new checklist, <code>/</code> search, <code>Esc</code> close."
         ]
       }
     ]
