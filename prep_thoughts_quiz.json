@@ -30484,5 +30484,103 @@
    "why": "Diagnosis by layer tells you where effort pays. Most failures here are context and prompt problems that a bigger model would not reliably fix.",
    "level": "Hard"
   }
+ ],
+ "A client sends a deeply nested JSON with 10,000+ objects, and deserialization takes 800 ms. What can you optimise?": [
+  {
+   "q": "A 10,000-object JSON request takes 800 ms to deserialize. What should you do first?",
+   "options": [
+    "Switch to a different JSON library straight away",
+    "Profile it and split the time into reading, parsing, mapping, validation and GC",
+    "Double the server's CPU",
+    "Turn on gzip compression"
+   ],
+   "answer": 1,
+   "why": "Without measuring you might fix the wrong thing. The parser is often not the main cost; setup, double conversion and GC frequently are.",
+   "level": "Easy"
+  },
+  {
+   "q": "The handler calls `new ObjectMapper().readValue(...)` on every request. What is the best fix?",
+   "options": [
+    "Create the mapper inside a try block",
+    "Call System.gc() after each request",
+    "Create one shared, configured mapper or ObjectReader at startup and reuse it",
+    "Use a new mapper per thread per request"
+   ],
+   "answer": 2,
+   "why": "ObjectMapper is thread-safe once configured and caches class information. Recreating it per request throws that work away every time.",
+   "level": "Easy"
+  },
+  {
+   "q": "Code parses the body with `readTree()` and then calls `treeToValue()` to get objects. Why is this slow?",
+   "options": [
+    "It builds the data twice: once as a generic tree and again as typed objects",
+    "readTree() is not thread-safe",
+    "treeToValue() skips validation",
+    "JsonNode cannot hold numbers"
+   ],
+   "answer": 0,
+   "why": "Binding directly to typed classes with readValue() does the work in one pass and creates far fewer objects.",
+   "level": "Medium"
+  },
+  {
+   "q": "Gzip shrinks the request by 85%, but deserialization time does not change. Why?",
+   "options": [
+    "Gzip is applied only to responses",
+    "Gzip makes parsing slower",
+    "The client ignored the gzip header",
+    "The server decompresses back to the same full JSON text and still parses all of it"
+   ],
+   "answer": 3,
+   "why": "Compression saves network time, not parsing work. To parse less, send less data: fewer fields, flatter structure, deltas.",
+   "level": "Medium"
+  },
+  {
+   "q": "Why does a streaming parser reduce garbage-collection pauses for a large array of items?",
+   "options": [
+    "Only one item or a small batch is alive at a time, so objects die young and are cheap to collect",
+    "Streaming parsers do not create any objects",
+    "Streaming turns off the garbage collector",
+    "Streaming stores items on disk instead of memory"
+   ],
+   "answer": 0,
+   "why": "Holding all 10,000 objects (and their nested lists and strings) at once fills the heap. Processing and releasing them one by one keeps memory small.",
+   "level": "Medium"
+  },
+  {
+   "q": "When is switching from JSON to Protobuf a good choice?",
+   "options": [
+    "For a public API used directly from browsers by many third parties",
+    "When you want humans to read the payload easily",
+    "When you control both the client and the server and want smaller, faster messages with a shared schema",
+    "When you cannot change the client at all"
+   ],
+   "answer": 2,
+   "why": "Protobuf needs both sides to share a schema and tooling. For internal service-to-service traffic it is a strong option; public APIs usually keep JSON.",
+   "level": "Medium"
+  },
+  {
+   "q": "An attacker sends JSON nested 100,000 levels deep. What is the main risk, and the fix?",
+   "options": [
+    "It only slows down that one request, so no fix is needed",
+    "It corrupts the database; use transactions",
+    "It breaks gzip; disable compression",
+    "A recursive parser can run out of stack or memory; set maximum nesting depth and body size limits"
+   ],
+   "answer": 3,
+   "why": "Deep nesting is a denial-of-service vector. Libraries such as Jackson 2.15+ enforce limits through StreamReadConstraints; also cap body size at the load balancer.",
+   "level": "Hard"
+  },
+  {
+   "q": "Sellers upload a full 50 MB catalogue that takes seconds to process even after optimisation. What is the best design?",
+   "options": [
+    "Raise the request timeout to two minutes",
+    "Accept the upload, return 202 Accepted with a job ID, and process it in the background with streaming",
+    "Ask sellers to retry until it succeeds",
+    "Parse it on the client and send objects one per request synchronously"
+   ],
+   "answer": 1,
+   "why": "Large work should be off the request path: the client gets a fast reply, and the job can be retried, split across workers and tracked.",
+   "level": "Hard"
+  }
  ]
 }
