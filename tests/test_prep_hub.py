@@ -898,3 +898,16 @@ def test_deep_dive_five_page_summaries(auth_client):
         md = sd_deep_bank.summary_text(slug)
         assert [int(n) for n in re.findall(r"^## Page (\d)\. ", md, re.M)] == [1, 2, 3, 4, 5], slug
     assert auth_client.get("/interview-prep/design/not-a-design/summary").status_code == 404
+
+
+def test_system_design_phrases_guide(auth_client):
+    client = auth_client
+    r = client.get("/interview-prep/guides/system-design-phrases")
+    assert r.status_code == 200
+    assert b"Rescue phrases" in r.data
+    r = client.get("/interview-prep/guides/system-design-phrases/pdf")
+    assert r.status_code == 200 and r.data[:4] == b"%PDF"
+    r = client.get("/interview-prep")
+    assert b"/interview-prep/guides/system-design-phrases" in r.data
+    r = client.get("/interview-prep/design/uber/summary")
+    assert b"system-design-phrases" in r.data

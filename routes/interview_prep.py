@@ -313,6 +313,8 @@ _GUIDES = {
                       "System Design Bank (reference)"),
     "system-design-summary": ("SYSTEM_DESIGN_5_PAGE_SUMMARY.md",
                               "System design in 5 pages"),
+    "system-design-phrases": ("SYSTEM_DESIGN_PHRASES.md",
+                              "System design: what to say, step by step"),
 }
 
 
