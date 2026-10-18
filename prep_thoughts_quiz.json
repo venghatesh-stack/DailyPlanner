@@ -30386,5 +30386,103 @@
    "why": "Each turn is a model call with a growing history, so long sessions summarise or drop old tool output. Keeping everything eventually overflows the window and dilutes attention.",
    "level": "Medium"
   }
+ ],
+ "Your RAG system retrieves the correct documents, but the LLM still generates incorrect answers. How would you identify whether the problem is in the context, the prompt or the model?": [
+  {
+   "q": "Logs show the right policy document was retrieved, yet the bot answers wrongly. What should you look at first?",
+   "options": [
+    "The embedding model's dimension size",
+    "Which GPU the model ran on",
+    "The exact final prompt the model received, to see if the answer-bearing passage is actually in it",
+    "The user's previous chat sessions"
+   ],
+   "answer": 2,
+   "why": "Retrieving the right document is not the same as the right passage reaching the model. Truncation, chunking and parsing all happen after search, so the logged final prompt is the ground truth.",
+   "level": "Easy"
+  },
+  {
+   "q": "With only the gold passage in the prompt, the model answers correctly. With the usual 12 retrieved chunks, it is wrong. Where is the problem?",
+   "options": [
+    "Context assembly: noise, ordering, or stale or conflicting chunks",
+    "The model is too small for the task",
+    "The embedding model is broken",
+    "The question is ambiguous"
+   ],
+   "answer": 0,
+   "why": "The oracle test shows the model and prompt can handle the question when the evidence is clean, so what differs is the assembled context.",
+   "level": "Easy"
+  },
+  {
+   "q": "Gold passage plus a short, clean prompt gives the right answer, but the production prompt does not. What do you do next?",
+   "options": [
+    "Switch to a bigger model",
+    "Re-embed all documents",
+    "Increase the number of retrieved chunks",
+    "Remove production prompt instructions one at a time to find the one that causes the error"
+   ],
+   "answer": 3,
+   "why": "The clean prompt test isolates the prompt as the cause. Removing instructions one by one finds the conflicting or misleading line, such as 'be generous to customers'.",
+   "level": "Medium"
+  },
+  {
+   "q": "The model correctly quotes 'large appliances: 10-day return window' but says a 12-day-old order can still be returned. What kind of failure is this?",
+   "options": [
+    "A retrieval failure",
+    "A reasoning failure in the model (date arithmetic), not a retrieval or context failure",
+    "A chunking failure",
+    "A prompt injection attack"
+   ],
+   "answer": 1,
+   "why": "Quoting correctly shows extraction worked. The wrong conclusion is a reasoning error, which is cheap to fix by computing the day count in code and passing it in.",
+   "level": "Medium"
+  },
+  {
+   "q": "You delete the gold passage from the prompt and the model's answer does not change at all. What does this suggest?",
+   "options": [
+    "The gold passage was correct and well used",
+    "The reranker is working perfectly",
+    "The model was answering from its training knowledge and ignoring the retrieved context",
+    "Temperature is set too low"
+   ],
+   "answer": 2,
+   "why": "If removing the evidence changes nothing, the evidence was not driving the answer. Strengthen 'answer only from sources' and ask the model to quote its evidence.",
+   "level": "Medium"
+  },
+  {
+   "q": "A failing question gives the right answer on some runs and the wrong one on others. How should you debug it?",
+   "options": [
+    "Judge it from a single run",
+    "Increase the temperature to get more variety",
+    "Ignore it, because it is sometimes right",
+    "Set temperature to 0 for debugging and measure the failure rate over several runs"
+   ],
+   "answer": 3,
+   "why": "Randomness hides the real cause. Fixing sampling and counting failures over several runs gives a fair comparison before and after each change.",
+   "level": "Medium"
+  },
+  {
+   "q": "Gold passage, clean prompt and a stronger model all still give the 'wrong' answer. What should you check?",
+   "options": [
+    "Buy an even larger model",
+    "Whether the expected answer (the label) is outdated or the question is ambiguous",
+    "Add more chunks to the prompt",
+    "Rewrite the embedding pipeline"
+   ],
+   "answer": 1,
+   "why": "When no layer change fixes it, the test case itself may be wrong. Labels written before a policy change are a common cause.",
+   "level": "Hard"
+  },
+  {
+   "q": "After tagging 60 failures, 27 are context, 14 prompt, 12 model and 7 bad labels. A teammate proposes moving every request to a bigger model. What is the best response?",
+   "options": [
+    "Fix the biggest group (context) first; a bigger model would address only about a fifth of failures at much higher cost",
+    "Agree, since a bigger model fixes everything",
+    "Only fix the labels",
+    "Stop using RAG altogether"
+   ],
+   "answer": 0,
+   "why": "Diagnosis by layer tells you where effort pays. Most failures here are context and prompt problems that a bigger model would not reliably fix.",
+   "level": "Hard"
+  }
  ]
 }
