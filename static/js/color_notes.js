@@ -746,6 +746,48 @@
     checkPush();
   });
 
+  // ── home-screen widget setup ─────────────────────────────────────────
+  async function loadDevices() {
+    const box = $("#cn-wd-list");
+    try {
+      const j = await api("/api/color-notes/widget-tokens");
+      if (!j.items || !j.items.length) { box.innerHTML = ""; return; }
+      box.innerHTML = '<div class="cn-devices"><h3>Connected phones</h3>' + j.items.map(t =>
+        '<div class="cn-dev"><div>' + esc(t.label) + "<span>" + (t.last_used_at ? "Last synced " + esc(ago(t.last_used_at)) : "Not synced yet") +
+        '</span></div><button type="button" class="cn-btn danger" data-revoke="' + esc(t.id) + '">Disconnect</button></div>').join("") + "</div>";
+    } catch (e) { box.innerHTML = ""; }
+  }
+  function openWidget() {
+    $("#cn-wd").hidden = false; $("#cn-wd-scrim").hidden = false;
+    $("#cn-wd-manual").hidden = true;
+    loadDevices();
+  }
+  function closeWidget() { $("#cn-wd").hidden = true; $("#cn-wd-scrim").hidden = true; }
+  $("#cn-widget-btn").addEventListener("click", openWidget);
+  $("#cn-wd-close").addEventListener("click", closeWidget);
+  $("#cn-wd-scrim").addEventListener("click", closeWidget);
+  $("#cn-wd-connect").addEventListener("click", async () => {
+    try {
+      const label = /Android/i.test(navigator.userAgent) ? "Android phone" : "Widget";
+      const j = await api("/api/color-notes/widget-token", { label: label });
+      $("#cn-wd-server").value = j.server; $("#cn-wd-token").value = j.token;
+      $("#cn-wd-manual").hidden = false;
+      loadDevices();
+      location.href = j.connect_url;          // opens the widget app if it is installed
+    } catch (e) { window.showToast && showToast(e.message, "error"); }
+  });
+  $("#cn-wd-copy").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText($("#cn-wd-token").value); window.showToast && showToast("Access code copied", "success"); }
+    catch (e) { $("#cn-wd-token").select(); }
+  });
+  $("#cn-wd-list").addEventListener("click", async e => {
+    const b = e.target.closest("[data-revoke]");
+    if (!b) return;
+    await api("/api/color-notes/widget-token/" + encodeURIComponent(b.dataset.revoke) + "/revoke", {});
+    window.showToast && showToast("Disconnected. That widget will stop updating.", "success");
+    loadDevices();
+  });
+
   // Back button / Escape closes the editor
   window.addEventListener("popstate", () => {
     if (!$("#cn-rem").hidden) { closeReminder(); history.pushState({ cnEditor: 1 }, ""); return; }
@@ -754,6 +796,7 @@
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") {
       if (!$("#cn-rem").hidden) { closeReminder(); return; }
+      if (!$("#cn-wd").hidden) { closeWidget(); return; }
       if ($$(".cn-pop").some(p => !p.hidden)) { closePops(); return; }
       if (editor.note) { closeEditor(); return; }
       fab.classList.remove("open");
@@ -778,6 +821,7 @@
     if (open || nw) history.replaceState(null, "", location.pathname);
     if (open && byId(open)) { const n = byId(open); openEditor(Object.assign({}, n, { items: (n.items || []).map(i => Object.assign({}, i)) }), { focus: false }); }
     else if (nw === "text" || nw === "checklist") newNote(nw);
+    if (p.get("widget") === "1") openWidget();
   });
   window.ColorNotes = { state: state, render: render, load: load };
 })();

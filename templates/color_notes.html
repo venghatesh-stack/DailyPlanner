@@ -23,6 +23,7 @@
       <p class="cn-sub" id="cn-sub">Sticky notes and checklists, in colour.</p>
     </div>
     <div class="cn-tools">
+      <button type="button" class="cn-btn" id="cn-widget-btn" title="Show your notes on your phone's home screen"><i data-feather="smartphone"></i>Widget</button>
       <button type="button" class="cn-btn icon" id="cn-layout" title="Switch between grid and list" aria-label="Switch between grid and list"><i data-feather="list"></i></button>
       <label class="sr-only" for="cn-sort" style="position:absolute;left:-9999px">Sort notes</label>
       <select class="cn-select" id="cn-sort" aria-label="Sort notes">
@@ -135,6 +136,29 @@
     <button type="button" class="cn-btn" id="cn-rem-cancel">Cancel</button>
     <button type="button" class="cn-btn primary" id="cn-rem-save">Save</button>
   </div>
+</div>
+
+<!-- Home-screen widget setup -->
+<div class="cn-dlg-scrim" id="cn-wd-scrim" hidden></div>
+<div class="cn-dlg cn-wd" id="cn-wd" role="dialog" aria-modal="true" aria-labelledby="cn-wd-h" hidden>
+  <h2 id="cn-wd-h">Notes on your home screen</h2>
+  <p class="cn-hint">A small Android app adds a <b>Color Notes widget</b> to your home screen. It shows your pinned notes (or your latest ones) in their colours, lets you tick checklist items, and opens a note when you tap it.</p>
+  <ol class="cn-steps">
+    <li><b>Install the widget app</b> on your Android phone.
+      <div class="cn-step-act"><a class="cn-btn primary" id="cn-wd-apk" href="https://github.com/venghatesh-stack/DailyPlanner/releases/download/notes-widget/DailyPlannerNotesWidget.apk"><i data-feather="download"></i>Download the app (APK)</a></div>
+      <span class="cn-small">Android asks once to allow installing apps from Chrome or Files. It isn't from the Play Store, so Play Protect may ask you to confirm; choose <i>Install anyway</i>.</span></li>
+    <li><b>Connect this account</b>, on the same phone.
+      <div class="cn-step-act"><button type="button" class="cn-btn primary" id="cn-wd-connect"><i data-feather="link"></i>Connect widget app</button></div>
+      <div id="cn-wd-manual" hidden>
+        <span class="cn-small">If the app did not open, copy these into it:</span>
+        <label class="cn-field">Server <input readonly id="cn-wd-server"></label>
+        <label class="cn-field">Access code <input readonly id="cn-wd-token"></label>
+        <button type="button" class="cn-btn" id="cn-wd-copy"><i data-feather="copy"></i>Copy access code</button>
+      </div></li>
+    <li><b>Add the widget</b>: in the app, tap <i>Add widget to home screen</i>. Or long-press an empty spot on your home screen → <i>Widgets</i> → <i>DailyPlanner Notes</i>.</li>
+  </ol>
+  <div id="cn-wd-list"></div>
+  <div class="cn-dlg-actions"><button type="button" class="cn-btn" id="cn-wd-close">Close</button></div>
 </div>
 
 <div class="cn-snack" id="cn-snack" role="status" hidden><span></span><button type="button">Undo</button></div>

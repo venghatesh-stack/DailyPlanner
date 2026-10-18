@@ -267,3 +267,125 @@ def notify_pin(note_id):
             extra=SHADE, urgency="normal")
     return jsonify({"item": _one(user_id, note_id), "on": on, "sent": sent, "failed": failed,
                     "tag": f"cnote-pin-{note_id}"})
+
+
+# ── Home-screen widget (Android companion app) ───────────────────────────
+# The widget cannot use the browser's login cookie, so each phone gets its
+# own token. Only its SHA-256 is stored; the token itself is shown once, as a
+# dpnotes://connect link the app opens to configure itself. Tokens can only
+# read notes and tick checklist items, and can be revoked from the page.
+import hashlib
+import secrets
+from urllib.parse import quote
+
+TOKENS = "widget_tokens"
+WIDGET_FIELDS = "id,kind,title,body,items,color,is_pinned,remind_at,remind_repeat,updated_at"
+
+
+def _hash(token):
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+def _token_user():
+    """The user id for this request's widget token, or None."""
+    auth = request.headers.get("Authorization", "")
+    token = auth[7:].strip() if auth.lower().startswith("bearer ") else ""
+    if not token or len(token) > 200:
+        return None
+    try:
+        rows = get(TOKENS, {"token_hash": f"eq.{_hash(token)}", "revoked_at": "is.null",
+                            "select": "id,user_id,last_used_at"}) or []
+    except Exception:
+        return None
+    if not rows:
+        return None
+    row = rows[0]
+    try:
+        update(TOKENS, {"id": f"eq.{row['id']}"}, {"last_used_at": _now()})
+    except Exception:
+        pass
+    return row["user_id"]
+
+
+@color_notes_bp.route("/api/color-notes/widget-tokens", methods=["GET"])
+@login_required
+def widget_tokens():
+    try:
+        rows = get(TOKENS, {"user_id": f"eq.{session['user_id']}", "revoked_at": "is.null",
+                            "select": "id,label,created_at,last_used_at", "order": "created_at.desc"}) or []
+    except Exception as e:
+        if _missing_table(e) or "widget_tokens" in str(e):
+            return jsonify({"items": [], "migration_pending": True})
+        raise
+    return jsonify({"items": rows})
+
+
+@color_notes_bp.route("/api/color-notes/widget-token", methods=["POST"])
+@login_required
+def new_widget_token():
+    label = str((request.get_json(silent=True) or {}).get("label") or "Android widget").strip()[:60]
+    token = "dpw_" + secrets.token_urlsafe(32)
+    try:
+        post(TOKENS, {"user_id": session["user_id"], "token_hash": _hash(token), "label": label})
+    except Exception as e:
+        return jsonify({"error": "Run MIGRATION_COLOR_NOTES.sql in Supabase first."}), 503
+    server = request.host_url.rstrip("/")
+    if server.startswith("http://") and not server.startswith(("http://localhost", "http://127.")):
+        server = "https://" + server[len("http://"):]
+    return jsonify({"token": token, "server": server,
+                    "connect_url": f"dpnotes://connect?server={quote(server, safe='')}&token={quote(token, safe='')}"}), 201
+
+
+@color_notes_bp.route("/api/color-notes/widget-token/<tid>/revoke", methods=["POST"])
+@login_required
+def revoke_widget_token(tid):
+    update(TOKENS, {"id": f"eq.{tid}", "user_id": f"eq.{session['user_id']}"}, {"revoked_at": _now()})
+    return jsonify({"ok": True})
+
+
+@color_notes_bp.route("/api/widget/notes", methods=["GET"])
+def widget_notes():
+    user_id = _token_user()
+    if not user_id:
+        return jsonify({"error": "Not connected. Open the widget app and connect again."}), 401
+    scope = request.args.get("scope") or "pinned"
+    params = {"user_id": f"eq.{user_id}", "deleted_at": "is.null", "purged_at": "is.null",
+              "is_archived": "is.false", "select": WIDGET_FIELDS,
+              "order": "is_pinned.desc,updated_at.desc", "limit": "25"}
+    rows = get(TABLE, params) or []
+    pinned = [r for r in rows if r.get("is_pinned")]
+    if scope == "pinned" and pinned:
+        rows = pinned
+    return jsonify({"notes": rows, "scope": "pinned" if (scope == "pinned" and pinned) else "recent",
+                    "server_time": _now()})
+
+
+@color_notes_bp.route("/api/widget/notes/<note_id>/toggle", methods=["POST"])
+def widget_toggle(note_id):
+    user_id = _token_user()
+    if not user_id:
+        return jsonify({"error": "Not connected"}), 401
+    item_id = str((request.get_json(silent=True) or {}).get("item_id") or "")
+    note = _one(user_id, note_id)
+    if not note or note.get("kind") != "checklist":
+        return jsonify({"error": "Note not found"}), 404
+    items = note.get("items") or []
+    hit = False
+    for it in items:
+        if it.get("id") == item_id:
+            it["done"] = not it.get("done")
+            hit = True
+    if not hit:
+        return jsonify({"error": "Item not found"}), 404
+    update(TABLE, {"id": f"eq.{note_id}", "user_id": f"eq.{user_id}"}, {"items": items, "updated_at": _now()})
+    note = _one(user_id, note_id)
+    if note and note.get("notify_pinned"):
+        try:
+            from services import push_service
+            title = (note.get("title") or "").strip() or "Note"
+            push_service.send_to_user(user_id, title=f"\U0001F4CC {title}", body=shade_text(note),
+                                      url=f"/color-notes?open={note_id}", tag=f"cnote-pin-{note_id}",
+                                      extra=SHADE, urgency="normal")
+        except Exception:
+            logger.debug("shade refresh after widget toggle failed", exc_info=True)
+    return jsonify({"ok": True, "note": note})

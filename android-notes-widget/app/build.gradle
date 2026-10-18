@@ -1,0 +1,50 @@
+plugins {
+    id 'com.android.application'
+}
+
+def runNumber = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger()
+
+android {
+    namespace 'com.dailyplanner.noteswidget'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.dailyplanner.noteswidget"
+        minSdk 26
+        targetSdk 34
+        versionCode runNumber
+        versionName "1.0." + runNumber
+    }
+
+    // A fixed key so each new build installs as an update over the last one.
+    // This is a personal, side-loaded app; the key only proves "same app as
+    // before" to Android.
+    signingConfigs {
+        release {
+            storeFile file('widget.keystore')
+            storePassword 'dailyplanner'
+            keyAlias 'widget'
+            keyPassword 'dailyplanner'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+        debug {
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+}

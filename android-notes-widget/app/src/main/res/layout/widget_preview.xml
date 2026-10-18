@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg"
+    android:orientation="vertical"
+    android:padding="10dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingStart="4dp"
+        android:paddingBottom="6dp"
+        android:text="@string/widget_title"
+        android:textColor="@color/widget_text"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="6dp"
+        android:background="#FFD5F3D8"
+        android:padding="10dp"
+        android:text="Groceries\n☐ Milk 2L\n☐ Atta 5kg\n☑ Eggs"
+        android:textColor="#FF0F2E17"
+        android:textSize="13sp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#FFD6E8FF"
+        android:padding="10dp"
+        android:text="Interview prep\nRevise SQL joins and the RAG project"
+        android:textColor="#FF0E2442"
+        android:textSize="13sp" />
+</LinearLayout>

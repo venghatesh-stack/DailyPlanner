@@ -270,3 +270,66 @@ def test_shade_text_limits():
     assert out.count("☐") == 10 and out.endswith("+4 more")
     assert shade_text({"kind": "text", "body": ""}) == "Tap to open"
     assert len(shade_text({"kind": "text", "body": "x" * 1000})) == 400
+
+
+@pytest.fixture
+def widget(monkeypatch, notes):
+    import routes.color_notes as cn
+    tokens = []
+    real_get, real_post, real_update = cn.get, cn.post, cn.update
+
+    def g(table, params=None, **kw):
+        if table == "widget_tokens":
+            return [dict(t) for t in tokens if _match(t, params)]
+        return real_get(table, params, **kw)
+
+    def p(table, payload, **kw):
+        if table == "widget_tokens":
+            row = dict(payload, id=f"t{len(tokens) + 1}", revoked_at=None, created_at="x", last_used_at=None)
+            tokens.append(row)
+            return [dict(row)]
+        return real_post(table, payload, **kw)
+
+    def u(table, params=None, json=None, **kw):
+        if table == "widget_tokens":
+            for t in tokens:
+                if _match(t, params):
+                    t.update(json)
+            return None
+        return real_update(table, params, json, **kw)
+
+    monkeypatch.setattr(cn, "get", g)
+    monkeypatch.setattr(cn, "post", p)
+    monkeypatch.setattr(cn, "update", u)
+    return tokens
+
+
+def test_widget_token_flow(auth_client, client, widget, notes):
+    auth_client.post("/api/color-notes", json={"title": "Pinned list", "kind": "checklist", "is_pinned": True,
+                                               "items": [{"id": "i1", "text": "Milk"}]})
+    auth_client.post("/api/color-notes", json={"title": "Other", "body": "x"})
+    j = auth_client.post("/api/color-notes/widget-token", json={"label": "Pixel"}).get_json()
+    token = j["token"]
+    assert token.startswith("dpw_") and j["connect_url"].startswith("dpnotes://connect?server=")
+    assert widget[0]["token_hash"] != token and len(widget[0]["token_hash"]) == 64   # only the hash is stored
+    assert [t["label"] for t in auth_client.get("/api/color-notes/widget-tokens").get_json()["items"]] == ["Pixel"]
+
+    H = {"Authorization": f"Bearer {token}"}
+    with client.session_transaction() as s:      # the widget has no login cookie
+        s.clear()
+    assert client.get("/api/widget/notes").status_code == 401
+    assert client.get("/api/widget/notes", headers={"Authorization": "Bearer nope"}).status_code == 401
+    r = client.get("/api/widget/notes", headers=H).get_json()
+    assert r["scope"] == "pinned" and [n["title"] for n in r["notes"]] == ["Pinned list"]
+    r = client.get("/api/widget/notes?scope=all", headers=H).get_json()
+    assert len(r["notes"]) == 2
+    nid = r["notes"][0]["id"] if r["notes"][0]["title"] == "Pinned list" else r["notes"][1]["id"]
+    r = client.post(f"/api/widget/notes/{nid}/toggle", json={"item_id": "i1"}, headers=H)
+    assert r.status_code == 200 and r.get_json()["note"]["items"][0]["done"] is True
+    assert client.post(f"/api/widget/notes/{nid}/toggle", json={"item_id": "zz"}, headers=H).status_code == 404
+    assert widget[0]["last_used_at"]
+    # Revoked tokens stop working.
+    with client.session_transaction() as s:
+        s.update({"user_id": "test-user-id", "_user_id": "test-user-id", "_fresh": True, "authenticated": True})
+    assert auth_client.post(f"/api/color-notes/widget-token/{widget[0]['id']}/revoke").get_json()["ok"]
+    assert client.get("/api/widget/notes", headers=H).status_code == 401

@@ -47,3 +47,19 @@ create index if not exists color_notes_remind_idx
 alter table color_notes add column if not exists notify_pinned boolean not null default false;
 
 alter table color_notes enable row level security;
+
+-- ────────────────────────────────────────────────────────────────────
+--  Home-screen widget (Android companion app). Each connected phone gets
+--  its own token; only a SHA-256 hash is stored. Revoking sets revoked_at.
+-- ────────────────────────────────────────────────────────────────────
+create table if not exists widget_tokens (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      text not null,
+  token_hash   text not null unique,
+  label        text not null default 'Android widget',
+  created_at   timestamptz not null default now(),
+  last_used_at timestamptz,
+  revoked_at   timestamptz
+);
+create index if not exists widget_tokens_user_idx on widget_tokens (user_id);
+alter table widget_tokens enable row level security;

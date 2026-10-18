@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DailyPlanner Notes</string>
+    <string name="widget_name">DailyPlanner Notes</string>
+    <string name="widget_desc">Your Color Notes on the home screen. Tick checklist items and tap a note to open it.</string>
+    <string name="widget_title">Color Notes</string>
+    <string name="not_connected">Tap to connect your DailyPlanner account</string>
+    <string name="no_notes">No notes yet. Tap + to add one.</string>
+    <string name="loading">Loading…</string>
+</resources>
