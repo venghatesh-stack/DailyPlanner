@@ -63,13 +63,11 @@ public class ActionActivity extends Activity {
             finish();
             return;
         }
-        String path = "/color-notes";
-        try {
-            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(Prefs.server(this) + path))
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-        } catch (Exception e) {
-            Toast.makeText(this, "No browser found to open DailyPlanner", Toast.LENGTH_LONG).show();
-        }
+        // Anything else (the widget's title, or an older widget's taps):
+        // stay in this app. Its settings screen shows the connection,
+        // pending changes and version. The planner opens only from the
+        // editor's explicit "Open in planner" button.
+        startActivity(new Intent(this, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
         finish();
     }
 }

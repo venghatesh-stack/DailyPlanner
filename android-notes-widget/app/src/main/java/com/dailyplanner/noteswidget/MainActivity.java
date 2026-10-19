@@ -47,6 +47,18 @@ public class MainActivity extends Activity {
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(s + "/color-notes")));
         });
         handleLink(getIntent());
+        TextView version = new TextView(this);
+        try {
+            version.setText("Widget app version " + getPackageManager().getPackageInfo(getPackageName(), 0).versionName
+                    + " · " + Store.pending(this) + " change(s) waiting to sync");
+        } catch (Exception e) {
+            version.setText("Widget app");
+        }
+        version.setAlpha(0.6f);
+        version.setPadding(0, 24, 0, 0);
+        ((android.widget.LinearLayout) status.getParent()).addView(version);
+        // Rebuild the widget so its taps always run this version's code.
+        NotesWidgetProvider.refreshAll(getApplicationContext());
     }
 
     @Override

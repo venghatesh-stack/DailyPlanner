@@ -46,6 +46,12 @@ public class NotesWidgetProvider extends AppWidgetProvider {
     @Override
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
+        if (Intent.ACTION_MY_PACKAGE_REPLACED.equals(intent.getAction())) {
+            // After an update, rebuild the widget so every tap uses the new code.
+            refreshAll(context);
+            SyncJobService.schedulePeriodic(context);
+            return;
+        }
         if (ACTION_REFRESH.equals(intent.getAction())) {
             refreshAll(context);
             SyncJobService.syncSoon(context);
