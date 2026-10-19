@@ -74,7 +74,7 @@ final class Store {
         } catch (JSONException ignored) {
             // cannot happen with a JSONArray
         }
-        sp(c).edit().putString("cache", wrap.toString()).putString("outbox", outbox.toString()).apply();
+        sp(c).edit().putString("cache", wrap.toString()).putString("outbox", outbox.toString()).commit();
     }
 
     static String newItemId() {
@@ -124,11 +124,13 @@ final class Store {
                 JSONObject target = null;
                 for (int i = 0; i < out.length(); i++) {
                     JSONObject op = out.getJSONObject(i);
-                    if (id.equals(op.optString("id")) && "create".equals(op.optString("type"))) target = op;
+                    if (id.equals(op.optString("id")) && "create".equals(op.optString("type"))
+                            && !(i == 0 && (id + "|create").equals(inFlight))) target = op;
                 }
                 if (target == null && out.length() > 0) {
                     JSONObject last = out.getJSONObject(out.length() - 1);
-                    if (id.equals(last.optString("id")) && "patch".equals(last.optString("type"))) target = last;
+                    boolean sending = out.length() == 1 && (id + "|patch").equals(inFlight);
+                    if (!sending && id.equals(last.optString("id")) && "patch".equals(last.optString("type"))) target = last;
                 }
                 if (target != null) {
                     merge(target.getJSONObject("fields"), fields);
@@ -160,11 +162,23 @@ final class Store {
                     if (itemId.equals(it.optString("id"))) it.put("done", !it.optBoolean("done"));
                 }
                 if (isLocal(noteId)) {
+                    boolean merged = false;
                     for (int i = 0; i < out.length(); i++) {
                         JSONObject op = out.getJSONObject(i);
-                        if (noteId.equals(op.optString("id")) && "create".equals(op.optString("type"))) {
+                        if (noteId.equals(op.optString("id")) && "create".equals(op.optString("type"))
+                                && !(i == 0 && (noteId + "|create").equals(inFlight))) {
                             op.getJSONObject("fields").put("items", new JSONArray(items.toString()));
+                            merged = true;
                         }
+                    }
+                    if (!merged) {
+                        JSONObject op = new JSONObject();
+                        op.put("type", "patch");
+                        op.put("id", noteId);
+                        JSONObject f = new JSONObject();
+                        f.put("items", new JSONArray(items.toString()));
+                        op.put("fields", f);
+                        out.put(op);
                     }
                 } else {
                     JSONObject op = new JSONObject();
@@ -200,30 +214,46 @@ final class Store {
      * server's notes, which also brings in edits made in the planner.
      * Returns true when everything is in sync. Blocking.
      */
+    private static final Object SYNC = new Object();   // one sync at a time; edits never wait on it
+    /** The queued change being sent right now: new edits must not merge into it. */
+    private static volatile String inFlight = null;
+
     static boolean flush(Context c) {
-        synchronized (LOCK) {
+        synchronized (SYNC) {
             if (!Prefs.connected(c)) return false;
             while (true) {
-                JSONArray out = outbox(c);
-                if (out.length() == 0) break;
-                JSONObject op = out.optJSONObject(0);
+                JSONObject op;
+                synchronized (LOCK) {
+                    JSONArray out = outbox(c);
+                    if (out.length() == 0) break;
+                    op = out.optJSONObject(0);
+                    inFlight = op.optString("id") + "|" + op.optString("type");
+                }
                 try {
                     send(c, op);
                     drop(c, 0);
+                    inFlight = null;
                 } catch (Api.ApiException e) {
+                    inFlight = null;
                     if (e.code == 401) { Prefs.saveError(c, e.getMessage()); return false; }
                     if (e.code >= 500 || e.code == 408 || e.code == 429) { Prefs.saveError(c, "Will sync when the server is back"); return false; }
                     drop(c, 0);           // the server refused this change (note deleted elsewhere): move on
                 } catch (IOException e) {
+                    inFlight = null;
                     Prefs.saveError(c, "Offline. Changes are saved on this phone and will sync.");
                     return false;
                 } catch (JSONException e) {
+                    inFlight = null;
                     drop(c, 0);
                 }
             }
             try {
                 String json = Api.fetchNotes(c);
-                if (outbox(c).length() == 0) Prefs.saveResult(c, json);
+                synchronized (LOCK) {
+                    // Keep anything edited on the phone while we were fetching.
+                    if (outbox(c).length() > 0) return false;
+                    Prefs.saveResult(c, json);
+                }
                 return true;
             } catch (Api.ApiException e) {
                 Prefs.saveError(c, e.getMessage());
@@ -248,13 +278,16 @@ final class Store {
     }
 
     private static void drop(Context c, int index) {
+        synchronized (LOCK) {
         JSONArray out = outbox(c), next = new JSONArray();
         for (int i = 0; i < out.length(); i++) if (i != index) next.put(out.opt(i));
-        sp(c).edit().putString("outbox", next.toString()).apply();
+        sp(c).edit().putString("outbox", next.toString()).commit();
+        }
     }
 
     /** A local note got its server id: update the notes and any queued changes. */
     private static void remap(Context c, String localId, JSONObject server) throws JSONException {
+        synchronized (LOCK) {
         String realId = server.getString("id");
         JSONArray notes = notes(c), out = outbox(c);
         JSONObject n = find(notes, localId);
@@ -267,5 +300,6 @@ final class Store {
             if (localId.equals(op.optString("id"))) op.put("id", realId);
         }
         save(c, notes, out);
+        }
     }
 }

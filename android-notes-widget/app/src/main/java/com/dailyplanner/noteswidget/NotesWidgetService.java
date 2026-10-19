@@ -47,6 +47,17 @@ public class NotesWidgetService extends RemoteViewsService {
                 notes.clear();
                 return;
             }
+            // Nothing saved on the phone yet (new install, or just connected):
+            // fetch here rather than wait for the background job. This runs on
+            // a background thread, so the network is allowed.
+            if (Prefs.cache(context).isEmpty()) {
+                try {
+                    Store.flush(context);
+                } catch (Exception e) {
+                    Prefs.saveError(context, "Could not load notes: " + e.getMessage());
+                }
+                NotesWidgetProvider.updateHeaders(context);
+            }
             load(Prefs.cache(context));
         }
 
@@ -64,13 +75,26 @@ public class NotesWidgetService extends RemoteViewsService {
 
         @Override public void onDestroy() { notes.clear(); }
         @Override public int getCount() { return notes.size(); }
-        @Override public RemoteViews getLoadingView() { return null; }
+        /** Shown briefly while a card is drawn (never the launcher's endless "Loading…"). */
+        @Override public RemoteViews getLoadingView() {
+            return new RemoteViews(context.getPackageName(), R.layout.widget_note);
+        }
         @Override public int getViewTypeCount() { return 1; }
         @Override public long getItemId(int position) { return position; }
         @Override public boolean hasStableIds() { return false; }
 
         @Override
         public RemoteViews getViewAt(int position) {
+            try {
+                return buildCard(position);
+            } catch (Exception e) {
+                RemoteViews card = new RemoteViews(context.getPackageName(), R.layout.widget_note);
+                card.setTextViewText(R.id.note_title, "Could not show this note");
+                return card;
+            }
+        }
+
+        private RemoteViews buildCard(int position) {
             RemoteViews card = new RemoteViews(context.getPackageName(), R.layout.widget_note);
             if (position < 0 || position >= notes.size()) return card;
             JSONObject n = notes.get(position);

@@ -97,7 +97,8 @@ public class NotesWidgetProvider extends AppWidgetProvider {
     static String emptyText(Context c) {
         if (!Prefs.connected(c)) return c.getString(R.string.not_connected);
         if (!Prefs.error(c).isEmpty() && Prefs.cache(c).isEmpty()) return Prefs.error(c) + "\nTap ⟳ to try again.";
-        return Prefs.lastSync(c) == 0 ? c.getString(R.string.loading) : c.getString(R.string.no_notes);
+        return Prefs.lastSync(c) == 0 ? "Fetching your notes… (the server can take up to a minute to wake). Tap ⟳ if this stays."
+                : c.getString(R.string.no_notes);
     }
 
     static RemoteViews build(Context context, int widgetId) {
