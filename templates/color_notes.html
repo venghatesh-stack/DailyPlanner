@@ -21,6 +21,7 @@
     <div>
       <h1>Color Notes</h1>
       <p class="cn-sub" id="cn-sub">Sticky notes and checklists, in colour.</p>
+      <button type="button" class="cn-sync" id="cn-sync" title="Where your notes are stored">Saved on this phone</button>
     </div>
     <div class="cn-tools">
       <button type="button" class="cn-btn" id="cn-widget-btn" title="Show your notes on your phone's home screen"><i data-feather="smartphone"></i>Widget</button>
@@ -69,6 +70,7 @@
 
 <div class="cn-fab" id="cn-fab">
   <div class="cn-fab-menu" id="cn-fab-menu">
+    <button type="button" class="cn-btn" data-new="voice"><i data-feather="mic"></i>Voice note</button>
     <button type="button" class="cn-btn" data-new="checklist"><i data-feather="check-square"></i>Checklist</button>
     <button type="button" class="cn-btn" data-new="text"><i data-feather="file-text"></i>Text note</button>
   </div>
@@ -82,6 +84,7 @@
     <button type="button" class="cn-ib" id="cn-back" aria-label="Done" title="Done"><i data-feather="arrow-left"></i></button>
     <span class="sp"></span>
     <span class="cn-saved" id="cn-saved" aria-live="polite"></span>
+    <button type="button" class="cn-ib" id="cn-mic" aria-pressed="false" aria-label="Dictate" title="Dictate (speak to type)"><i data-feather="mic"></i></button>
     <button type="button" class="cn-ib" id="cn-pin" aria-pressed="false" aria-label="Pin to top" title="Pin to top"><i data-feather="bookmark"></i></button>
     <button type="button" class="cn-ib" id="cn-bell" aria-label="Reminder" title="Reminder"><i data-feather="bell"></i></button>
     <div style="position:relative">
@@ -103,6 +106,21 @@
     <textarea class="cn-textarea" id="cn-text" placeholder="Note" aria-label="Note"></textarea>
     <div id="cn-list" hidden></div>
     <p class="cn-info" id="cn-info"></p>
+  </div>
+  <div class="cn-dict" id="cn-dict" role="status" aria-live="polite" hidden>
+    <span class="cn-dict-dot" aria-hidden="true"></span>
+    <span class="cn-dict-text" id="cn-dict-text">Listening…</span>
+    <select id="cn-dict-lang" aria-label="Dictation language">
+      <option value="en-IN">English (India)</option>
+      <option value="en-US">English (US)</option>
+      <option value="en-GB">English (UK)</option>
+      <option value="ta-IN">தமிழ் Tamil</option>
+      <option value="hi-IN">हिन्दी Hindi</option>
+      <option value="te-IN">తెలుగు Telugu</option>
+      <option value="kn-IN">ಕನ್ನಡ Kannada</option>
+      <option value="ml-IN">മലയാളം Malayalam</option>
+    </select>
+    <button type="button" class="cn-btn" id="cn-dict-stop">Done</button>
   </div>
 </section>
 
@@ -159,6 +177,25 @@
   </ol>
   <div id="cn-wd-list"></div>
   <div class="cn-dlg-actions"><button type="button" class="cn-btn" id="cn-wd-close">Close</button></div>
+</div>
+
+<!-- On this phone: storage status, backup and restore -->
+<div class="cn-dlg-scrim" id="cn-ph-scrim" hidden></div>
+<div class="cn-dlg" id="cn-ph" role="dialog" aria-modal="true" aria-labelledby="cn-ph-h" hidden>
+  <h2 id="cn-ph-h">Notes on this phone</h2>
+  <p class="cn-hint">Your notes are saved in this phone's storage, so Color Notes opens and saves without internet. Changes made offline are sent to your account when you're back online, and then appear on your other devices.</p>
+  <div class="cn-ph-stats" id="cn-ph-stats"></div>
+  <p class="cn-hint">To keep a copy you can open anywhere, or move notes to another phone, save a backup file to your phone's Downloads.</p>
+  <div class="cn-step-act">
+    <button type="button" class="cn-btn primary" id="cn-ph-json"><i data-feather="download"></i>Backup file (.json)</button>
+    <button type="button" class="cn-btn" id="cn-ph-txt"><i data-feather="file-text"></i>Readable copy (.txt)</button>
+  </div>
+  <div class="cn-step-act">
+    <label class="cn-btn" for="cn-ph-file"><i data-feather="upload"></i>Restore from backup file</label>
+    <input type="file" id="cn-ph-file" accept="application/json,.json" hidden>
+    <button type="button" class="cn-btn" id="cn-ph-sync"><i data-feather="refresh-cw"></i>Sync now</button>
+  </div>
+  <div class="cn-dlg-actions"><button type="button" class="cn-btn" id="cn-ph-close">Close</button></div>
 </div>
 
 <div class="cn-snack" id="cn-snack" role="status" hidden><span></span><button type="button">Undo</button></div>

@@ -204,3 +204,26 @@
 .cn-devices h3 { font-size: 14px; margin: 0 0 6px; }
 .cn-dev { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13.5px; padding: 6px 0; }
 .cn-dev span { color: var(--color-text-secondary); font-size: 12.5px; display: block; }
+
+/* Sync status under the title */
+.cn-sync { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; padding: 2px 8px 2px 0; border: 0; background: none; font: inherit; font-size: 12px; color: var(--color-text-secondary); cursor: pointer; }
+.cn-sync::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #9a9ca3; }
+.cn-sync.ok::before { background: #2f7d4f; }
+.cn-sync.off::before { background: #9a6214; }
+.cn-sync.warn { color: var(--color-danger); }
+.cn-sync.warn::before { background: #c2362f; }
+.cn-ph-stats { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 14px; margin: 4px 0 12px; }
+.cn-ph-stats b { font-weight: 700; }
+
+/* Dictation */
+.cn-ib#cn-mic[aria-pressed="true"] { background: #c2362f; color: #fff; }
+.cn-ib#cn-mic[aria-pressed="true"] svg { fill: none; }
+.cn-dict { display: flex; align-items: center; gap: 10px; padding: 10px 12px max(10px, env(safe-area-inset-bottom)); border-top: 1px solid color-mix(in srgb, var(--ni) 14%, transparent); background: color-mix(in srgb, var(--ni) 7%, var(--nb)); }
+.cn-dict-dot { flex: 0 0 auto; width: 12px; height: 12px; border-radius: 50%; background: #c2362f; animation: cn-pulse 1.2s ease-in-out infinite; }
+.cn-dict-text { flex: 1; min-width: 0; font-size: 14px; opacity: .85; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cn-dict select { max-width: 130px; font: inherit; font-size: 13px; padding: 6px; border-radius: 8px; border: 1px solid color-mix(in srgb, var(--ni) 25%, transparent); background: transparent; color: inherit; }
+.cn-dict select option { color: #15161a; }
+@keyframes cn-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(.7); opacity: .5; } }
+@media (prefers-reduced-motion: reduce) { .cn-dict-dot { animation: none; } }
+/* While a note is open, the page-wide 💡 button would sit on the dictation bar. */
+body.cn-editing .ph-pill { display: none !important; }

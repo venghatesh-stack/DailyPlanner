@@ -16,7 +16,7 @@
   };
 
   const state = {
-    notes: store.get("cn-cache", []),
+    notes: [],
     tab: "notes",
     color: "",
     q: "",
@@ -69,11 +69,167 @@
       opt.headers["Content-Type"] = "application/json";
       opt.body = JSON.stringify(body);
     }
-    const r = await fetch(path, opt);
+    let r;
+    try { r = await fetch(path, opt); }
+    catch (e) { const err = new Error("You're offline"); err.offline = true; throw err; }
+    const ct = r.headers.get("content-type") || "";
+    if (!ct.includes("json")) {
+      // A login page (session expired) or a sleeping server's error page.
+      const err = new Error(r.redirected || r.ok ? "Sign in again to sync your notes" : "Server not reachable (" + r.status + ")");
+      err.auth = r.redirected || r.ok; err.offline = !err.auth; throw err;
+    }
     let j = {};
     try { j = await r.json(); } catch (e) { /* empty */ }
-    if (!r.ok) throw new Error(j.error || ("Request failed (" + r.status + ")"));
+    if (!r.ok) { const err = new Error(j.error || ("Request failed (" + r.status + ")")); err.status = r.status; throw err; }
     return j;
+  }
+
+  // ── on-phone storage ─────────────────────────────────────────────────
+  // Notes live on this phone first (IndexedDB), so the page opens and saves
+  // with no internet. Every change also goes into an outbox, which is sent to
+  // the server in order whenever it can be reached. Notes created offline get
+  // a temporary "local-" id until the server gives them a real one.
+  const local = (function () {
+    const DB = "dp-colornotes", STORE = "kv";
+    let dbp = null;
+    function open() {
+      if (dbp) return dbp;
+      dbp = new Promise((res, rej) => {
+        if (!("indexedDB" in window)) { rej(new Error("no idb")); return; }
+        const rq = indexedDB.open(DB, 1);
+        rq.onupgradeneeded = () => { if (!rq.result.objectStoreNames.contains(STORE)) rq.result.createObjectStore(STORE); };
+        rq.onsuccess = () => res(rq.result);
+        rq.onerror = () => rej(rq.error);
+      });
+      return dbp;
+    }
+    async function get(key, dflt) {
+      try {
+        const db = await open();
+        return await new Promise(res => {
+          const rq = db.transaction(STORE).objectStore(STORE).get(key);
+          rq.onsuccess = () => res(rq.result === undefined ? dflt : rq.result);
+          rq.onerror = () => res(dflt);
+        });
+      } catch (e) { return store.get("cn-" + key, dflt); }
+    }
+    async function set(key, val) {
+      try {
+        const db = await open();
+        await new Promise(res => {
+          const tx = db.transaction(STORE, "readwrite");
+          tx.objectStore(STORE).put(val, key);
+          tx.oncomplete = res; tx.onerror = res; tx.onabort = res;
+        });
+      } catch (e) { store.set("cn-" + key, val); }
+    }
+    return { get: get, set: set };
+  })();
+
+  const sync = { outbox: [], running: false, lastOk: 0, error: "", timer: null };
+  let saveTimer = null;
+  function persist() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      local.set("notes", state.notes);
+      local.set("outbox", sync.outbox);
+      local.set("lastOk", sync.lastOk);
+    }, 150);
+  }
+
+  function isLocalId(id) { return typeof id === "string" && id.indexOf("local-") === 0; }
+
+  function queue(op) {
+    if (op.type === "patch") {
+      // Fold edits into a not-yet-sent create, or into the last patch for the same note.
+      const create = sync.outbox.find(o => o.type === "create" && o.id === op.id);
+      if (create) { Object.assign(create.fields, op.fields); persist(); showSync(); return; }
+      const last = sync.outbox[sync.outbox.length - 1];
+      if (last && last.type === "patch" && last.id === op.id) { Object.assign(last.fields, op.fields); persist(); showSync(); return; }
+    }
+    if (op.type === "action" && op.action === "purge" && isLocalId(op.id)) {
+      // Never reached the server: just forget it.
+      sync.outbox = sync.outbox.filter(o => o.id !== op.id);
+      persist(); showSync(); return;
+    }
+    sync.outbox.push(op);
+    persist();
+    showSync();
+    kick();
+  }
+
+  function kick(delay) {
+    clearTimeout(sync.timer);
+    sync.timer = setTimeout(runSync, delay == null ? 400 : delay);
+  }
+
+  function remap(oldId, newId) {
+    sync.outbox.forEach(o => { if (o.id === oldId) o.id = newId; });
+    state.notes.forEach(n => { if (n.id === oldId) n.id = newId; });
+    if (editor.note && editor.note.id === oldId) editor.note.id = newId;
+  }
+
+  async function runSync() {
+    if (sync.running || !sync.outbox.length) { showSync(); return; }
+    sync.running = true;
+    showSync();
+    try {
+      while (sync.outbox.length) {
+        const op = sync.outbox[0];
+        try {
+          if (op.type === "create") {
+            const j = await api("/api/color-notes", op.fields);
+            const oldId = op.id;
+            sync.outbox.shift();
+            if (j.item) {
+              remap(oldId, j.item.id);
+              const n = byId(j.item.id);
+              if (n) { n.created_at = j.item.created_at; n.updated_at = n.updated_at || j.item.updated_at; }
+            }
+          } else if (op.type === "patch") {
+            if (isLocalId(op.id)) { sync.outbox.shift(); continue; }
+            await api("/api/color-notes/" + encodeURIComponent(op.id), op.fields);
+            sync.outbox.shift();
+          } else if (op.type === "action") {
+            if (op.action === "empty") await api("/api/color-notes/trash/empty", {});
+            else if (!isLocalId(op.id)) await api("/api/color-notes/" + encodeURIComponent(op.id) + "/" + op.action, {});
+            sync.outbox.shift();
+          } else {
+            sync.outbox.shift();
+          }
+          persist();
+        } catch (e) {
+          if (e.offline || e.auth || e.status === 503 || e.status >= 500) throw e;
+          // The server refused this change (e.g. note deleted elsewhere): drop it and go on.
+          console.warn("Color Notes: dropped a change the server refused", op, e.message);
+          sync.outbox.shift();
+          persist();
+        }
+      }
+      sync.error = "";
+      sync.lastOk = Date.now();
+      persist();
+    } catch (e) {
+      sync.error = e.auth ? e.message : (e.status === 503 ? e.message : "");
+      kick(30000);                       // try again in a while
+    } finally {
+      sync.running = false;
+      showSync();
+      render();
+    }
+  }
+
+  function showSync() {
+    const el = $("#cn-sync");
+    if (!el) return;
+    const n = sync.outbox.length;
+    let text, cls = "";
+    if (sync.error) { text = sync.error; cls = "warn"; }
+    else if (!navigator.onLine) { text = n ? "Offline · " + n + " change" + (n === 1 ? "" : "s") + " saved on this phone" : "Offline · notes saved on this phone"; cls = "off"; }
+    else if (sync.running || n) { text = "Saved on this phone · syncing…"; }
+    else { text = "Saved on this phone · synced"; cls = "ok"; }
+    el.textContent = text;
+    el.className = "cn-sync " + cls;
   }
 
   // ── notification-shade pin (the closest a web app gets to a widget) ──
@@ -83,6 +239,11 @@
       .then(ns => ns.forEach(n => n.close())).catch(() => {});
   }
   async function shade(id, on, quiet) {
+    if (isLocalId(id) || sync.outbox.some(o => o.id === id && o.type === "create")) {
+      await runSync();
+      id = editor.note && editor.note.id && !isLocalId(editor.note.id) ? editor.note.id : id;
+      if (isLocalId(id)) { if (!quiet && window.showToast) showToast("Connect to the internet first, then pin it.", "warning"); return; }
+    }
     try {
       if (on && window.ClPush && "Notification" in window) {
         const sub = await ClPush.currentSubscription();
@@ -108,7 +269,7 @@
     else state.notes.unshift(note);
     cache();
   }
-  function cache() { store.set("cn-cache", state.notes.slice(0, 400)); }
+  function cache() { persist(); }
 
   function searchText(n) {
     return ((n.title || "") + " " + (n.body || "") + " " + (n.items || []).map(i => i.text).join(" ")).toLowerCase();
@@ -266,30 +427,46 @@
   }
 
   // ── loading ──────────────────────────────────────────────────────────
+  async function loadLocal() {
+    const notes = await local.get("notes", null);
+    // First run after this update: bring over the old quick cache.
+    state.notes = Array.isArray(notes) ? notes : store.get("cn-cache", []);
+    sync.outbox = await local.get("outbox", []) || [];
+    sync.lastOk = await local.get("lastOk", 0) || 0;
+    render();
+    showSync();
+  }
+
   async function load() {
+    await runSync();                                   // send what this phone has first
     try {
       const j = await api("/api/color-notes");
       $("#cn-migrate").hidden = !j.migration_pending;
-      state.notes = j.items || [];
-      cache();
+      if (j.migration_pending) { render(); return; }
+      const pending = new Set(sync.outbox.map(o => o.id));
+      const mine = {};
+      state.notes.forEach(n => { mine[n.id] = n; });
+      const merged = (j.items || []).map(r => pending.has(r.id) && mine[r.id] ? mine[r.id] : r);
+      state.notes.forEach(n => { if (isLocalId(n.id) && pending.has(n.id)) merged.unshift(n); });
+      state.notes = merged;
+      sync.lastOk = Date.now();
+      persist();
       render();
+      showSync();
     } catch (e) {
       render();
-      if (window.showToast) showToast("Could not load notes: " + e.message, "error");
+      showSync();
+      if (e.auth && window.showToast) showToast(e.message, "warning");
     }
   }
 
   // ── quick actions from the list ──────────────────────────────────────
   async function patch(id, fields) {
     const n = byId(id);
-    if (n) { Object.assign(n, fields, { updated_at: new Date().toISOString() }); cache(); }
+    if (n) { Object.assign(n, fields, { updated_at: new Date().toISOString() }); }
+    queue({ type: "patch", id: id, fields: Object.assign({}, fields) });
     render();
-    try {
-      const j = await api("/api/color-notes/" + encodeURIComponent(id), fields);
-      if (j.item) { upsert(j.item); if (!editor.note || editor.note.id !== id) render(); }
-    } catch (e) {
-      if (window.showToast) showToast(e.message, "error");
-    }
+    await runSync();
   }
 
   let snackTimer = null;
@@ -308,20 +485,14 @@
     const n = byId(id);
     if (!n) return;
     const local = {
-      trash: { deleted_at: new Date().toISOString(), is_pinned: false },
+      trash: { deleted_at: new Date().toISOString(), is_pinned: false, notify_pinned: false },
       restore: { deleted_at: null },
     }[action];
-    if (local) { Object.assign(n, local); cache(); render(); }
-    if (action === "purge") { state.notes = state.notes.filter(x => x.id !== id); cache(); render(); }
-    try {
-      const j = await api("/api/color-notes/" + encodeURIComponent(id) + "/" + action, {});
-      if (j.item) upsert(j.item);
-      render();
-    } catch (e) {
-      if (window.showToast) showToast(e.message, "error");
-      load();
-    }
-    if (action === "trash") { if (n.notify_pinned) { n.notify_pinned = false; closeShade(id); } snack("Moved to Trash", () => doAction(id, "restore")); }
+    if (local) { Object.assign(n, local); }
+    if (action === "purge") state.notes = state.notes.filter(x => x.id !== id);
+    queue({ type: "action", id: id, action: action });
+    render();
+    if (action === "trash") { closeShade(id); snack("Moved to Trash", () => doAction(id, "restore")); }
   }
 
   // ── editor ───────────────────────────────────────────────────────────
@@ -340,6 +511,7 @@
     paintEditor();
     if (!editor.pushed) { history.pushState({ cnEditor: 1 }, ""); editor.pushed = true; }
     document.body.style.overflow = "hidden";
+    document.body.classList.add("cn-editing");
     if (opts.focus !== false) {
       setTimeout(() => {
         if (note.kind === "checklist" && !note.id && !(note.items || []).length) addItem(-1);
@@ -364,7 +536,7 @@
     const rr = $("#cn-remind-row");
     rr.hidden = !n.remind_at || trashed;
     if (n.remind_at) rr.querySelector("span").textContent = whenLabel(n.remind_at) + (REPEAT_LABEL[n.remind_repeat] ? " · repeats " + REPEAT_LABEL[n.remind_repeat] : "");
-    $("#cn-info").textContent = n.id ? "Created " + new Date(n.created_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) +
+    $("#cn-info").textContent = n.id && n.created_at ? "Created " + new Date(n.created_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) +
       " · Edited " + ago(n.updated_at) : "";
     const more = $("#cn-more-pop");
     const mi = (act, ic, label, cls) => '<button type="button" data-act="' + act + '" class="' + (cls || "") + '">' + icon(ic) + esc(label) + "</button>";
@@ -429,36 +601,35 @@
     const fields = editor.dirty;
     if (!Object.keys(fields).length) return editor.saving;
     editor.dirty = {};
-    editor.saving = editor.saving.then(async () => {
-      try {
-        let j;
-        if (!n.id) {
-          if (isEmpty(n)) { $("#cn-saved").textContent = ""; return; }
-          j = await api("/api/color-notes", {
-            kind: n.kind, title: n.title, body: n.body, items: n.items, color: n.color,
-            is_pinned: !!n.is_pinned, remind_at: n.remind_at || null, remind_repeat: n.remind_repeat || "none",
-          });
-          n.id = j.item.id;
-        } else {
-          j = await api("/api/color-notes/" + encodeURIComponent(n.id), fields);
-        }
-        if (j.item) {
-          n.created_at = j.item.created_at; n.updated_at = j.item.updated_at;
-          upsert(Object.assign({}, j.item, editor.note === n ? { title: n.title, body: n.body, items: n.items } : {}));
-        }
-        $("#cn-saved").textContent = "Saved";
-      } catch (e) {
-        Object.assign(editor.dirty, fields, editor.dirty);
-        $("#cn-saved").textContent = "Not saved";
-        if (window.showToast) showToast("Could not save: " + e.message, "error");
-      }
-    });
-    return editor.saving;
+    const now = new Date().toISOString();
+    if (!n.id) {
+      if (isEmpty(n)) { $("#cn-saved").textContent = ""; return editor.saving; }
+      n.id = "local-" + uid();
+      n.created_at = now; n.updated_at = now;
+      state.notes.unshift(JSON.parse(JSON.stringify(n)));
+      queue({ type: "create", id: n.id, fields: {
+        kind: n.kind, title: n.title, body: n.body, items: n.items, color: n.color,
+        is_pinned: !!n.is_pinned, is_archived: !!n.is_archived,
+        remind_at: n.remind_at || null, remind_repeat: n.remind_repeat || "none",
+      } });
+    } else {
+      n.updated_at = now;
+      const copy = JSON.parse(JSON.stringify(fields));
+      const held = byId(n.id);
+      if (held) Object.assign(held, JSON.parse(JSON.stringify(fields)), { updated_at: now });
+      else state.notes.unshift(JSON.parse(JSON.stringify(n)));
+      queue({ type: "patch", id: n.id, fields: copy });
+    }
+    persist();
+    $("#cn-saved").textContent = navigator.onLine ? "Saved" : "Saved on phone";
+    kick(300);                                  // the server catches up in the background
+    return Promise.resolve();
   }
 
   async function closeEditor(fromPop) {
     if (!editor.note) return;
     const n = editor.note;
+    if (dict.on) stopDictation();
     const changed = editor.changedContent;
     editor.changedContent = false;
     await flush();
@@ -467,6 +638,7 @@
     $("#cn-scrim").hidden = true;
     closePops();
     document.body.style.overflow = "";
+    document.body.classList.remove("cn-editing");
     editor.note = null;
     if (editor.pushed && !fromPop) { editor.pushed = false; history.back(); }
     editor.pushed = false;
@@ -474,11 +646,11 @@
     render();
   }
 
-  function newNote(kind, extra) {
+  function newNote(kind, extra, opts) {
     openEditor(Object.assign({
       kind: kind, title: "", body: "", items: [], color: store.get("cn-last-color", "yellow"),
       is_pinned: false, remind_at: null, remind_repeat: "none",
-    }, extra || {}));
+    }, extra || {}), opts);
   }
 
   function closePops() {
@@ -618,8 +790,11 @@
       return;
     }
     delete b.dataset.armed; b.textContent = "Empty Trash";
-    state.notes = state.notes.filter(n => !n.deleted_at); cache(); render();
-    try { await api("/api/color-notes/trash/empty", {}); snack("Trash emptied"); } catch (err) { showToast && showToast(err.message, "error"); load(); }
+    state.notes.filter(n => n.deleted_at && isLocalId(n.id)).forEach(n => { sync.outbox = sync.outbox.filter(o => o.id !== n.id); });
+    state.notes = state.notes.filter(n => !n.deleted_at);
+    queue({ type: "action", id: "*", action: "empty" });
+    render();
+    snack("Trash emptied");
   });
 
   $("#cn-calendar").addEventListener("click", e => {
@@ -645,6 +820,12 @@
     if (!b) return;
     fab.classList.remove("open");
     $("#cn-fab-main").setAttribute("aria-expanded", "false");
+    if (b.dataset.new === "voice") {
+      newNote("text", null, { focus: false });
+      $("#cn-text").focus();
+      startDictation();                     // same tap, so the browser allows the mic
+      return;
+    }
     newNote(b.dataset.new);
   });
 
@@ -788,6 +969,235 @@
     loadDevices();
   });
 
+  // ── voice dictation ──────────────────────────────────────────────────
+  // Uses the phone's own speech recognition (Chrome on Android sends audio to
+  // Google's recogniser, so it needs a connection; the note itself is saved
+  // on the phone either way). Spoken "comma", "full stop", "question mark",
+  // "new line" and "new paragraph" become punctuation; in a checklist each
+  // sentence (or "next item") becomes its own item.
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const ANDROID = /Android/i.test(navigator.userAgent);
+  const dict = { rec: null, on: false, interim: "" };
+  const langSel = $("#cn-dict-lang");
+  langSel.value = store.get("cn-dict-lang", (navigator.language || "").toLowerCase().startsWith("en-us") ? "en-US" : "en-IN");
+  if (!langSel.value) langSel.value = "en-IN";
+
+  function spokenToText(t) {
+    return t
+      .replace(/\s*\b(new paragraph)\b\s*/gi, "\n\n")
+      .replace(/\s*\b(new line|next line)\b\s*/gi, "\n")
+      .replace(/\s*\b(full stop|period)\b/gi, ".")
+      .replace(/\s*\bcomma\b/gi, ",")
+      .replace(/\s*\bquestion mark\b/gi, "?")
+      .replace(/\s*\b(exclamation mark|exclamation point)\b/gi, "!")
+      .replace(/\s*\bcolon\b/gi, ":")
+      .replace(/[ \t]+([.,?!:])/g, "$1")
+      .replace(/([.,?!:])(?=[A-Za-z\u0900-\u0DFF])/g, "$1 ")
+      .replace(/[ \t]{2,}/g, " ")
+      .replace(/([.?!][ \t]+|\n)([a-z])/g, (m, a, b) => a + b.toUpperCase());
+  }
+  function capitalise(prev, t) {
+    const before = prev.replace(/\s+$/, "");
+    if (!before || /[.?!\n]$/.test(prev.replace(/[ \t]+$/, "")) || /[.?!]$/.test(before)) return t.charAt(0).toUpperCase() + t.slice(1);
+    return t;
+  }
+
+  function insertText(raw) {
+    const n = editor.note;
+    if (!n || n.deleted_at) return;
+    let t = spokenToText(raw.trim());
+    if (!t) return;
+    const active = document.activeElement;
+    if (active && active.id === "cn-title") {
+      const v = active.value, sep = v && !/\s$/.test(v) ? " " : "";
+      active.value = (v + sep + t.replace(/\n+/g, " ")).slice(0, 300);
+      change({ title: active.value });
+      return;
+    }
+    if (n.kind === "checklist") {
+      const parts = t.split(/\n+|\s*\bnext item\b\s*/i).map(x => x.replace(/^[,.\s]+|[,.\s]+$/g, "")).filter(Boolean);
+      const items = n.items = n.items || [];
+      let focusedLi = active && active.closest ? active.closest(".cn-item") : null;
+      let at = focusedLi ? items.findIndex(i => i.id === focusedLi.dataset.iid) : -1;
+      let lastId = null;
+      parts.forEach((p, k) => {
+        p = p.charAt(0).toUpperCase() + p.slice(1);
+        if (k === 0 && at >= 0 && !(items[at].text || "").trim()) { items[at].text = p; lastId = items[at].id; return; }
+        const it = { id: uid(), text: p, done: false };
+        if (at >= 0) items.splice(++at, 0, it); else items.push(it);
+        lastId = it.id;
+      });
+      change({ items: items });
+      renderItems(lastId);
+      return;
+    }
+    const ta = $("#cn-text");
+    const v = ta.value;
+    const pos = document.activeElement === ta ? ta.selectionStart : v.length;
+    const head = v.slice(0, pos), tail = v.slice(pos);
+    const sep = head && !/[\s\n]$/.test(head) && !/^[.,?!:]/.test(t) ? " " : "";
+    t = capitalise(head, t);
+    ta.value = head + sep + t + (tail && !/^[\s\n]/.test(tail) ? " " : "") + tail;
+    const caret = (head + sep + t).length;
+    ta.setSelectionRange(caret, caret);
+    autosize(ta);
+    change({ body: ta.value });
+  }
+
+  function dictUI() {
+    $("#cn-mic").setAttribute("aria-pressed", String(dict.on));
+    $("#cn-dict").hidden = !dict.on;
+    $("#cn-dict-text").textContent = dict.interim ? dict.interim : "Listening… speak now";
+  }
+
+  function startDictation() {
+    if (!SR) {
+      window.showToast && showToast("Voice typing isn't available in this browser. Use Chrome on Android, or the mic on your keyboard.", "warning");
+      return;
+    }
+    if (!editor.note || editor.note.deleted_at) return;
+    if (dict.on) return;
+    dict.on = true;
+    dict.interim = "";
+    const rec = new SR();
+    dict.rec = rec;
+    rec.lang = langSel.value || "en-IN";
+    rec.interimResults = true;
+    // Android Chrome repeats earlier words in continuous mode, so there we
+    // listen one phrase at a time and start again after each.
+    rec.continuous = !ANDROID;
+    rec.maxAlternatives = 1;
+    rec.onresult = e => {
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const r = e.results[i];
+        if (r.isFinal) insertText(r[0].transcript);
+        else interim += r[0].transcript;
+      }
+      dict.interim = interim;
+      dictUI();
+    };
+    rec.onerror = e => {
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        stopDictation();
+        window.showToast && showToast("Allow microphone access for this site to dictate (tap the lock icon in the address bar, or the app's site settings).", "warning");
+      } else if (e.error === "network") {
+        stopDictation();
+        window.showToast && showToast("Voice typing needs an internet connection. Your note is still saved on this phone.", "warning");
+      } else if (e.error === "language-not-supported") {
+        stopDictation();
+        window.showToast && showToast("That language isn't available for voice typing on this phone.", "warning");
+      }
+      // "no-speech" and "aborted" just end this round; onend restarts it.
+    };
+    rec.onend = () => {
+      dict.interim = "";
+      if (dict.on && dict.rec === rec) {
+        try { rec.start(); } catch (err) { stopDictation(); }
+      }
+      dictUI();
+    };
+    try { rec.start(); } catch (err) { dict.on = false; }
+    dictUI();
+  }
+
+  function stopDictation() {
+    dict.on = false;
+    const rec = dict.rec;
+    dict.rec = null;
+    if (rec) { try { rec.stop(); } catch (e) { /* already stopped */ } }
+    dict.interim = "";
+    dictUI();
+    flush();
+  }
+
+  $("#cn-mic").addEventListener("click", () => { dict.on ? stopDictation() : startDictation(); });
+  $("#cn-dict-stop").addEventListener("click", stopDictation);
+  langSel.addEventListener("change", () => {
+    store.set("cn-dict-lang", langSel.value);
+    if (dict.on) { stopDictation(); startDictation(); }
+  });
+  if (!SR) $("#cn-mic").title = "Voice typing isn't available in this browser";
+
+  // ── on this phone: status, backup and restore ───────────────────────
+  function openPhone() {
+    const notes = state.notes.filter(n => !n.deleted_at).length;
+    const trash = state.notes.filter(n => n.deleted_at).length;
+    const pending = sync.outbox.length;
+    $("#cn-ph-stats").innerHTML =
+      "<span>Notes on this phone</span><b>" + notes + (trash ? " (+" + trash + " in Trash)" : "") + "</b>" +
+      "<span>Waiting to sync</span><b>" + (pending ? pending + " change" + (pending === 1 ? "" : "s") : "Nothing — all synced") + "</b>" +
+      "<span>Last synced</span><b>" + (sync.lastOk ? esc(ago(new Date(sync.lastOk).toISOString())) : "Not yet") + "</b>" +
+      "<span>Connection</span><b>" + (navigator.onLine ? "Online" : "Offline") + "</b>";
+    $("#cn-ph").hidden = false; $("#cn-ph-scrim").hidden = false;
+  }
+  function closePhone() { $("#cn-ph").hidden = true; $("#cn-ph-scrim").hidden = true; }
+  function download(name, text, type) {
+    const blob = new Blob([text], { type: type });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+  function stamp() { return ymd(new Date()) + "-" + hm(new Date()).replace(":", ""); }
+  $("#cn-sync").addEventListener("click", openPhone);
+  $("#cn-ph-close").addEventListener("click", closePhone);
+  $("#cn-ph-scrim").addEventListener("click", closePhone);
+  $("#cn-ph-sync").addEventListener("click", async () => { await load(); openPhone(); });
+  $("#cn-ph-json").addEventListener("click", () => {
+    const keep = state.notes.filter(n => !n.deleted_at).map(n => ({
+      id: n.id, kind: n.kind, title: n.title, body: n.body, items: n.items, color: n.color,
+      is_pinned: !!n.is_pinned, is_archived: !!n.is_archived, remind_at: n.remind_at || null,
+      remind_repeat: n.remind_repeat || "none", created_at: n.created_at, updated_at: n.updated_at,
+    }));
+    download("color-notes-" + stamp() + ".json", JSON.stringify({ app: "DailyPlanner Color Notes", version: 1, exported_at: new Date().toISOString(), notes: keep }, null, 2), "application/json");
+  });
+  $("#cn-ph-txt").addEventListener("click", () => {
+    const blocks = sorted(state.notes.filter(n => !n.deleted_at)).map(n => {
+      const head = (n.title || "(untitled)") + "  [" + (n.color || "yellow") + (n.is_archived ? ", archived" : "") + "]";
+      const body = n.kind === "checklist" ? (n.items || []).map(i => (i.done ? "[x] " : "[ ] ") + i.text).join("\n") : (n.body || "");
+      const rem = n.remind_at ? "\nReminder: " + whenLabel(n.remind_at) + (REPEAT_LABEL[n.remind_repeat] ? " (" + REPEAT_LABEL[n.remind_repeat] + ")" : "") : "";
+      return head + "\n" + "-".repeat(Math.min(40, head.length)) + "\n" + body + rem;
+    });
+    download("color-notes-" + stamp() + ".txt", blocks.join("\n\n\n") + "\n", "text/plain");
+  });
+  $("#cn-ph-file").addEventListener("change", async e => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!f) return;
+    try {
+      const data = JSON.parse(await f.text());
+      const list = Array.isArray(data) ? data : data.notes;
+      if (!Array.isArray(list)) throw new Error("This isn't a Color Notes backup file");
+      const have = new Set(state.notes.map(n => n.id));
+      const sig = n => (n.kind || "") + "|" + (n.title || "") + "|" + (n.body || "") + "|" + JSON.stringify((n.items || []).map(i => i.text));
+      const haveSig = new Set(state.notes.filter(n => !n.deleted_at).map(sig));
+      let added = 0;
+      list.forEach(src => {
+        if (!src || (have.has(src.id) && haveSig.has(sig(src))) || haveSig.has(sig(src))) return;
+        const color = COLORS.includes(src.color) ? src.color : "yellow";
+        const kind = src.kind === "checklist" ? "checklist" : "text";
+        const items = (src.items || []).map(i => ({ id: uid(), text: String(i.text || ""), done: !!i.done }));
+        const n = { id: "local-" + uid(), kind: kind, title: String(src.title || "").slice(0, 300), body: String(src.body || ""), items: items,
+          color: color, is_pinned: !!src.is_pinned, is_archived: !!src.is_archived,
+          remind_at: src.remind_at && new Date(src.remind_at) > new Date() ? src.remind_at : null,
+          remind_repeat: src.remind_repeat || "none", created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+        state.notes.unshift(n);
+        queue({ type: "create", id: n.id, fields: { kind: n.kind, title: n.title, body: n.body, items: n.items, color: n.color,
+          is_pinned: n.is_pinned, is_archived: n.is_archived, remind_at: n.remind_at, remind_repeat: n.remind_repeat } });
+        haveSig.add(sig(n));
+        added++;
+      });
+      render();
+      openPhone();
+      window.showToast && showToast(added ? "Restored " + added + " note" + (added === 1 ? "" : "s") : "Nothing new to restore: these notes are already here", added ? "success" : "info");
+    } catch (err) {
+      window.showToast && showToast("Could not read that file: " + err.message, "error");
+    }
+  });
+
   // Back button / Escape closes the editor
   window.addEventListener("popstate", () => {
     if (!$("#cn-rem").hidden) { closeReminder(); history.pushState({ cnEditor: 1 }, ""); return; }
@@ -797,6 +1207,7 @@
     if (e.key === "Escape") {
       if (!$("#cn-rem").hidden) { closeReminder(); return; }
       if (!$("#cn-wd").hidden) { closeWidget(); return; }
+      if (!$("#cn-ph").hidden) { closePhone(); return; }
       if ($$(".cn-pop").some(p => !p.hidden)) { closePops(); return; }
       if (editor.note) { closeEditor(); return; }
       fab.classList.remove("open");
@@ -815,12 +1226,17 @@
   // ── start ────────────────────────────────────────────────────────────
   if (window.feather) feather.replace();
   render();
-  load().then(() => {
+  window.addEventListener("online", () => { showSync(); load(); });
+  window.addEventListener("offline", showSync);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") kick(0); });
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { /* optional */ }
+  loadLocal().then(load).then(() => {
     const p = new URLSearchParams(location.search);
     const open = p.get("open"), nw = p.get("new");
     if (open || nw) history.replaceState(null, "", location.pathname);
     if (open && byId(open)) { const n = byId(open); openEditor(Object.assign({}, n, { items: (n.items || []).map(i => Object.assign({}, i)) }), { focus: false }); }
     else if (nw === "text" || nw === "checklist") newNote(nw);
+    else if (nw === "voice") newNote("text");
     if (p.get("widget") === "1") openWidget();
   });
   window.ColorNotes = { state: state, render: render, load: load };
