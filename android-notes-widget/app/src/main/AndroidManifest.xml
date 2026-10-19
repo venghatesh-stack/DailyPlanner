@@ -2,6 +2,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Lets the app find the phone's voice-typing service on Android 11+. -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
+        </intent>
+    </queries>
 
     <application
         android:allowBackup="true"
@@ -47,6 +55,28 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/notes_widget_info" />
         </receiver>
+
+        <!-- Edit a note on the phone (opened from the widget). -->
+        <activity
+            android:name=".NoteActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity="com.dailyplanner.noteswidget.edit"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- Quick add: a small box over the home screen. -->
+        <activity
+            android:name=".QuickAddActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity="com.dailyplanner.noteswidget.quick"
+            android:theme="@style/QuickTheme"
+            android:windowSoftInputMode="stateVisible|adjustResize" />
+
+        <service
+            android:name=".SyncJobService"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
 
         <service
             android:name=".NotesWidgetService"

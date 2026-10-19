@@ -21,6 +21,7 @@ public class ActionActivity extends Activity {
     static final String TOGGLE = "toggle";
     static final String NEW = "new";
     static final String LIST = "list";
+    static final String ADD_ITEM = "add_item";
 
     static PendingIntent pending(Context c, int requestCode, String action) {
         Intent i = new Intent(c, ActionActivity.class).putExtra(EXTRA_ACTION, action);
@@ -42,21 +43,27 @@ public class ActionActivity extends Activity {
             return;
         }
         if (TOGGLE.equals(action) && noteId != null) {
-            final String itemId = in.getStringExtra(EXTRA_ITEM);
-            new Thread(() -> {
-                try {
-                    Api.toggle(app, noteId, itemId);
-                } catch (Exception e) {
-                    Prefs.saveError(app, "Could not tick that item: " + e.getMessage());
-                }
-                NotesWidgetProvider.refreshAll(app);
-            }).start();
+            // Ticked on the phone at once; the server catches up in the background.
+            Store.toggleItem(app, noteId, in.getStringExtra(EXTRA_ITEM));
+            NotesWidgetProvider.showLocal(app);
+            SyncJobService.syncSoon(app);
+            finish();
+            return;
+        }
+        if (OPEN.equals(action) && noteId != null) {
+            startActivity(new Intent(this, NoteActivity.class).putExtra(EXTRA_NOTE, noteId)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            finish();
+            return;
+        }
+        if (NEW.equals(action) || ADD_ITEM.equals(action)) {
+            Intent q = new Intent(this, QuickAddActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            if (ADD_ITEM.equals(action)) q.putExtra(EXTRA_NOTE, noteId);
+            startActivity(q);
             finish();
             return;
         }
         String path = "/color-notes";
-        if (OPEN.equals(action) && noteId != null) path = "/color-notes?open=" + Uri.encode(noteId);
-        else if (NEW.equals(action)) path = "/color-notes?new=text";
         try {
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(Prefs.server(this) + path))
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));

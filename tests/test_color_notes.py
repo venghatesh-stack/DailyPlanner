@@ -511,3 +511,24 @@ def test_missing_new_column_does_not_break_notes_or_reminders(auth_client, monke
     now = datetime(2026, 10, 19, 9, 0, 20, tzinfo=IST)
     rows.append(_note(remind_at=datetime(2026, 10, 19, 9, 0, tzinfo=IST).astimezone(timezone.utc).isoformat()))
     assert cr.fire("u1", now) == ["n1"] and len(sent) == 1          # the reminder still goes out
+
+
+def test_widget_can_create_and_edit_notes(auth_client, client, widget, notes):
+    j = auth_client.post("/api/color-notes/widget-token", json={"label": "Phone"}).get_json()
+    H = {"Authorization": f"Bearer {j['token']}"}
+    with client.session_transaction() as s:
+        s.clear()
+    assert client.post("/api/widget/notes", json={"title": "x"}).status_code == 401
+    r = client.post("/api/widget/notes", headers=H, json={"kind": "checklist", "title": "Shop", "color": "green",
+                                                         "items": [{"id": "a", "text": "Milk"}], "user_id": "hacker"})
+    assert r.status_code == 201
+    note = r.get_json()["note"]
+    assert note["title"] == "Shop" and note["color"] == "green" and notes[-1]["user_id"] == "test-user-id"
+    r = client.post(f"/api/widget/notes/{note['id']}", headers=H,
+                    json={"items": [{"id": "a", "text": "Milk"}, {"id": "b", "text": "Eggs"}], "remind_at": "2030-01-01T00:00:00Z",
+                          "deleted_at": "now"})
+    out = r.get_json()["note"]
+    assert [i["text"] for i in out["items"]] == ["Milk", "Eggs"]
+    assert out["remind_at"] is None and not out.get("deleted_at")          # reminders/trash stay in the planner
+    assert client.post(f"/api/widget/notes/{note['id']}", headers=H, json={"color": "pink"}).status_code == 400
+    assert client.post("/api/widget/notes/nope", headers=H, json={"title": "y"}).status_code == 404

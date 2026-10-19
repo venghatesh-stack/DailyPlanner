@@ -349,6 +349,8 @@ from urllib.parse import quote
 
 TOKENS = "widget_tokens"
 WIDGET_FIELDS = "id,kind,title,body,items,color,is_pinned,remind_at,remind_repeat,updated_at"
+# What the widget app may change. Reminders, archive and trash stay in the planner.
+WIDGET_EDITABLE = ("kind", "title", "body", "items", "color", "is_pinned")
 
 
 def _hash(token):
@@ -427,6 +429,60 @@ def widget_notes():
         rows = pinned
     return jsonify({"notes": rows, "scope": "pinned" if (scope == "pinned" and pinned) else "recent",
                     "server_time": _now()})
+
+
+def _widget_refresh_shade(user_id, note):
+    if note and note.get("notify_pinned"):
+        try:
+            from services import push_service
+            title = (note.get("title") or "").strip() or "Note"
+            push_service.send_to_user(user_id, title=f"\U0001F4CC {title}", body=shade_text(note),
+                                      url=f"/color-notes?open={note['id']}", tag=f"cnote-pin-{note['id']}",
+                                      extra=SHADE, urgency="normal")
+        except Exception:
+            logger.debug("shade refresh after widget edit failed", exc_info=True)
+
+
+@color_notes_bp.route("/api/widget/notes", methods=["POST"])
+def widget_create():
+    """A new note typed (or spoken) on the home-screen widget."""
+    user_id = _token_user()
+    if not user_id:
+        return jsonify({"error": "Not connected"}), 401
+    data = request.get_json(silent=True) or {}
+    try:
+        payload = _clean({k: data[k] for k in WIDGET_EDITABLE if k in data}, partial=False)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    for flag in ("is_pinned",):
+        if flag in data:
+            payload[flag] = bool(data[flag])
+    payload["user_id"] = user_id
+    rows = post(TABLE, payload)
+    note = rows[0] if rows else None
+    return jsonify({"note": _one(user_id, note["id"]) if note else None}), 201
+
+
+@color_notes_bp.route("/api/widget/notes/<note_id>", methods=["POST"])
+def widget_update(note_id):
+    """Edits made in the widget app: title, text, items, colour, pin."""
+    user_id = _token_user()
+    if not user_id:
+        return jsonify({"error": "Not connected"}), 401
+    data = request.get_json(silent=True) or {}
+    try:
+        patch = _clean({k: data[k] for k in WIDGET_EDITABLE if k in data}, partial=True)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    note = _one(user_id, note_id)
+    if not note or note.get("deleted_at"):
+        return jsonify({"error": "Note not found"}), 404
+    if patch:
+        patch["updated_at"] = _now()
+        update(TABLE, {"id": f"eq.{note_id}", "user_id": f"eq.{user_id}"}, patch)
+        note = _link(user_id, note_id, keys=set(patch)) if LINK_KEYS & set(patch) else _one(user_id, note_id)
+        _widget_refresh_shade(user_id, note)
+    return jsonify({"note": note})
 
 
 @color_notes_bp.route("/api/widget/notes/<note_id>/toggle", methods=["POST"])

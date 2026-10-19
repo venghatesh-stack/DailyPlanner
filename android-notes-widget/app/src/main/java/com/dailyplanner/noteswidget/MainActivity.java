@@ -77,18 +77,19 @@ public class MainActivity extends Activity {
         new Thread(() -> {
             String msg;
             boolean bad;
-            try {
-                String json = Api.fetchNotes(getApplicationContext());
-                Prefs.saveResult(getApplicationContext(), json);
-                int count = new JSONObject(json).optJSONArray("notes") == null ? 0
-                        : new JSONObject(json).optJSONArray("notes").length();
-                msg = "Connected. " + count + " note" + (count == 1 ? "" : "s") + " ready for the widget.";
+            android.content.Context app = getApplicationContext();
+            boolean ok = Store.flush(app);
+            int count = Store.notes(app).length();
+            if (ok) {
+                msg = "Connected. " + count + " note" + (count == 1 ? "" : "s") + " on the widget. "
+                        + "Changes sync automatically.";
                 bad = false;
-            } catch (Exception e) {
-                msg = "Could not connect: " + e.getMessage();
+            } else {
+                msg = "Could not connect: " + Prefs.error(app);
                 bad = true;
             }
-            NotesWidgetProvider.refreshAll(getApplicationContext());
+            SyncJobService.schedulePeriodic(app);
+            NotesWidgetProvider.refreshAll(app);
             final String m = msg;
             final boolean b = bad;
             runOnUiThread(() -> showStatus(m, b));

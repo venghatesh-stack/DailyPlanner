@@ -43,6 +43,21 @@ final class Api {
         }
     }
 
+    /** POST /api/widget/notes. Returns the created note. */
+    static JSONObject createNote(Context c, JSONObject fields) throws IOException {
+        String text = request(c, "POST", Prefs.server(c) + "/api/widget/notes", fields.toString());
+        try {
+            return new JSONObject(text).getJSONObject("note");
+        } catch (org.json.JSONException e) {
+            throw new IOException("Unexpected reply from the server");
+        }
+    }
+
+    /** POST /api/widget/notes/{id} with the changed fields. */
+    static void updateNote(Context c, String id, JSONObject fields) throws IOException {
+        request(c, "POST", Prefs.server(c) + "/api/widget/notes/" + Uri.encode(id), fields.toString());
+    }
+
     private static String request(Context c, String method, String url, String body) throws IOException {
         if (!Prefs.connected(c)) throw new ApiException(401, "Not connected");
         HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();

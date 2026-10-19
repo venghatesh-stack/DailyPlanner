@@ -37,24 +37,17 @@ public class NotesWidgetService extends RemoteViewsService {
 
         @Override public void onCreate() { load(Prefs.cache(context)); }
 
-        /** Called on a background thread when the widget asks for fresh data. */
+        /**
+         * Draws from the copy saved on the phone, so it is instant and works
+         * offline. The network is SyncJobService's job; it redraws when done.
+         */
         @Override
         public void onDataSetChanged() {
             if (!Prefs.connected(context)) {
                 notes.clear();
-                NotesWidgetProvider.updateHeaders(context);
                 return;
             }
-            try {
-                String json = Api.fetchNotes(context);
-                Prefs.saveResult(context, json);
-                load(json);
-            } catch (Exception e) {
-                Prefs.saveError(context, e instanceof Api.ApiException ? e.getMessage()
-                        : "Offline. Showing saved notes.");
-                load(Prefs.cache(context));
-            }
-            NotesWidgetProvider.updateHeaders(context);
+            load(Prefs.cache(context));
         }
 
         private void load(String json) {
@@ -114,6 +107,13 @@ public class NotesWidgetService extends RemoteViewsService {
                     if (count++ >= MAX_ITEMS) break;
                     card.addView(R.id.items, itemRow(id, it, ink));
                 }
+                RemoteViews add = new RemoteViews(context.getPackageName(), R.layout.widget_add_row);
+                add.setTextColor(R.id.add_row, NoteColors.fade(ink, 0xB0));
+                Intent addIntent = new Intent();
+                addIntent.putExtra(ActionActivity.EXTRA_ACTION, ActionActivity.ADD_ITEM);
+                addIntent.putExtra(ActionActivity.EXTRA_NOTE, id);
+                add.setOnClickFillInIntent(R.id.add_row, addIntent);
+                card.addView(R.id.items, add);
                 int total = open.size() + done.size();
                 String progress = total == 0 ? "Empty checklist" : done.size() + "/" + total + " done";
                 if (total > MAX_ITEMS) progress += " · +" + (total - MAX_ITEMS) + " more";

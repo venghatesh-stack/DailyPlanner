@@ -20,6 +20,27 @@ public class NotesWidgetProvider extends AppWidgetProvider {
             manager.updateAppWidget(id, build(context, id));
         }
         manager.notifyAppWidgetViewDataChanged(ids, R.id.list);
+        SyncJobService.schedulePeriodic(context);
+        SyncJobService.syncSoon(context);
+    }
+
+    @Override
+    public void onEnabled(Context context) {
+        SyncJobService.schedulePeriodic(context);
+    }
+
+    @Override
+    public void onDisabled(Context context) {
+        SyncJobService.cancelPeriodic(context);
+    }
+
+    /** Redraw from what is saved on the phone (no network; instant). */
+    static void showLocal(Context context) {
+        AppWidgetManager manager = AppWidgetManager.getInstance(context);
+        int[] ids = manager.getAppWidgetIds(new ComponentName(context, NotesWidgetProvider.class));
+        if (ids == null || ids.length == 0) return;
+        updateHeaders(context);
+        manager.notifyAppWidgetViewDataChanged(ids, R.id.list);
     }
 
     @Override
@@ -27,10 +48,11 @@ public class NotesWidgetProvider extends AppWidgetProvider {
         super.onReceive(context, intent);
         if (ACTION_REFRESH.equals(intent.getAction())) {
             refreshAll(context);
+            SyncJobService.syncSoon(context);
         }
     }
 
-    /** Rebuild the header and reload every widget's notes from the server. */
+    /** Rebuild the header and redraw every widget from the phone's copy. */
     static void refreshAll(Context context) {
         AppWidgetManager manager = AppWidgetManager.getInstance(context);
         int[] ids = manager.getAppWidgetIds(new ComponentName(context, NotesWidgetProvider.class));
@@ -60,6 +82,8 @@ public class NotesWidgetProvider extends AppWidgetProvider {
         long last = Prefs.lastSync(c);
         String when = last == 0 ? "" : "Updated " + DateUtils.getRelativeTimeSpanString(
                 last, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS);
+        int pending = Store.pending(c);
+        if (pending > 0) return pending + " change" + (pending == 1 ? "" : "s") + " waiting to sync";
         if (!err.isEmpty()) return err.length() > 60 ? err.substring(0, 60) : err;
         return when;
     }
