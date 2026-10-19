@@ -52,6 +52,40 @@ def _now():
     return datetime.now(timezone.utc).isoformat()
 
 
+# Columns added after the first version. If the SQL that adds them has not
+# been run yet, reads fall back to the older column set instead of failing,
+# so notes and reminders keep working (just without these features).
+OPTIONAL_COLS = ("notify_pinned", "checklist_item_id")
+
+
+def _err_text(e):
+    resp = getattr(e, "response", None)
+    try:
+        return str(e) + " " + (resp.text if resp is not None else "")
+    except Exception:
+        return str(e)
+
+
+def _missing_column(e):
+    t = _err_text(e)
+    return "42703" in t or ("column" in t and "does not exist" in t)
+
+
+def _safe_get(table, params):
+    try:
+        return get(table, params) or []
+    except Exception as e:
+        if table != TABLE or not _missing_column(e):
+            raise
+        if any(k in OPTIONAL_COLS for k in params):
+            return []                      # a filter on a column that isn't there yet
+        p2 = dict(params)
+        if "select" in p2:
+            p2["select"] = ",".join(c for c in p2["select"].split(",") if c not in OPTIONAL_COLS)
+        logger.warning("color_notes is missing %s - run MIGRATION_COLOR_NOTES.sql", ", ".join(OPTIONAL_COLS))
+        return get(table, p2) or []
+
+
 def _missing_table(e):
     """True when the migration has not been run yet."""
     resp = getattr(e, "response", None)
@@ -128,6 +162,8 @@ def _link(user_id, note_id, keys=None):
     `keys` are the fields just changed; None means trash/restore."""
     from services import color_note_links
     note = _one(user_id, note_id)
+    if note and "checklist_item_id" not in note:
+        return note       # column not added yet: linking would duplicate checklist items
     if note and keys is not None and not note.get("remind_at") and not ({"remind_at", "is_archived"} & set(keys)):
         # A one-off reminder that already fired keeps its checklist item for
         # that day; editing the title must not take it away.
@@ -139,7 +175,7 @@ def _link(user_id, note_id, keys=None):
 
 
 def _one(user_id, note_id):
-    rows = get(TABLE, {"id": f"eq.{note_id}", "user_id": f"eq.{user_id}",
+    rows = _safe_get(TABLE, {"id": f"eq.{note_id}", "user_id": f"eq.{user_id}",
                        "purged_at": "is.null", "select": FIELDS}) or []
     return rows[0] if rows else None
 
@@ -155,8 +191,8 @@ def page():
 def list_notes():
     user_id = session["user_id"]
     try:
-        rows = get(TABLE, {"user_id": f"eq.{user_id}", "purged_at": "is.null",
-                           "select": FIELDS, "order": "updated_at.desc", "limit": "2000"}) or []
+        rows = _safe_get(TABLE, {"user_id": f"eq.{user_id}", "purged_at": "is.null",
+                                 "select": FIELDS, "order": "updated_at.desc", "limit": "2000"})
     except Exception as e:
         if _missing_table(e):
             return jsonify({"items": [], "migration_pending": True})
@@ -249,7 +285,7 @@ def empty_trash():
     user_id = session["user_id"]
     try:
         from services import color_note_links
-        linked = get(TABLE, {"user_id": f"eq.{user_id}", "deleted_at": "not.is.null", "purged_at": "is.null",
+        linked = _safe_get(TABLE, {"user_id": f"eq.{user_id}", "deleted_at": "not.is.null", "purged_at": "is.null",
                              "checklist_item_id": "not.is.null", "select": FIELDS}) or []
         for n in linked:
             color_note_links.sync(user_id, n)

@@ -39,6 +39,7 @@ def notes(monkeypatch):
 
     def fake_post(table, payload, **kw):
         row = dict({"is_pinned": False, "is_archived": False, "remind_at": None, "remind_repeat": "none",
+                    "checklist_item_id": None, "notify_pinned": False,
                     "deleted_at": None, "purged_at": None, "created_at": "2026-10-19T00:00:00+00:00",
                     "updated_at": "2026-10-19T00:00:00+00:00"}, **payload, id=f"n{len(rows) + 1}")
         rows.append(row)
@@ -481,3 +482,32 @@ def test_linked_notes_are_not_pushed_twice(remind):
     assert cr.fire("u1", now) == ["n1"]
     assert sent == []                                   # the checklist item announces it instead
     assert rows[0]["remind_at"] is None                 # but the note still moves on
+
+
+def test_missing_new_column_does_not_break_notes_or_reminders(auth_client, monkeypatch, remind):
+    """v336 went live before its SQL was run: Supabase answered 42703 for
+    checklist_item_id and every reminder stopped. Reads must fall back."""
+    import routes.color_notes as cn
+    from requests.exceptions import HTTPError
+
+    def missing(params):
+        if "checklist_item_id" in (params.get("select") or "") or "notify_pinned" in (params.get("select") or ""):
+            err = HTTPError("400 Client Error")
+            err.response = type("R", (), {"status_code": 400, "text": '{"code":"42703","message":"column color_notes.checklist_item_id does not exist"}'})()
+            raise err
+
+    store = [{"id": "a", "user_id": "test-user-id", "title": "Old", "kind": "text", "purged_at": None, "deleted_at": None}]
+
+    def g(table, params=None, **kw):
+        missing(params or {})
+        return [dict(r) for r in store if _match(r, params)]
+    monkeypatch.setattr(cn, "get", g)
+    j = auth_client.get("/api/color-notes").get_json()
+    assert [n["title"] for n in j["items"]] == ["Old"]
+
+    cr, rows, sent = remind
+    real = cr.get
+    monkeypatch.setattr(cr, "get", lambda t, params=None, **kw: (missing(params), real(t, params))[1])
+    now = datetime(2026, 10, 19, 9, 0, 20, tzinfo=IST)
+    rows.append(_note(remind_at=datetime(2026, 10, 19, 9, 0, tzinfo=IST).astimezone(timezone.utc).isoformat()))
+    assert cr.fire("u1", now) == ["n1"] and len(sent) == 1          # the reminder still goes out

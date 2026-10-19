@@ -89,12 +89,20 @@ def _claim(user_id, note_id, remind_at, today):
 
 
 def due(user_id, now_utc):
+    params = {
+        "user_id": f"eq.{user_id}", "remind_at": f"lte.{now_utc.isoformat()}",
+        "deleted_at": "is.null", "purged_at": "is.null", "is_archived": "is.false",
+        "select": "id,kind,title,body,items,color,remind_at,remind_repeat,checklist_item_id,is_archived,deleted_at",
+        "limit": "50"}
     try:
-        return get(TABLE, {
-            "user_id": f"eq.{user_id}", "remind_at": f"lte.{now_utc.isoformat()}",
-            "deleted_at": "is.null", "purged_at": "is.null", "is_archived": "is.false",
-            "select": "id,kind,title,body,items,color,remind_at,remind_repeat,checklist_item_id,is_archived,deleted_at",
-            "limit": "50"}) or []
+        return get(TABLE, params) or []
+    except Exception:
+        pass
+    # The checklist_item_id column may not exist yet (SQL not run): a missing
+    # column must never silence every reminder, so ask again without it.
+    try:
+        params["select"] = "id,kind,title,body,items,color,remind_at,remind_repeat,is_archived,deleted_at"
+        return get(TABLE, params) or []
     except Exception:
         # Table not created yet (migration pending): nothing to remind.
         logger.debug("color notes reminder query failed for %s", user_id, exc_info=True)
