@@ -53,7 +53,8 @@ public class NotesWidgetService extends RemoteViewsService {
             if (Prefs.cache(context).isEmpty()) {
                 try {
                     Store.flush(context);
-                } catch (Exception e) {
+                } catch (Throwable e) {
+                    CrashLog.record(context, e, "Widget loading notes");
                     Prefs.saveError(context, "Could not load notes: " + e.getMessage());
                 }
                 NotesWidgetProvider.updateHeaders(context);
@@ -87,7 +88,8 @@ public class NotesWidgetService extends RemoteViewsService {
         public RemoteViews getViewAt(int position) {
             try {
                 return buildCard(position);
-            } catch (Exception e) {
+            } catch (Throwable e) {
+                CrashLog.record(context, e, "Widget drawing a note");
                 RemoteViews card = new RemoteViews(context.getPackageName(), R.layout.widget_note);
                 card.setTextViewText(R.id.note_title, "Could not show this note");
                 return card;

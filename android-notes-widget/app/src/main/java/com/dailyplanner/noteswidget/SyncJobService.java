@@ -24,7 +24,8 @@ public class SyncJobService extends JobService {
             boolean done = false;
             try {
                 done = Store.flush(app);
-            } catch (Exception e) {
+            } catch (Throwable e) {
+                CrashLog.record(app, e, "Background sync");
                 Prefs.saveError(app, "Sync failed: " + e.getMessage());
             }
             NotesWidgetProvider.showLocal(app);

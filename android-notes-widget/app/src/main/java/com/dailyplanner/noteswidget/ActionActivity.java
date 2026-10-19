@@ -32,6 +32,17 @@ public class ActionActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        try {
+            build();
+        } catch (Throwable t) {
+            CrashLog.record(this, t, "Widget tap");
+            android.widget.Toast.makeText(this, "Something went wrong. Open the DailyPlanner Notes app to see the details.",
+                    android.widget.Toast.LENGTH_LONG).show();
+            finish();
+        }
+    }
+
+    private void build() {
         Intent in = getIntent();
         String action = in.getStringExtra(EXTRA_ACTION);
         String noteId = in.getStringExtra(EXTRA_NOTE);

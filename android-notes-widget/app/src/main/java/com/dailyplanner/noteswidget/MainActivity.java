@@ -57,6 +57,26 @@ public class MainActivity extends Activity {
         version.setAlpha(0.6f);
         version.setPadding(0, 24, 0, 0);
         ((android.widget.LinearLayout) status.getParent()).addView(version);
+        String crash = CrashLog.last(this);
+        if (!crash.isEmpty()) {
+            android.widget.LinearLayout parent = (android.widget.LinearLayout) status.getParent();
+            TextView err = new TextView(this);
+            err.setText("Last problem (please share this with your developer):\n\n" + crash);
+            err.setTextSize(12);
+            err.setTextIsSelectable(true);
+            err.setBackgroundColor(0x22C2362F);
+            err.setPadding(24, 24, 24, 24);
+            parent.addView(err);
+            Button share = new Button(this);
+            share.setText("Share error details");
+            share.setOnClickListener(v -> startActivity(Intent.createChooser(
+                    new Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, crash), "Share error")));
+            parent.addView(share);
+            Button clear = new Button(this);
+            clear.setText("Clear error");
+            clear.setOnClickListener(v -> { CrashLog.clear(this); parent.removeView(err); parent.removeView(share); parent.removeView(v); });
+            parent.addView(clear);
+        }
         // Rebuild the widget so its taps always run this version's code.
         NotesWidgetProvider.refreshAll(getApplicationContext());
     }

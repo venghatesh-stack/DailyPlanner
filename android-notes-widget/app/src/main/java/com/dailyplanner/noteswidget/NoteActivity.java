@@ -40,6 +40,17 @@ public class NoteActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        try {
+            build();
+        } catch (Throwable t) {
+            CrashLog.record(this, t, "Opening a note");
+            android.widget.Toast.makeText(this, "Something went wrong. Open the DailyPlanner Notes app to see the details.",
+                    android.widget.Toast.LENGTH_LONG).show();
+            finish();
+        }
+    }
+
+    private void build() {
         noteId = getIntent().getStringExtra(ActionActivity.EXTRA_NOTE);
         JSONObject n = Store.note(this, noteId);
         if (n == null) {
@@ -140,6 +151,9 @@ public class NoteActivity extends Activity {
 
         setContentView(scroll);
         paintPage();
+        // Cursor at the end of the title, ready to type.
+        title.requestFocus();
+        title.setSelection(title.getText().length());
     }
 
     private void paintPage() {

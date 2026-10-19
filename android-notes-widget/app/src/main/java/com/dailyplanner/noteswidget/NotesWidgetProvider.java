@@ -45,6 +45,14 @@ public class NotesWidgetProvider extends AppWidgetProvider {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        try {
+            handle(context, intent);
+        } catch (Throwable t) {
+            CrashLog.record(context, t, "Widget update (" + intent.getAction() + ")");
+        }
+    }
+
+    private void handle(Context context, Intent intent) {
         super.onReceive(context, intent);
         if (Intent.ACTION_MY_PACKAGE_REPLACED.equals(intent.getAction())) {
             // After an update, rebuild the widget so every tap uses the new code.

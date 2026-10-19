@@ -36,6 +36,17 @@ public class QuickAddActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        try {
+            build();
+        } catch (Throwable t) {
+            CrashLog.record(this, t, "Quick add");
+            android.widget.Toast.makeText(this, "Something went wrong. Open the DailyPlanner Notes app to see the details.",
+                    android.widget.Toast.LENGTH_LONG).show();
+            finish();
+        }
+    }
+
+    private void build() {
         noteId = getIntent().getStringExtra(ActionActivity.EXTRA_NOTE);
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
 
@@ -108,7 +119,7 @@ public class QuickAddActivity extends Activity {
             LinearLayout colors = Ui.colorRow(this, color, name -> color = name);
             colors.setPadding(0, Ui.dp(this, 8), 0, Ui.dp(this, 4));
             root.addView(colors, Ui.matchWrap());
-            body.requestFocus();
+            title.requestFocus();                       // start typing the title straight away
         }
 
         LinearLayout buttons = new LinearLayout(this);
