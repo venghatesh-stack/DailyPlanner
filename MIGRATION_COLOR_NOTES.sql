@@ -45,6 +45,9 @@ create index if not exists color_notes_remind_idx
 
 -- Added after the first version (safe if the table already exists):
 alter table color_notes add column if not exists notify_pinned boolean not null default false;
+-- A note with a reminder is mirrored to a Daily Checklist item (and from
+-- there to Google Calendar). This is that item.
+alter table color_notes add column if not exists checklist_item_id uuid;
 
 alter table color_notes enable row level security;
 

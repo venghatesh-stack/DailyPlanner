@@ -93,7 +93,7 @@ def due(user_id, now_utc):
         return get(TABLE, {
             "user_id": f"eq.{user_id}", "remind_at": f"lte.{now_utc.isoformat()}",
             "deleted_at": "is.null", "purged_at": "is.null", "is_archived": "is.false",
-            "select": "id,kind,title,body,items,remind_at,remind_repeat",
+            "select": "id,kind,title,body,items,color,remind_at,remind_repeat,checklist_item_id,is_archived,deleted_at",
             "limit": "50"}) or []
     except Exception:
         # Table not created yet (migration pending): nothing to remind.
@@ -120,10 +120,17 @@ def fire(user_id, now_local):
             continue
         if not _claim(user_id, note["id"], raw, now_local.date().isoformat()):
             continue
-        title = (note.get("title") or "").strip() or "Note reminder"
-        push_service.send_to_user(user_id, title=f"📝 {title}", body=preview(note),
-                                  url=f"/color-notes?open={note['id']}",
-                                  tag=f"cnote-{note['id']}")
+        if not note.get("checklist_item_id"):
+            # Linked notes are announced by their checklist item (push) and
+            # its Google Calendar event, at this same minute: one alert, not two.
+            title = (note.get("title") or "").strip() or "Note reminder"
+            push_service.send_to_user(user_id, title=f"📝 {title}", body=preview(note),
+                                      url=f"/color-notes?open={note['id']}",
+                                      tag=f"cnote-{note['id']}")
         update(TABLE, {"id": f"eq.{note['id']}", "remind_at": f"eq.{raw}"}, move)
+        if note.get("checklist_item_id") and (note.get("remind_repeat") == "yearly"):
+            # A yearly reminder is a one-off checklist item: move it to next year.
+            from services import color_note_links
+            color_note_links.sync(user_id, dict(note, remind_at=move["remind_at"]))
         sent.append(note["id"])
     return sent

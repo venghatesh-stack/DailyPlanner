@@ -333,3 +333,151 @@ def test_widget_token_flow(auth_client, client, widget, notes):
         s.update({"user_id": "test-user-id", "_user_id": "test-user-id", "_fresh": True, "authenticated": True})
     assert auth_client.post(f"/api/color-notes/widget-token/{widget[0]['id']}/revoke").get_json()["ok"]
     assert client.get("/api/widget/notes", headers=H).status_code == 401
+
+
+# ── reminders -> Daily Checklist (-> Google Calendar) ───────────────────
+def test_plan_maps_repeats_to_checklist_schedules():
+    from services.color_note_links import plan
+    base = {"id": "n", "title": "Pay rent", "kind": "text", "body": "Before the 5th"}
+    at = datetime(2026, 10, 19, 9, 30, tzinfo=IST).astimezone(timezone.utc).isoformat()   # a Monday
+    p = plan(dict(base, remind_at=at, remind_repeat="none"), IST)
+    assert p["schedule"] == "once" and p["schedule_days"] == "2026-10-19"
+    assert p["reminder_time"] == "09:30:00" and p["time_of_day"] == "morning"
+    assert p["name"] == "\U0001F4DD Pay rent" and p["group_name"] == "Color Notes" and "Before the 5th" in p["notes"]
+    assert plan(dict(base, remind_at=at, remind_repeat="daily"), IST)["schedule"] == "daily"
+    w = plan(dict(base, remind_at=at, remind_repeat="weekly"), IST)
+    assert (w["schedule"], w["schedule_days"]) == ("custom", "1")                 # Monday, Sun=0
+    mo = plan(dict(base, remind_at=at, remind_repeat="monthly"), IST)
+    assert (mo["schedule"], mo["schedule_days"]) == ("monthly_dom", "19")
+    assert plan(dict(base, remind_at=at, remind_repeat="yearly"), IST)["schedule"] == "once"
+    # No checklist item without a reminder, or for archived / trashed notes.
+    assert plan(base, IST) is None
+    assert plan(dict(base, remind_at=at, is_archived=True), IST) is None
+    assert plan(dict(base, remind_at=at, deleted_at="x"), IST) is None
+    # Untitled notes are named from their text or first item.
+    assert plan({"id": "n", "kind": "checklist", "items": [{"text": "Milk"}], "remind_at": at}, IST)["name"] == "\U0001F4DD Milk"
+
+
+@pytest.fixture
+def linked(monkeypatch, notes):
+    """Notes + a fake checklist table, with Calendar calls recorded."""
+    import routes.checklist as ck
+    import routes.color_notes as cn
+    from services import color_note_links as cl
+    import services.push_scheduler as ps
+    items, times, cal = [], [], []
+
+    def table(t):
+        return {"checklist_items": items, "checklist_reminder_times": times}.get(t)
+
+    note_get, note_post, note_update = cn.get, cn.post, cn.update
+
+    def g(t, params=None, **kw):
+        rows = table(t)
+        if rows is None:
+            return note_get(t, params, **kw)
+        return [dict(r) for r in rows if _match(r, params)]
+
+    def p(t, payload, **kw):
+        rows = table(t)
+        if rows is None:
+            return note_post(t, payload, **kw)
+        row = dict(payload, id=f"{t[:2]}{len(rows) + 1}")
+        rows.append(row)
+        return [dict(row)]
+
+    def u(t, params=None, json=None, **kw):
+        rows = table(t)
+        if rows is None:
+            return note_update(t, params, json, **kw)
+        for r in rows:
+            if _match(r, params):
+                r.update(json)
+
+    def d(t, params=None, **kw):
+        rows = table(t)
+        rows[:] = [r for r in rows if not _match(r, params)]
+
+    for mod in (cl, ck):
+        monkeypatch.setattr(mod, "get", g)
+        monkeypatch.setattr(mod, "post", p)
+        monkeypatch.setattr(mod, "update", u)
+    monkeypatch.setattr(cl, "sb_delete", d)
+    monkeypatch.setattr(ck, "sb_delete", d)
+    monkeypatch.setattr(cn, "get", g)
+    monkeypatch.setattr(cn, "update", u)
+    monkeypatch.setattr(ps, "_user_tz_name", lambda uid: "Asia/Kolkata")
+    monkeypatch.setattr(ck, "_sync_children_calendar_async", lambda uid, row, a, r: cal.append(("sync", row["name"], [x["reminder_time"] for x in a], len(r))))
+    monkeypatch.setattr(ck, "_resync_all_children_calendar_async", lambda uid, row: cal.append(("resync", row["name"])))
+    monkeypatch.setattr(ck.cal_sync, "delete_from_calendar", lambda uid, ev: cal.append(("delete", ev)))
+    return {"items": items, "times": times, "cal": cal, "notes": notes}
+
+
+def test_reminder_creates_and_follows_a_checklist_item(auth_client, linked):
+    items, times, cal = linked["items"], linked["times"], linked["cal"]
+    r = auth_client.post("/api/color-notes", json={"title": "Pay rent", "body": "Before the 5th",
+                                                   "remind_at": "2026-10-20T09:00:00+05:30"})
+    note = r.get_json()["item"]
+    assert note["checklist_item_id"] == items[0]["id"]
+    assert items[0]["schedule"] == "once" and items[0]["schedule_days"] == "2026-10-20"
+    assert [t["reminder_time"] for t in times] == ["09:00:00"]
+    assert cal[-1] == ("sync", "\U0001F4DD Pay rent", ["09:00:00"], 0)          # Google Calendar event
+    nid = note["id"]
+    # Move the time and make it weekly: same item, new time and schedule.
+    auth_client.post(f"/api/color-notes/{nid}", json={"remind_at": "2026-10-21T18:15:00+05:30", "remind_repeat": "weekly"})
+    assert len([i for i in items if not i.get("is_deleted")]) == 1
+    assert (items[0]["schedule"], items[0]["schedule_days"], items[0]["time_of_day"]) == ("custom", "3", "evening")
+    assert [t["reminder_time"] for t in times] == ["18:15:00"]
+    # Renaming the note renames the item and its Calendar event.
+    auth_client.post(f"/api/color-notes/{nid}", json={"title": "Pay house rent"})
+    assert items[0]["name"] == "\U0001F4DD Pay house rent" and cal[-1] == ("resync", "\U0001F4DD Pay house rent")
+    # Body edits alone do not touch the checklist or Calendar.
+    n_cal = len(cal)
+    auth_client.post(f"/api/color-notes/{nid}", json={"body": "edited"})
+    assert len(cal) == n_cal
+    # Removing the reminder removes the item and its Calendar events.
+    times[0]["google_event_id"] = "gev1"
+    auth_client.post(f"/api/color-notes/{nid}", json={"remind_at": None})
+    assert items[0]["is_deleted"] is True and times == []
+    assert linked["notes"][0]["checklist_item_id"] is None
+
+
+def test_trash_and_archive_take_the_item_away(auth_client, linked):
+    items = linked["items"]
+    nid = auth_client.post("/api/color-notes", json={"title": "A", "remind_at": "2026-10-20T09:00:00+05:30",
+                                                     "remind_repeat": "daily"}).get_json()["item"]["id"]
+    auth_client.post(f"/api/color-notes/{nid}/trash")
+    assert items[-1]["is_deleted"] is True
+    auth_client.post(f"/api/color-notes/{nid}/restore")                         # back again
+    live = [i for i in items if not i.get("is_deleted")]
+    assert len(live) == 1 and live[0]["schedule"] == "daily"
+    auth_client.post(f"/api/color-notes/{nid}", json={"is_archived": True})
+    assert not [i for i in items if not i.get("is_deleted")]
+
+
+def test_add_to_checklist_without_a_reminder(auth_client, linked):
+    nid = auth_client.post("/api/color-notes", json={"kind": "checklist", "title": "Packing",
+                                                     "items": [{"text": "Charger"}]}).get_json()["item"]["id"]
+    j = auth_client.post(f"/api/color-notes/{nid}/checklist").get_json()
+    assert j["ok"] and j["timed"] is False
+    item = linked["items"][-1]
+    assert item["schedule"] == "once" and item["time_of_day"] == "anytime" and item["name"] == "\U0001F4DD Packing"
+    assert linked["times"] == []                                                  # no time, so no push or Calendar
+
+
+def test_fired_one_off_keeps_its_checklist_item(auth_client, linked):
+    items = linked["items"]
+    nid = auth_client.post("/api/color-notes", json={"title": "Call", "remind_at": "2026-10-20T09:00:00+05:30"}).get_json()["item"]["id"]
+    linked["notes"][0]["remind_at"] = None                                      # the scheduler fired and cleared it
+    auth_client.post(f"/api/color-notes/{nid}", json={"title": "Call bank"})
+    assert items[0].get("is_deleted") is not True
+
+
+def test_linked_notes_are_not_pushed_twice(remind):
+    cr, rows, sent = remind
+    now = datetime(2026, 10, 19, 9, 0, 20, tzinfo=IST)
+    rows.append(_note(remind_at=datetime(2026, 10, 19, 9, 0, tzinfo=IST).astimezone(timezone.utc).isoformat(),
+                      checklist_item_id="ci1"))
+    assert cr.fire("u1", now) == ["n1"]
+    assert sent == []                                   # the checklist item announces it instead
+    assert rows[0]["remind_at"] is None                 # but the note still moves on

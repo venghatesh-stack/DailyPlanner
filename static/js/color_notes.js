@@ -184,12 +184,14 @@
             if (j.item) {
               remap(oldId, j.item.id);
               const n = byId(j.item.id);
-              if (n) { n.created_at = j.item.created_at; n.updated_at = n.updated_at || j.item.updated_at; }
+              if (n) { n.created_at = j.item.created_at; n.updated_at = n.updated_at || j.item.updated_at; n.checklist_item_id = j.item.checklist_item_id || null; }
             }
           } else if (op.type === "patch") {
             if (isLocalId(op.id)) { sync.outbox.shift(); continue; }
-            await api("/api/color-notes/" + encodeURIComponent(op.id), op.fields);
+            const j = await api("/api/color-notes/" + encodeURIComponent(op.id), op.fields);
             sync.outbox.shift();
+            const n = byId(op.id);
+            if (n && j.item) n.checklist_item_id = j.item.checklist_item_id || null;
           } else if (op.type === "action") {
             if (op.action === "empty") await api("/api/color-notes/trash/empty", {});
             else if (!isLocalId(op.id)) await api("/api/color-notes/" + encodeURIComponent(op.id) + "/" + op.action, {});
@@ -321,6 +323,7 @@
       meta.push('<span class="cn-chip' + (late ? " late" : "") + '">' + icon("bell") + esc(whenLabel(n.remind_at)) +
         (REPEAT_LABEL[n.remind_repeat] ? " · " + REPEAT_LABEL[n.remind_repeat] : "") + "</span>");
     }
+    if (n.checklist_item_id && n.remind_at && !n.deleted_at) meta.push('<span class="cn-chip" title="Also on your Daily Checklist and Google Calendar">' + icon("check-circle") + "Checklist</span>");
     if (n.notify_pinned && !n.deleted_at) meta.push('<span class="cn-chip" title="Shown in your notification bar">' + icon("smartphone") + "Bar</span>");
     if (n.kind === "checklist" && items.length) meta.push("<span>" + items.filter(i => i.done).length + "/" + items.length + "</span>");
     meta.push("<span>" + esc(state.tab === "trash" ? "Deleted " + ago(n.deleted_at) : ago(n.updated_at)) + "</span>");
@@ -536,14 +539,16 @@
     const rr = $("#cn-remind-row");
     rr.hidden = !n.remind_at || trashed;
     if (n.remind_at) rr.querySelector("span").textContent = whenLabel(n.remind_at) + (REPEAT_LABEL[n.remind_repeat] ? " · repeats " + REPEAT_LABEL[n.remind_repeat] : "");
-    $("#cn-info").textContent = n.id && n.created_at ? "Created " + new Date(n.created_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) +
-      " · Edited " + ago(n.updated_at) : "";
+    $("#cn-info").textContent = (n.checklist_item_id && n.remind_at ? "On your Daily Checklist and Google Calendar · " : "") +
+      (n.id && n.created_at ? "Created " + new Date(n.created_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) +
+      " · Edited " + ago(n.updated_at) : "");
     const more = $("#cn-more-pop");
     const mi = (act, ic, label, cls) => '<button type="button" data-act="' + act + '" class="' + (cls || "") + '">' + icon(ic) + esc(label) + "</button>";
     more.innerHTML = trashed
       ? mi("restore", "rotate-ccw", "Restore") + mi("purge", "trash-2", "Delete forever", "danger")
       : mi("convert", n.kind === "checklist" ? "file-text" : "check-square", n.kind === "checklist" ? "Convert to text note" : "Convert to checklist") +
         (n.kind === "checklist" ? mi("uncheck", "square", "Uncheck all") + mi("clear-done", "x-square", "Delete checked items") : "") +
+        mi("checklist", "check-circle", n.checklist_item_id ? "On your Daily Checklist ✓" : (n.remind_at ? "Add to Daily Checklist + Calendar" : "Add to today's checklist")) +
         (n.id ? mi("shade", "smartphone", n.notify_pinned ? "Remove from notification bar" : "Pin to notification bar") : "") +
         mi("archive", "archive", n.is_archived ? "Move out of Archive" : "Archive") +
         mi("share", "share-2", "Share or copy") +
@@ -682,6 +687,18 @@
       change({ is_archived: val });
       await closeEditor();
       snack(val ? "Archived" : "Moved out of Archive", () => patch(n.id, { is_archived: !val }));
+    } else if (act === "checklist") {
+      await flush();
+      await runSync();
+      if (isLocalId(n.id)) { window.showToast && showToast("Connect to the internet first, then add it.", "warning"); return; }
+      try {
+        const j = await api("/api/color-notes/" + encodeURIComponent(n.id) + "/checklist", {});
+        if (j.item && j.item.checklist_item_id) { n.checklist_item_id = j.item.checklist_item_id; const h = byId(n.id); if (h) h.checklist_item_id = n.checklist_item_id; }
+        window.showToast && showToast(j.timed
+          ? "On your Daily Checklist at " + timeLabel(new Date(n.remind_at)) + ", and in Google Calendar if it's connected"
+          : "Added to today's checklist", "success");
+        paintEditor(); render();
+      } catch (e) { window.showToast && showToast(e.message, "error"); }
     } else if (act === "shade") {
       await flush();
       await shade(n.id, !n.notify_pinned);

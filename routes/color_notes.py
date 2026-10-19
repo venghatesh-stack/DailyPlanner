@@ -40,7 +40,9 @@ MAX_BODY = 100_000
 MAX_ITEMS = 500
 MAX_ITEM_TEXT = 2_000
 FIELDS = ("id,kind,title,body,items,color,is_pinned,is_archived,remind_at,remind_repeat,"
-          "last_reminded_at,notify_pinned,created_at,updated_at,deleted_at")
+          "last_reminded_at,notify_pinned,checklist_item_id,created_at,updated_at,deleted_at")
+# Changes that can alter the linked checklist item (and its Calendar event).
+LINK_KEYS = {"remind_at", "remind_repeat", "is_archived", "title", "kind"}
 # A note in the notification shade: silent, no vibration, replaced in place
 # when refreshed, and kept until dismissed (same as the pinned Day Board).
 SHADE = {"silent": True, "renotify": False, "vibrate": [], "requireInteraction": True}
@@ -121,6 +123,21 @@ def _clean(data, partial):
     return out
 
 
+def _link(user_id, note_id, keys=None):
+    """Bring the note's checklist item (and Calendar event) in line.
+    `keys` are the fields just changed; None means trash/restore."""
+    from services import color_note_links
+    note = _one(user_id, note_id)
+    if note and keys is not None and not note.get("remind_at") and not ({"remind_at", "is_archived"} & set(keys)):
+        # A one-off reminder that already fired keeps its checklist item for
+        # that day; editing the title must not take it away.
+        return note
+    if note and (note.get("remind_at") or note.get("checklist_item_id")):
+        color_note_links.sync(user_id, note)
+        note = _one(user_id, note_id)
+    return note
+
+
 def _one(user_id, note_id):
     rows = get(TABLE, {"id": f"eq.{note_id}", "user_id": f"eq.{user_id}",
                        "purged_at": "is.null", "select": FIELDS}) or []
@@ -163,7 +180,10 @@ def create_note():
         if _missing_table(e):
             return jsonify({"error": "Run MIGRATION_COLOR_NOTES.sql in Supabase first."}), 503
         raise
-    return jsonify({"item": rows[0] if rows else payload}), 201
+    item = rows[0] if rows else payload
+    if rows and item.get("remind_at"):
+        item = _link(user_id, item["id"], keys={"remind_at"}) or item
+    return jsonify({"item": item}), 201
 
 
 @color_notes_bp.route("/api/color-notes/<note_id>", methods=["POST"])
@@ -181,6 +201,8 @@ def update_note(note_id):
         return jsonify({"item": _one(user_id, note_id)})
     patch["updated_at"] = _now()
     update(TABLE, {"id": f"eq.{note_id}", "user_id": f"eq.{user_id}"}, patch)
+    if LINK_KEYS & set(patch):
+        return jsonify({"item": _link(user_id, note_id, keys=set(patch))})
     return jsonify({"item": _one(user_id, note_id)})
 
 
@@ -189,7 +211,7 @@ def _set(note_id, fields):
     if not _one(user_id, note_id):
         return jsonify({"error": "Note not found"}), 404
     update(TABLE, {"id": f"eq.{note_id}", "user_id": f"eq.{user_id}"}, fields)
-    return jsonify({"item": _one(user_id, note_id), "ok": True})
+    return jsonify({"item": _link(user_id, note_id), "ok": True})
 
 
 @color_notes_bp.route("/api/color-notes/<note_id>/trash", methods=["POST"])
@@ -213,8 +235,11 @@ def purge_note(note_id):
         return jsonify({"error": "Note not found"}), 404
     if not note.get("deleted_at"):
         return jsonify({"error": "Move the note to Trash first"}), 409
+    if note.get("checklist_item_id"):
+        from services import color_note_links
+        color_note_links.sync(user_id, dict(note, deleted_at=note.get("deleted_at") or _now()))
     update(TABLE, {"id": f"eq.{note_id}", "user_id": f"eq.{user_id}"},
-           {"purged_at": _now(), "remind_at": None})
+           {"purged_at": _now(), "remind_at": None, "checklist_item_id": None})
     return jsonify({"ok": True})
 
 
@@ -222,6 +247,14 @@ def purge_note(note_id):
 @login_required
 def empty_trash():
     user_id = session["user_id"]
+    try:
+        from services import color_note_links
+        linked = get(TABLE, {"user_id": f"eq.{user_id}", "deleted_at": "not.is.null", "purged_at": "is.null",
+                             "checklist_item_id": "not.is.null", "select": FIELDS}) or []
+        for n in linked:
+            color_note_links.sync(user_id, n)
+    except Exception:
+        logger.debug("unlink on empty trash failed", exc_info=True)
     update(TABLE, {"user_id": f"eq.{user_id}", "deleted_at": "not.is.null", "purged_at": "is.null"},
            {"purged_at": _now(), "remind_at": None})
     return jsonify({"ok": True})
@@ -389,3 +422,23 @@ def widget_toggle(note_id):
         except Exception:
             logger.debug("shade refresh after widget toggle failed", exc_info=True)
     return jsonify({"ok": True, "note": note})
+
+
+@color_notes_bp.route("/api/color-notes/<note_id>/checklist", methods=["POST"])
+@login_required
+def add_to_checklist(note_id):
+    """Put a note on the Daily Checklist. With a reminder: the linked,
+    timed item (kept in step automatically). Without: a one-off item for
+    today, with no time."""
+    from services import color_note_links
+    user_id = session["user_id"]
+    note = _one(user_id, note_id)
+    if not note:
+        return jsonify({"error": "Note not found"}), 404
+    if note.get("deleted_at"):
+        return jsonify({"error": "Restore the note first"}), 409
+    if note.get("remind_at") and not note.get("is_archived"):
+        item_id = color_note_links.sync(user_id, note)
+        return jsonify({"ok": True, "item_id": item_id, "timed": True, "item": _one(user_id, note_id)})
+    item_id = color_note_links.add_today(user_id, note)
+    return jsonify({"ok": True, "item_id": item_id, "timed": False, "item": note})
