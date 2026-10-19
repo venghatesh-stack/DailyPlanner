@@ -39,13 +39,36 @@ jobs:
       - name: Publish release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
-          gh release delete notes-widget --yes --cleanup-tag || true
-          gh release create notes-widget android-notes-widget/DailyPlannerNotesWidget.apk \
-            --title "DailyPlanner Notes widget (build ${{ github.run_number }})" \
-            --notes "Android home-screen widget for Color Notes. Install the APK, then connect it from Color Notes → Widget. Built from ${{ github.sha }}." \
-            --target "${{ github.sha }}"
+          set -e
+          APK=android-notes-widget/DailyPlannerNotesWidget.apk
+          TITLE="DailyPlanner Notes widget (build ${{ github.run_number }})"
+          NOTES="Android home-screen widget for Color Notes. Install the APK, then connect it from Color Notes -> Widget. Built from ${{ github.sha }}."
+          # A draft is invisible to the public (404). Remove any stuck drafts first.
+          for id in $(gh api "repos/$REPO/releases?per_page=100" --jq '.[] | select(.tag_name=="notes-widget" and .draft) | .id'); do
+            gh api -X DELETE "repos/$REPO/releases/$id"
+          done
+          if gh release view notes-widget >/dev/null 2>&1; then
+            # Update in place: replace the APK, keep the release published.
+            gh release upload notes-widget "$APK" --clobber
+            gh release edit notes-widget --title "$TITLE" --notes "$NOTES" --draft=false
+          else
+            gh release create notes-widget "$APK" --title "$TITLE" --notes "$NOTES" --target "${{ github.sha }}"
+          fi
+          id=$(gh api "repos/$REPO/releases?per_page=100" --jq '[.[] | select(.tag_name=="notes-widget")][0].id')
+          gh api -X PATCH "repos/$REPO/releases/$id" -F draft=false -F prerelease=false >/dev/null
           gh release delete notes-widget-build-log --yes --cleanup-tag || true
+
+      - name: Check the public download link works
+        run: |
+          for i in 1 2 3 4 5 6; do
+            if curl -fsIL "https://github.com/${{ github.repository }}/releases/download/notes-widget/DailyPlannerNotesWidget.apk" >/dev/null; then
+              echo "Download link OK"; exit 0
+            fi
+            sleep 10
+          done
+          echo "The public APK link is not reachable"; exit 1
 
       - name: Publish build log on failure
         if: failure()
