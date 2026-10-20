@@ -30582,5 +30582,115 @@
    "why": "Large work should be off the request path: the client gets a fast reply, and the job can be retried, split across workers and tracked.",
    "level": "Hard"
   }
+ ],
+ "A product has 10,000 units in stock and one million users try to buy it in 30 seconds. Design A: database transactions with row-level locking. Design B: Redis-based inventory reservation. Design C: queue-based purchase processing. How would you prevent overselling without making checkout unbearably slow?": [
+  {
+   "q": "One million users try to buy in 30 seconds and there are 10,000 units. What share of requests must end in \"sold out\"?",
+   "options": [
+    "About 50%",
+    "About 90%",
+    "About 99%",
+    "About 10%"
+   ],
+   "answer": 2,
+   "why": "Only 10,000 of 1,000,000 (1%) can win, so 99% of the work is saying \"sold out\" quickly.",
+   "level": "Easy"
+  },
+  {
+   "q": "Roughly what is the average request rate for 1 million users in 30 seconds?",
+   "options": [
+    "About 33,000 requests per second",
+    "About 3,300 requests per second",
+    "About 330,000 requests per second",
+    "About 1,000 requests per second"
+   ],
+   "answer": 0,
+   "why": "1,000,000 / 30 is about 33,000 per second on average, and the burst at the start is much higher.",
+   "level": "Easy"
+  },
+  {
+   "q": "In Design A, each transaction holds the stock row lock for about 5-10 ms. What is the best-case rate of successful decrements on that one row?",
+   "options": [
+    "About 33,000 per second",
+    "About 10,000 per second",
+    "About 5 per second",
+    "About 100-200 per second"
+   ],
+   "answer": 3,
+   "why": "Locks on one hot row run one after another: 1000 ms / 5-10 ms gives 100-200 per second, far below the incoming load.",
+   "level": "Medium"
+  },
+  {
+   "q": "Which change most improves Design A without giving up correctness?",
+   "options": [
+    "Use SELECT ... FOR UPDATE and call payment inside the same transaction",
+    "Use a single conditional UPDATE stock = stock - 1 WHERE stock > 0 and keep the transaction tiny",
+    "Lower the isolation level to read uncommitted",
+    "Increase the connection pool to 10,000"
+   ],
+   "answer": 1,
+   "why": "One conditional statement checks and decrements together and holds the lock for the shortest time. Holding a lock across payment or weakening isolation makes things worse or unsafe.",
+   "level": "Medium"
+  },
+  {
+   "q": "Why is a plain Redis DECR not enough for the reservation gate?",
+   "options": [
+    "It can go below zero and does not stop one user reserving many times",
+    "DECR is not atomic in Redis",
+    "DECR is too slow for 100,000 operations per second",
+    "DECR deletes the key when it reaches zero"
+   ],
+   "answer": 0,
+   "why": "DECR is atomic but blind. A Lua script checks stock first, uses a per-user idempotency key, and sets a TTL on the reservation, all in one atomic step.",
+   "level": "Medium"
+  },
+  {
+   "q": "A user's 10-minute reservation key expires in Redis. What happens to the stock count?",
+   "options": [
+    "Redis automatically adds the unit back",
+    "The database decrements again",
+    "Nothing, unless a sweeper or worker adds the unit back to the stock key",
+    "The order is confirmed anyway"
+   ],
+   "answer": 2,
+   "why": "Key expiry only deletes the reservation. A sweeper job, often driven by a sorted set of expiry times, must return the unit with INCRBY.",
+   "level": "Hard"
+  },
+  {
+   "q": "Redis fails over and the new primary shows 5 more units than it should. In the layered design, what stops an oversell?",
+   "options": [
+    "The waiting room",
+    "The CDN cache",
+    "The idempotency key",
+    "The database conditional decrement WHERE stock > 0, which rejects orders once stock is zero"
+   ],
+   "answer": 3,
+   "why": "The database is the final guard. If its stock is zero, the update changes 0 rows and the order is rejected; reconciliation then corrects Redis.",
+   "level": "Hard"
+  },
+  {
+   "q": "What is the main problem with making a queue the only gate in Design C?",
+   "options": [
+    "Queues cannot keep messages in order",
+    "Losers wait minutes for a \"sold out\" they could have been told instantly",
+    "Queues always oversell",
+    "Queues cannot handle bursts"
+   ],
+   "answer": 1,
+   "why": "With a million messages and 2,000 per second of processing, the last user hears back after about 8 minutes. A counter in front lets only winners enter the queue.",
+   "level": "Medium"
+  },
+  {
+   "q": "When the system is unsure whether a reservation is still valid, which way should it err?",
+   "options": [
+    "Toward slight undersell, fixed later by reconciliation and a second wave",
+    "Toward oversell, then cancel extra orders",
+    "Toward pausing the whole site",
+    "Toward giving the unit to the next request immediately without checks"
+   ],
+   "answer": 0,
+   "why": "Undersell leaves a few units to release later. Oversell means cancelled paid orders and broken trust, so the design never risks it.",
+   "level": "Easy"
+  }
  ]
 }
