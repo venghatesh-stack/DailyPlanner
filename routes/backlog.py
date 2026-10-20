@@ -150,6 +150,24 @@ def promote_due(user_id, today, lead_days=1):
             "select": "id",
             "limit": "200",
         }) or []
+        # Rows mirroring a dated project task (a study plan, for example)
+        # belong to their own day, not the day before: a day early would
+        # put two days of tasks in the bucket at once.
+        try:
+            early = get("quick_bucket", params={
+                "user_id": f"eq.{user_id}",
+                "is_deleted": "eq.false",
+                "is_done": "eq.false",
+                "time_bucket": "eq.future",
+                "backlog_due": f"gt.{today.isoformat()}",
+                "source_task_id": "not.is.null",
+                "select": "id",
+                "limit": "500",
+            }) or []
+            skip = {r["id"] for r in early}
+            rows = [r for r in rows if r["id"] not in skip]
+        except Exception:
+            pass  # source_task_id not migrated: keep the one-day lead
     except Exception:
         # The column arrives with MIGRATION_BACKLOG_ROUTING.sql. Until then
         # this is a feature that does not exist yet, not an error.
