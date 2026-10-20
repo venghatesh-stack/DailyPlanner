@@ -15,7 +15,7 @@ Technique: memory palace (method of loci).
 3. Paste the prompt and answer OUT LOUD before typing.
 4. Write down your green, amber and red cards.
 
-Your own 30 min: read ''What to say'' (https://dailyplanner-zus3.onrender.com/interview-prep/guides/system-design-phrases) once aloud, then skim ''System design in 5 pages'' (https://dailyplanner-zus3.onrender.com/interview-prep/guides/system-design-summary).'),
+Your own 30 min: ''50 core concepts'' guide, concepts 1 to 10 (https://dailyplanner-zus3.onrender.com/interview-prep/guides/system-design-concepts). For each, read it, then close it and say its ''Say it'' line aloud.'),
   ('2026-10-21', '08:30', '10:45', '📚 URL shortener + Unique ID generator', 'Day 1 - Foundations, caching and core building blocks
 
 For each design (45-60 min):
@@ -100,7 +100,7 @@ Technique: active recall with green/amber/red piles, and anchoring numbers to co
 3. Paste the prompt and answer OUT LOUD before typing.
 4. Write down your green, amber and red cards.
 
-Your own 30 min: Concepts tab in Interview Prep: indexes, sharding keys, replication, consistency levels.'),
+Your own 30 min: ''50 core concepts'' guide, concepts 11 to 20 (https://dailyplanner-zus3.onrender.com/interview-prep/guides/system-design-concepts). For each, read it, then close it and say its ''Say it'' line aloud.'),
   ('2026-10-22', '08:30', '10:45', '📚 Object storage (S3) + File storage (Dropbox)', 'Day 2 - Storage, data modelling and search
 
 For each design (45-60 min):
@@ -188,7 +188,7 @@ Technique: chunking, the link method, and a palace for the 10 reusable patterns.
 3. Paste the prompt and answer OUT LOUD before typing.
 4. Write down your green, amber and red cards.
 
-Your own 30 min: Concepts: queues vs streams, at-least-once vs exactly-once, ordering, idempotency keys, outbox, sagas.'),
+Your own 30 min: ''50 core concepts'' guide, concepts 21 to 30 (https://dailyplanner-zus3.onrender.com/interview-prep/guides/system-design-concepts). For each, read it, then close it and say its ''Say it'' line aloud.'),
   ('2026-10-23', '08:30', '10:45', '📚 Distributed message queue (Kafka) + Idempotent processing', 'Day 3 - Async, messaging and real time
 
 For each design (45-60 min):
@@ -279,7 +279,7 @@ Technique: elaborative interrogation (''why?'' and ''what if?''), the Feynman te
 3. Paste the prompt and answer OUT LOUD before typing.
 4. Write down your green, amber and red cards.
 
-Your own 30 min: write your checklist for product designs: users and scale, read/write ratio, core entities, APIs, data stores, hot paths, failure modes.'),
+Your own 30 min: ''50 core concepts'' guide, concepts 31 to 40 (https://dailyplanner-zus3.onrender.com/interview-prep/guides/system-design-concepts). For each, read it, then close it and say its ''Say it'' line aloud.'),
   ('2026-10-24', '08:30', '10:45', '📚 Uber: matching, location updates, dispatch', 'Day 4 - Classic product designs
 
 For each design (45-60 min):
@@ -373,7 +373,7 @@ Technique: interleaved, timed recall under pressure.
 3. Paste the prompt and answer OUT LOUD before typing.
 4. Write down your green, amber and red cards.
 
-Your own 30 min: redo your 3 weakest cards from the drill, from memory.'),
+Your own 30 min: ''50 core concepts'' guide, concepts 41 to 50 (https://dailyplanner-zus3.onrender.com/interview-prep/guides/system-design-concepts). For each, read it, then close it and say its ''Say it'' line aloud. Then redo your 3 weakest cards from the drill.'),
   ('2026-10-25', '08:30', '10:45', '📚 Flash sale + Ticket booking (contention, inventory)', 'Day 5 - High-stakes systems, reliability and full mocks
 
 For each design (45-60 min):

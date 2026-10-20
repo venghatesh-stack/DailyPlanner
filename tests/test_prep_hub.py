@@ -943,3 +943,19 @@ def test_recall_cards(auth_client):
     g = auth_client.get("/interview-prep/guides/memory-techniques")
     assert g.status_code == 200 and b"Session 5" in g.data
     assert sd_deep_bank.check_recall("# x\n") != []
+
+
+def test_fifty_concepts_guide(auth_client):
+    import os, re
+    md = open(os.path.join(os.path.dirname(__file__), "..", "SYSTEM_DESIGN_50_CONCEPTS.md"), encoding="utf-8").read()
+    nums = [int(n) for n in re.findall(r"^### (\d+)\. ", md, re.M)]
+    assert nums == list(range(1, 51))
+    for part in re.split(r"^### ", md, flags=re.M)[1:]:
+        for field in ("**What it is:**", "**Why it matters:**", "**How it works:**", "**Trade-off:**",
+                      "**Remember:**", "**Say it:**", "**Seen in:**"):
+            assert field in part, (part[:40], field)
+        for slug in re.findall(r"/interview-prep/design/([a-z0-9-]+)/summary", part):
+            assert os.path.exists(os.path.join(os.path.dirname(__file__), "..", "sd_deep", "summaries", slug + ".md")), slug
+    r = auth_client.get("/interview-prep/guides/system-design-concepts")
+    assert r.status_code == 200 and b"Back-of-the-envelope" in r.data
+    assert b"/interview-prep/guides/system-design-concepts" in auth_client.get("/interview-prep").data

@@ -315,6 +315,8 @@ _GUIDES = {
                               "System design in 5 pages"),
     "system-design-phrases": ("SYSTEM_DESIGN_PHRASES.md",
                               "System design: what to say, step by step"),
+    "system-design-concepts": ("SYSTEM_DESIGN_50_CONCEPTS.md",
+                               "System design: the 50 core concepts"),
     "memory-techniques": ("MEMORY_TECHNIQUES_SD.md",
                           "Memory techniques for system design (5 sessions with Claude)"),
     "chanakya-niti": ("CHANAKYA_NITI_GUIDE.md",
