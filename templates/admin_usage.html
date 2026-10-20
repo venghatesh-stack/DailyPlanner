@@ -72,6 +72,16 @@
   </div>
   {% endif %}
 
+  <!-- ── Row-level security readiness ── -->
+  {% if data.key_kind == 'secret' %}
+  <div class="banner" style="border:1px solid #2F7A3E;background:#E5F2E7;color:#16202A;border-radius:10px;padding:10px 14px;margin:10px 0">
+    ✅ <b>Server key: secret (service role).</b> Row-level security can be on for every table: the app bypasses it, and the public key sees nothing.</div>
+  {% else %}
+  <div class="banner" style="border:1px solid #AE461A;background:#FBEDE4;color:#16202A;border-radius:10px;padding:10px 14px;margin:10px 0">
+    ⚠️ <b>Server key: {{ data.key_kind }}.</b> Before running <code>MIGRATION_ENABLE_RLS_ALL.sql</code>, set <code>SUPABASE_KEY</code> on Render to the project's
+    <b>secret</b> key (Supabase → Project Settings → API Keys) and redeploy, or the app will stop seeing its data.</div>
+  {% endif %}
+
   <!-- ── Supabase counts ── -->
   <h2>Supabase database</h2>
   {% set s = data.supabase %}

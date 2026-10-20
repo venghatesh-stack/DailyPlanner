@@ -177,6 +177,17 @@ def _drive_quotas():
     return out
 
 
+def _key_kind():
+    """'secret', 'public' or 'unknown': which Supabase key the server uses.
+    Only a secret (service_role) key keeps working once row-level security
+    is on for every table with no policies (MIGRATION_ENABLE_RLS_ALL.sql)."""
+    try:
+        from services.thoughts_service import key_kind
+        return key_kind()
+    except Exception:
+        return "unknown"
+
+
 def _gather():
     ref = _project_ref()
     has_attach = _column_exists("messages", "attachment_file_id")
@@ -199,6 +210,7 @@ def _gather():
         "migrations": migrations,
         "meters": meters,
         "project_ref": ref,
+        "key_kind": _key_kind(),
         "users": _list_users(),
         "viewer_id": session.get("user_id"),
     }
