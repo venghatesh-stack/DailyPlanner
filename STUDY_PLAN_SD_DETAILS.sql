@@ -4,7 +4,7 @@
 -- Also sets the goal daily commitment (14 h) and deadline. Safe to run again.
 
 drop table if exists _d;
-create temp table _d(k text, kind text, arg text, due text, planned numeric, sp int);
+create temp table _d(k text, kind text, arg text, due time, planned numeric, sp int);
 insert into _d values
   ('url-shortener','card','','10:45',1.12,1),
   ('unique-id-generator','card','','10:45',1.12,1),
