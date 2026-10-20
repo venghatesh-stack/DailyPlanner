@@ -603,7 +603,7 @@ async function openTaskDetail(taskId) {
     _val("sheet-priority",  t.priority || "medium");
     _val("sheet-start",     t.start_date || "");
     _val("sheet-due",       t.due_date || "");
-    _val("sheet-duration",  t.duration_days || "");
+    _val("sheet-duration",  t.duration_days ?? "");
     _val("sheet-due-time",  t.due_time || "");
     // Highlight the matching Due-Time preset chip, if any
     _qa(".time-preset-chip").forEach(c => {
@@ -611,10 +611,11 @@ async function openTaskDetail(taskId) {
       const normalized = (t.due_time || "").slice(0, 5);
       c.classList.toggle("active", !!normalized && onClick.includes(`'${normalized}'`));
     });
-    _val("sheet-planned",   t.planned_hours || "");
-    _val("sheet-actual",    t.actual_hours || "");
+    _val("sheet-planned",   t.planned_hours ?? "");
+    _val("sheet-actual",    t.actual_hours ?? "");
     _val("sheet-delegate",  t.delegated_to || "");
     _val("sheet-notes",     t.notes || "");
+    renderSheetLinks(t.notes || "");
     _val("sheet-reminder",  "");
     _val("sheet-quadrant",  t.quadrant || "");
 
@@ -2855,3 +2856,61 @@ document.addEventListener("keydown", (e) => {
     if (typeof closeTaskSheet === "function") { closeTaskSheet(); }
   }
 });
+
+
+/* Links in a task's notes, listed as tappable rows at the top of the sheet.
+   The label is the text before the link on the same line ("Card: …" gives
+   "Card"), else the line above it (a design's name), else the path. App
+   links open in this tab; other sites in a new one. DOM nodes only, never
+   innerHTML, so notes cannot inject markup. */
+function renderSheetLinks(notes) {
+  const box = document.getElementById("sheet-links");
+  if (!box) return;
+  box.textContent = "";
+  const lines = String(notes || "").split("\n");
+  const seen = new Set();
+  let count = 0;
+  lines.forEach((line, i) => {
+    const re = /https?:\/\/[^\s)<>"']+/g;
+    let m;
+    while ((m = re.exec(line))) {
+      const url = m[0].replace(/[.,;:]+$/, "");
+      if (seen.has(url)) continue;
+      seen.add(url);
+      let before = line.slice(0, m.index).replace(/[:\-–(]+\s*$/, "").replace(/^\s*\d+\.\s*/, "").trim();
+      // Nearest line above with no link: the heading these links belong to.
+      let head = "";
+      for (let k = i - 1; k >= 0; k--) {
+        const L = lines[k].trim();
+        if (!L) break;
+        if (!/https?:\/\//.test(L)) { head = L.replace(/^[-\s]+/, "").replace(/:$/, ""); break; }
+      }
+      if (!before || before.length < 3) before = head;
+      else if (before.length <= 12 && head && /^\s/.test(line)) before = head + " · " + before;
+      const a = document.createElement("a");
+      let href = url, path = url, external = true;
+      try {
+        const u = new URL(url);
+        if (u.host === location.host || /dailyplanner-[a-z0-9]+\.onrender\.com$/.test(u.host)) {
+          href = u.pathname + u.search; external = false;
+        }
+        path = u.pathname.replace(/^\/interview-prep\//, "").replace(/\/$/, "") || u.host;
+        if (/\.pdf$|\/pdf$/.test(u.pathname)) path += " (PDF)";
+      } catch (e) { /* keep raw */ }
+      a.href = href;
+      if (external) { a.target = "_blank"; a.rel = "noopener"; }
+      a.textContent = (before ? before + " " : "") + "→ ";
+      const s = document.createElement("span");
+      s.textContent = path;
+      a.appendChild(s);
+      if (!count) {
+        const h = document.createElement("b");
+        h.textContent = "Open";
+        box.appendChild(h);
+      }
+      box.appendChild(a);
+      count++;
+    }
+  });
+  box.hidden = count === 0;
+}

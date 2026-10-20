@@ -15,6 +15,13 @@
 <script src="{{ url_for('static', filename='js/pt-shared.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/okr_cascade.js') }}" defer></script>
 {% include "_pwa_head.html" %}
+<style>
+.sheet-links{display:flex;flex-direction:column;gap:6px;margin:4px 0 12px;padding:10px 12px;border:1px solid var(--color-border,#ddd);border-radius:12px;background:var(--color-surface-secondary,#f6f6f3)}
+.sheet-links b{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-secondary,#666)}
+.sheet-links a{display:flex;gap:8px;align-items:baseline;font-size:14.5px;font-weight:600;text-decoration:none;color:var(--color-primary,#2563eb);padding:6px 0;border-top:1px solid var(--color-border,#e5e5e5);overflow-wrap:anywhere}
+.sheet-links a:first-of-type{border-top:none}
+.sheet-links a span{font-weight:400;color:var(--color-text-secondary,#666);font-size:13px}
+</style>
 </head>
 <body>
 
@@ -550,6 +557,8 @@
   </div>
 
   <div class="panel-body">
+    <!-- Links found in the notes, tappable (study material, docs, tickets). -->
+    <div id="sheet-links" class="sheet-links" hidden></div>
     <!-- ── Section: Schedule ── -->
     <details class="panel-section" open>
       <summary class="section-toggle">
@@ -669,6 +678,7 @@
           <label>Notes</label>
           <textarea id="sheet-notes" class="panel-input panel-textarea" rows="3"
                     placeholder="Add notes…"
+                    oninput="renderSheetLinks(this.value)"
                     onblur="autoSaveField('notes', this.value)"></textarea>
         </div>
         <div class="field-row">
