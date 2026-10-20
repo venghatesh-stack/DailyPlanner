@@ -4,7 +4,7 @@
 -- Then open Planner and tap 'Sync to Google' to send the blocks to Google Calendar.
 
 drop table if exists _plan;
-create temp table _plan(plan_date date, start_time text, end_time text, title text, description text);
+create temp table _plan(plan_date date, start_time time, end_time time, title text, description text);
 insert into _plan values
   ('2026-10-21', '06:00', '08:00', '🧠 Memory session 1: palace for ''What to say'' + the card template', 'Day 1 - Foundations, caching and core building blocks
 
@@ -449,7 +449,7 @@ update daily_events e
 set title = p.title, description = p.description, end_time = p.end_time
 from _plan p
 where e.user_id = (select id::text from users where email = 'venghatesh@gmail.com')
-  and e.plan_date = p.plan_date and e.start_time = p.start_time
+  and e.plan_date = p.plan_date and e.start_time::time = p.start_time
   and (e.title like '📚 %' or e.title like '🧠 %')
   and coalesce(e.is_deleted, false) = false;
 
@@ -459,11 +459,266 @@ select (select id::text from users where email = 'venghatesh@gmail.com'), p.plan
 from _plan p
 where not exists (select 1 from daily_events e
                   where e.user_id = (select id::text from users where email = 'venghatesh@gmail.com')
-                    and e.plan_date = p.plan_date and e.start_time = p.start_time
+                    and e.plan_date = p.plan_date and e.start_time::time = p.start_time
                     and (e.title like '📚 %' or e.title like '🧠 %')
                     and coalesce(e.is_deleted, false) = false);
+
+
+-- ════════════════════════════════════════════════════════════════════
+--  PART 2: the same plan in Projects, in OKR form.
+--  Project -> Objective -> 5 Key Results -> Initiatives -> Epics -> 64 tasks.
+--  Ticking tasks off moves the objective's progress bar automatically.
+--  Safe to run again: anything already there is reused, nothing is duplicated.
+-- ════════════════════════════════════════════════════════════════════
+drop table if exists _okr_kr;
+create temp table _okr_kr(n int, title text, target numeric, unit text, initiative text);
+insert into _okr_kr values
+    (1, 'Recall cards said from memory and marked green', 48, 'cards', 'Study the 48 designs'),
+    (2, 'Timed mock interviews completed', 6, 'mocks', 'Mock interviews'),
+    (3, 'Core concepts explained aloud from memory', 50, 'concepts', 'The 50 core concepts'),
+    (4, 'Memory sessions with Claude completed', 5, 'sessions', 'Daily memory sessions'),
+    (5, 'Focused study hours logged', 70, 'hours', 'Daily study blocks');
+drop table if exists _okr_task;
+create temp table _okr_task(kr int, epic text, task_text text, due date, notes text);
+insert into _okr_task values
+    (1, 'Day 1 - Foundations and caching', 'Recall card green: Design a URL Shortener (TinyURL / Bitly)', '2026-10-21'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/url-shortener/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/url-shortener/summary'),
+    (1, 'Day 1 - Foundations and caching', 'Recall card green: Design a Distributed Unique ID Generator (Snowflake)', '2026-10-21'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/unique-id-generator/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/unique-id-generator/summary'),
+    (1, 'Day 1 - Foundations and caching', 'Recall card green: Design an API Gateway Rate Limiter', '2026-10-21'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/api-rate-limiter/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/api-rate-limiter/summary'),
+    (1, 'Day 1 - Foundations and caching', 'Recall card green: Design a Distributed Cache (Redis / Memcached cluster)', '2026-10-21'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/distributed-cache/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/distributed-cache/summary'),
+    (1, 'Day 1 - Foundations and caching', 'Recall card green: Design a caching strategy for a read-heavy API (product catalog scale)', '2026-10-21'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/read-heavy-cache/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/read-heavy-cache/summary'),
+    (1, 'Day 1 - Foundations and caching', 'Recall card green: Design cache invalidation for frequently updated content', '2026-10-21'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/cache-invalidation/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/cache-invalidation/summary'),
+    (1, 'Day 1 - Foundations and caching', 'Recall card green: Design a counter service that avoids hot keys (likes, views, inventory-style counts)', '2026-10-21'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/hot-key-counter/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/hot-key-counter/summary'),
+    (1, 'Day 1 - Foundations and caching', 'Recall card green: Design a Distributed Key-Value Store (Dynamo-style)', '2026-10-21'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/distributed-kv-store/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/distributed-kv-store/summary'),
+    (1, 'Day 2 - Storage and search', 'Recall card green: Design an Object Storage Service (S3)', '2026-10-22'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/object-storage-s3/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/object-storage-s3/summary'),
+    (1, 'Day 2 - Storage and search', 'Recall card green: Design a file storage and sharing system (Dropbox / Google Drive)', '2026-10-22'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/file-storage/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/file-storage/summary'),
+    (1, 'Day 2 - Storage and search', 'Recall card green: Design a partitioning strategy for a large events table', '2026-10-22'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/events-table-partitioning/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/events-table-partitioning/summary'),
+    (1, 'Day 2 - Storage and search', 'Recall card green: Design a time-range query store (time-series and event history)', '2026-10-22'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/time-range-queries/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/time-range-queries/summary'),
+    (1, 'Day 2 - Storage and search', 'Recall card green: Design an audit log and immutable history', '2026-10-22'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/audit-log/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/audit-log/summary'),
+    (1, 'Day 2 - Storage and search', 'Recall card green: Design Autocomplete (search typeahead suggestions)', '2026-10-22'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/autocomplete/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/autocomplete/summary'),
+    (1, 'Day 2 - Storage and search', 'Recall card green: Design E-commerce Catalog Search (product search)', '2026-10-22'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/ecommerce-search/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/ecommerce-search/summary'),
+    (1, 'Day 2 - Storage and search', 'Recall card green: Design a Web Crawler (search-engine scale)', '2026-10-22'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/web-crawler/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/web-crawler/summary'),
+    (1, 'Day 2 - Storage and search', 'Recall card green: Design geo search for nearby locations (Yelp / Google Maps nearby)', '2026-10-22'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/geo-search-nearby/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/geo-search-nearby/summary'),
+    (1, 'Day 3 - Messaging and real time', 'Recall card green: Design a Distributed Message Queue (Kafka)', '2026-10-23'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/distributed-message-queue/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/distributed-message-queue/summary'),
+    (1, 'Day 3 - Messaging and real time', 'Recall card green: Design Exactly-Once-Like Processing Using Idempotency', '2026-10-23'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/idempotent-processing/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/idempotent-processing/summary'),
+    (1, 'Day 3 - Messaging and real time', 'Recall card green: Design a Job Queue (background task processing)', '2026-10-23'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/job-queue/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/job-queue/summary'),
+    (1, 'Day 3 - Messaging and real time', 'Recall card green: Design a Pub-Sub System for Event Notifications', '2026-10-23'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/pubsub-notifications/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/pubsub-notifications/summary'),
+    (1, 'Day 3 - Messaging and real time', 'Recall card green: Design backpressure for a write-heavy pipeline', '2026-10-23'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/backpressure-pipeline/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/backpressure-pipeline/summary'),
+    (1, 'Day 3 - Messaging and real time', 'Recall card green: Design an event-driven order processing workflow (e-commerce)', '2026-10-23'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/order-processing-workflow/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/order-processing-workflow/summary'),
+    (1, 'Day 3 - Messaging and real time', 'Recall card green: Design a Payment System (e-commerce pay-in and pay-out)', '2026-10-23'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/payment-system/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/payment-system/summary'),
+    (1, 'Day 3 - Messaging and real time', 'Recall card green: Design a Messaging App (WhatsApp / Messenger)', '2026-10-23'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/messaging-app/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/messaging-app/summary'),
+    (1, 'Day 3 - Messaging and real time', 'Recall card green: Design Presence for a Chat Application (online / away / last seen)', '2026-10-23'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/chat-presence/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/chat-presence/summary'),
+    (1, 'Day 3 - Messaging and real time', 'Recall card green: Design WebSocket scaling (live updates)', '2026-10-23'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/websocket-scaling/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/websocket-scaling/summary'),
+    (1, 'Day 4 - Classic products', 'Recall card green: Design Uber (ride-hailing)', '2026-10-24'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/uber/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/uber/summary'),
+    (1, 'Day 4 - Classic products', 'Recall card green: Design Google Maps (routing, ETA and navigation)', '2026-10-24'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/google-maps-navigation/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/google-maps-navigation/summary'),
+    (1, 'Day 4 - Classic products', 'Recall card green: Design Swiggy / DoorDash-style food delivery ordering', '2026-10-24'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/food-delivery/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/food-delivery/summary'),
+    (1, 'Day 4 - Classic products', 'Recall card green: Design a Social News Feed (Facebook / Twitter / Instagram home timeline)', '2026-10-24'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/news-feed/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/news-feed/summary'),
+    (1, 'Day 4 - Classic products', 'Recall card green: Design fanout for a follower graph', '2026-10-24'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/follower-fanout/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/follower-fanout/summary'),
+    (1, 'Day 4 - Classic products', 'Recall card green: Design a ranked home timeline (ranking and freshness)', '2026-10-24'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/ranked-timeline/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/ranked-timeline/summary'),
+    (1, 'Day 4 - Classic products', 'Recall card green: Design notifications for a feed action (like, comment, follow, mention)', '2026-10-24'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/feed-notifications/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/feed-notifications/summary'),
+    (1, 'Day 4 - Classic products', 'Recall card green: Design Netflix / YouTube-style video streaming', '2026-10-24'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/video-streaming/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/video-streaming/summary'),
+    (1, 'Day 4 - Classic products', 'Recall card green: Design a CDN strategy for media delivery (video, images, live events)', '2026-10-24'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/media-cdn/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/media-cdn/summary'),
+    (1, 'Day 4 - Classic products', 'Recall card green: Design Instagram-style image sharing', '2026-10-24'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/image-sharing/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/image-sharing/summary'),
+    (1, 'Day 5 - High-stakes systems and reliability', 'Recall card green: Design a flash sale system (Big Billion Days style sale event)', '2026-10-25'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/flash-sale/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/flash-sale/summary'),
+    (1, 'Day 5 - High-stakes systems and reliability', 'Recall card green: Design a ticket booking system (Ticketmaster / BookMyShow)', '2026-10-25'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/ticket-booking/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/ticket-booking/summary'),
+    (1, 'Day 5 - High-stakes systems and reliability', 'Recall card green: Design a real-time gaming leaderboard', '2026-10-25'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/leaderboard/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/leaderboard/summary'),
+    (1, 'Day 5 - High-stakes systems and reliability', 'Recall card green: Design an ad click event aggregation system', '2026-10-25'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/ad-click-aggregation/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/ad-click-aggregation/summary'),
+    (1, 'Day 5 - High-stakes systems and reliability', 'Recall card green: Design a stock exchange (order matching engine)', '2026-10-25'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/stock-exchange/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/stock-exchange/summary'),
+    (1, 'Day 5 - High-stakes systems and reliability', 'Recall card green: Design multi-region failover and disaster recovery', '2026-10-25'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/multi-region-dr/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/multi-region-dr/summary'),
+    (1, 'Day 5 - High-stakes systems and reliability', 'Recall card green: Design retries, timeouts and circuit breakers (resilient service client)', '2026-10-25'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/retries-circuit-breakers/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/retries-circuit-breakers/summary'),
+    (1, 'Day 5 - High-stakes systems and reliability', 'Recall card green: Design graceful degradation when a dependency fails', '2026-10-25'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/graceful-degradation/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/graceful-degradation/summary'),
+    (1, 'Day 5 - High-stakes systems and reliability', 'Recall card green: Design a canary deployment and rollback strategy', '2026-10-25'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/canary-deployments/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/canary-deployments/summary'),
+    (1, 'Day 5 - High-stakes systems and reliability', 'Recall card green: Design authentication and session management (web app login, tokens, sessions)', '2026-10-25'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/auth-sessions/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/auth-sessions/summary'),
+    (1, 'Day 5 - High-stakes systems and reliability', 'Recall card green: Design role-based access control (centralized authorization service)', '2026-10-25'::date, 'Say the card from memory in P-N-H-B-D-F-C order in 3 minutes, then check it. Done = every line right.
+Card: https://dailyplanner-zus3.onrender.com/interview-prep/design/rbac-authorization/recall
+Summary: https://dailyplanner-zus3.onrender.com/interview-prep/design/rbac-authorization/summary'),
+    (2, 'Mocks', 'Mock 1: URL shortener (45 min)', '2026-10-21'::date, 'Timed, out loud, following ''What to say'' (https://dailyplanner-zus3.onrender.com/interview-prep/guides/system-design-phrases). Write down 3 gaps afterwards.'),
+    (2, 'Mocks', 'Mock 2: search autocomplete (45 min)', '2026-10-22'::date, 'Timed, out loud, following ''What to say'' (https://dailyplanner-zus3.onrender.com/interview-prep/guides/system-design-phrases). Write down 3 gaps afterwards.'),
+    (2, 'Mocks', 'Mock 3: WhatsApp (45 min)', '2026-10-23'::date, 'Timed, out loud, following ''What to say'' (https://dailyplanner-zus3.onrender.com/interview-prep/guides/system-design-phrases). Write down 3 gaps afterwards.'),
+    (2, 'Mocks', 'Mock 4: Uber or Swiggy (45 min)', '2026-10-24'::date, 'Timed, out loud, following ''What to say'' (https://dailyplanner-zus3.onrender.com/interview-prep/guides/system-design-phrases). Write down 3 gaps afterwards.'),
+    (2, 'Mocks', 'Mock 5: an unseen design (60 min)', '2026-10-25'::date, 'Timed, out loud, following ''What to say'' (https://dailyplanner-zus3.onrender.com/interview-prep/guides/system-design-phrases). Write down 3 gaps afterwards.'),
+    (2, 'Mocks', 'Mock 6: payment system (45 min)', '2026-10-25'::date, 'Timed, out loud, following ''What to say'' (https://dailyplanner-zus3.onrender.com/interview-prep/guides/system-design-phrases). Write down 3 gaps afterwards.'),
+    (3, 'Concepts', 'Concepts 1 to 10: say each ''Say it'' line from memory', '2026-10-21'::date, 'https://dailyplanner-zus3.onrender.com/interview-prep/guides/system-design-concepts'),
+    (4, 'Memory sessions', 'Memory session 1 with Claude', '2026-10-21'::date, 'Prompt: https://dailyplanner-zus3.onrender.com/interview-prep/guides/memory-techniques (Session 1)'),
+    (3, 'Concepts', 'Concepts 11 to 20: say each ''Say it'' line from memory', '2026-10-22'::date, 'https://dailyplanner-zus3.onrender.com/interview-prep/guides/system-design-concepts'),
+    (4, 'Memory sessions', 'Memory session 2 with Claude', '2026-10-22'::date, 'Prompt: https://dailyplanner-zus3.onrender.com/interview-prep/guides/memory-techniques (Session 2)'),
+    (3, 'Concepts', 'Concepts 21 to 30: say each ''Say it'' line from memory', '2026-10-23'::date, 'https://dailyplanner-zus3.onrender.com/interview-prep/guides/system-design-concepts'),
+    (4, 'Memory sessions', 'Memory session 3 with Claude', '2026-10-23'::date, 'Prompt: https://dailyplanner-zus3.onrender.com/interview-prep/guides/memory-techniques (Session 3)'),
+    (3, 'Concepts', 'Concepts 31 to 40: say each ''Say it'' line from memory', '2026-10-24'::date, 'https://dailyplanner-zus3.onrender.com/interview-prep/guides/system-design-concepts'),
+    (4, 'Memory sessions', 'Memory session 4 with Claude', '2026-10-24'::date, 'Prompt: https://dailyplanner-zus3.onrender.com/interview-prep/guides/memory-techniques (Session 4)'),
+    (3, 'Concepts', 'Concepts 41 to 50: say each ''Say it'' line from memory', '2026-10-25'::date, 'https://dailyplanner-zus3.onrender.com/interview-prep/guides/system-design-concepts'),
+    (4, 'Memory sessions', 'Memory session 5 with Claude', '2026-10-25'::date, 'Prompt: https://dailyplanner-zus3.onrender.com/interview-prep/guides/memory-techniques (Session 5)');
+
+do $okr$
+declare
+  uid text; pid uuid; oid uuid; kid uuid; iid uuid; eid uuid; tid uuid;
+  has_epics boolean := to_regclass('public.epics') is not null;
+  has_task_epic boolean := exists (select 1 from information_schema.columns
+      where table_name = 'project_tasks' and column_name = 'epic_id');
+  has_task_obj boolean := exists (select 1 from information_schema.columns
+      where table_name = 'project_tasks' and column_name = 'objective_id');
+  k record; t record;
+begin
+  select id::text into uid from users where email = 'venghatesh@gmail.com';
+  if uid is null then raise exception 'No user with that email'; end if;
+
+  select project_id into pid from projects
+   where user_id = uid and name = 'System design bootcamp (21-25 Oct)' and coalesce(is_archived, false) = false limit 1;
+  if pid is null then
+    insert into projects (user_id, name, description)
+    values (uid, 'System design bootcamp (21-25 Oct)', 'Five days, 14 hours a day: recall cards, memory sessions with Claude, the 50 core concepts and 6 timed mocks. The calendar blocks are in the Planner.')
+    returning project_id into pid;
+  end if;
+
+  select id into oid from objectives
+   where user_id = uid and project_id = pid and title = 'Walk into any system design interview able to recall and present a design calmly' and coalesce(is_deleted, false) = false limit 1;
+  if oid is null then
+    insert into objectives (user_id, project_id, title, description, time_horizon, start_date, target_date, status)
+    values (uid, pid, 'Walk into any system design interview able to recall and present a design calmly', 'Measured by recall, not by hours read: every design said from memory, every concept explained aloud, and 6 timed mocks.',
+            'ongoing', '2026-10-21', '2026-10-25', 'active')
+    returning id into oid;
+  end if;
+
+  for k in select * from _okr_kr order by n loop
+    select id into kid from key_results
+     where user_id = uid and objective_id = oid and title = k.title and coalesce(is_deleted, false) = false limit 1;
+    if kid is null then
+      insert into key_results (user_id, objective_id, title, unit, start_value, current_value, target_value, order_index)
+      values (uid, oid, k.title, k.unit, 0, 0, k.target, k.n) returning id into kid;
+    end if;
+    select id into iid from initiatives
+     where user_id = uid and key_result_id = kid and title = k.initiative and coalesce(is_deleted, false) = false limit 1;
+    if iid is null then
+      insert into initiatives (user_id, key_result_id, title, status, order_index)
+      values (uid, kid, k.initiative, 'active', k.n) returning id into iid;
+    end if;
+
+    for t in select * from _okr_task where kr = k.n loop
+      eid := null;
+      if has_epics then
+        execute 'select id from epics where user_id = $1 and initiative_id = $2 and title = $3 and coalesce(is_deleted,false) = false limit 1'
+          into eid using uid, iid, t.epic;
+        if eid is null then
+          execute 'insert into epics (user_id, initiative_id, title, status) values ($1, $2, $3, ''active'') returning id'
+            into eid using uid, iid, t.epic;
+        end if;
+      end if;
+      select task_id into tid from project_tasks
+       where user_id = uid and project_id = pid and task_text = t.task_text and coalesce(is_deleted, false) = false limit 1;
+      if tid is null then
+        insert into project_tasks (project_id, user_id, task_text, status, priority, start_date, due_date, notes,
+                                   key_result_id, initiative_id)
+        values (pid, uid, t.task_text, 'open', 'high', t.due, t.due, t.notes, kid, iid)
+        returning task_id into tid;
+      end if;
+      if has_task_epic and eid is not null then
+        execute 'update project_tasks set epic_id = $1 where task_id = $2' using eid, tid;
+      end if;
+      if has_task_obj then
+        execute 'update project_tasks set objective_id = $1 where task_id = $2' using oid, tid;
+      end if;
+    end loop;
+  end loop;
+end
+$okr$;
 
 -- To remove the whole plan later:
 -- update daily_events set is_deleted = true
 --  where (title like '📚 %' or title like '🧠 %') and plan_date between '2026-10-21' and '2026-10-25'
 --    and user_id = (select id::text from users where email = 'venghatesh@gmail.com');
+-- and the project (its objective, key results and tasks go with it):
+-- delete from projects where name = 'System design bootcamp (21-25 Oct)'
+--   and user_id = (select id::text from users where email = 'venghatesh@gmail.com');

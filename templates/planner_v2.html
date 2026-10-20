@@ -13,6 +13,7 @@
 <script src="{{ url_for('static', filename='voice.js') }}"></script>
 <script defer src="{{ url_for('static', filename='v2/planner_v2.js') }}"></script>
 {% include "_pwa_head.html" %}
+<style>@media (max-width: 600px) { #gcal-push-btn .gsync-lbl { display: none } #gcal-push-btn { padding: 6px 10px; font-size: 18px; line-height: 1 } }</style>
 </head>
 <body>
 
@@ -37,7 +38,7 @@
       <button class="view-btn" data-view="week" onclick="setView('week')">Week</button>
     </div>
     <button class="view-btn" type="button" id="gcal-push-btn" onclick="pushUnsyncedToGoogle(this)"
-            title="Send events that are not in Google Calendar yet (for example, ones added in bulk)">Sync to Google</button>
+            title="Send events that are not in Google Calendar yet (for example, ones added in bulk)" aria-label="Sync to Google Calendar"><span aria-hidden="true">⟳</span><span class="gsync-lbl"> Sync to Google</span></button>
     <button class="gcal-create-btn" onclick="openCreateModal()" id="new-event-btn">
       <i data-feather="plus"></i>
       <span>Create</span>
@@ -414,8 +415,8 @@
   // Events added in bulk (e.g. a study plan inserted with SQL) skip the
   // automatic Google sync; this sends every event Google does not have yet.
   async function pushUnsyncedToGoogle(btn) {
-    const label = btn.textContent;
-    btn.disabled = true; btn.textContent = "Syncing…";
+    const label = btn.innerHTML;
+    btn.disabled = true; btn.textContent = "…";
     try {
       const d = new Date(), today = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
       const r = await fetch("/api/v2/events/resync?from=" + today, {
@@ -433,7 +434,7 @@
     } catch (e) {
       if (window.showToast) showToast("You're offline", "error");
     } finally {
-      btn.disabled = false; btn.textContent = label;
+      btn.disabled = false; btn.innerHTML = label;
     }
   }
 </script>

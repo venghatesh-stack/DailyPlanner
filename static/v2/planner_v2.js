@@ -776,7 +776,7 @@ function showPopover(ev, chipEl, dateStr) {
 
   document.getElementById("popover-title").textContent = ev.task_text || ev.title || "";
   document.getElementById("popover-time").textContent = formatTimeRange(ev.start_time, ev.end_time);
-  document.getElementById("popover-desc").textContent = ev.description || ev.notes || "";
+  renderLinkedText(document.getElementById("popover-desc"), ev.description || ev.notes || "");
 
   // On mobile, let CSS render the popover as a bottom-sheet (see planner_v2.css @media).
   // Clear any inline positioning from a previous desktop-view invocation.
@@ -2741,3 +2741,36 @@ document.addEventListener("DOMContentLoaded", () => {
   // Render feather icons
   if (window.feather) feather.replace();
 });
+
+
+// Plain text with its http(s) links made tappable (study-plan blocks carry
+// links to recall cards and guides). Built with DOM nodes, never innerHTML,
+// so a description can't inject markup. Same-site links open in this tab.
+function renderLinkedText(el, text) {
+  el.textContent = "";
+  const re = /https?:\/\/[^\s)<>"']+/g;
+  let last = 0, m;
+  while ((m = re.exec(text))) {
+    let url = m[0].replace(/[.,;:]+$/, "");
+    if (m.index > last) el.appendChild(document.createTextNode(text.slice(last, m.index)));
+    const a = document.createElement("a");
+    let label = url, href = url;
+    try {
+      const u = new URL(url);
+      if (u.host === location.host || /dailyplanner-[a-z0-9]+\.onrender\.com$/.test(u.host)) {
+        href = u.pathname + u.search;
+        const slugs = (u.searchParams.get("slugs") || "").split(",").filter(Boolean);
+        label = u.pathname.replace(/^\/interview-prep\//, "").replace(/\/$/, "")
+          + (slugs.length > 3 ? " (" + slugs.length + " cards)" : slugs.length ? " (" + slugs.join(", ") + ")" : "");
+      } else {
+        a.target = "_blank"; a.rel = "noopener";
+      }
+    } catch (e) { /* keep the raw url */ }
+    a.href = href; a.textContent = label;
+    a.style.wordBreak = "break-word";
+    el.appendChild(a);
+    last = m.index + url.length;
+    re.lastIndex = last;
+  }
+  if (last < text.length) el.appendChild(document.createTextNode(text.slice(last)));
+}
