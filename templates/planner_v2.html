@@ -36,6 +36,8 @@
       <button class="view-btn" data-view="3day" onclick="setView('3day')">3 Day</button>
       <button class="view-btn" data-view="week" onclick="setView('week')">Week</button>
     </div>
+    <button class="view-btn" type="button" id="gcal-push-btn" onclick="pushUnsyncedToGoogle(this)"
+            title="Send events that are not in Google Calendar yet (for example, ones added in bulk)">Sync to Google</button>
     <button class="gcal-create-btn" onclick="openCreateModal()" id="new-event-btn">
       <i data-feather="plus"></i>
       <span>Create</span>
@@ -408,5 +410,32 @@
 </div>
 
 <script>document.addEventListener("DOMContentLoaded",()=>{if(window.feather)feather.replace()});</script>
+<script>
+  // Events added in bulk (e.g. a study plan inserted with SQL) skip the
+  // automatic Google sync; this sends every event Google does not have yet.
+  async function pushUnsyncedToGoogle(btn) {
+    const label = btn.textContent;
+    btn.disabled = true; btn.textContent = "Syncing…";
+    try {
+      const d = new Date(), today = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+      const r = await fetch("/api/v2/events/resync?from=" + today, {
+        method: "POST", credentials: "same-origin",
+        headers: { "X-CSRFToken": (document.querySelector('meta[name="csrf-token"]') || {}).content || "" },
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        if (j.login_url && confirm((j.error || "Google Calendar is not connected") + ". Connect now?")) location.href = j.login_url;
+        else if (window.showToast) showToast(j.error || "Could not sync", "error");
+      } else if (window.showToast) {
+        showToast(j.total ? "Sent " + j.synced + " of " + j.total + " events to Google Calendar" + (j.failed ? " (" + j.failed + " failed)" : "")
+                          : "Everything is already in Google Calendar", j.failed ? "warning" : "success");
+      }
+    } catch (e) {
+      if (window.showToast) showToast("You're offline", "error");
+    } finally {
+      btn.disabled = false; btn.textContent = label;
+    }
+  }
+</script>
 </body>
 </html>

@@ -696,11 +696,20 @@ def resync_unsynced_events():
             "login_url": url_for("events.google_login"),
         }), 400
 
-    rows = get("daily_events", params={
+    params = {
         "user_id": f"eq.{user_id}",
         "is_deleted": "eq.false",
         "google_event_id": "is.null",
-    }) or []
+    }
+    # ?from=YYYY-MM-DD: only events on or after that day (so a button press
+    # never floods Google with months of old entries).
+    since = (request.args.get("from") or "").strip()
+    if since:
+        try:
+            params["plan_date"] = f"gte.{date.fromisoformat(since).isoformat()}"
+        except ValueError:
+            return jsonify({"error": "Invalid from date"}), 400
+    rows = get("daily_events", params=params) or []
 
     # Skip per-occurrence override rows — they patch existing Google
     # instances via sync_exception_override, not a fresh insert.
