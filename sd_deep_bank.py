@@ -32,6 +32,76 @@ def summary_text(slug):
     except OSError:
         return None
 
+#: One recall card per design: sd_deep/recall/<slug>.md, a fixed 7-line
+#: order (P-N-H-B-D-F-C) for remembering and presenting the design.
+RECALL_DIR = os.path.join(DIR, "recall")
+RECALL_ORDER = [("P", "Problem"), ("N", "Numbers"), ("H", "Hard part"), ("B", "Boxes"),
+                ("D", "Decisions"), ("F", "Failures"), ("C", "Close")]
+
+
+def recall_path(slug):
+    return os.path.join(RECALL_DIR, slug + ".md")
+
+
+def recall_text(slug):
+    """The design's recall card (Markdown), or None if it has none yet."""
+    try:
+        with open(recall_path(slug), encoding="utf-8") as fh:
+            return fh.read()
+    except OSError:
+        return None
+
+
+def check_recall(md):
+    """Problems with a recall card; an empty list means it keeps the template."""
+    import re
+    errs = []
+    lines = md.splitlines()
+    if not lines or not re.match(r"^# .+: recall card$", lines[0]):
+        errs.append("first line must be '# <title>: recall card'")
+    hook = re.search(r"^> \*\*Hook:\*\* (.+)$", md, re.M)
+    if not hook or not (3 <= hook.group(1).count("→") <= 6):
+        errs.append("hook: one line with 4-7 steps joined by →")
+    pos = []
+    for letter, name in RECALL_ORDER:
+        m = re.search(r"^\*\*%s · %s:\*\*" % (letter, re.escape(name)), md, re.M)
+        if not m:
+            errs.append(f"missing **{letter} · {name}:**")
+        else:
+            pos.append(m.start())
+    if pos != sorted(pos):
+        errs.append("sections out of P-N-H-B-D-F-C order")
+
+    def numbered(after, before):
+        a = md.find(after)
+        b = md.find(before, a + 1) if a >= 0 else -1
+        block = md[a:b] if a >= 0 and b > a else ""
+        return re.findall(r"^\d\. (.+)$", block, re.M)
+
+    nums = numbered("**N · Numbers:**", "**H · ")
+    if len(nums) != 3 or not all(", so " in n for n in nums):
+        errs.append("numbers: exactly 3, each with ', so <consequence>'")
+    dec = numbered("**D · Decisions:**", "**F · ")
+    if len(dec) != 3 or not all(" over " in d and " because " in d for d in dec):
+        errs.append("decisions: exactly 3, each 'X over Y, because Z'")
+    fail = numbered("**F · Failures:**", "**C · ")
+    if len(fail) != 2 or not all("→" in f for f in fail):
+        errs.append("failures: exactly 2, each 'what breaks → what happens'")
+    box = re.search(r"^\*\*B · Boxes:\*\* `([^`]+)`", md, re.M)
+    if not box or not (3 <= box.group(1).count("→") <= 6):
+        errs.append("boxes: a `A → B → ...` chain of 4-7 boxes")
+    close = re.search(r'^\*\*C · Close:\*\* "(.+)"$', md, re.M)
+    if not close or not (35 <= len(close.group(1).split()) <= 110):
+        errs.append("close: one quoted 35-110 word wrap-up")
+    quiz = re.findall(r"^\d\. .+\? → .+$", md[md.find("**Quiz yourself:**"):], re.M) \
+        if "**Quiz yourself:**" in md else []
+    if len(quiz) != 3:
+        errs.append("quiz: exactly 3 'Question? → answer' lines")
+    words = len(md.split())
+    if words > 420:
+        errs.append(f"too long: {words} words (max 420, it must fit one page)")
+    return errs
+
 GROUPS = {
     "classic": "Core classic products",
     "feeds": "Feeds, ranking & recommendations",

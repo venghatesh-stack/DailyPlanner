@@ -920,3 +920,26 @@ def test_chanakya_niti_guide(auth_client):
     r = client.get("/interview-prep/guides/chanakya-niti/pdf")
     assert r.status_code == 200 and r.data[:4] == b"%PDF"
     assert b"/interview-prep/guides/chanakya-niti" in client.get("/interview-prep").data
+
+
+def test_recall_cards(auth_client):
+    import re
+    import sd_deep_bank
+    for d in sd_deep_bank.DESIGNS:  # every design has a card that keeps the template
+        md = sd_deep_bank.recall_text(d["slug"])
+        assert md, d["slug"]
+        assert sd_deep_bank.check_recall(md) == [], d["slug"]
+    html = auth_client.get("/interview-prep/design/uber/recall").get_data(as_text=True)
+    assert "recall card" in html and "Hard part" in html and "/interview-prep/design/uber/summary" in html
+    assert "/interview-prep/design/uber/recall" in auth_client.get("/interview-prep/design/uber/summary").get_data(as_text=True)
+    deck = auth_client.get("/interview-prep/recall-cards?slugs=uber,url-shortener").get_data(as_text=True)
+    assert "2 cards" in deck
+    r = auth_client.get("/interview-prep/recall-cards.pdf?slugs=uber,url-shortener")
+    if r.mimetype == "application/pdf":
+        assert len(re.findall(rb"/Type\s*/Page\b", r.data)) >= 2
+    assert auth_client.get("/interview-prep/recall-cards?slugs=nope").status_code == 404
+    assert auth_client.get("/interview-prep/design/nope/recall").status_code == 404
+    assert b"/interview-prep/recall-cards" in auth_client.get("/interview-prep").data
+    g = auth_client.get("/interview-prep/guides/memory-techniques")
+    assert g.status_code == 200 and b"Session 5" in g.data
+    assert sd_deep_bank.check_recall("# x\n") != []

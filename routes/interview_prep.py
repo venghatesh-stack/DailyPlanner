@@ -315,6 +315,8 @@ _GUIDES = {
                               "System design in 5 pages"),
     "system-design-phrases": ("SYSTEM_DESIGN_PHRASES.md",
                               "System design: what to say, step by step"),
+    "memory-techniques": ("MEMORY_TECHNIQUES_SD.md",
+                          "Memory techniques for system design (5 sessions with Claude)"),
     "chanakya-niti": ("CHANAKYA_NITI_GUIDE.md",
                       "Chanakya Niti: a detailed guide"),
 }
@@ -1989,7 +1991,7 @@ def _guide_text(slug):
 _GUIDE_PDF_PT = 14
 
 
-def _guide_pdf_bytes(title, md, body_pt=_GUIDE_PDF_PT):
+def _guide_pdf_bytes(title, md, body_pt=_GUIDE_PDF_PT, h1_new_page=False):
     """A shipped Markdown guide as a PDF: headings, paragraphs, bullet and
     numbered lists, **bold** lead-ins, block quotes and code fences. Raises
     ImportError if fpdf2 isn't installed."""
@@ -2035,6 +2037,7 @@ def _guide_pdf_bytes(title, md, body_pt=_GUIDE_PDF_PT):
     lines = md.replace("\r", "").split("\n")
     i, buf = 0, []
     seen_h2 = False
+    seen_h1 = False
 
     def flush():
         if buf:
@@ -2057,7 +2060,11 @@ def _guide_pdf_bytes(title, md, body_pt=_GUIDE_PDF_PT):
         elif not st:
             flush()
         elif st.startswith("# "):
-            flush(); para(st[2:], size=body_pt * 1.7, style="B", gap=2.5)
+            flush()
+            if h1_new_page and seen_h1:  # a deck of cards: one per page
+                pdf.add_page()
+            seen_h1 = True
+            para(st[2:], size=body_pt * 1.7, style="B", gap=2.5)
         elif st.startswith("## "):
             flush()
             # A guide whose sections are its pages ("## Page 2. ...") starts
@@ -3130,7 +3137,78 @@ def sd_deep_summary(slug):
         "next": sd_deep_bank.BY_SLUG[order[i + 1]] if 0 <= i < len(order) - 1 else None,
     }
     return render_template("sd_summary.html", d=d, content=md, nav=nav,
-                           count=len(order), index=i + 1)
+                           count=len(order), index=i + 1, kind="summary",
+                           has_recall=bool(sd_deep_bank.recall_text(slug)))
+
+
+def _recall_slugs(raw):
+    """Designs that have a recall card, in bank order; ?slugs=a,b narrows it."""
+    have = [x["slug"] for x in sd_deep_bank.DESIGNS if sd_deep_bank.recall_text(x["slug"])]
+    want = [s.strip() for s in (raw or "").split(",") if s.strip()]
+    return [s for s in want if s in have] if want else have
+
+
+@interview_prep_bp.route("/interview-prep/design/<slug>/recall", methods=["GET"])
+@login_required
+def sd_deep_recall(slug):
+    """A design's one-page recall card (P-N-H-B-D-F-C): what to remember."""
+    from flask import abort
+    d = sd_deep_bank.BY_SLUG.get(slug)
+    md = sd_deep_bank.recall_text(slug) if d else None
+    if not md:
+        abort(404)
+    order = _recall_slugs("")
+    i = order.index(slug)
+    nav = {"prev": sd_deep_bank.BY_SLUG[order[i - 1]] if i > 0 else None,
+           "next": sd_deep_bank.BY_SLUG[order[i + 1]] if i < len(order) - 1 else None}
+    return render_template("sd_summary.html", d=d, content=md, nav=nav,
+                           count=len(order), index=i + 1, kind="recall", has_recall=True)
+
+
+@interview_prep_bp.route("/interview-prep/design/<slug>/recall.pdf", methods=["GET"])
+@login_required
+def sd_deep_recall_pdf(slug):
+    return redirect(f"/interview-prep/recall-cards.pdf?slugs={slug}"
+                    + (f"&fs={request.args.get('fs')}" if request.args.get("fs") else ""))
+
+
+def _recall_deck(slugs, sep="\n\n"):
+    return sep.join(sd_deep_bank.recall_text(s).strip() for s in slugs)
+
+
+@interview_prep_bp.route("/interview-prep/recall-cards", methods=["GET"])
+@login_required
+def sd_recall_cards():
+    """Several recall cards on one page (?slugs=a,b,c), or all of them."""
+    from flask import abort
+    slugs = _recall_slugs(request.args.get("slugs"))
+    if not slugs:
+        abort(404)
+    q = request.args.get("slugs") or ""
+    return render_template("sd_summary.html", d={"slug": "", "title": "Recall cards"},
+                           content=_recall_deck(slugs, "\n\n---\n\n"), nav={}, count=len(slugs), index=0,
+                           kind="deck", has_recall=True, deck_q=q)
+
+
+@interview_prep_bp.route("/interview-prep/recall-cards.pdf", methods=["GET"])
+@login_required
+def sd_recall_cards_pdf():
+    """Recall cards as a PDF, each card on a new page, 14pt by default (phone)."""
+    from flask import abort
+    slugs = _recall_slugs(request.args.get("slugs"))
+    if not slugs:
+        abort(404)
+    try:
+        pt = float(request.args.get("fs") or 14)
+    except ValueError:
+        pt = 14
+    try:
+        pdf = _guide_pdf_bytes("System design recall cards", _recall_deck(slugs),
+                               body_pt=pt, h1_new_page=True)
+    except ImportError:
+        return redirect("/interview-prep/recall-cards?slugs=" + ",".join(slugs))
+    name = (slugs[0] + "-recall-card.pdf") if len(slugs) == 1 else "system-design-recall-cards.pdf"
+    return _pdf_response(pdf, name)
 
 
 @interview_prep_bp.route("/interview-prep/design/<slug>/summary.pdf", methods=["GET"])

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>{{ d.title }}: 5-page summary — DailyPlanner</title>
+<title>{{ d.title }}{% if kind == 'summary' %}: 5-page summary{% elif kind == 'recall' %}: recall card{% endif %} — DailyPlanner</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='design-system.css') }}">
 <script src="/static/js/vendor/feather-4.29.2.min.js"></script>
 <script src="{{ url_for('static', filename='js/global.js') }}"></script>
@@ -16,6 +16,8 @@
   .bar a.primary { background: var(--color-primary); color: var(--color-on-primary); border-color: transparent; }
   .bar .sp { flex: 1; }
   .md { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px; padding: 22px 26px; line-height: 1.62; font-size: 15.5px; }
+  .md hr { border: none; border-top: 2px dashed var(--color-border); margin: 30px 0; }
+  .md h1 + blockquote { font-size: 17px; }
   .md h1 { font-size: 25px; font-weight: 900; letter-spacing: -.02em; margin: 4px 0 10px; }
   .md h2 { font-size: 20px; font-weight: 800; margin: 28px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--color-border); }
   .md h3 { font-size: 16.5px; font-weight: 800; margin: 18px 0 6px; }
@@ -36,17 +38,30 @@
 <div class="wrap">
   <div class="bar">
     <a href="/interview-prep/design">← All designs</a>
-    <a href="/interview-prep/design/{{ d.slug }}">Full deep dive</a>
+    {% if kind != 'deck' %}<a href="/interview-prep/design/{{ d.slug }}">Full deep dive</a>{% endif %}
+    {% if kind == 'summary' and has_recall %}<a href="/interview-prep/design/{{ d.slug }}/recall">🧠 Recall card</a>{% endif %}
+    {% if kind == 'recall' %}<a href="/interview-prep/design/{{ d.slug }}/summary">📄 5-page summary</a>{% endif %}
     <a href="/interview-prep/guides/system-design-phrases">🗣 What to say</a>
+    <a href="/interview-prep/guides/memory-techniques">Memory techniques</a>
     <span class="sp"></span>
+    {% if kind == 'summary' %}
     <span class="count">{{ index }} of {{ count }}</span>
     <a class="primary" href="/interview-prep/design/{{ d.slug }}/summary.pdf" target="_blank" rel="noopener" title="Five A4 pages, to print or read on a laptop">⤓ PDF · 5 pages</a>
     <a href="/interview-prep/design/{{ d.slug }}/summary.pdf?fs=14" target="_blank" rel="noopener" title="14pt text for reading on a phone">Large-text PDF</a>
+    {% elif kind == 'recall' %}
+    <span class="count">Card {{ index }} of {{ count }}</span>
+    <a class="primary" href="/interview-prep/recall-cards.pdf?slugs={{ d.slug }}" target="_blank" rel="noopener">⤓ PDF</a>
+    <a href="/interview-prep/recall-cards">All cards</a>
+    {% else %}
+    <span class="count">{{ count }} cards</span>
+    <a class="primary" href="/interview-prep/recall-cards.pdf?slugs={{ deck_q }}" target="_blank" rel="noopener" title="Each card starts a new page, 14pt for a phone">⤓ PDF · large text</a>
+    {% endif %}
   </div>
   <article class="md" id="md-out">Loading…</article>
   <div class="pager">
-    {% if nav.prev %}<a href="/interview-prep/design/{{ nav.prev.slug }}/summary">← {{ nav.prev.title }}</a>{% else %}<span></span>{% endif %}
-    {% if nav.next %}<a href="/interview-prep/design/{{ nav.next.slug }}/summary">{{ nav.next.title }} →</a>{% endif %}
+    {% set sub = 'recall' if kind == 'recall' else 'summary' %}
+    {% if nav.prev %}<a href="/interview-prep/design/{{ nav.prev.slug }}/{{ sub }}">← {{ nav.prev.title }}</a>{% else %}<span></span>{% endif %}
+    {% if nav.next %}<a href="/interview-prep/design/{{ nav.next.slug }}/{{ sub }}">{{ nav.next.title }} →</a>{% endif %}
   </div>
 </div>
 <script>
