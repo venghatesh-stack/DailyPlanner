@@ -29453,6 +29453,54 @@
    "answer": 2,
    "why": "Sensitive data such as payment details should not be in memory at all; under the DPDP Act it is a liability. Remember stable, useful, non-sensitive facts with a source.",
    "level": "Medium"
+  },
+  {
+   "q": "LLMs are stateless. How does an agent \"remember\" what happened 20 steps ago?",
+   "options": [
+    "The model stores earlier steps in its weights during the session",
+    "The provider keeps a hidden memory of each conversation for the model",
+    "The agent loop re-sends the transcript, so step 1 is still in the text",
+    "It cannot; agents only ever see the most recent step"
+   ],
+   "answer": 2,
+   "why": "Each model call is text in, text out. The harness appends every tool call and result to the transcript and re-sends it, so earlier steps are re-read, not remembered.",
+   "level": "Easy"
+  },
+  {
+   "q": "Why does prompt caching make re-sending the whole transcript every step affordable?",
+   "options": [
+    "The unchanged prefix is cached, so only the new tail is processed in full",
+    "It compresses the transcript into a short summary before each call",
+    "It lets the model skip tool results it has already read",
+    "It stores the transcript in a vector store and retrieves the top matches"
+   ],
+   "answer": 0,
+   "why": "Between steps almost the whole prompt is identical. The provider reuses the work for that prefix, billing it at a fraction of the price and answering faster. Editing early content breaks the cache.",
+   "level": "Medium"
+  },
+  {
+   "q": "Your agent compacted its context, and now it has lost a file path it needs. What is the best fix for the future?",
+   "options": [
+    "Turn compaction off and let the transcript grow without limit",
+    "Ask the model to recall the path harder from its earlier reasoning",
+    "Switch to a model with a larger context window",
+    "Write durable facts to external memory or structured state that survives compaction"
+   ],
+   "answer": 3,
+   "why": "Compaction saves space but drops detail. Facts that must survive belong in files, a task list or a state object the agent can read back, not only in the transcript.",
+   "level": "Medium"
+  },
+  {
+   "q": "Which statement about very long contexts is accurate?",
+   "options": [
+    "Quality stays the same as long as the text fits in the window",
+    "Models tend to miss facts buried in the middle, and every step costs more",
+    "Long contexts are free once prompt caching is turned on",
+    "A long context survives into the next session automatically"
+   ],
+   "answer": 1,
+   "why": "\"Lost in the middle\": attention is strongest at the start and end of a long prompt. Long contexts also add cost and delay, and nothing in them persists after the session.",
+   "level": "Hard"
   }
  ],
  "How does A2A (Agent2Agent protocol) let agents from different vendors talk to each other?": [
