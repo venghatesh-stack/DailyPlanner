@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<title>Prescriptions — DailyPlanner</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='design-system.css') }}">
+<script src="/static/js/vendor/feather-4.29.2.min.js"></script>
+<script src="{{ url_for('static', filename='js/global.js') }}"></script>
+<script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+<style>
+  body { background: var(--color-bg); color: var(--color-text); font-family: var(--font-family); margin: 0; }
+  [hidden] { display: none !important; }
+  .rx-app { max-width: 980px; margin: 0 auto; padding: 24px 16px 96px; box-sizing: border-box; }
+  .rx-hero { display: flex; justify-content: space-between; align-items: flex-end; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+  .rx-hero h1 { font-size: 27px; font-weight: 800; margin: 0 0 6px; letter-spacing: -.02em; }
+  .rx-sub { color: var(--color-text-secondary); font-size: 14px; margin: 0; max-width: 62ch; line-height: 1.5; }
+  .rx-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 12px; border: 1px solid var(--color-border);
+    background: var(--color-surface); color: var(--color-text); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: none; }
+  .rx-btn svg { width: 16px; height: 16px; }
+  .rx-btn.primary { background: var(--color-primary); color: var(--color-on-primary); border-color: transparent; }
+  .rx-btn.danger { color: var(--color-danger, #b42318); }
+  .rx-btn:disabled { opacity: .55; cursor: default; }
+  .rx-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .rx-tools input[type=search] { flex: 1 1 220px; min-width: 0; font: inherit; font-size: 15px; padding: 10px 12px; border-radius: 12px;
+    border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); }
+  .rx-chip { font: inherit; font-size: 13px; font-weight: 700; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--color-border);
+    background: var(--color-surface); color: var(--color-text); cursor: pointer; }
+  .rx-chip[aria-pressed="true"] { background: var(--color-text); color: var(--color-surface); border-color: transparent; }
+  .rx-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 12px; }
+  .rx-card { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 12px; padding: 12px; border-radius: 16px; cursor: pointer; text-align: left;
+    border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); font: inherit; }
+  .rx-card:hover, .rx-card:focus-visible { border-color: var(--color-primary); outline: none; }
+  .rx-thumb { width: 76px; height: 96px; border-radius: 10px; overflow: hidden; background: var(--color-surface-secondary, #f2f2ef);
+    display: flex; align-items: center; justify-content: center; font-size: 26px; }
+  .rx-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .rx-t { font-weight: 800; font-size: 15.5px; margin: 0 0 4px; overflow-wrap: anywhere; }
+  .rx-m { font-size: 13px; color: var(--color-text-secondary); margin: 0 0 4px; overflow-wrap: anywhere; }
+  .rx-n { font-size: 13px; margin: 4px 0 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .rx-who { display: inline-block; font-size: 11.5px; font-weight: 800; padding: 2px 8px; border-radius: 999px;
+    background: var(--color-primary-light, #e8efff); color: var(--color-primary-on-tint, #1d4ed8); margin-bottom: 4px; }
+  .rx-empty { padding: 34px 18px; text-align: center; border: 1px dashed var(--color-border); border-radius: 16px; color: var(--color-text-secondary); }
+  .rx-warn { padding: 12px 14px; border-radius: 12px; border: 1px solid #AE461A; background: #FBEDE4; color: #16202A; margin-bottom: 14px; font-size: 14px; }
+
+  dialog.rx-dlg { width: min(640px, 100vw); max-width: 100vw; max-height: 100dvh; box-sizing: border-box; padding: 0; border: none;
+    border-radius: 18px; background: var(--color-surface); color: var(--color-text); }
+  dialog.rx-dlg::backdrop { background: rgba(0,0,0,.45); }
+  @media (max-width: 640px) { dialog.rx-dlg { margin: auto 0 0; border-radius: 18px 18px 0 0; width: 100vw; } }
+  .rx-dhead { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--color-border); position: sticky; top: 0; background: var(--color-surface); z-index: 1; }
+  .rx-dhead h2 { font-size: 17px; margin: 0; flex: 1; overflow-wrap: anywhere; }
+  .rx-x { border: none; background: none; font-size: 22px; cursor: pointer; color: var(--color-text-secondary); padding: 4px 8px; }
+  .rx-body { padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+  .rx-f label { display: block; font-size: 12.5px; font-weight: 700; color: var(--color-text-secondary); margin: 0 0 4px; }
+  .rx-f input, .rx-f textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 15.5px; padding: 10px 12px; border-radius: 10px;
+    border: 1px solid var(--color-border); background: var(--color-bg); color: var(--color-text); }
+  .rx-f textarea { min-height: 84px; resize: vertical; }
+  .rx-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 420px) { .rx-row2 { grid-template-columns: 1fr; } }
+  .rx-pick { display: flex; gap: 8px; flex-wrap: wrap; }
+  .rx-picked { display: flex; gap: 8px; flex-wrap: wrap; }
+  .rx-picked span { font-size: 12.5px; padding: 4px 10px; border-radius: 999px; background: var(--color-surface-secondary, #f2f2ef); }
+  .rx-pages { display: flex; flex-direction: column; gap: 12px; }
+  .rx-page { border: 1px solid var(--color-border); border-radius: 12px; overflow: hidden; }
+  .rx-page img { display: block; width: 100%; height: auto; background: #fff; }
+  .rx-pbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 8px 10px; font-size: 13px; }
+  .rx-pbar b { flex: 1 1 100%; overflow-wrap: anywhere; }
+  .rx-pdf { padding: 22px; text-align: center; font-size: 32px; }
+  .rx-foot { display: flex; gap: 8px; flex-wrap: wrap; justify-content: space-between; padding-top: 4px; }
+  .rx-meta { font-size: 13.5px; color: var(--color-text-secondary); }
+  .rx-notes { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; margin: 0; }
+  .rx-lock { font-size: 12.5px; color: var(--color-text-secondary); margin: 0; }
+</style>
+{% include "_pwa_head.html" %}
+</head>
+<body>
+<div class="nav-icons">{% include "_top_nav.html" %}</div>
+
+<main class="rx-app">
+  <header class="rx-hero">
+    <div>
+      <h1>💊 Prescriptions</h1>
+      <p class="rx-sub">Photograph or upload prescriptions for anyone in the family, with the doctor, date and notes. Files are private: only you can open them.</p>
+    </div>
+    <button type="button" class="rx-btn primary" id="rx-add"><i data-feather="plus"></i> Add prescription</button>
+  </header>
+
+  <div class="rx-warn" id="rx-missing" hidden>Prescriptions are not set up yet. Run <code>MIGRATION_PRESCRIPTIONS.sql</code> in the Supabase SQL editor, then reload this page.</div>
+
+  <div class="rx-tools">
+    <label for="rx-q" class="sr-only" style="position:absolute;left:-9999px">Search prescriptions</label>
+    <input type="search" id="rx-q" placeholder="Search doctor, medicine, notes…" autocomplete="off">
+    <div id="rx-people" class="rx-pick" role="group" aria-label="Filter by person"></div>
+  </div>
+
+  <div id="rx-list" class="rx-list" aria-live="polite"></div>
+  <div id="rx-empty" class="rx-empty" hidden>No prescriptions yet. Tap <b>Add prescription</b> and take a photo of one.</div>
+</main>
+
+<!-- Add / edit -->
+<dialog class="rx-dlg" id="rx-form-dlg" aria-labelledby="rx-form-title">
+  <form id="rx-form" method="dialog">
+    <div class="rx-dhead"><h2 id="rx-form-title">Add prescription</h2><button type="button" class="rx-x" data-close aria-label="Close">×</button></div>
+    <div class="rx-body">
+      <div class="rx-f">
+        <label>Photos or PDF <span id="rx-files-hint">(required)</span></label>
+        <div class="rx-pick">
+          <button type="button" class="rx-btn" id="rx-cam"><i data-feather="camera"></i> Take photo</button>
+          <button type="button" class="rx-btn" id="rx-choose"><i data-feather="paperclip"></i> Choose files</button>
+        </div>
+        <input type="file" id="rx-cam-in" accept="image/*" capture="environment" hidden>
+        <input type="file" id="rx-file-in" accept="image/*,application/pdf" multiple hidden>
+        <div class="rx-picked" id="rx-picked" style="margin-top:8px"></div>
+      </div>
+      <div class="rx-f"><label for="rx-title">Title</label><input id="rx-title" name="title" maxlength="120" placeholder="e.g. Fever and cough"></div>
+      <div class="rx-row2">
+        <div class="rx-f"><label for="rx-patient">For</label><input id="rx-patient" name="patient" maxlength="60" list="rx-patient-list" placeholder="Self, Amma, Shreya…"><datalist id="rx-patient-list"></datalist></div>
+        <div class="rx-f"><label for="rx-date">Date</label><input id="rx-date" name="prescribed_on" type="date"></div>
+      </div>
+      <div class="rx-row2">
+        <div class="rx-f"><label for="rx-doctor">Doctor</label><input id="rx-doctor" name="doctor" maxlength="80" list="rx-doctor-list" placeholder="Dr. …"><datalist id="rx-doctor-list"></datalist></div>
+        <div class="rx-f"><label for="rx-clinic">Hospital / clinic</label><input id="rx-clinic" name="clinic" maxlength="100"></div>
+      </div>
+      <div class="rx-f"><label for="rx-notes">Notes</label><textarea id="rx-notes" name="notes" maxlength="4000" placeholder="Medicines, dosage, how many days, next visit…"></textarea></div>
+      <div class="rx-foot">
+        <button type="button" class="rx-btn" data-close>Cancel</button>
+        <button type="submit" class="rx-btn primary" id="rx-save">Save</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<!-- View -->
+<dialog class="rx-dlg" id="rx-view-dlg" aria-labelledby="rx-view-title">
+  <div class="rx-dhead"><h2 id="rx-view-title"></h2><button type="button" class="rx-x" data-close aria-label="Close">×</button></div>
+  <div class="rx-body">
+    <p class="rx-meta" id="rx-view-meta"></p>
+    <p class="rx-notes" id="rx-view-notes"></p>
+    <div class="rx-pages" id="rx-view-pages"></div>
+    <div class="rx-foot">
+      <button type="button" class="rx-btn danger" id="rx-del"><i data-feather="trash-2"></i> Delete</button>
+      <button type="button" class="rx-btn primary" id="rx-edit"><i data-feather="edit-2"></i> Edit or add pages</button>
+    </div>
+    <p class="rx-lock">🔒 Private: only you can open these files.</p>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const csrf = document.querySelector('meta[name="csrf-token"]')?.content || "";
+  let items = [], who = "", editing = null, picked = [];
+
+  const toast = (m, t) => (window.showToast ? showToast(m, t || "success") : alert(m));
+  const esc = (s) => String(s ?? "");
+  const fmtDate = (d) => { if (!d) return ""; const x = new Date(d + "T00:00:00"); return x.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }); };
+  const isImg = (m) => /^image\/(jpeg|jpg|png|webp)$/.test(m || "");
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+  async function load() {
+    const r = await fetch("/api/prescriptions", { credentials: "same-origin" });
+    const j = await r.json().catch(() => ({ items: [] }));
+    $("rx-missing").hidden = j.available !== false;
+    items = j.items || [];
+    renderPeople(); render();
+  }
+
+  function renderPeople() {
+    const people = [...new Set(items.map(i => i.patient).filter(Boolean))].sort();
+    const box = $("rx-people"); box.textContent = "";
+    if (people.length < 2) { who = people.includes(who) ? who : ""; }
+    ["", ...people].forEach(p => {
+      if (people.length < 2 && p === "") return;
+      const b = el("button", "rx-chip", p || "Everyone"); b.type = "button";
+      b.setAttribute("aria-pressed", String(who === p));
+      b.onclick = () => { who = p; renderPeople(); render(); };
+      box.appendChild(b);
+    });
+    const dl = $("rx-patient-list"); dl.textContent = "";
+    people.forEach(p => { const o = document.createElement("option"); o.value = p; dl.appendChild(o); });
+    const dd = $("rx-doctor-list"); dd.textContent = "";
+    [...new Set(items.map(i => i.doctor).filter(Boolean))].sort().forEach(d => { const o = document.createElement("option"); o.value = d; dd.appendChild(o); });
+  }
+
+  function render() {
+    const q = $("rx-q").value.trim().toLowerCase();
+    const list = items.filter(i => (!who || i.patient === who) &&
+      (!q || [i.title, i.patient, i.doctor, i.clinic, i.notes].join(" ").toLowerCase().includes(q)));
+    const box = $("rx-list"); box.textContent = "";
+    $("rx-empty").hidden = items.length > 0;
+    list.forEach(i => {
+      const c = el("button", "rx-card"); c.type = "button";
+      const th = el("div", "rx-thumb");
+      const f0 = i.files[0];
+      if (f0 && isImg(f0.mime)) { const im = document.createElement("img"); im.loading = "lazy"; im.alt = ""; im.src = f0.url; th.appendChild(im); }
+      else th.textContent = f0 && f0.mime === "application/pdf" ? "📄" : "💊";
+      const body = el("div");
+      if (i.patient) body.appendChild(el("span", "rx-who", i.patient));
+      body.appendChild(el("p", "rx-t", i.title || "Prescription"));
+      body.appendChild(el("p", "rx-m", [i.doctor, i.clinic, fmtDate(i.prescribed_on)].filter(Boolean).join(" · ") + (i.files.length > 1 ? ` · ${i.files.length} pages` : "")));
+      if (i.notes) body.appendChild(el("p", "rx-n", i.notes));
+      c.append(th, body);
+      c.onclick = () => openView(i);
+      box.appendChild(c);
+    });
+    if (items.length && !list.length) box.appendChild(el("div", "rx-empty", "Nothing matches."));
+  }
+
+  function openView(i) {
+    editing = i;
+    $("rx-view-title").textContent = i.title || "Prescription";
+    $("rx-view-meta").textContent = [i.patient && "For " + i.patient, i.doctor, i.clinic, fmtDate(i.prescribed_on)].filter(Boolean).join(" · ");
+    $("rx-view-notes").textContent = i.notes || "";
+    const pages = $("rx-view-pages"); pages.textContent = "";
+    i.files.forEach((f, n) => {
+      const pg = el("div", "rx-page");
+      if (isImg(f.mime)) { const a = document.createElement("a"); a.href = f.url; a.target = "_blank"; a.rel = "noopener";
+        const im = document.createElement("img"); im.alt = `Page ${n + 1}`; im.loading = "lazy"; im.src = f.url; a.appendChild(im); pg.appendChild(a); }
+      else pg.appendChild(el("div", "rx-pdf", f.mime === "application/pdf" ? "📄" : "🖼️"));
+      const bar = el("div", "rx-pbar");
+      bar.appendChild(el("b", null, `Page ${n + 1}` + (f.name ? ` · ${f.name}` : "")));
+      const open = el("a", "rx-btn", "Open"); open.href = f.url; open.target = "_blank"; open.rel = "noopener";
+      const dl = el("a", "rx-btn", "Download"); dl.href = f.url + "?download=1";
+      bar.append(open, dl);
+      if (i.files.length > 1) {
+        const rm = el("button", "rx-btn danger", "Remove"); rm.type = "button";
+        rm.onclick = async () => {
+          if (!confirm("Remove this page?")) return;
+          const r = await post(`/api/prescriptions/${i.id}/file/${n}/delete`);
+          if (r.ok) { replace(r.item); openView(r.item); }
+        };
+        bar.appendChild(rm);
+      }
+      pg.appendChild(bar); pages.appendChild(pg);
+    });
+    $("rx-view-dlg").showModal();
+  }
+
+  function replace(item) { const k = items.findIndex(x => x.id === item.id); if (k >= 0) items[k] = item; else items.unshift(item); renderPeople(); render(); }
+
+  async function post(url, body) {
+    const r = await fetch(url, { method: "POST", credentials: "same-origin", headers: { "X-CSRFToken": csrf }, body });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { toast(j.error || "Something went wrong", "error"); return {}; }
+    return { ok: true, ...j };
+  }
+
+  function openForm(i) {
+    editing = i || null; picked = [];
+    $("rx-form").reset(); $("rx-picked").textContent = "";
+    $("rx-form-title").textContent = i ? "Edit prescription" : "Add prescription";
+    $("rx-files-hint").textContent = i ? "(add more pages, optional)" : "(required)";
+    $("rx-title").value = i ? i.title : "";
+    $("rx-patient").value = i ? i.patient : (who || "");
+    $("rx-doctor").value = i ? i.doctor : "";
+    $("rx-clinic").value = i ? i.clinic : "";
+    $("rx-notes").value = i ? i.notes : "";
+    $("rx-date").value = i ? (i.prescribed_on || "") : new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    $("rx-form-dlg").showModal();
+  }
+
+  function addPicked(list) {
+    for (const f of list) { if (picked.length < 8) picked.push(f); }
+    const box = $("rx-picked"); box.textContent = "";
+    picked.forEach((f, k) => { const s = el("span", null, `${f.name} (${Math.max(1, Math.round(f.size / 1024))} KB) ✕`); s.style.cursor = "pointer";
+      s.title = "Remove"; s.onclick = () => { picked.splice(k, 1); addPicked([]); }; box.appendChild(s); });
+  }
+
+  $("rx-add").onclick = () => openForm(null);
+  $("rx-edit").onclick = () => { $("rx-view-dlg").close(); openForm(editing); };
+  $("rx-cam").onclick = () => $("rx-cam-in").click();
+  $("rx-choose").onclick = () => $("rx-file-in").click();
+  $("rx-cam-in").onchange = (e) => { addPicked(e.target.files); e.target.value = ""; };
+  $("rx-file-in").onchange = (e) => { addPicked(e.target.files); e.target.value = ""; };
+  $("rx-q").oninput = render;
+  document.querySelectorAll("[data-close]").forEach(b => b.onclick = () => b.closest("dialog").close());
+
+  $("rx-form").onsubmit = async (e) => {
+    e.preventDefault();
+    if (!editing && !picked.length) { toast("Add a photo or PDF first", "error"); return; }
+    const fd = new FormData();
+    ["title", "patient", "doctor", "clinic", "notes"].forEach(k => fd.append(k, $("rx-" + k).value));
+    fd.append("prescribed_on", $("rx-date").value);
+    picked.forEach(f => fd.append("files", f));
+    const btn = $("rx-save"); btn.disabled = true; btn.textContent = picked.length ? "Uploading…" : "Saving…";
+    const r = await post(editing ? `/api/prescriptions/${editing.id}` : "/api/prescriptions", fd);
+    btn.disabled = false; btn.textContent = "Save";
+    if (!r.ok) return;
+    $("rx-form-dlg").close(); replace(r.item); toast("Saved");
+  };
+
+  $("rx-del").onclick = async () => {
+    if (!editing || !confirm("Delete this prescription?")) return;
+    const r = await post(`/api/prescriptions/${editing.id}/delete`);
+    if (!r.ok) return;
+    items = items.filter(x => x.id !== editing.id); $("rx-view-dlg").close(); renderPeople(); render(); toast("Deleted");
+  };
+
+  load();
+  if (window.feather) feather.replace();
+})();
+</script>
+</body>
+</html>

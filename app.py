@@ -79,6 +79,7 @@ def create_app():
     from routes.relationships import relationships_bp
     from routes.focus_log import focus_log_bp
     from routes.photos import photos_bp
+    from routes.prescriptions import prescriptions_bp
     from routes.quotes import quotes_bp
     from routes.mythology import mythology_bp
     from routes.grocery import grocery_bp
@@ -131,6 +132,7 @@ def create_app():
     app.register_blueprint(relationships_bp)
     app.register_blueprint(focus_log_bp)
     app.register_blueprint(photos_bp)
+    app.register_blueprint(prescriptions_bp)
     app.register_blueprint(quotes_bp)
     app.register_blueprint(mythology_bp)
     app.register_blueprint(grocery_bp)
