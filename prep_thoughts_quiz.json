@@ -30740,5 +30740,127 @@
    "why": "Undersell leaves a few units to release later. Oversell means cancelled paid orders and broken trust, so the design never risks it.",
    "level": "Easy"
   }
+ ],
+ "Your database got slower after doubling its RAM: queries went from 300 ms to 2.4 seconds, with no query changes. What would you investigate?": [
+  {
+   "q": "A database got 8x slower right after its RAM was doubled. What is the best first assumption?",
+   "options": [
+    "The extra RAM is slowing every query down",
+    "Something else changed with the resize, such as a restart, settings or hardware",
+    "The application code must have changed secretly",
+    "The database needs even more RAM"
+   ],
+   "answer": 1,
+   "why": "RAM by itself helps or sits unused. A resize usually means a restart onto a different instance, which brings other changes.",
+   "level": "Easy"
+  },
+  {
+   "q": "Latency is 2.4 s just after the resize, 1.9 s an hour later and 1.5 s after two hours. What does this most suggest?",
+   "options": [
+    "A query plan flip",
+    "A cross-AZ network move",
+    "A cold cache warming up",
+    "A JVM heap above 32 GB"
+   ],
+   "answer": 2,
+   "why": "Steady improvement over hours is the signature of a cache that was emptied by the restart and is refilling.",
+   "level": "Easy"
+  },
+  {
+   "q": "Which Postgres tool loads chosen tables and indexes into memory right after a restart?",
+   "options": [
+    "VACUUM FULL",
+    "pg_dump",
+    "REINDEX",
+    "pg_prewarm"
+   ],
+   "answer": 3,
+   "why": "pg_prewarm (and its autoprewarm option) reloads hot pages so the cache is warm before real traffic.",
+   "level": "Medium"
+  },
+  {
+   "q": "Only one join query is 10x slower. EXPLAIN ANALYZE shows a nested loop estimated at 12 rows that returns 1,750 rows. What is the best first fix?",
+   "options": [
+    "Run ANALYZE on the tables so the planner has fresh statistics",
+    "Double the RAM again",
+    "Restart the database to clear the plan",
+    "Add a second read replica"
+   ],
+   "answer": 0,
+   "why": "Estimated rows far from actual rows means stale or missing statistics. ANALYZE refreshes them and usually restores the right plan.",
+   "level": "Medium"
+  },
+  {
+   "q": "Why can a larger effective_cache_size make some queries slower right after a restart?",
+   "options": [
+    "It allocates memory and starves the OS",
+    "It disables all indexes",
+    "It makes the planner assume random reads are cheap, so it may pick index-heavy nested loops that hit a cold disk",
+    "It forces every query to use a sequential scan"
+   ],
+   "answer": 2,
+   "why": "effective_cache_size allocates nothing; it is a planner hint. A bigger value favours plans with many random reads, which are slow when the cache is cold.",
+   "level": "Hard"
+  },
+  {
+   "q": "An endpoint makes 600 small queries. After the resize the database is in a different availability zone, adding about 1 ms per round trip. How much latency does this add per request?",
+   "options": [
+    "About 1 ms",
+    "About 60 ms",
+    "About 6 seconds",
+    "About 600 ms"
+   ],
+   "answer": 3,
+   "why": "600 round trips x 1 ms each = about 600 ms. Chatty endpoints magnify small network changes.",
+   "level": "Easy"
+  },
+  {
+   "q": "An Elasticsearch heap was raised from 30 GB to 48 GB with the RAM, and p99 got worse. What is the main reason?",
+   "options": [
+    "Above about 32 GB the JVM loses compressed object pointers, and bigger heaps can pause longer",
+    "Elasticsearch cannot use more than 32 GB of disk",
+    "The heap size has no effect on latency",
+    "Bigger heaps always mean fewer GC pauses"
+   ],
+   "answer": 0,
+   "why": "Crossing ~32 GB turns off compressed oops, so objects use more memory; bigger heaps can mean longer GC pauses and less page cache. Keep heap under ~31 GB.",
+   "level": "Medium"
+  },
+  {
+   "q": "p50 latency is unchanged after the resize, but p99 has spiked. Which group of causes fits best?",
+   "options": [
+    "Cross-AZ network latency on every query",
+    "Pauses such as GC, transparent huge page compaction or long checkpoints",
+    "A cold cache affecting every read",
+    "Slower CPU on every request"
+   ],
+   "answer": 1,
+   "why": "If the typical request is fine and only the tail is worse, look for occasional stalls rather than a slowdown on every request.",
+   "level": "Medium"
+  },
+  {
+   "q": "In the first 15 minutes of triage, what is the most useful thing to do?",
+   "options": [
+    "Roll out a code change to rewrite all slow queries",
+    "Increase work_mem across the board",
+    "Compare before and after metrics: top queries, wait events, hit ratio, CPU, iowait and steal",
+    "Immediately double the RAM again"
+   ],
+   "answer": 2,
+   "why": "Measure first. Side-by-side metrics tell you whether it is cache, plan, hardware or network before you change anything.",
+   "level": "Easy"
+  },
+  {
+   "q": "As a director, what is the best way to make future resizes safe?",
+   "options": [
+    "Allow resizes only during peak hours so problems show quickly",
+    "Skip baselines because managed services handle everything",
+    "Let each engineer resize whenever they like without a ticket",
+    "Record a baseline, resize in a quiet window, canary on a replica, diff settings and keep a rollback"
+   ],
+   "answer": 3,
+   "why": "Treat a resize as a change: baseline, quiet window, canary and compare, visible settings diff, and a ready rollback.",
+   "level": "Medium"
+  }
  ]
 }
