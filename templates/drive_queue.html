@@ -112,6 +112,25 @@
 
   .dq-now-playing { display: flex; align-items: center; gap: 10px; margin: 10px 4px 6px; font-size: 12.5px; color: var(--color-text-secondary); }
   .dq-now-playing strong { color: var(--color-text); font-weight: 800; }
+
+  .dq-order { display:flex; gap:6px; }
+  .dq-controls { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin: 0 4px 12px; }
+  .dq-ctl { padding: 8px 14px; border-radius: 10px; font-size: 13.5px; font-weight: 700; border:1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); cursor:pointer; display:inline-flex; gap:6px; align-items:center; }
+  .dq-ctl.primary { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); }
+  .dq-ctl svg { width:15px; height:15px; }
+  .dq-toggle { font-size: 12.5px; color: var(--color-text-secondary); display:inline-flex; gap:6px; align-items:center; }
+  .dq-rep { display:inline-flex; align-items:center; gap:2px; border:1px solid var(--color-border); border-radius:8px; overflow:hidden; }
+  .dq-rep button { width:26px; height:30px; border:0; background:var(--color-surface); color:var(--color-text); cursor:pointer; font-weight:800; }
+  .dq-rep span { min-width:30px; text-align:center; font-size:12.5px; font-weight:800; font-variant-numeric: tabular-nums; }
+  .dq-card.is-playing { border-color: var(--color-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 25%, transparent); }
+  .dq-card.is-done { opacity: .55; }
+  .dq-card-actions { align-items:center; }
+  .dq-notes { background: var(--color-surface); border:1px solid var(--color-border); border-radius:12px; padding: 12px 16px; margin: 0 0 16px; font-size: 14px; line-height: 1.55; }
+  .dq-notes h3 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--color-text-secondary); }
+  .dq-notes p { margin: 6px 0; }
+  .dq-notes ul { margin: 4px 0 8px; padding-left: 20px; }
+  .dq-safety { font-size: 12.5px; color: var(--color-text-secondary); margin: 0 4px 14px; }
+  @media (max-width: 560px) { .dq-card { grid-template-columns: 28px 1fr; } .dq-card-actions { grid-column: 1 / -1; justify-content: flex-end; } }
 </style>
 {% include "_pwa_head.html" %}
 </head>
@@ -121,9 +140,9 @@
   <header class="dq-hero">
     <div>
       <h1><span class="dq-emoji">🎧</span>Drive Queue</h1>
-      <p class="dq-sub">Pick a target window. We pull <b>drivable</b>-tagged items from
-        Inbox + TravelReads and pack them to fit, longest-first. Hit play; YouTube
-        items open in an inline player so the page can keep going while you drive.</p>
+      <p class="dq-sub">A playlist of <b>drivable</b> items from TravelReads and Inbox.
+        Keep your queue order or pack the time, set how many times each video plays,
+        then Play all: it moves to the next video on its own.</p>
     </div>
     <a class="dq-icon-btn" href="/inbox" title="Back to Inbox"><i data-feather="arrow-left"></i></a>
   </header>
@@ -132,21 +151,39 @@
     <div class="dq-presets" role="tablist" aria-label="Quick targets">
       <button class="dq-preset" data-mins="30">30 min</button>
       <button class="dq-preset is-active" data-mins="60">1 hr</button>
-      <button class="dq-preset" data-mins="90">1.5 hr</button>
-      <button class="dq-preset" data-mins="120">2 hr (commute)</button>
+      <button class="dq-preset" data-mins="120">2 hr</button>
+      <button class="dq-preset" data-mins="240">4 hr</button>
+      <button class="dq-preset" data-mins="480">8 hr trip</button>
     </div>
     <label>
-      <span class="dq-lbl">Custom</span>
-      <input id="dq-mins" type="number" min="5" max="240" step="5" value="60">
+      <span class="dq-lbl">Custom (min)</span>
+      <input id="dq-mins" type="number" min="5" max="720" step="5" value="60">
     </label>
-    <button class="dq-build-btn" onclick="dqBuild()">Build queue</button>
+    <label>
+      <span class="dq-lbl">Order</span>
+      <select id="dq-order" style="width:auto">
+        <option value="queue">Your queue order</option>
+        <option value="fill">Fill the time (longest first)</option>
+      </select>
+    </label>
+    <button class="dq-build-btn" onclick="dqBuild()">Build playlist</button>
   </section>
 
   <div class="dq-summary" id="dq-summary"></div>
   <div class="dq-bar"><div class="dq-bar-fill" id="dq-bar-fill" style="width:0%"></div></div>
 
+  <div class="dq-controls" id="dq-controls" hidden>
+    <button class="dq-ctl primary" onclick="dqPlayAll()"><i data-feather="play"></i>Play all</button>
+    <button class="dq-ctl" onclick="dqStep(-1)"><i data-feather="skip-back"></i>Prev</button>
+    <button class="dq-ctl" onclick="dqStep(1)"><i data-feather="skip-forward"></i>Next</button>
+    <label class="dq-toggle"><input type="checkbox" id="dq-markdone" checked> Mark TravelReads done after its last play</label>
+  </div>
+  <p class="dq-safety" id="dq-safety" hidden>Driving: listen only, start the playlist before you set off and don't touch the screen.
+    On a phone, keep this page open with the screen on (we ask the phone to stay awake); YouTube in a browser pauses when the screen locks.</p>
+
   <div id="dq-now-playing"></div>
-  <div id="dq-player-slot"></div>
+  <div id="dq-player-slot"><div class="dq-player" id="dq-player-wrap" hidden><div id="dq-yt"></div></div></div>
+  <div id="dq-notes"></div>
 
   <div id="dq-list">
     <div class="dq-empty">
@@ -160,8 +197,17 @@
 const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 let _queue = [];
 let _target = 60;
+let _cur = -1, _playsLeft = 0, _player = null, _ytReady = false, _wake = null, _pendingId = null;
+
+function lsGet(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+try { document.getElementById('dq-order').value = lsGet('dq-order', 'queue'); } catch (e) {}
+const _savedMins = lsGet('dq-mins', '');
+if (_savedMins) document.getElementById('dq-mins').value = _savedMins;
 
 document.querySelectorAll('.dq-preset').forEach(btn => {
+  btn.classList.toggle('is-active', btn.dataset.mins === document.getElementById('dq-mins').value);
   btn.addEventListener('click', () => {
     document.querySelectorAll('.dq-preset').forEach(b => b.classList.remove('is-active'));
     btn.classList.add('is-active');
@@ -179,91 +225,208 @@ function fmtMin(secs) {
   return rem ? `${h}h ${rem}m` : `${h}h`;
 }
 
+function repKey(it) { return 'dq-rep-' + it.source_table + '-' + it.id; }
+function reps(it) { const n = parseInt(lsGet(repKey(it), '1'), 10); return n >= 1 && n <= 20 ? n : 1; }
+function setReps(i, delta) {
+  const it = _queue[i]; if (!it) return;
+  const n = Math.max(1, Math.min(20, reps(it) + delta));
+  lsSet(repKey(it), String(n));
+  document.getElementById('dq-rep-' + i).textContent = '×' + n;
+  if (i === _cur) _playsLeft = Math.max(1, _playsLeft + delta);
+  dqSummary();
+}
+
+function dqSummary() {
+  const total = _queue.reduce((a, it) => a + it.est_seconds * reps(it), 0);
+  const once = _queue.reduce((a, it) => a + it.est_seconds, 0);
+  document.getElementById('dq-summary').innerHTML = `
+    <span><strong>${_queue.length}</strong> item${_queue.length === 1 ? '' : 's'}</span><span>·</span>
+    <span><strong>${fmtMin(total)}</strong> with repeats${total !== once ? ` (${fmtMin(once)} once through)` : ''} of a <strong>${fmtMin(_target * 60)}</strong> target</span>`;
+  document.getElementById('dq-bar-fill').style.width = Math.min(100, Math.round(total * 100 / (_target * 60))) + '%';
+}
+
+// Notes: keep it simple and safe — escape, then **bold**, "- " bullets, paragraphs.
+function renderNotes(txt) {
+  const lines = escHtml(txt).split(/\n/);
+  let out = '', inList = false;
+  for (const raw of lines) {
+    const l = raw.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    const m = l.match(/^\s*(?:[-*•]|\d+\.)\s+(.*)/);
+    if (m) { if (!inList) { out += '<ul>'; inList = true; } out += `<li>${m[1]}</li>`; continue; }
+    if (inList) { out += '</ul>'; inList = false; }
+    if (l.trim()) out += `<p>${l}</p>`;
+  }
+  return out + (inList ? '</ul>' : '');
+}
+
 async function dqBuild() {
-  const mins = Math.max(5, Math.min(240, parseInt(document.getElementById('dq-mins').value || '60', 10)));
+  const mins = Math.max(5, Math.min(720, parseInt(document.getElementById('dq-mins').value || '60', 10)));
+  const order = document.getElementById('dq-order').value;
+  lsSet('dq-order', order); lsSet('dq-mins', String(mins));
   _target = mins;
   const list = document.getElementById('dq-list');
-  list.innerHTML = '<div class="dq-empty">Building queue…</div>';
+  list.innerHTML = '<div class="dq-empty">Building playlist…</div>';
 
   try {
-    const r = await fetch(`/api/drive-queue?minutes=${mins}`, { credentials: 'same-origin' });
+    const r = await fetch(`/api/drive-queue?minutes=${mins}&order=${encodeURIComponent(order)}`, { credentials: 'same-origin' });
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || 'Failed');
-
     _queue = data.items || [];
-    const filled = data.filled_minutes || 0;
-    document.getElementById('dq-summary').innerHTML = `
-      <span><strong>${_queue.length}</strong> item${_queue.length === 1 ? '' : 's'}</span>
-      <span>·</span>
-      <span>fills <strong>${filled}m</strong> of <strong>${mins}m</strong> target</span>
-      <span>·</span>
-      <span><strong>${data.candidate_count}</strong> drivable item${data.candidate_count === 1 ? '' : 's'} in your library</span>
-    `;
-    document.getElementById('dq-bar-fill').style.width = Math.min(100, Math.round(filled * 100 / mins)) + '%';
+    _cur = -1;
 
     if (!_queue.length) {
+      document.getElementById('dq-summary').innerHTML = '';
+      document.getElementById('dq-controls').hidden = true;
+      document.getElementById('dq-safety').hidden = true;
       list.innerHTML = `
         <div class="dq-empty">
           <strong>No drivable items found.</strong>
-          Open <a href="/inbox">Inbox</a> or <a href="/travel-reads">TravelReads</a> and tap the
+          Open <a href="/travel-reads">TravelReads</a> (try “Add a pack”) or <a href="/inbox">Inbox</a> and tap the
           🎧 chip on items that are safe to listen to while driving (talks, podcasts, lectures).
         </div>`;
-      document.getElementById('dq-now-playing').innerHTML = '';
-      document.getElementById('dq-player-slot').innerHTML = '';
       if (window.feather) feather.replace();
       return;
     }
-
-    list.innerHTML = _queue.map((it, i) => {
-      const sourcePill = it.source_table === 'travel_reads'
-        ? '<span class="dq-pill src-travel">TravelReads</span>'
-        : '<span class="dq-pill src-inbox">Inbox</span>';
-      const estClass = it.est_known ? 'dq-est' : 'dq-est is-est';
-      const estLabel = it.est_known ? fmtMin(it.est_seconds) : `~${fmtMin(it.est_seconds)}`;
-      const playBtn = it.youtube_id
-        ? `<button class="dq-icon-btn" title="Play inline" onclick="dqPlay(${i})"><i data-feather="play"></i></button>`
-        : `<a class="dq-icon-btn" href="${escAttr(it.url)}" target="_blank" rel="noopener" title="Open"><i data-feather="external-link"></i></a>`;
-      return `
-        <div class="dq-card">
-          <span class="dq-num">${i + 1}</span>
-          <div class="dq-card-body">
-            <div class="dq-card-title"><a href="${escAttr(it.url)}" target="_blank" rel="noopener">${escHtml(it.title)}</a></div>
-            <div class="dq-card-meta">
-              ${sourcePill}
-              <span class="${estClass}">${estLabel}</span>
-              ${(it.labels || []).filter(l => l !== 'drivable').map(l => `<span class="dq-pill">${escHtml(l)}</span>`).join('')}
-            </div>
-          </div>
-          <div class="dq-card-actions">
-            ${playBtn}
-            <a class="dq-icon-btn" href="${escAttr(it.url)}" target="_blank" rel="noopener" title="Open in YouTube"><i data-feather="external-link"></i></a>
-          </div>
-        </div>`;
-    }).join('');
-    if (window.feather) feather.replace();
+    document.getElementById('dq-controls').hidden = false;
+    document.getElementById('dq-safety').hidden = false;
+    dqSummary();
+    dqRenderList();
   } catch (e) {
-    list.innerHTML = `<div class="dq-empty"><strong>Couldn't build queue.</strong>${escHtml(e.message || '')}</div>`;
+    list.innerHTML = `<div class="dq-empty"><strong>Couldn't build playlist.</strong>${escHtml(e.message || '')}</div>`;
   }
 }
+
+function dqRenderList() {
+  const list = document.getElementById('dq-list');
+  list.innerHTML = _queue.map((it, i) => {
+    const sourcePill = it.source_table === 'travel_reads'
+      ? '<span class="dq-pill src-travel">TravelReads</span>'
+      : '<span class="dq-pill src-inbox">Inbox</span>';
+    const estClass = it.est_known ? 'dq-est' : 'dq-est is-est';
+    const estLabel = it.est_known ? fmtMin(it.est_seconds) : `~${fmtMin(it.est_seconds)}`;
+    const playBtn = it.youtube_id
+      ? `<button class="dq-icon-btn" title="Play from here" onclick="dqPlay(${i})"><i data-feather="play"></i></button>`
+      : `<a class="dq-icon-btn" href="${escAttr(it.url)}" target="_blank" rel="noopener" title="Open (not YouTube, skipped by Play all)"><i data-feather="external-link"></i></a>`;
+    return `
+      <div class="dq-card${i === _cur ? ' is-playing' : ''}${it._done ? ' is-done' : ''}" id="dq-card-${i}">
+        <span class="dq-num">${i + 1}</span>
+        <div class="dq-card-body">
+          <div class="dq-card-title"><a href="${escAttr(it.url)}" target="_blank" rel="noopener">${escHtml(it.title)}</a></div>
+          <div class="dq-card-meta">
+            ${sourcePill}
+            <span class="${estClass}">${estLabel}</span>
+            ${it.notes ? '<span class="dq-pill">notes</span>' : ''}
+            ${(it.labels || []).filter(l => l !== 'drivable').slice(0, 3).map(l => `<span class="dq-pill">${escHtml(l)}</span>`).join('')}
+          </div>
+        </div>
+        <div class="dq-card-actions">
+          <span class="dq-rep" title="How many times to play">
+            <button aria-label="Fewer plays" onclick="setReps(${i},-1)">−</button>
+            <span id="dq-rep-${i}">×${reps(it)}</span>
+            <button aria-label="More plays" onclick="setReps(${i},1)">+</button>
+          </span>
+          ${playBtn}
+        </div>
+      </div>`;
+  }).join('');
+  if (window.feather) feather.replace();
+}
+
+// ── YouTube IFrame API: one player, reused, so "ended" drives the playlist ──
+function ensureYT() {
+  if (window.YT && window.YT.Player) return Promise.resolve();
+  return new Promise(res => {
+    const prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => { if (prev) prev(); res(); };
+    if (!document.getElementById('yt-api')) {
+      const t = document.createElement('script'); t.id = 'yt-api';
+      t.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(t);
+    }
+  });
+}
+
+async function loadVideo(id) {
+  await ensureYT();
+  document.getElementById('dq-player-wrap').hidden = false;
+  if (_player && _ytReady) { _player.loadVideoById(id); return; }
+  _pendingId = id;
+  if (_player) return;
+  _player = new YT.Player('dq-yt', {
+    width: '100%', height: '100%', videoId: id,
+    playerVars: { autoplay: 1, rel: 0, playsinline: 1 },
+    events: {
+      onReady: e => { _ytReady = true; if (_pendingId && _pendingId !== id) e.target.loadVideoById(_pendingId); else e.target.playVideo(); _pendingId = null; },
+      onStateChange: e => { if (e.data === YT.PlayerState.ENDED) onEnded(); },
+      onError: () => { toastMsg('This video can’t play here, skipping'); advance(1); },
+    },
+  });
+}
+
+function toastMsg(m) { try { if (window.showToast) showToast(m); } catch (e) {} }
+
+function nextPlayable(from, dir) {
+  for (let i = from; i >= 0 && i < _queue.length; i += dir) if (_queue[i].youtube_id) return i;
+  return -1;
+}
+
+function dqPlayAll() { const i = nextPlayable(0, 1); if (i < 0) { toastMsg('No YouTube items to play'); return; } dqPlay(i); }
+function dqStep(dir) { const i = nextPlayable((_cur < 0 ? 0 : _cur + dir), dir); if (i >= 0) dqPlay(i); }
 
 function dqPlay(idx) {
   const it = _queue[idx];
   if (!it || !it.youtube_id) return;
-  document.getElementById('dq-player-slot').innerHTML = `
-    <div class="dq-player">
-      <iframe src="https://www.youtube.com/embed/${encodeURIComponent(it.youtube_id)}?autoplay=1&rel=0"
-              title="${escAttr(it.title)}"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowfullscreen
-              referrerpolicy="strict-origin-when-cross-origin"></iframe>
-    </div>`;
-  document.getElementById('dq-now-playing').innerHTML = `
-    <i data-feather="play-circle" style="width:16px;height:16px"></i>
-    <span>Now playing <strong>#${idx + 1}</strong> · ${escHtml(it.title)}</span>`;
-  if (window.feather) feather.replace();
-  // Smoothly scroll the player into view so the user sees the change.
+  _cur = idx;
+  _playsLeft = reps(it);
+  keepAwake();
+  loadVideo(it.youtube_id);
+  showNow();
+  document.querySelectorAll('.dq-card').forEach(c => c.classList.remove('is-playing'));
+  const card = document.getElementById('dq-card-' + idx); if (card) card.classList.add('is-playing');
   document.getElementById('dq-player-slot').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
+
+function showNow() {
+  const it = _queue[_cur]; if (!it) return;
+  const total = reps(it), n = total - _playsLeft + 1;
+  document.getElementById('dq-now-playing').innerHTML = `
+    <i data-feather="play-circle" style="width:16px;height:16px"></i>
+    <span>Now playing <strong>#${_cur + 1}</strong>${total > 1 ? ` · play <strong>${n} of ${total}</strong>` : ''} · ${escHtml(it.title)}</span>`;
+  document.getElementById('dq-notes').innerHTML = it.notes
+    ? `<div class="dq-notes"><h3>Crisp notes</h3>${renderNotes(it.notes)}</div>` : '';
+  if (window.feather) feather.replace();
+}
+
+function onEnded() {
+  _playsLeft -= 1;
+  if (_playsLeft > 0) { _player.seekTo(0, true); _player.playVideo(); showNow(); return; }
+  const it = _queue[_cur];
+  if (it) { it._done = true; const c = document.getElementById('dq-card-' + _cur); if (c) c.classList.add('is-done'); markDone(it); }
+  advance(1);
+}
+
+function advance(dir) {
+  const i = nextPlayable(_cur + dir, dir);
+  if (i >= 0) dqPlay(i);
+  else { document.getElementById('dq-now-playing').innerHTML = '<span>Playlist finished. 🎉</span>'; releaseAwake(); }
+}
+
+async function markDone(it) {
+  if (it.source_table !== 'travel_reads' || !document.getElementById('dq-markdone').checked) return;
+  try {
+    await fetch(`/api/travel-reads/${encodeURIComponent(it.id)}/status`, {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ status: 'done' }),
+    });
+  } catch (e) {}
+}
+
+// Keep the screen on while playing (supported browsers only).
+async function keepAwake() {
+  try { if ('wakeLock' in navigator && !_wake) { _wake = await navigator.wakeLock.request('screen'); _wake.addEventListener('release', () => { _wake = null; }); } } catch (e) {}
+}
+function releaseAwake() { try { if (_wake) _wake.release(); } catch (e) {} _wake = null; }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && _cur >= 0) keepAwake(); });
 
 if (window.feather) feather.replace();
 </script>

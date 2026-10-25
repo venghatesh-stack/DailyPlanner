@@ -350,9 +350,36 @@
       </label>
     </div>
     <div class="tr-add-actions">
+      <button type="button" class="btn" onclick="trPacksOpen()"><i data-feather="package"></i> Add a pack</button>
+      <button type="button" class="btn" onclick="trBulkOpen()"><i data-feather="list"></i> Bulk add</button>
       <button type="submit" class="btn btn-primary"><i data-feather="plus"></i> Add to queue</button>
     </div>
   </form>
+
+  <div class="tr-modal" id="tr-bulk" hidden role="dialog" aria-modal="true" aria-labelledby="tr-bulk-title">
+    <div class="tr-modal-backdrop" onclick="trBulkClose()"></div>
+    <div class="tr-modal-card">
+      <button type="button" class="tr-modal-close" onclick="trBulkClose()" aria-label="Close">×</button>
+      <h3 id="tr-bulk-title">Bulk add</h3>
+      <p class="tr-modal-sub">One link per line, in the order you want them. Only the link is required:<br><code>URL | minutes | title | note</code></p>
+      <textarea id="tr-bulk-text" placeholder="https://www.youtube.com/watch?v=… | 18 | Simon Sinek: How great leaders inspire action | Leadership"></textarea>
+      <div class="tr-add-actions">
+        <span id="tr-bulk-count" style="margin-right:auto;font-size:13px;color:var(--color-text-secondary)"></span>
+        <button type="button" class="btn" onclick="trBulkClose()">Cancel</button>
+        <button type="button" class="btn btn-primary" id="tr-bulk-go" onclick="trBulkAdd()">Add all</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tr-modal" id="tr-packs" hidden role="dialog" aria-modal="true" aria-labelledby="tr-packs-title">
+    <div class="tr-modal-backdrop" onclick="trPacksClose()"></div>
+    <div class="tr-modal-card">
+      <button type="button" class="tr-modal-close" onclick="trPacksClose()" aria-label="Close">×</button>
+      <h3 id="tr-packs-title">Ready-made packs</h3>
+      <p class="tr-modal-sub">Adds every item in order, tagged 🎧 drivable, with crisp notes. Items already in your queue are not added twice. Then open <a href="/drive-queue">Drive Queue</a> to play them as a playlist.</p>
+      <div id="tr-packs-list">Loading…</div>
+    </div>
+  </div>
 
   <div id="tr-list-root">
     <div class="tr-empty" id="tr-loading">Loading…</div>
@@ -611,6 +638,70 @@ function _updateStats() {
     display = String(mins);
   }
   document.getElementById('tr-stat-minutes').textContent = display;
+}
+
+async function trPacksOpen() {
+  document.getElementById('tr-packs').hidden = false;
+  const box = document.getElementById('tr-packs-list');
+  try {
+    const j = await (await fetch('/api/travel-reads/packs', { credentials: 'same-origin' })).json();
+    const packs = j.packs || [];
+    box.innerHTML = packs.length ? packs.map(p => `
+      <div style="display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--color-border)">
+        <div><strong>${escapeHtml(p.title)}</strong><div style="font-size:13px;color:var(--color-text-secondary)">${p.count} items · ${Math.floor(p.minutes / 60)} h ${p.minutes % 60} min${p.description ? ' · ' + escapeHtml(p.description) : ''}</div></div>
+        <button type="button" class="btn btn-primary" onclick="trPackAdd('${p.slug}', this)">Add</button>
+      </div>`).join('') : 'No packs yet.';
+  } catch (e) { box.textContent = 'Could not load packs.'; }
+}
+function trPacksClose() { document.getElementById('tr-packs').hidden = true; }
+async function trPackAdd(slug, btn) {
+  btn.disabled = true; btn.textContent = 'Adding…';
+  try {
+    const r = await fetch(`/api/travel-reads/packs/${encodeURIComponent(slug)}/add`, {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF }, body: '{}',
+    });
+    const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error(j.error || 'Failed');
+    trPacksClose();
+    if (typeof trLoad === 'function') await trLoad(); else location.reload();
+    if (window.showToast) showToast(`Added ${j.added}` + (j.notes_filled ? `, notes added to ${j.notes_filled} already queued` : ''), 'success', 3500);
+  } catch (e) {
+    if (window.showToast) showToast(e.message || 'Could not add', 'error');
+  } finally { btn.disabled = false; btn.textContent = 'Add'; }
+}
+
+function trBulkOpen() {
+  document.getElementById('tr-bulk').hidden = false;
+  const ta = document.getElementById('tr-bulk-text'); ta.focus(); trBulkCount();
+}
+function trBulkClose() { document.getElementById('tr-bulk').hidden = true; }
+function trBulkCount() {
+  const lines = document.getElementById('tr-bulk-text').value.split('\n').filter(l => /^\s*https?:\/\//.test(l));
+  const mins = lines.reduce((a, l) => a + (parseInt((l.split('|')[1] || '').replace(/\D/g, ''), 10) || 0), 0);
+  document.getElementById('tr-bulk-count').textContent = lines.length ? `${lines.length} links` + (mins ? ` · ${Math.floor(mins / 60)} h ${mins % 60} min` : '') : '';
+}
+document.addEventListener('input', e => { if (e.target && e.target.id === 'tr-bulk-text') trBulkCount(); });
+async function trBulkAdd() {
+  const btn = document.getElementById('tr-bulk-go');
+  const text = document.getElementById('tr-bulk-text').value;
+  btn.disabled = true; btn.textContent = 'Adding…';
+  try {
+    const r = await fetch('/api/travel-reads/bulk', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ text }),
+    });
+    const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error(j.error || 'Failed');
+    document.getElementById('tr-bulk-text').value = '';
+    trBulkClose();
+    if (typeof trLoad === 'function') await trLoad(); else location.reload();
+    const msg = `Added ${j.added}` + (j.skipped ? `, ${j.skipped} already in the queue` : '') + (j.errors && j.errors.length ? `, ${j.errors.length} skipped` : '');
+    if (window.showToast) showToast(msg, j.errors && j.errors.length ? 'warning' : 'success', 3000);
+  } catch (e) {
+    if (window.showToast) showToast(e.message || 'Could not add', 'error');
+  } finally { btn.disabled = false; btn.textContent = 'Add all'; }
 }
 
 async function trAdd(ev) {

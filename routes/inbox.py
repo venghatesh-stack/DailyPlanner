@@ -1787,9 +1787,12 @@ def drive_queue_api():
     can show "~15m" instead of "15m"."""
     user_id = session["user_id"]
     try:
-        target_min = max(5, min(240, int(request.args.get("minutes", 60))))
+        target_min = max(5, min(720, int(request.args.get("minutes", 60))))
     except (TypeError, ValueError):
         target_min = 60
+    # "fill" packs the window longest-first (the original behaviour);
+    # "queue" keeps the order you queued things in (a playlist, a pack).
+    order = (request.args.get("order") or "fill").strip().lower()
     target_secs = target_min * 60
 
     # ── Pull from inbox_links ─────────────────────────────────────
@@ -1809,8 +1812,9 @@ def drive_queue_api():
         "status": "not.in.(archived,done)",
         "labels": "cs.{drivable}",
         "select": (
-            "id,url,title,description,duration_minutes,labels,source,kind"
+            "id,url,title,description,duration_minutes,labels,source,kind,notes,added_at"
         ),
+        "order": "added_at.desc",
         "limit": "200",
     }) or []
 
@@ -1843,7 +1847,22 @@ def drive_queue_api():
             "est_seconds": secs or DEFAULT_SECS,
             "est_known": secs > 0,
             "youtube_id": _yt_id_for_drive(r.get("url") or ""),
+            "notes": (r.get("notes") or "")[:6000],
         })
+
+    if order == "queue":
+        # TravelReads first, in queue order (newest added first, which is
+        # also the order a bulk add or a pack lists them), then Inbox.
+        # Fill until the window is reached; never skip ahead.
+        candidates.sort(key=lambda c: 0 if c["source_table"] == "travel_reads" else 1)
+        picked, used_secs = [], 0
+        for c in candidates:
+            if used_secs >= target_secs:
+                break
+            picked.append(c)
+            used_secs += c["est_seconds"]
+        return jsonify({"target_minutes": target_min, "filled_minutes": round(used_secs / 60),
+                        "items": picked, "candidate_count": len(candidates), "order": "queue"})
 
     # Stable sort: priority-flagged items first, then longest first
     # within each tier. Longest-first means the queue front-loads big

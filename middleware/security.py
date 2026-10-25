@@ -14,8 +14,11 @@ def apply_security_headers(app):
         # blob: covers any future client-side preview from File API.
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
+            # www.youtube.com + s.ytimg.com: the YouTube IFrame Player API,
+            # which Drive Queue uses to auto-advance and repeat videos.
             "script-src 'self' 'unsafe-inline' "
-            "  https://unpkg.com https://cdn.jsdelivr.net https://cdn.quilljs.com; "
+            "  https://unpkg.com https://cdn.jsdelivr.net https://cdn.quilljs.com "
+            "  https://www.youtube.com https://s.ytimg.com; "
             "style-src 'self' 'unsafe-inline' "
             "  https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdn.quilljs.com; "
             "style-src-elem 'self' 'unsafe-inline' "

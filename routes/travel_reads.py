@@ -155,10 +155,12 @@ def list_travel_reads():
 
     prio_rank = {"high": 0, "medium": 1, "low": 2}
     status_rank = {"in_progress": 0, "queued": 1, "done": 2}
+    # Newest first within a bucket (two stable sorts; hash() of the
+    # timestamp string used to randomise this order on every restart).
+    rows.sort(key=lambda r: r.get("added_at") or "", reverse=True)
     rows.sort(key=lambda r: (
         status_rank.get(r.get("status") or "queued", 1),
         prio_rank.get(r.get("priority") or "medium", 1),
-        -(r.get("added_at") or "").__hash__(),  # newer first within bucket
     ))
 
     # Aggregate stats for the header strip.
@@ -245,6 +247,174 @@ def add_travel_read():
         return jsonify({"error": "Couldn't save — please try again."}), 502
 
     return jsonify({"ok": True, "item": rows[0] if rows else None})
+
+
+# ─── API: bulk add ───────────────────────────────────────────────
+
+_MAX_BULK = 100
+
+
+def parse_bulk(text):
+    """One item per line: `URL | minutes | title | note`. Only the URL is
+    required; blank lines and lines starting with # are skipped."""
+    items, errors = [], []
+    for n, raw in enumerate((text or "").splitlines(), 1):
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = [x.strip() for x in line.split("|")]
+        url = parts[0]
+        if not re.match(r"^https?://\S+$", url):
+            errors.append(f"Line {n}: not a link")
+            continue
+        minutes = None
+        if len(parts) > 1 and parts[1]:
+            m = re.search(r"\d+", parts[1])
+            minutes = int(m.group()) if m else None
+        items.append({"url": url, "minutes": minutes,
+                      "title": parts[2] if len(parts) > 2 else "",
+                      "note": " | ".join(parts[3:]) if len(parts) > 3 else ""})
+    return items, errors
+
+
+@travel_reads_bp.route("/api/travel-reads/bulk", methods=["POST"])
+@login_required
+def bulk_add_travel_reads():
+    """Add many links at once, in the order given: the first line shows
+    first in the queue. Links already in the queue are skipped."""
+    from datetime import timedelta, timezone
+    user_id = session["user_id"]
+    data = request.get_json(force=True) or {}
+    items, errors = parse_bulk(data.get("text"))
+    if not items:
+        return jsonify({"error": "No links found. One per line: URL | minutes | title | note",
+                        "errors": errors}), 400
+    if len(items) > _MAX_BULK:
+        return jsonify({"error": f"Up to {_MAX_BULK} links at a time"}), 400
+    priority = (data.get("priority") or "medium").strip().lower()
+    if priority not in VALID_PRIORITIES:
+        priority = "medium"
+    try:
+        have = {r.get("url") for r in (get("travel_reads", params={
+            "user_id": f"eq.{user_id}", "status": "neq.archived",
+            "select": "url", "limit": "1000"}) or [])}
+    except Exception:
+        have = set()
+    now = datetime.now(timezone.utc)
+    added, skipped = [], 0
+    for i, it in enumerate(items):
+        if it["url"] in have:
+            skipped += 1
+            continue
+        have.add(it["url"])
+        title = it["title"][:_MAX_TITLE]
+        description = ""
+        if not title:
+            meta = fetch_meta(it["url"])
+            title = (meta.get("title") or it["url"])[:_MAX_TITLE]
+            description = (meta.get("description") or "")[:_MAX_DESC]
+        kind = _normalize_kind("", it["url"])
+        payload = {
+            "user_id": user_id, "url": it["url"], "title": title, "description": description,
+            "thumbnail_url": _thumbnail_for(it["url"], kind), "source": _source_from_url(it["url"]),
+            "kind": kind, "duration_minutes": it["minutes"], "priority": priority,
+            "status": "queued", "notes": it["note"][:_MAX_NOTES] or None,
+            # Earlier lines get a later timestamp so they list first.
+            "added_at": (now - timedelta(seconds=i)).isoformat(),
+            "labels": auto_label(it["url"], title, description, kind, (it["minutes"] or 0) * 60),
+        }
+        try:
+            rows = post("travel_reads", payload)
+        except Exception as e:
+            logger.error("travel_reads bulk insert failed: %s", e)
+            errors.append(f"Could not save {it['url']}")
+            continue
+        if rows:
+            added.append(rows[0])
+    return jsonify({"ok": True, "added": len(added), "skipped": skipped,
+                    "errors": errors, "items": added})
+
+
+# ─── Ready-made packs (data/travel_packs/*.json) ──────────────────
+
+import json as _json
+import os as _os
+
+_PACK_DIR = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), "data", "travel_packs")
+
+
+def _load_pack(slug):
+    if not re.fullmatch(r"[a-z0-9-]{1,60}", slug or ""):
+        return None
+    try:
+        with open(_os.path.join(_PACK_DIR, slug + ".json"), encoding="utf-8") as fh:
+            return _json.load(fh)
+    except (OSError, ValueError):
+        return None
+
+
+@travel_reads_bp.route("/api/travel-reads/packs", methods=["GET"])
+@login_required
+def list_packs():
+    out = []
+    try:
+        names = sorted(f[:-5] for f in _os.listdir(_PACK_DIR) if f.endswith(".json"))
+    except OSError:
+        names = []
+    for slug in names:
+        pk = _load_pack(slug)
+        if pk:
+            items = pk.get("items") or []
+            out.append({"slug": slug, "title": pk.get("title") or slug, "description": pk.get("description") or "",
+                        "count": len(items), "minutes": sum(int(i.get("minutes") or 0) for i in items)})
+    return jsonify({"packs": out})
+
+
+@travel_reads_bp.route("/api/travel-reads/packs/<slug>/add", methods=["POST"])
+@login_required
+def add_pack(slug):
+    """Queue every item of a pack, in order, with its notes. An item already
+    in the queue is not added twice; if it has no notes yet, it gets the
+    pack's notes."""
+    from datetime import timedelta, timezone
+    user_id = session["user_id"]
+    pk = _load_pack(slug)
+    if not pk:
+        return jsonify({"error": "Pack not found"}), 404
+    try:
+        existing = {r.get("url"): r for r in (get("travel_reads", params={
+            "user_id": f"eq.{user_id}", "status": "neq.archived",
+            "select": "id,url,notes", "limit": "1000"}) or [])}
+    except Exception:
+        existing = {}
+    now = datetime.now(timezone.utc)
+    added = filled = 0
+    for i, it in enumerate(pk.get("items") or []):
+        url = it.get("url") or ""
+        notes = (it.get("notes") or "")[:_MAX_NOTES] or None
+        if url in existing:
+            row = existing[url]
+            if notes and not (row.get("notes") or "").strip():
+                update("travel_reads", {"id": f"eq.{row['id']}", "user_id": f"eq.{user_id}"}, {"notes": notes})
+                filled += 1
+            continue
+        kind = _normalize_kind(it.get("kind") or "", url)
+        title = (it.get("title") or url)[:_MAX_TITLE]
+        minutes = it.get("minutes")
+        labels = auto_label(url, title, "", kind, int(minutes or 0) * 60)
+        for extra in (it.get("labels") or []) + ["drivable"]:
+            if extra not in labels:
+                labels.append(extra)
+        post("travel_reads", {
+            "user_id": user_id, "url": url, "title": title,
+            "description": (it.get("description") or "")[:_MAX_DESC],
+            "thumbnail_url": _thumbnail_for(url, kind), "source": _source_from_url(url),
+            "kind": kind, "duration_minutes": minutes, "priority": "medium", "status": "queued",
+            "notes": notes, "labels": sorted(labels),
+            "added_at": (now - timedelta(seconds=i)).isoformat(),
+        })
+        added += 1
+    return jsonify({"ok": True, "added": added, "notes_filled": filled})
 
 
 # ─── API: update fields ──────────────────────────────────────────
