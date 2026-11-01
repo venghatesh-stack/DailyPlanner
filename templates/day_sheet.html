@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<title>Day Sheet — DailyPlanner</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='design-system.css') }}">
+<script src="/static/js/vendor/feather-4.29.2.min.js"></script>
+<script src="{{ url_for('static', filename='js/global.js') }}"></script>
+<script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+<style>
+  body { background: var(--color-bg); color: var(--color-text); font-family: var(--font-family); margin: 0; }
+  [hidden] { display: none !important; }
+  .ds-app { max-width: 1200px; margin: 0 auto; padding: 24px 16px 96px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px; }
+  .ds-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
+  .ds-kicker { font-size: 12.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--color-primary-ink, var(--color-primary)); }
+  .ds-head h1 { margin: 4px 0 0; font-size: 34px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+  .ds-save { font-size: 12.5px; color: var(--color-text-secondary); margin-top: 6px; min-height: 18px; }
+  .ds-week { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .ds-day { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; width: 50px; height: 58px; border-radius: 12px;
+    border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); font: inherit; cursor: pointer; text-decoration: none; }
+  .ds-day small { font-size: 10.5px; font-weight: 800; letter-spacing: .06em; color: var(--color-text-secondary); }
+  .ds-day b { font-size: 17px; font-weight: 800; }
+  .ds-day[aria-current="date"] { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-on-primary); }
+  .ds-day[aria-current="date"] small { color: inherit; }
+  .ds-day.is-today:not([aria-current]) { border-color: var(--color-primary); }
+  .ds-arrow { width: 40px; height: 58px; border-radius: 12px; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text);
+    display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+  .ds-arrow svg { width: 18px; height: 18px; }
+
+  .ds-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px; padding: 20px; box-sizing: border-box; min-width: 0; }
+  .ds-card h2 { margin: 0 0 12px; font-size: 17px; font-weight: 800; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .ds-card h2 span { font-size: 12.5px; font-weight: 600; color: var(--color-text-secondary); }
+  .ds-in { font: inherit; color: var(--color-text); border: 0; background: transparent; width: 100%; min-width: 0; padding: 0; outline: none; }
+  .ds-in::placeholder, .ds-area::placeholder { color: var(--color-text-tertiary, var(--color-text-secondary)); opacity: .8; }
+  .ds-in:focus-visible, .ds-area:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; border-radius: 4px; }
+  .ds-check { width: 20px; height: 20px; flex: 0 0 20px; accent-color: var(--color-primary); cursor: pointer; margin: 0; }
+  .ds-area { font: inherit; color: var(--color-text); border: 0; background: transparent; width: 100%; resize: vertical; outline: none; padding: 0; line-height: 1.6; box-sizing: border-box; }
+
+  .ds-focus { display: flex; flex-wrap: wrap; gap: 14px 18px; align-items: center; }
+  .ds-focus label { font-size: 13px; font-weight: 700; color: var(--color-text-secondary); }
+  .ds-focus .ds-in { flex: 1 1 320px; font-size: 19px; font-weight: 700; }
+  .ds-energy { display: flex; gap: 6px; align-items: center; }
+  .ds-dot { width: 28px; height: 28px; border-radius: 50%; padding: 0; cursor: pointer; border: 2px solid var(--color-primary); background: var(--color-surface); }
+  .ds-dot.on { background: var(--color-primary); }
+
+  .ds-cols { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+  .ds-left { flex: 1 1 400px; min-width: 0; }
+  .ds-right { flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+  .ds-pair { display: flex; flex-wrap: wrap; gap: 20px; }
+  .ds-pair > .ds-card { flex: 1 1 280px; }
+
+  .ds-hour { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 10px; align-items: start; border-top: 1px solid var(--color-border); padding: 7px 0; min-height: 34px; }
+  .ds-hour > span { font-size: 12.5px; font-weight: 600; color: var(--color-text-secondary); font-variant-numeric: tabular-nums; padding-top: 7px; }
+  .ds-hour.is-now > span { color: var(--color-primary-ink, var(--color-primary)); font-weight: 800; }
+  .ds-hour.is-now { border-top: 2px solid var(--color-primary); }
+  .ds-hour .ds-in { font-size: 14.5px; padding: 6px 10px; border-radius: 8px; background: var(--color-bg); box-sizing: border-box; }
+  .ds-slot { display: flex; flex-direction: column; gap: 4px; }
+  .ds-chip { display: flex; gap: 8px; align-items: baseline; font-size: 13.5px; padding: 5px 10px; border-radius: 8px;
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent); color: var(--color-text); }
+  .ds-chip b { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--color-primary-ink, var(--color-primary)); white-space: nowrap; }
+  .ds-chip.done { text-decoration: line-through; opacity: .6; }
+  .ds-range { display: flex; gap: 6px; align-items: center; font-size: 12.5px; color: var(--color-text-secondary); }
+  .ds-range select { font: inherit; font-size: 12.5px; padding: 3px 6px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); }
+
+  .ds-top { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 12px; background: var(--color-bg); margin-bottom: 8px; }
+  .ds-num { width: 30px; height: 30px; flex: 0 0 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px;
+    color: var(--color-on-primary); background: var(--color-primary); }
+  .ds-top .ds-in { font-size: 15.5px; font-weight: 600; }
+  .ds-row { display: flex; gap: 12px; align-items: center; min-height: 44px; border-bottom: 1px solid var(--color-border); }
+  .ds-row .ds-in { font-size: 15px; }
+  .is-done .ds-in { text-decoration: line-through; color: var(--color-text-secondary); }
+  .ds-add { margin-top: 10px; font: inherit; font-size: 13.5px; font-weight: 700; color: var(--color-primary-ink, var(--color-primary)); background: none; border: 0; padding: 8px 0; cursor: pointer; }
+  .ds-x { width: 32px; height: 32px; flex: 0 0 32px; border: 0; background: none; color: var(--color-text-secondary); cursor: pointer; border-radius: 8px; font-size: 18px; }
+  .ds-x:hover { background: var(--color-bg); }
+  .ds-planned { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--color-border); }
+  .ds-planned p { margin: 0 0 6px; font-size: 12px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--color-text-secondary); }
+
+  .ds-hab { display: grid; grid-template-columns: minmax(0, 1fr) repeat(7, 28px); gap: 6px; align-items: center; min-height: 42px; border-top: 1px solid var(--color-border); }
+  .ds-hab.head { border-top: 0; min-height: 22px; font-size: 11px; font-weight: 800; color: var(--color-text-secondary); text-align: center; }
+  .ds-hab .name { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+  .ds-hab .name small { display: block; font-weight: 400; font-size: 11.5px; color: var(--color-text-secondary); }
+  .ds-hab .ds-check { margin: 0 auto; }
+  .ds-hab .cur { outline: 2px solid color-mix(in srgb, var(--color-primary) 35%, transparent); outline-offset: 3px; border-radius: 4px; }
+  .ds-empty { font-size: 14px; color: var(--color-text-secondary); }
+  .ds-empty a, .ds-banner a { color: var(--color-primary-ink, var(--color-primary)); font-weight: 700; }
+  .ds-lined { background: repeating-linear-gradient(transparent 0, transparent 23px, var(--color-border) 23px, var(--color-border) 24px); line-height: 24px; }
+  .ds-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+  .ds-field label { font-size: 13px; font-weight: 700; color: var(--color-text-secondary); }
+  .ds-field .ds-area { border-bottom: 1px solid var(--color-border); padding: 6px 0; }
+  .ds-banner { padding: 12px 16px; border-radius: 12px; font-size: 14px; border: 1px solid var(--color-warning, #b45309);
+    background: var(--color-warning-light, #fff7ed); color: var(--color-warning-on-tint, #7c2d12); }
+  @media (max-width: 640px) {
+    .ds-head h1 { font-size: 27px; }
+    .ds-week { flex-wrap: nowrap; width: 100%; gap: 4px; }
+    #ds-week { flex: 1 1 auto; flex-wrap: nowrap !important; gap: 4px !important; min-width: 0; }
+    .ds-day { flex: 1 1 0; width: auto; min-width: 0; height: 52px; }
+    .ds-day small { font-size: 9.5px; letter-spacing: 0; }
+    .ds-day b { font-size: 15px; }
+    .ds-arrow { width: 28px; flex: 0 0 28px; height: 52px; }
+    .ds-card { padding: 16px; }
+  }
+  @media print {
+    .nav-icons, .ds-arrow, .ds-add, .ds-x, .ds-save, .ds-banner, .ds-range { display: none !important; }
+    body { background: #fff; }
+    .ds-card { break-inside: avoid; }
+  }
+</style>
+{% include "_pwa_head.html" %}
+</head>
+<body>
+<div class="nav-icons">{% include "_top_nav.html" %}</div>
+<main class="ds-app" id="ds" data-date="{{ sheet_date }}">
+  <header class="ds-head">
+    <div>
+      <div class="ds-kicker">Day sheet</div>
+      <h1 id="ds-title">Loading…</h1>
+      <div class="ds-save" id="ds-save" role="status" aria-live="polite"></div>
+    </div>
+    <nav class="ds-week" aria-label="This week">
+      <a class="ds-arrow" id="ds-prev" href="#" aria-label="Previous week"><i data-feather="chevron-left"></i></a>
+      <span id="ds-week" style="display:flex;gap:6px;flex-wrap:wrap"></span>
+      <a class="ds-arrow" id="ds-next" href="#" aria-label="Next week"><i data-feather="chevron-right"></i></a>
+    </nav>
+  </header>
+
+  <div class="ds-banner" id="ds-banner" hidden></div>
+
+  <section class="ds-card ds-focus" aria-label="Focus and energy">
+    <label for="ds-focus">Today's focus</label>
+    <input id="ds-focus" class="ds-in" maxlength="300" placeholder="One sentence: what would make today a good day?">
+    <div class="ds-energy" role="group" aria-label="Energy">
+      <span style="font-size:13px;font-weight:700;color:var(--color-text-secondary)">Energy</span>
+      <span id="ds-energy" style="display:flex;gap:6px"></span>
+    </div>
+  </section>
+
+  <div class="ds-cols">
+    <section class="ds-card ds-left" aria-labelledby="ds-sched-h">
+      <h2 id="ds-sched-h">Schedule
+        <span class="ds-range">
+          <label for="ds-from">From</label><select id="ds-from"></select>
+          <label for="ds-to">to</label><select id="ds-to"></select>
+        </span>
+      </h2>
+      <div id="ds-hours"></div>
+    </section>
+
+    <div class="ds-right">
+      <section class="ds-card" aria-labelledby="ds-top-h">
+        <h2 id="ds-top-h">Top 3 priorities</h2>
+        <div id="ds-top3"></div>
+      </section>
+
+      <div class="ds-pair">
+        <section class="ds-card" aria-labelledby="ds-todo-h">
+          <h2 id="ds-todo-h">To-do</h2>
+          <div id="ds-todos"></div>
+          <button type="button" class="ds-add" onclick="dsAddTodo()">+ Add a to-do</button>
+          <div class="ds-planned" id="ds-planned" hidden>
+            <p>Already planned today</p>
+            <div id="ds-planned-list"></div>
+          </div>
+        </section>
+
+        <section class="ds-card" aria-labelledby="ds-hab-h">
+          <h2 id="ds-hab-h">Habits this week</h2>
+          <div id="ds-habits"></div>
+        </section>
+      </div>
+
+      <div class="ds-pair">
+        <section class="ds-card" aria-labelledby="ds-notes-h">
+          <h2 id="ds-notes-h">Notes</h2>
+          <textarea id="ds-notes" class="ds-area ds-lined" rows="8" aria-labelledby="ds-notes-h" placeholder="Ideas, calls to make, things to remember"></textarea>
+        </section>
+
+        <section class="ds-card" aria-labelledby="ds-ref-h">
+          <h2 id="ds-ref-h">End of day</h2>
+          <div class="ds-field"><label for="ds-reflection">What went well?</label>
+            <textarea id="ds-reflection" class="ds-area" rows="2"></textarea></div>
+          <div class="ds-field"><label for="ds-tomorrow">What will I do differently tomorrow?</label>
+            <textarea id="ds-tomorrow" class="ds-area" rows="2"></textarea></div>
+          <div class="ds-field"><label for="ds-gratitude">Grateful for</label>
+            <textarea id="ds-gratitude" class="ds-area" rows="2"></textarea></div>
+        </section>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const CSRF = document.querySelector('meta[name="csrf-token"]').content;
+const DATE = document.getElementById('ds').dataset.date;
+let S = null;          // last loaded payload
+let sheet = null;      // the editable day_sheets part
+const pending = {};    // fields waiting to be saved
+let saveTimer = null;
+
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function lsGet(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+function dt(iso) { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d); }
+function fmtHour(h) { const ap = h < 12 ? 'am' : 'pm'; return (h % 12 === 0 ? 12 : h % 12) + ' ' + ap; }
+function fmtTime(t) { if (!t) return ''; const [h, m] = t.split(':').map(Number); const ap = h < 12 ? 'am' : 'pm'; return (h % 12 === 0 ? 12 : h % 12) + (m ? ':' + String(m).padStart(2, '0') : '') + ' ' + ap; }
+
+// ── Saving: debounce, then one POST with whatever changed ──
+function queue(field, value) {
+  pending[field] = value;
+  status('Saving…');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(flush, 700);
+}
+function queueSheet() { queue('sheet', Object.assign({}, pending.sheet || {}, sheetPatch)); sheetPatch = {}; }
+let sheetPatch = {};
+function touch(key) {
+  if (!S.available) { status('Not saved: run ' + S.migration + ' in Supabase first'); return; }
+  sheetPatch[key] = sheet[key]; queueSheet();
+}
+
+async function flush() {
+  const body = Object.assign({ date: DATE }, pending);
+  Object.keys(pending).forEach(k => delete pending[k]);
+  try {
+    const r = await fetch('/api/day-sheet', { method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || 'Could not save');
+    status('Saved');
+  } catch (e) {
+    status('Not saved: ' + e.message);
+    if (window.showToast) showToast(e.message, 'error');
+  }
+}
+function status(t) { document.getElementById('ds-save').textContent = t; }
+window.addEventListener('beforeunload', () => { if (Object.keys(pending).length) { clearTimeout(saveTimer); flush(); } });
+
+// ── Render ──
+async function load() {
+  const r = await fetch('/api/day-sheet?date=' + encodeURIComponent(DATE), { credentials: 'same-origin' });
+  S = await r.json();
+  if (!r.ok) { document.getElementById('ds-title').textContent = S.error || 'Could not load'; return; }
+  sheet = S.sheet;
+  const d = dt(S.date);
+  document.getElementById('ds-title').textContent = d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+  document.title = 'Day Sheet · ' + d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) + ' — DailyPlanner';
+  if (!S.available) {
+    const b = document.getElementById('ds-banner');
+    b.hidden = false;
+    b.innerHTML = `Top 3, to-dos, energy, notes and hour notes need one table. Run <b>${esc(S.migration)}</b> in Supabase once. Focus, schedule, habits and the reflection already work.`;
+  }
+  renderWeek(); renderFocus(); renderEnergy(); renderRange(); renderHours(); renderTop3(); renderTodos(); renderPlanned(); renderHabits(); renderText();
+  if (window.feather) feather.replace();
+}
+
+function renderWeek() {
+  const names = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+  document.getElementById('ds-week').innerHTML = S.week.map((iso, i) =>
+    `<a class="ds-day${iso === S.today ? ' is-today' : ''}" href="/day-sheet?date=${iso}"${iso === S.date ? ' aria-current="date"' : ''}
+        aria-label="${esc(dt(iso).toDateString())}"><small>${names[i]}</small><b>${dt(iso).getDate()}</b></a>`).join('');
+  const shift = n => { const x = dt(S.date); x.setDate(x.getDate() + n); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
+  document.getElementById('ds-prev').href = '/day-sheet?date=' + shift(-7);
+  document.getElementById('ds-next').href = '/day-sheet?date=' + shift(7);
+}
+
+function renderFocus() {
+  const f = document.getElementById('ds-focus');
+  f.value = S.meta.focus || '';
+  f.oninput = () => queue('focus', f.value);
+}
+
+function renderEnergy() {
+  const box = document.getElementById('ds-energy');
+  box.innerHTML = [1, 2, 3, 4, 5].map(n => `<button type="button" class="ds-dot${n <= (sheet.energy || 0) ? ' on' : ''}"
+      aria-label="Energy ${n} of 5" aria-pressed="${sheet.energy === n}" data-n="${n}"></button>`).join('');
+  box.querySelectorAll('button').forEach(b => b.onclick = () => {
+    const n = Number(b.dataset.n);
+    sheet.energy = sheet.energy === n ? 0 : n;
+    touch('energy'); renderEnergy();
+  });
+}
+
+function hourRange() {
+  let from = parseInt(lsGet('ds-from', '6'), 10), to = parseInt(lsGet('ds-to', '21'), 10);
+  // Widen to include anything scheduled outside the chosen range.
+  (S.timed || []).forEach(t => { const h = parseInt(t.time, 10); if (!isNaN(h)) { from = Math.min(from, h); to = Math.max(to, h); } });
+  Object.keys(sheet.hours || {}).forEach(k => { const h = parseInt(k, 10); from = Math.min(from, h); to = Math.max(to, h); });
+  return [from, to];
+}
+function renderRange() {
+  const opts = (sel, v) => Array.from({ length: 24 }, (_, h) => `<option value="${h}"${h === v ? ' selected' : ''}>${fmtHour(h)}</option>`).join('');
+  const f = document.getElementById('ds-from'), t = document.getElementById('ds-to');
+  f.innerHTML = opts(f, parseInt(lsGet('ds-from', '6'), 10));
+  t.innerHTML = opts(t, parseInt(lsGet('ds-to', '21'), 10));
+  f.onchange = () => { lsSet('ds-from', f.value); renderHours(); };
+  t.onchange = () => { lsSet('ds-to', t.value); renderHours(); };
+}
+function renderHours() {
+  const [from, to] = hourRange();
+  const nowH = (S.date === S.today) ? new Date().getHours() : -1;
+  const byHour = {};
+  (S.timed || []).forEach(t => { const h = parseInt(t.time, 10); (byHour[h] = byHour[h] || []).push(t); });
+  let html = '';
+  for (let h = from; h <= to; h++) {
+    const key = String(h).padStart(2, '0');
+    const chips = (byHour[h] || []).map(t => `<div class="ds-chip${t.done ? ' done' : ''}"><b>${esc(fmtTime(t.time))}${t.end_time ? '–' + esc(fmtTime(t.end_time)) : ''}</b><span>${esc(t.title)}</span></div>`).join('');
+    html += `<div class="ds-hour${h === nowH ? ' is-now' : ''}"><span>${fmtHour(h)}</span><div class="ds-slot">${chips}
+      <input class="ds-in" data-h="${key}" aria-label="Note for ${fmtHour(h)}" maxlength="300" value="${esc((sheet.hours || {})[key] || '')}"></div></div>`;
+  }
+  const box = document.getElementById('ds-hours');
+  box.innerHTML = html;
+  box.querySelectorAll('input').forEach(i => i.oninput = () => {
+    sheet.hours = sheet.hours || {};
+    if (i.value.trim()) sheet.hours[i.dataset.h] = i.value; else delete sheet.hours[i.dataset.h];
+    touch('hours');
+  });
+}
+
+function renderTop3() {
+  const ph = ['The one thing that must happen today', 'Second priority', 'Third priority'];
+  const box = document.getElementById('ds-top3');
+  box.innerHTML = sheet.top3.map((t, i) => `<div class="ds-top${t.done ? ' is-done' : ''}">
+      <span class="ds-num" aria-hidden="true">${i + 1}</span>
+      <input class="ds-in" data-i="${i}" aria-label="Priority ${i + 1}" maxlength="300" placeholder="${ph[i]}" value="${esc(t.text)}">
+      <input type="checkbox" class="ds-check" data-i="${i}" aria-label="Priority ${i + 1} done"${t.done ? ' checked' : ''}></div>`).join('');
+  box.querySelectorAll('.ds-in').forEach(el => el.oninput = () => { sheet.top3[el.dataset.i].text = el.value; touch('top3'); });
+  box.querySelectorAll('.ds-check').forEach(el => el.onchange = () => {
+    sheet.top3[el.dataset.i].done = el.checked; el.parentElement.classList.toggle('is-done', el.checked); touch('top3');
+  });
+}
+
+function renderTodos() {
+  while (sheet.todos.length < 5) sheet.todos.push({ text: '', done: false });
+  const box = document.getElementById('ds-todos');
+  box.innerHTML = sheet.todos.map((t, i) => `<div class="ds-row${t.done ? ' is-done' : ''}">
+      <input type="checkbox" class="ds-check" data-i="${i}" aria-label="To-do ${i + 1} done"${t.done ? ' checked' : ''}>
+      <input class="ds-in" data-i="${i}" aria-label="To-do ${i + 1}" maxlength="300" value="${esc(t.text)}">
+      <button type="button" class="ds-x" data-i="${i}" aria-label="Remove to-do ${i + 1}">×</button></div>`).join('');
+  box.querySelectorAll('.ds-in').forEach(el => el.oninput = () => { sheet.todos[el.dataset.i].text = el.value; saveTodos(); });
+  box.querySelectorAll('.ds-check').forEach(el => el.onchange = () => {
+    sheet.todos[el.dataset.i].done = el.checked; el.parentElement.classList.toggle('is-done', el.checked); saveTodos();
+  });
+  box.querySelectorAll('.ds-x').forEach(el => el.onclick = () => { sheet.todos.splice(Number(el.dataset.i), 1); saveTodos(); renderTodos(); });
+}
+function saveTodos() { sheet.todos = sheet.todos.slice(0, 30); touch('todos'); }
+function dsAddTodo() {
+  if (sheet.todos.length >= 30) return;
+  sheet.todos.push({ text: '', done: false }); renderTodos();
+  const ins = document.querySelectorAll('#ds-todos .ds-in'); ins[ins.length - 1].focus();
+}
+
+function renderPlanned() {
+  const list = (S.untimed || []);
+  document.getElementById('ds-planned').hidden = !list.length;
+  document.getElementById('ds-planned-list').innerHTML = list.map(t =>
+    `<div class="ds-chip${t.done ? ' done' : ''}" style="margin-bottom:4px"><span>${esc(t.title)}</span></div>`).join('') +
+    '<a href="/day?date=' + esc(S.date) + '" style="font-size:13px;color:var(--color-primary-ink,var(--color-primary));font-weight:700">Open in Day view →</a>';
+}
+
+function renderHabits() {
+  const box = document.getElementById('ds-habits');
+  if (!S.habits.length) { box.innerHTML = '<p class="ds-empty">No habits yet. Add them on the <a href="/health">Health</a> page and they appear here.</p>'; return; }
+  const letters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  box.innerHTML = `<div class="ds-hab head"><span></span>${letters.map(l => `<span>${l}</span>`).join('')}</div>` +
+    S.habits.map((h, hi) => `<div class="ds-hab"><span class="name">${esc(h.name)}${h.boolean ? '' : `<small>goal ${h.goal}${h.unit ? ' ' + esc(h.unit) : ''}</small>`}</span>
+      ${h.days.map((d, di) => `<input type="checkbox" class="ds-check${d.date === S.date ? ' cur' : ''}" data-h="${hi}" data-d="${di}"
+        aria-label="${esc(h.name)}, ${esc(dt(d.date).toDateString())}"${d.done ? ' checked' : ''}>`).join('')}</div>`).join('');
+  box.querySelectorAll('.ds-check').forEach(el => el.onchange = async () => {
+    const h = S.habits[el.dataset.h], d = h.days[el.dataset.d];
+    if (!h.boolean && !el.checked && d.value > 0 && !confirm(`Clear ${d.value} ${h.unit || ''} logged for ${h.name}?`)) { el.checked = true; return; }
+    try {
+      const r = await fetch('/api/day-sheet/habit', { method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+        body: JSON.stringify({ habit_id: h.id, date: d.date, done: el.checked }) });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'Failed');
+      d.done = el.checked; d.value = j.value; status('Saved');
+    } catch (e) { el.checked = !el.checked; if (window.showToast) showToast(e.message || 'Could not save', 'error'); }
+  });
+}
+
+function renderText() {
+  const notes = document.getElementById('ds-notes'), tom = document.getElementById('ds-tomorrow');
+  const ref = document.getElementById('ds-reflection'), gra = document.getElementById('ds-gratitude');
+  notes.value = sheet.notes || ''; tom.value = sheet.tomorrow || '';
+  ref.value = S.meta.reflection || ''; gra.value = S.meta.gratitude || '';
+  notes.oninput = () => { sheet.notes = notes.value; touch('notes'); };
+  tom.oninput = () => { sheet.tomorrow = tom.value; touch('tomorrow'); };
+  ref.oninput = () => queue('reflection', ref.value);
+  gra.oninput = () => queue('gratitude', gra.value);
+}
+
+load();
+</script>
+</body>
+</html>

@@ -873,9 +873,17 @@ button.nav-group-title:hover{background:var(--color-surface-secondary);color:var
            its initial scroll position is off-screen. Reflection is at the
            bottom of the same scroll, because reviewing the day is part of
            the day. -->
-      <a href="/day" data-match="^/day" title="Day — one scrollable page for one day: everything scheduled, everything without a time, habits, and the reflection at the bottom">
+      <a href="/day" data-match="^/day(?:$|\?)" title="Day — one scrollable page for one day: everything scheduled, everything without a time, habits, and the reflection at the bottom">
         <i data-feather="sun"></i>
         Day
+      </a>
+
+      <!-- Day Sheet: the paper-planner layout of one day (focus, schedule,
+           Top 3, to-dos, habit week, notes, reflection), wired to the same
+           data as /day, /health and the dashboard. -->
+      <a href="/day-sheet" data-match="^/day-sheet" title="Day Sheet — a planner page for one day: focus, hourly schedule, Top 3, to-dos, habits this week, notes and end-of-day reflection">
+        <i data-feather="layout"></i>
+        Day Sheet
       </a>
 
       <!-- Half-hour slots for one day on a time axis. The page existed
