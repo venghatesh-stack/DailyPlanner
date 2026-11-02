@@ -111,6 +111,7 @@
 </head>
 <body>
 <div class="nav-icons">{% include "_top_nav.html" %}</div>
+<script type="application/json" id="ds-data">{{ payload | tojson }}</script>
 <main class="ds-app" id="ds" data-date="{{ sheet_date }}">
   <header class="ds-head">
     <div>
@@ -212,15 +213,15 @@ function queue(field, value) {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(flush, 700);
 }
-function queueSheet() { queue('sheet', Object.assign({}, pending.sheet || {}, sheetPatch)); sheetPatch = {}; }
-let sheetPatch = {};
+// The sheet is small, so every save sends all of it: the server can write
+// it in one upsert without reading the old row first.
 function touch(key) {
   if (!S.available) { status('Not saved: run ' + S.migration + ' in Supabase first'); return; }
-  sheetPatch[key] = sheet[key]; queueSheet();
+  queue('sheet', sheet);
 }
 
 async function flush() {
-  const body = Object.assign({ date: DATE }, pending);
+  const body = JSON.parse(JSON.stringify(Object.assign({ date: DATE }, pending)));
   Object.keys(pending).forEach(k => delete pending[k]);
   try {
     const r = await fetch('/api/day-sheet', { method: 'POST', credentials: 'same-origin',
@@ -238,9 +239,13 @@ window.addEventListener('beforeunload', () => { if (Object.keys(pending).length)
 
 // ── Render ──
 async function load() {
-  const r = await fetch('/api/day-sheet?date=' + encodeURIComponent(DATE), { credentials: 'same-origin' });
-  S = await r.json();
-  if (!r.ok) { document.getElementById('ds-title').textContent = S.error || 'Could not load'; return; }
+  // Data comes embedded in the page (one request instead of two).
+  try { S = JSON.parse(document.getElementById('ds-data').textContent); } catch (e) { S = null; }
+  if (!S || !S.sheet) {
+    const r = await fetch('/api/day-sheet?date=' + encodeURIComponent(DATE), { credentials: 'same-origin' });
+    S = await r.json();
+    if (!r.ok) { document.getElementById('ds-title').textContent = S.error || 'Could not load'; return; }
+  }
   sheet = S.sheet;
   const d = dt(S.date);
   document.getElementById('ds-title').textContent = d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
