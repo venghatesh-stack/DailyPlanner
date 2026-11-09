@@ -55,3 +55,16 @@ def test_drive_queue_queue_order(auth_client, monkeypatch):
     assert j["target_minutes"] == 600 and [i["id"] for i in j["items"]] == ["t1", "t2", "t3", "i1"]
     page = auth_client.get("/drive-queue").data
     assert b"Play all" in page and b"8 hr trip" in page
+
+
+def test_every_pack_is_valid():
+    import os, re
+    d = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "travel_packs")
+    for f in os.listdir(d):
+        pk = json.load(open(os.path.join(d, f), encoding="utf-8"))
+        assert re.fullmatch(r"[a-z0-9-]{1,60}\.json", f) and pk["title"] and pk["items"], f
+        urls = [i["url"] for i in pk["items"]]
+        assert len(urls) == len(set(urls)), f
+        for i in pk["items"]:
+            assert re.fullmatch(r"https://www\.youtube\.com/watch\?v=[A-Za-z0-9_-]{11}", i["url"]), (f, i["url"])
+            assert i["title"] and int(i["minutes"]) > 0

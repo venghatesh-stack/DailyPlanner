@@ -1,0 +1,116 @@
+{
+ "title": "How India scales: system design talks",
+ "description": "10 talks: Hotstar, JioCinema, Flipkart, PhonePe, UPI, Razorpay, Zerodha, Blinkit/Zomato Kafka, IRCTC",
+ "items": [
+  {
+   "url": "https://www.youtube.com/watch?v=QjvyiyH4rr0",
+   "minutes": 46,
+   "title": "01 · Gaurav Kamboj: Scaling Hotstar for 25 million concurrent viewers",
+   "kind": "video",
+   "labels": [
+    "system-design",
+    "india-scale"
+   ],
+   "notes": "**Start here.** Watch #1 (Hotstar) and #10 (IRCTC) first: high-concurrency video streaming, then transaction locking."
+  },
+  {
+   "url": "https://www.youtube.com/watch?v=36N1Bz7qW0A",
+   "minutes": 45,
+   "title": "02 · Prachi Sharma & Arpit Bhayani: How JioCinema streams IPL to 20 million devices",
+   "kind": "video",
+   "labels": [
+    "system-design",
+    "india-scale"
+   ],
+   "notes": ""
+  },
+  {
+   "url": "https://www.youtube.com/watch?v=qXJ3S3T3xJY",
+   "minutes": 60,
+   "title": "03 · Ashutosh Agrawal (ex-Chief Architect, JioCinema): Live streaming at world-record scale",
+   "kind": "video",
+   "labels": [
+    "system-design",
+    "india-scale"
+   ],
+   "notes": ""
+  },
+  {
+   "url": "https://www.youtube.com/watch?v=juKG07jL8fY",
+   "minutes": 32,
+   "title": "04 · Sudhir Reddy: How Flipkart built hybrid cloud for scale",
+   "kind": "video",
+   "labels": [
+    "system-design",
+    "india-scale"
+   ],
+   "notes": ""
+  },
+  {
+   "url": "https://www.youtube.com/watch?v=F7SHH47sWAY",
+   "minutes": 53,
+   "title": "05 · Heads of Engineering, PhonePe: Why PhonePe still bets on data centres",
+   "kind": "video",
+   "labels": [
+    "system-design",
+    "india-scale"
+   ],
+   "notes": ""
+  },
+  {
+   "url": "https://www.youtube.com/watch?v=hBvlnWQWpZ0",
+   "minutes": 240,
+   "title": "06 · Nikhil Kamath with PhonePe, Razorpay & NPCI: If UPI is free, who pays for it?",
+   "kind": "video",
+   "labels": [
+    "system-design",
+    "india-scale"
+   ],
+   "notes": ""
+  },
+  {
+   "url": "https://www.youtube.com/watch?v=yqkyq8TPWbg",
+   "minutes": 50,
+   "title": "07 · Arjun Tomer & Arpit Bhayani: Razorpay's journey to microservices",
+   "kind": "video",
+   "labels": [
+    "system-design",
+    "india-scale"
+   ],
+   "notes": ""
+  },
+  {
+   "url": "https://www.youtube.com/watch?v=xhi5Q_wL9i0",
+   "minutes": 20,
+   "title": "08 · Kailash Nadh (CTO, Zerodha): 7+ million Postgres tables",
+   "kind": "video",
+   "labels": [
+    "system-design",
+    "india-scale"
+   ],
+   "notes": ""
+  },
+  {
+   "url": "https://www.youtube.com/watch?v=kjGP_kBQdVc",
+   "minutes": 41,
+   "title": "09 · Pradeep Khileri: Scaling Kafka at Blinkit and Zomato",
+   "kind": "video",
+   "labels": [
+    "system-design",
+    "india-scale"
+   ],
+   "notes": ""
+  },
+  {
+   "url": "https://www.youtube.com/watch?v=j3etJx7M0Sc",
+   "minutes": 59,
+   "title": "10 · Gaurav Sen, interviewed by Keerti Purswani: IRCTC System Design",
+   "kind": "video",
+   "labels": [
+    "system-design",
+    "india-scale"
+   ],
+   "notes": "**Start here** with #1 (Hotstar).\n\n**Think about it:** how would you architect a fault-tolerant system to handle the Tatkal concurrency bottleneck?"
+  }
+ ]
+}
