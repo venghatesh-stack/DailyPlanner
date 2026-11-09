@@ -30862,5 +30862,1469 @@
    "why": "Treat a resize as a change: baseline, quiet window, canary and compare, visible settings diff, and a ready rollback.",
    "level": "Medium"
   }
+ ],
+ "A query on a 2-billion-row Postgres table ran in 80 ms. After a routine deploy, it takes 14 seconds. What do you investigate first?": [
+  {
+   "q": "A query jumped from 80 ms to 14 s exactly when a deploy went out. What is the best first move if the change is reversible?",
+   "options": [
+    "Roll back the deploy, then investigate on a canary",
+    "Double the database instance size",
+    "Run VACUUM FULL on the table",
+    "Add a new index on every filtered column"
+   ],
+   "answer": 0,
+   "why": "Rolling back restores users fastest; diagnosis can happen safely on a canary or replica.",
+   "level": "Easy"
+  },
+  {
+   "q": "The app trace shows 14 s, but pg_stat_statements shows the query still averaging about 80 ms. Where is the problem most likely?",
+   "options": [
+    "A bad query plan inside Postgres",
+    "Stale statistics on the table",
+    "Outside the query: connection pool wait, N+1 queries or retries",
+    "An INVALID index"
+   ],
+   "answer": 2,
+   "why": "If Postgres itself still measures 80 ms, the extra time is spent before or around the query, not in it.",
+   "level": "Easy"
+  },
+  {
+   "q": "After the deploy, pg_stat_statements shows a new queryid for the statement and the old one stopped getting calls. What does that tell you?",
+   "options": [
+    "The table was truncated",
+    "The SQL text sent by the app changed",
+    "Postgres restarted",
+    "Autovacuum is running"
+   ],
+   "answer": 1,
+   "why": "queryid is computed from the normalised statement, so a new one means the app is sending different SQL.",
+   "level": "Easy"
+  },
+  {
+   "q": "customer_id is an indexed bigint column. After an ORM upgrade the plan shows Filter: ((customer_id)::numeric = 98123). Why is the index not used?",
+   "options": [
+    "The index became corrupt during the deploy",
+    "numeric values cannot be compared at all",
+    "Postgres caches plans for 24 hours",
+    "The parameter is bound as numeric, so Postgres casts the column and the bigint index cannot match the cast expression"
+   ],
+   "answer": 3,
+   "why": "There is no bigint = numeric operator in the index's operator family, so the column is cast and the plain index is skipped. Bind bigint or cast the parameter.",
+   "level": "Medium"
+  },
+  {
+   "q": "A query is fast for the first five executions on each connection, then becomes slow for some customers. What is the most likely cause?",
+   "options": [
+    "Postgres switched the prepared statement to a cached generic plan",
+    "The connection pool is too large",
+    "The table needs REINDEX",
+    "The OS page cache was cleared"
+   ],
+   "answer": 0,
+   "why": "With plan_cache_mode = auto, Postgres uses custom plans for the first five executions, then may switch to a generic plan that suits average values but not skewed ones.",
+   "level": "Medium"
+  },
+  {
+   "q": "Which setting lets you test whether a generic plan is the cause of a prepared-statement slowdown?",
+   "options": [
+    "SET work_mem = '1GB'",
+    "SET plan_cache_mode = force_custom_plan",
+    "SET enable_seqscan = on",
+    "SET statement_timeout = 0"
+   ],
+   "answer": 1,
+   "why": "force_custom_plan makes Postgres plan each execution for the actual parameter values; if speed returns, the generic plan was the problem.",
+   "level": "Medium"
+  },
+  {
+   "q": "A migration ran CREATE INDEX CONCURRENTLY and \\d lists the index, but the planner never uses it. What should you check?",
+   "options": [
+    "Whether autovacuum is disabled",
+    "Whether the table has a primary key",
+    "Whether the index is marked INVALID because the concurrent build failed",
+    "Whether shared_buffers is too small"
+   ],
+   "answer": 2,
+   "why": "A failed concurrent build leaves an INVALID index (indisvalid = false) that the planner ignores. Drop and rebuild it.",
+   "level": "Medium"
+  },
+  {
+   "q": "A backfill changed 5 crore rows of a 2-billion-row table, and plan estimates are now far from actual rows. Why didn't auto-analyze run?",
+   "options": [
+    "Auto-analyze never runs on large tables",
+    "ANALYZE only runs after a restart",
+    "Backfills disable statistics collection",
+    "With the default analyze scale factor of 0.1, about 20 crore changed rows are needed before auto-analyze triggers"
+   ],
+   "answer": 3,
+   "why": "The threshold scales with table size, so huge tables can run on stale statistics for a long time. Run ANALYZE manually after large backfills.",
+   "level": "Hard"
+  },
+  {
+   "q": "Many queries on a table show wait_event_type = 'Lock' right after a migration started. What is the likely cause?",
+   "options": [
+    "A slow disk",
+    "An ALTER TABLE waiting for or holding an ACCESS EXCLUSIVE lock, with other queries queued behind it",
+    "Too many indexes",
+    "A cold buffer cache"
+   ],
+   "answer": 1,
+   "why": "Even while waiting for its lock, ALTER TABLE blocks new queries on the table. Find the blocker with pg_blocking_pids and use lock_timeout on migrations.",
+   "level": "Easy"
+  },
+  {
+   "q": "As an engineering director, which practice best prevents this kind of deploy regression from reaching users again?",
+   "options": [
+    "Ban all ORM upgrades permanently",
+    "Ask engineers to be more careful",
+    "Ship library upgrades alone behind canaries, with EXPLAIN checks on top queries in CI and auto_explain in production",
+    "Only deploy on Fridays when traffic is lower"
+   ],
+   "answer": 2,
+   "why": "Isolating risky upgrades, catching plan changes in CI and comparing canaries makes regressions visible early and cheap to roll back.",
+   "level": "Medium"
+  }
+ ],
+ "Redis hit rate is 92%. During a flash sale, it drops to 31% within 40 seconds, and the database absorbs 60k QPS it was never provisioned for. What happened?": [
+  {
+   "q": "Traffic is 87,000 reads/s. Roughly how many database QPS do you get at a 31% cache hit rate?",
+   "options": [
+    "About 27,000",
+    "About 7,000",
+    "About 87,000",
+    "About 60,000"
+   ],
+   "answer": 3,
+   "why": "Database load is traffic x miss rate: 87,000 x 69% is about 60,000 QPS.",
+   "level": "Easy"
+  },
+  {
+   "q": "A cache warmer loaded 4 lakh keys over 40 seconds, all with a TTL of exactly 600 s. What happens 10 minutes later?",
+   "options": [
+    "All 4 lakh keys expire within the same 40-second window",
+    "Redis extends the TTLs automatically",
+    "Only the least used keys expire",
+    "Nothing, because TTLs are approximate"
+   ],
+   "answer": 0,
+   "why": "Keys written together with the same TTL expire together, creating a mass miss at one moment.",
+   "level": "Easy"
+  },
+  {
+   "q": "What is a cache stampede (thundering herd)?",
+   "options": [
+    "Redis running out of memory",
+    "Many concurrent requests missing the same key and all rebuilding it from the database",
+    "A Redis node failing over",
+    "Clients using too many connections"
+   ],
+   "answer": 1,
+   "why": "When a hot key expires, every request in the rebuild window misses and sends the same query to the database.",
+   "level": "Easy"
+  },
+  {
+   "q": "Which technique ensures only one request rebuilds a missing key while others wait for or reuse that result?",
+   "options": [
+    "Write-through caching",
+    "Read replicas",
+    "Single-flight request coalescing",
+    "Increasing maxmemory"
+   ],
+   "answer": 2,
+   "why": "Single-flight coalesces concurrent misses for the same key into one database call, in-process and with a short Redis lock across servers.",
+   "level": "Medium"
+  },
+  {
+   "q": "Redis INFO shows evicted_keys climbing steadily and used_memory at maxmemory, while expired_keys is normal. What is the main cause?",
+   "options": [
+    "Eviction churn: new sale-day keys are pushing out product keys",
+    "Mass TTL expiry",
+    "A key-format change in a deploy",
+    "A network partition"
+   ],
+   "answer": 0,
+   "why": "Rising evictions at the memory limit mean Redis is deleting live keys to make room. Add headroom or separate workloads.",
+   "level": "Medium"
+  },
+  {
+   "q": "Right after a deploy, misses rise only on keys with the prefix pdp:v4:, while expirations and evictions are flat. What happened?",
+   "options": [
+    "Redis lost its persistence file",
+    "The TTL jitter was too large",
+    "The database became slow",
+    "The deploy changed the cache key format, so every new-format key starts empty"
+   ],
+   "answer": 3,
+   "why": "A key or serializer change is equivalent to flushing the cache for that data. Roll back or read the old key as a fallback while the new one fills.",
+   "level": "Medium"
+  },
+  {
+   "q": "Why do jittered TTLs help?",
+   "options": [
+    "They make Redis use less memory",
+    "They spread expiry over time so keys written together do not expire together",
+    "They make keys never expire",
+    "They compress values"
+   ],
+   "answer": 1,
+   "why": "Adding a random +/- 10-20% to each TTL turns one cliff of expirations into a gentle slope.",
+   "level": "Easy"
+  },
+  {
+   "q": "One Redis cluster shard is at 100% CPU while others are idle, and clients see timeouts that the app treats as misses. What is the likely cause and fix?",
+   "options": [
+    "Too many shards; merge them",
+    "A slow database; add replicas",
+    "A hot key; add a short-TTL local cache and replicate the key across several copies",
+    "Mass expiry; increase TTLs"
+   ],
+   "answer": 2,
+   "why": "Redis runs commands on one main thread per instance, so a hot key can saturate one shard. Local L1 caching and key replicas spread the load.",
+   "level": "Hard"
+  },
+  {
+   "q": "During the incident, which action makes things worse?",
+   "options": [
+    "Turning off recommendation widgets with a feature flag",
+    "Serving stale values while one request refreshes",
+    "Shedding low-priority traffic at the gateway",
+    "Restarting Redis and doubling the database connection pool"
+   ],
+   "answer": 3,
+   "why": "Restarting empties the cache, and more connections push more concurrent queries into an already overloaded database.",
+   "level": "Medium"
+  },
+  {
+   "q": "As an engineering leader preparing for the next sale, what best reduces the risk of a cache collapse?",
+   "options": [
+    "Load-test with a cold cache and forced mass expiry, freeze cache key changes before the sale, and have pre-approved load-shedding flags",
+    "Buy a bigger database and skip testing",
+    "Turn the cache off so the database is always tested",
+    "Set every TTL to 24 hours"
+   ],
+   "answer": 0,
+   "why": "Treat the cache as load-bearing: test the failure mode, freeze risky changes and prepare a runbook to shed load.",
+   "level": "Medium"
+  }
+ ],
+ "Payment succeeds, but the inventory service times out with an unknown commit state. How do you reconcile this without 2PC?": [
+  {
+   "q": "The inventory call times out after payment was captured. What does the timeout tell you?",
+   "options": [
+    "Inventory definitely failed",
+    "Inventory definitely succeeded",
+    "The outcome is unknown: it may not have arrived, committed, or failed",
+    "The payment must be refunded immediately"
+   ],
+   "answer": 2,
+   "why": "A timeout only means no reply arrived in time. The write may have committed and the reply been lost.",
+   "level": "Easy"
+  },
+  {
+   "q": "Why is a blind retry without an idempotency key dangerous here?",
+   "options": [
+    "It is too slow",
+    "If the first request committed, the retry reserves stock a second time",
+    "It always fails",
+    "It refunds the customer"
+   ],
+   "answer": 1,
+   "why": "Without a key, inventory cannot tell a retry from a new request, so a lost reply plus a retry means a double reservation.",
+   "level": "Easy"
+  },
+  {
+   "q": "What is the best idempotency key for the inventory reservation?",
+   "options": [
+    "A stable ID such as the order ID, stored before the first call and reused on every retry",
+    "A new random UUID on every retry",
+    "The current timestamp",
+    "The customer's phone number"
+   ],
+   "answer": 0,
+   "why": "The key must be the same across retries so inventory can recognise a repeat and return the original result.",
+   "level": "Easy"
+  },
+  {
+   "q": "Where should inventory record the idempotency key?",
+   "options": [
+    "In an in-memory map on one server",
+    "In a log file",
+    "In Redis with a 10-second TTL",
+    "In the same database transaction as the stock change, with a unique constraint and the stored result"
+   ],
+   "answer": 3,
+   "why": "Recording the key atomically with the change prevents check-then-act races and lets a replay return the original answer.",
+   "level": "Medium"
+  },
+  {
+   "q": "Why is 2PC a poor fit for payment plus inventory in microservices?",
+   "options": [
+    "It is too simple",
+    "It only works with NoSQL",
+    "External payment gateways cannot join it, and participants can block holding locks if the coordinator fails",
+    "It cannot handle more than two services"
+   ],
+   "answer": 2,
+   "why": "2PC needs every participant to speak the protocol and can block on coordinator failure, which hurts availability on sale days.",
+   "level": "Medium"
+  },
+  {
+   "q": "What problem does the transactional outbox solve in this saga?",
+   "options": [
+    "It makes Kafka faster",
+    "It ensures the order state change and the outgoing command are saved in one local transaction, so no step is lost on a crash",
+    "It replaces the need for idempotency keys",
+    "It encrypts payment data"
+   ],
+   "answer": 1,
+   "why": "The outbox avoids the dual-write problem. Delivery is at least once, so consumers still need idempotency.",
+   "level": "Medium"
+  },
+  {
+   "q": "The saga decides to refund, and a minute later the delayed original reserve request reaches inventory. What prevents a stray reservation?",
+   "options": [
+    "Nothing can prevent it",
+    "Increasing the HTTP timeout",
+    "Refunding twice",
+    "Sending a cancel first that writes a tombstone for that key, so the late reserve is refused, plus reservation TTLs"
+   ],
+   "answer": 3,
+   "why": "A tombstone under the same key turns a late request into a no-op, and TTLs release any unconfirmed hold.",
+   "level": "Hard"
+  },
+  {
+   "q": "600 orders timed out: 540 had committed, 45 never arrived (40 then reserve, 5 out of stock), 15 were rejected. With idempotent retries, how many are refunded?",
+   "options": [
+    "20",
+    "60",
+    "600",
+    "45"
+   ],
+   "answer": 0,
+   "why": "Rejected orders are 15 + 5 = 20; the other 580 are confirmed. Blind refunds would have cancelled all 600.",
+   "level": "Medium"
+  },
+  {
+   "q": "Which flow makes compensation cheapest?",
+   "options": [
+    "Capture payment, then reserve stock",
+    "Reserve stock with a TTL, authorise payment, confirm the reservation, then capture",
+    "Capture payment and never reserve stock",
+    "Reserve stock with no TTL after delivery"
+   ],
+   "answer": 1,
+   "why": "Failures are then undone by releasing a hold or voiding an authorisation, not by refunding captured money.",
+   "level": "Easy"
+  },
+  {
+   "q": "As an engineering director, what best keeps this class of problem under control across teams?",
+   "options": [
+    "Let each team design its own retry logic",
+    "Hide pending orders from dashboards",
+    "Make 'unknown' a first-class state with an SLA, provide shared idempotency/outbox/reconciliation libraries, and track stuck orders and reconciliation mismatches weekly",
+    "Require 2PC for all services"
+   ],
+   "answer": 2,
+   "why": "Standard building blocks plus visible metrics on pending states and mismatches turn rare edge cases into managed, measured work.",
+   "level": "Medium"
+  }
+ ],
+ "At 80k events/sec, you observe duplicate event IDs, and the team attributes it to UUID v4 collisions. Is that diagnosis correct?": [
+  {
+   "q": "A team sees duplicate UUID v4 event IDs at 80k events/sec and blames random collisions. What is the best response?",
+   "options": [
+    "Agree, collisions are expected at this scale",
+    "Disagree: the yearly collision chance is about 6 × 10⁻¹³, so look for duplicate delivery or a generator bug",
+    "Switch to auto-increment IDs immediately",
+    "Increase the number of Kafka partitions"
+   ],
+   "answer": 1,
+   "why": "122 random bits make true collisions negligible even at trillions of IDs per year. Duplicates point to how events are moved or how IDs are made.",
+   "level": "Easy"
+  },
+  {
+   "q": "How many random bits does a UUID v4 contain?",
+   "options": [
+    "128",
+    "64",
+    "122",
+    "96"
+   ],
+   "answer": 2,
+   "why": "Of the 128 bits, 4 are the version and 2 are the variant, leaving 122 random bits.",
+   "level": "Easy"
+  },
+  {
+   "q": "Duplicate ID pairs all have byte-for-byte identical payloads. What is the most likely cause?",
+   "options": [
+    "A bad random seed",
+    "Truncated IDs",
+    "A UUID v4 collision",
+    "The same event delivered or processed twice"
+   ],
+   "answer": 3,
+   "why": "A true collision or a generator bug would put the same ID on different events. Identical payloads mean one event seen twice.",
+   "level": "Easy"
+  },
+  {
+   "q": "A consumer processes 5,000 messages, then a rebalance happens before it commits its offset. What happens next?",
+   "options": [
+    "The new owner of the partition processes those 5,000 messages again",
+    "Kafka deletes the 5,000 messages",
+    "The messages are skipped forever",
+    "The broker rejects the rebalance"
+   ],
+   "answer": 0,
+   "why": "The new consumer starts from the last committed offset, so processed but uncommitted messages are replayed.",
+   "level": "Easy"
+  },
+  {
+   "q": "What does Kafka's idempotent producer (enable.idempotence=true) protect against?",
+   "options": [
+    "Consumer reprocessing after a rebalance",
+    "Resends after the application restarts",
+    "Duplicate writes caused by the producer's own retries within a session",
+    "Duplicate side effects in external payment systems"
+   ],
+   "answer": 2,
+   "why": "The broker uses a producer ID and sequence numbers to drop repeated batches from retries in the same producer session, per partition.",
+   "level": "Medium"
+  },
+  {
+   "q": "Why is generating a new UUID on every retry a dangerous 'fix'?",
+   "options": [
+    "It slows down the producer",
+    "Retries get different IDs, so dedupe cannot catch them and double effects become invisible",
+    "UUIDs cannot be generated that fast",
+    "Kafka rejects new IDs on retries"
+   ],
+   "answer": 1,
+   "why": "The ID must be created once at the source so every retry and redelivery carries the same ID.",
+   "level": "Medium"
+  },
+  {
+   "q": "Two different events share an ID. The helper uses random.seed(int(time.time())) before building UUIDs. What went wrong?",
+   "options": [
+    "Processes started in the same second produce the same 'random' sequence",
+    "Python cannot generate UUIDs",
+    "The version digit was wrong",
+    "UUID v4 collisions are common in Python"
+   ],
+   "answer": 0,
+   "why": "A time-based seed on a non-crypto PRNG gives identical sequences to processes that start together. Use a library UUID backed by a CSPRNG.",
+   "level": "Medium"
+  },
+  {
+   "q": "A team stores only the low 64 bits of each UUID v4 in a BIGINT column. Roughly when does the chance of a collision reach 50% at 80k IDs/sec?",
+   "options": [
+    "After about a million years",
+    "After about one second",
+    "After about 9 hours",
+    "Never, 64 bits is enough"
+   ],
+   "answer": 2,
+   "why": "The low 64 bits contain 62 random bits (2 are variant bits). A 50% chance comes after about 2.5 billion IDs, which is roughly 9 hours at 80k/sec.",
+   "level": "Hard"
+  },
+  {
+   "q": "Which consumer design makes duplicate deliveries harmless?",
+   "options": [
+    "Commit the offset before processing",
+    "Retry every message three times",
+    "Use a bigger consumer group",
+    "Insert the event ID into a dedupe table with a unique key in the same transaction as the business change"
+   ],
+   "answer": 3,
+   "why": "If the insert conflicts, the event was already processed and is skipped. Doing it in the same transaction keeps the dedupe record and the effect consistent.",
+   "level": "Medium"
+  },
+  {
+   "q": "As a director, what is the best way to measure success after this incident?",
+   "options": [
+    "Target zero duplicate deliveries in Kafka",
+    "Set an SLO on duplicate business effects, standardise ID generation and require idempotent consumers in design review",
+    "Ban retries everywhere",
+    "Switch every service to UUID v7"
+   ],
+   "answer": 1,
+   "why": "At-least-once delivery will always produce some redeliveries. What matters is that they never cause double charges or shipments.",
+   "level": "Medium"
+  }
+ ],
+ "You add a single index to a high-traffic Postgres table. Write throughput drops 40% for 6 minutes with no errors in the logs. What happened?": [
+  {
+   "q": "Which lock does plain CREATE INDEX take on a Postgres table?",
+   "options": [
+    "ACCESS EXCLUSIVE, blocking reads and writes",
+    "SHARE, allowing reads but blocking writes",
+    "ROW SHARE, blocking nothing",
+    "No lock at all"
+   ],
+   "answer": 1,
+   "why": "SHARE allows SELECT but conflicts with the ROW EXCLUSIVE lock needed by INSERT, UPDATE and DELETE.",
+   "level": "Easy"
+  },
+  {
+   "q": "Why were there no errors in the logs while writes slowed down?",
+   "options": [
+    "Postgres hides all errors during index builds",
+    "Logging is turned off during DDL",
+    "The index build deleted the error log",
+    "Waiting for a lock or for I/O is not an error, so nothing fails"
+   ],
+   "answer": 3,
+   "why": "Writes queue or slow down; they do not fail unless lock_timeout or statement_timeout is set.",
+   "level": "Easy"
+  },
+  {
+   "q": "What is the main advantage of CREATE INDEX CONCURRENTLY?",
+   "options": [
+    "It does not block writes while the index is built",
+    "It is always faster than a plain build",
+    "It can run inside a transaction block",
+    "It uses no extra disk I/O"
+   ],
+   "answer": 0,
+   "why": "It takes a weaker SHARE UPDATE EXCLUSIVE lock, so reads and writes continue, at the cost of a longer build with extra passes.",
+   "level": "Easy"
+  },
+  {
+   "q": "Which view shows the live phase and progress of an index build in Postgres 12+?",
+   "options": [
+    "pg_stat_user_tables",
+    "pg_stat_statements",
+    "pg_stat_progress_create_index",
+    "pg_locks"
+   ],
+   "answer": 2,
+   "why": "pg_stat_progress_create_index reports the phase, blocks done versus total and lockers waited for.",
+   "level": "Easy"
+  },
+  {
+   "q": "A plain CREATE INDEX is waiting for a long batch transaction to finish before it can get its lock. What happens to new writes on that table?",
+   "options": [
+    "They proceed normally until the build starts",
+    "They are rejected with an error",
+    "They are redirected to a replica",
+    "They queue behind the waiting CREATE INDEX"
+   ],
+   "answer": 3,
+   "why": "Postgres grants locks in order, so a waiting SHARE request blocks later conflicting ROW EXCLUSIVE requests. Use lock_timeout to fail fast instead.",
+   "level": "Medium"
+  },
+  {
+   "q": "During a CONCURRENTLY build, the logs show 'checkpoints are occurring too frequently'. Why does this slow normal writes?",
+   "options": [
+    "Checkpoints lock the table",
+    "After each checkpoint, the first change to each page writes a full-page image to WAL, so each write produces more WAL",
+    "Checkpoints delete the index",
+    "Checkpoints pause replication completely"
+   ],
+   "answer": 1,
+   "why": "The index build's WAL burst hits max_wal_size and forces checkpoints; more checkpoints mean more full-page writes and more WAL per normal write.",
+   "level": "Medium"
+  },
+  {
+   "q": "200 pooled connections each complete a write in 20 ms. During the build each write takes 33 ms. Roughly what is the new throughput?",
+   "options": [
+    "About 6,000 writes per second",
+    "About 10,000 writes per second",
+    "About 3,300 writes per second",
+    "About 13,000 writes per second"
+   ],
+   "answer": 0,
+   "why": "Little's law: 200 ÷ 0.033 s ≈ 6,060 per second, down from 200 ÷ 0.020 = 10,000, about a 40% drop.",
+   "level": "Medium"
+  },
+  {
+   "q": "After the new index on (seller_id, status) is built, writes stay about 7% slower and the HOT update ratio drops. Why?",
+   "options": [
+    "The index is INVALID",
+    "Autovacuum is disabled",
+    "Updates to status now change an indexed column, so they cannot be HOT and must update every index",
+    "The table is still locked"
+   ],
+   "answer": 2,
+   "why": "HOT updates are only possible when no indexed column changes. Indexing a frequently updated column turns cheap updates into full index updates.",
+   "level": "Hard"
+  },
+  {
+   "q": "A CONCURRENTLY build was cancelled halfway. What is left behind?",
+   "options": [
+    "Nothing, it rolls back cleanly",
+    "A valid index that queries start using",
+    "A table-level lock that never releases",
+    "An INVALID index that queries ignore but writes still maintain"
+   ],
+   "answer": 3,
+   "why": "Drop it with DROP INDEX CONCURRENTLY or rebuild it with REINDEX INDEX CONCURRENTLY, or it adds write cost for no benefit.",
+   "level": "Medium"
+  },
+  {
+   "q": "As a director, which policy best prevents this incident from repeating?",
+   "options": [
+    "Ban new indexes on large tables",
+    "Migration linting that requires CONCURRENTLY and lock_timeout, planned low-traffic windows, a live owner with a cancel plan, and a schema freeze during sales",
+    "Let each engineer decide when to run migrations",
+    "Run all index builds during peak hours so issues surface quickly"
+   ],
+   "answer": 1,
+   "why": "Make the safe path the default and treat schema changes on hot tables as planned production changes.",
+   "level": "Medium"
+  }
+ ],
+ "Your gRPC service shows p50 at 42 ms and p99 at 1.8 s, with CPU and memory healthy. What do you test first?": [
+  {
+   "q": "p50 is 42 ms and p99 is 1.8 s, with CPU and memory healthy. What should you test first?",
+   "options": [
+    "Add more pods immediately",
+    "Increase memory limits",
+    "Compare client-side and server-side latency for the same RPC, per backend pod",
+    "Switch from gRPC to REST"
+   ],
+   "answer": 2,
+   "why": "This split shows whether the time is lost in the connection, on one hot pod, or inside the service, which removes half the suspects at once.",
+   "level": "Easy"
+  },
+  {
+   "q": "Why does a Kubernetes ClusterIP Service often fail to balance gRPC traffic evenly?",
+   "options": [
+    "It balances TCP connections, and gRPC reuses a few long-lived HTTP/2 connections",
+    "It does not support HTTP/2 at all",
+    "It only routes to one pod",
+    "It drops gRPC packets"
+   ],
+   "answer": 0,
+   "why": "L4 balancing picks a backend per connection. All calls on that connection go to the same pod, so load follows connection count.",
+   "level": "Easy"
+  },
+  {
+   "q": "Why can fleet-wide average CPU look healthy while a few requests take seconds?",
+   "options": [
+    "CPU does not affect latency",
+    "Averages across pods and minutes hide one hot pod, throttling bursts and short GC pauses",
+    "Monitoring tools always under-report CPU",
+    "Memory, not CPU, controls latency"
+   ],
+   "answer": 1,
+   "why": "Tails come from short, local events. You need per-pod, per-second data and throttling and GC counters to see them.",
+   "level": "Easy"
+  },
+  {
+   "q": "What does HTTP/2 head-of-line blocking at the TCP level mean for gRPC?",
+   "options": [
+    "Only the first stream is slowed",
+    "Streams are processed strictly one at a time",
+    "Requests are sent in reverse order",
+    "One lost packet stalls every stream on that connection until it is retransmitted"
+   ],
+   "answer": 3,
+   "why": "HTTP/2 multiplexes streams on one TCP connection, and TCP delivers bytes in order, so a loss delays everything behind it.",
+   "level": "Medium"
+  },
+  {
+   "q": "A pod with a 2-core CPU limit runs 16 busy threads. What happens in one 100 ms CFS period?",
+   "options": [
+    "The threads share 2 cores evenly for the full 100 ms",
+    "It uses the 200 ms quota in about 12.5 ms and is throttled for the remaining ~87.5 ms",
+    "The kernel adds more cores automatically",
+    "Nothing, limits only apply to memory"
+   ],
+   "answer": 1,
+   "why": "CPU limits are enforced per period. Bursty multi-threaded work spends the quota early and then waits, which hurts tail latency while averages look fine.",
+   "level": "Medium"
+  },
+  {
+   "q": "Which metric best confirms CPU throttling on a container?",
+   "options": [
+    "Average CPU utilisation per minute",
+    "Memory working set",
+    "nr_throttled and throttled time from cpu.stat (or the CFS throttled periods metric)",
+    "Disk IOPS"
+   ],
+   "answer": 2,
+   "why": "Throttling counters show how often the container was paused, which average utilisation cannot reveal.",
+   "level": "Medium"
+  },
+  {
+   "q": "A request fans out to 5 shards in parallel, each slow 0.14% of the time. Roughly what share of requests is slow?",
+   "options": [
+    "0.14%",
+    "0.03%",
+    "5%",
+    "0.7%"
+   ],
+   "answer": 3,
+   "why": "1 − 0.9986⁵ ≈ 0.7%. With fan-out, the slowest backend decides, so tails multiply.",
+   "level": "Medium"
+  },
+  {
+   "q": "The tail clusters around 1.8-2.2 s and the per-attempt timeout is 1 s. Connections are pinned to one hot pod. What is the most likely pattern?",
+   "options": [
+    "Requests time out at 1 s and are retried on the same connection, landing on the same slow pod",
+    "DNS timeouts",
+    "Nagle's algorithm",
+    "Memory leaks"
+   ],
+   "answer": 0,
+   "why": "Timeout plus a retry to the same sick backend lands near deadline + retry time. Retries should go to a different backend, within a budget.",
+   "level": "Hard"
+  },
+  {
+   "q": "Which change spreads gRPC load evenly across pods, including newly added ones?",
+   "options": [
+    "Raise MAX_CONCURRENT_STREAMS",
+    "Client-side round_robin with a headless Service, plus MaxConnectionAge on the server",
+    "Increase the deadline",
+    "Add more memory to each pod"
+   ],
+   "answer": 1,
+   "why": "round_robin picks a backend per call, and MaxConnectionAge forces periodic reconnects so new pods get traffic.",
+   "level": "Easy"
+  },
+  {
+   "q": "As a director, what is the best long-term response to this incident?",
+   "options": [
+    "Ask every team to over-provision CPU by 3x",
+    "Track only average latency to reduce alert noise",
+    "Ban retries across the company",
+    "Set p99 SLOs per critical RPC, standardise RPC defaults (balancing, deadlines, retry budgets) and alert on throttling and per-pod skew"
+   ],
+   "answer": 3,
+   "why": "Make tails visible, make the safe configuration the default, and catch hidden throttling and imbalance before customers do.",
+   "level": "Medium"
+  }
+ ],
+ "Google Maps routing: traffic updates every 30 seconds across 50 million road segments. How do you keep shortest paths fresh?": [
+  {
+   "q": "Traffic changes every 30 seconds on a 50-million-segment graph. What is the core idea that keeps routing fast?",
+   "options": [
+    "Rerun Dijkstra over the whole graph every 30 seconds",
+    "Separate the static topology from the live weights, preprocess the topology once, and cheaply re-apply new weights",
+    "Precompute all-pairs shortest paths every night",
+    "Only allow routes on highways"
+   ],
+   "answer": 1,
+   "why": "Topology barely changes, so the heavy preprocessing is done once. Only the light weight-dependent step reruns when traffic changes.",
+   "level": "Easy"
+  },
+  {
+   "q": "In Customizable Route Planning (CRP), what does the slow, offline preprocessing depend on?",
+   "options": [
+    "Today's live traffic speeds",
+    "The user's driving style",
+    "Only the graph's structure, such as a multi-level partition into cells",
+    "The ETA predictions for tomorrow"
+   ],
+   "answer": 2,
+   "why": "CRP's partition is metric-independent: it uses the shape of the graph, so it stays valid however the weights change.",
+   "level": "Medium"
+  },
+  {
+   "q": "A road is closed for a procession. How should the routing system treat it?",
+   "options": [
+    "As a metric change: set its weight to infinity in the next customization",
+    "As a topology change that needs a full offline rebuild",
+    "Ignore it until the next weekly map release",
+    "Delete the road from the map permanently"
+   ],
+   "answer": 0,
+   "why": "A closure is just a very large weight. Only genuinely new roads require the slower topology rebuild.",
+   "level": "Easy"
+  },
+  {
+   "q": "Why does the system re-customize only 'dirty' cells?",
+   "options": [
+    "Clean cells are stored on slower disks",
+    "Re-customizing clean cells gives wrong answers",
+    "Customization only works on small cells",
+    "Cells whose segment weights did not change keep the same shortcut costs, so recomputing them is wasted work"
+   ],
+   "answer": 3,
+   "why": "Shortcut costs depend only on weights inside the cell. Unchanged cells, and parents whose child shortcuts did not change, can be skipped.",
+   "level": "Easy"
+  },
+  {
+   "q": "40,000 dirty cells each take 0.2 ms to customize. Roughly how long is that on a 32-core machine?",
+   "options": [
+    "About 8 seconds",
+    "About 0.25 seconds",
+    "About 2.5 seconds",
+    "About 25 milliseconds"
+   ],
+   "answer": 1,
+   "why": "40,000 x 0.2 ms = 8 CPU-seconds. Cells are independent, so 8 / 32 is about 0.25 seconds of wall time.",
+   "level": "Medium"
+  },
+  {
+   "q": "Why must each route query pin a single weight snapshot version?",
+   "options": [
+    "To reduce memory use",
+    "Because queries cannot read new data",
+    "So it never mixes old shortcuts with new segment weights, which could give a route or ETA wrong under any real state",
+    "So that all users get the same route"
+   ],
+   "answer": 2,
+   "why": "Immutable, versioned snapshots give each query a consistent view. Servers swap a pointer when a new snapshot is fully loaded.",
+   "level": "Medium"
+  },
+  {
+   "q": "ALT (A* with landmarks) computes its lower bounds with free-flow travel times. What happens when heavy traffic arrives?",
+   "options": [
+    "The bounds stay valid lower bounds, so A* stays correct, though it guides the search less tightly",
+    "A* starts returning wrong routes",
+    "Landmarks must be recomputed every 30 seconds",
+    "The search stops working until traffic clears"
+   ],
+   "answer": 0,
+   "why": "Traffic only makes real times equal or longer than free-flow, so the estimates never overestimate and remain admissible.",
+   "level": "Hard"
+  },
+  {
+   "q": "A user is 50 minutes from a segment on a long drive. Which weight is usually best for that segment?",
+   "options": [
+    "The live speed right now",
+    "The posted speed limit only",
+    "A random sample of past speeds",
+    "A predicted speed for when they will reach it, blended from history and current trends"
+   ],
+   "answer": 3,
+   "why": "Live speed describes now. For segments reached later, a time-dependent predicted speed is usually more accurate.",
+   "level": "Medium"
+  },
+  {
+   "q": "A new snapshot arrives. How should the system handle the millions of trips already in progress?",
+   "options": [
+    "Fully reroute every active trip every 30 seconds",
+    "Re-check ETA only for trips whose remaining route crosses dirty cells, and reroute only if it got meaningfully worse",
+    "Ignore active trips until they finish",
+    "Ask each driver to restart navigation"
+   ],
+   "answer": 1,
+   "why": "Summing weights along the current route is cheap. Full reroute queries are saved for trips that actually got worse, with a minimum gain to avoid flapping.",
+   "level": "Medium"
+  },
+  {
+   "q": "As a director, how would you frame 'keeping routes fresh' for the organisation?",
+   "options": [
+    "Mandate a faster shortest-path algorithm",
+    "Buy more routing servers until freshness improves",
+    "Set a probe-to-routable freshness SLO, measure each pipeline stage, and ship snapshots with validation, canary and rollback",
+    "Update weights in place on every server as fast as possible"
+   ],
+   "answer": 2,
+   "why": "Most delay is in ingestion and aggregation, not the algorithm. A pipeline SLO plus safe snapshot rollout targets the real risk.",
+   "level": "Easy"
+  }
+ ],
+ "YouTube displays \"1.2M views\" without updating on every view. How do you count billions of plays per day?": [
+  {
+   "q": "Why not run UPDATE videos SET views = views + 1 for every view?",
+   "options": [
+    "SQL cannot add numbers",
+    "Row locks and billions of single-row writes cannot keep up, especially for a viral video",
+    "It would make counts too accurate",
+    "Databases cannot store numbers above one million"
+   ],
+   "answer": 1,
+   "why": "A hot video at tens of thousands of views per second would queue on one row lock. Pre-aggregation and sharding remove the bottleneck.",
+   "level": "Easy"
+  },
+  {
+   "q": "5 billion plays per day is roughly how many events per second on average?",
+   "options": [
+    "About 5,800",
+    "About 5,80,000",
+    "About 58,000",
+    "About 580"
+   ],
+   "answer": 2,
+   "why": "5,000,000,000 / 86,400 seconds is about 58,000 per second; plan for about 3x that at peak.",
+   "level": "Easy"
+  },
+  {
+   "q": "What does pre-aggregation in a 10-second window achieve?",
+   "options": [
+    "It turns many view events for a video into one counter increment per window per worker",
+    "It removes the need for Kafka",
+    "It makes each view count exactly once without dedupe",
+    "It lets you use HyperLogLog for total views"
+   ],
+   "answer": 0,
+   "why": "Instead of thousands of writes per second for a hot video, the store sees one delta per worker every 10 seconds.",
+   "level": "Medium"
+  },
+  {
+   "q": "How does a sharded counter help with a viral video?",
+   "options": [
+    "It deletes old views to save space",
+    "It stores the count in the CDN",
+    "It counts only unique viewers",
+    "Writes are spread over N sub-counters, and reads sum them (usually cached)"
+   ],
+   "answer": 3,
+   "why": "Splitting one hot key into many sub-keys spreads write load; the sum is computed on read and cached briefly.",
+   "level": "Medium"
+  },
+  {
+   "q": "Which is the right use of HyperLogLog in this system?",
+   "options": [
+    "Counting total views",
+    "Estimating unique viewers",
+    "Storing the rounded '1.2M' label",
+    "Deduplicating retried events by event_id"
+   ],
+   "answer": 1,
+   "why": "HLL estimates distinct counts in about 12 KB. Total views is a plain sum, so an integer counter is exact and cheap.",
+   "level": "Easy"
+  },
+  {
+   "q": "A new video's view count appears frozen for a while, then jumps. What is a likely reason?",
+   "options": [
+    "The cache server crashed",
+    "Kafka lost the events",
+    "The platform held increases while checking a suspicious spike for bots before trusting the views",
+    "Counts only update once a day"
+   ],
+   "answer": 2,
+   "why": "Some fraud checks need wider context and run slower. Holding the public count until validation finishes avoids showing inflated numbers.",
+   "level": "Medium"
+  },
+  {
+   "q": "A player retries a view event on a flaky network. What prevents it from counting twice?",
+   "options": [
+    "Dedupe on a client-generated event_id, plus exactly-once or idempotent writes in the pipeline",
+    "Kafka automatically deletes duplicates",
+    "Rounding the count to 1.2M hides the duplicate",
+    "HyperLogLog removes duplicates from total views"
+   ],
+   "answer": 0,
+   "why": "Duplicates come from clients, producers and restarts. Keyed dedupe and idempotent or checkpointed processing handle all three.",
+   "level": "Medium"
+  },
+  {
+   "q": "The live count showed 171M; after batch reconciliation it shows 160M. Which statement is correct?",
+   "options": [
+    "This proves the streaming pipeline is broken",
+    "The batch job should be turned off",
+    "Live counts should never be shown",
+    "The batch layer applied slower fraud rules and is the source of truth; the live count was provisional"
+   ],
+   "answer": 3,
+   "why": "In a Lambda-style design, stream numbers are fresh but provisional. Batch recounts from raw logs and corrects them.",
+   "level": "Medium"
+  },
+  {
+   "q": "A video at 1.2M views gets about 1 lakh views per hour. How often does the displayed '1.2M' need to change?",
+   "options": [
+    "About once an hour, when the rounded value changes",
+    "On every view",
+    "Every second",
+    "Never"
+   ],
+   "answer": 0,
+   "why": "100,000 views is 0.1M, so the rounded label moves one step roughly every hour. Caching the label saves huge read load.",
+   "level": "Hard"
+  },
+  {
+   "q": "As a director, which decision matters most for view counting?",
+   "options": [
+    "Making every count exact in real time",
+    "Defining which number is authoritative for display, creator analytics and payouts, with freshness and accuracy targets for each",
+    "Using one database for everything",
+    "Hiding counts from all users"
+   ],
+   "answer": 1,
+   "why": "Different consumers need different trade-offs. Payouts use reconciled data; display can be fresh and approximate.",
+   "level": "Easy"
+  }
+ ],
+ "Search autocomplete in under 100 ms globally. A query starts trending in one region. How do suggestions catch up?": [
+  {
+   "q": "How does autocomplete stay under 100 ms on every keystroke?",
+   "options": [
+    "It runs a database LIKE query for each prefix",
+    "It calls a machine learning model per keystroke",
+    "Top-k suggestions per prefix are precomputed in a trie or FST held in memory on servers near users",
+    "It waits for the user to finish typing"
+   ],
+   "answer": 2,
+   "why": "Lookup is a few memory reads. The rest of the budget is network, so servers sit close to users.",
+   "level": "Easy"
+  },
+  {
+   "q": "In a typical autocomplete latency budget, what takes the most time?",
+   "options": [
+    "The network round trip to the edge",
+    "The trie lookup",
+    "Merging trending candidates",
+    "Applying the blocklist"
+   ],
+   "answer": 0,
+   "why": "The lookup is under a millisecond; round trips of 20-50 ms dominate. That is why fresh data must already be at the edge.",
+   "level": "Easy"
+  },
+  {
+   "q": "Why can't the batch-built index alone handle a query that starts trending now?",
+   "options": [
+    "Tries cannot store new words",
+    "It is rebuilt hourly or daily, so new trends are missing until the next build",
+    "Batch indexes are only used for spelling",
+    "Batch builds are always wrong"
+   ],
+   "answer": 1,
+   "why": "The batch layer is good and stable but only as fresh as its last build. A streaming layer fills the gap.",
+   "level": "Easy"
+  },
+  {
+   "q": "What best defines a 'trending' query?",
+   "options": [
+    "The most searched query of all time",
+    "Any query typed more than 100 times",
+    "A query that appears in news headlines",
+    "A query searched far more than its own baseline for this time and region"
+   ],
+   "answer": 3,
+   "why": "'weather' is popular but rarely trending. Trending compares the current rate to the expected rate.",
+   "level": "Medium"
+  },
+  {
+   "q": "Why use a count-min sketch in the streaming layer?",
+   "options": [
+    "It gives exact counts for billing",
+    "It stores the full query text compactly",
+    "It estimates frequencies of any query in fixed small memory; it may overcount but never undercount",
+    "It sorts all queries alphabetically"
+   ],
+   "answer": 2,
+   "why": "Tracking exact counts for millions of rare queries is costly. A sketch plus a heavy-hitter list finds the likely trends cheaply.",
+   "level": "Medium"
+  },
+  {
+   "q": "A query spikes to 6,000 searches from only 60 accounts. What should happen?",
+   "options": [
+    "Block it: high volume from few distinct users looks like manipulation",
+    "Push it to all regions immediately",
+    "Insert it into every prefix including single letters",
+    "Make it the top suggestion for a week"
+   ],
+   "answer": 0,
+   "why": "Requiring a minimum number of distinct users and diverse sources is a key defence against gaming autocomplete.",
+   "level": "Medium"
+  },
+  {
+   "q": "How do fresh trending candidates reach users without slowing requests?",
+   "options": [
+    "Each request calls the stream job",
+    "The whole index is rebuilt every minute",
+    "Users download the trending list once a day",
+    "Small delta updates with a TTL are pushed to that region's edge servers and merged in memory at serve time"
+   ],
+   "answer": 3,
+   "why": "Deltas are cheap to ship. Serve-time merging is in-memory, so it adds only a few milliseconds.",
+   "level": "Medium"
+  },
+  {
+   "q": "Why cap fresh trending items at 2-3 of the 10 suggestion slots?",
+   "options": [
+    "Tries can only hold 7 items",
+    "The trending signal is noisier and less vetted, so a cap protects overall quality",
+    "Users cannot read more than 3 suggestions",
+    "Fresh items are always offensive"
+   ],
+   "answer": 1,
+   "why": "Batch scores use richer signals. A cap lets real trends appear while limiting damage from a noisy or bad signal.",
+   "level": "Medium"
+  },
+  {
+   "q": "A 135x trend score decays with a 30-minute half-life after the rush ends. About when does it fall below 10x?",
+   "options": [
+    "After about 30 minutes",
+    "After about 8 hours",
+    "After about 2 hours",
+    "It never falls below 10x"
+   ],
+   "answer": 2,
+   "why": "135 halves to about 67, 34, 17, then 8. Four half-lives is about 2 hours; a TTL also acts as a backstop.",
+   "level": "Hard"
+  },
+  {
+   "q": "As a director, how should freshness vs safety for trending suggestions be decided?",
+   "options": [
+    "Engineers choose freely to maximise freshness",
+    "Turn trending off entirely to avoid risk",
+    "Copy a competitor's settings",
+    "As a policy set with trust-and-safety and legal by category, with metrics, a kill switch and rollback"
+   ],
+   "answer": 3,
+   "why": "Some categories can auto-approve fast; sensitive ones need stricter rules. Incidents must be removable in minutes.",
+   "level": "Easy"
+  }
+ ],
+ "Google Drive: two users edit the same file offline and reconnect simultaneously. How do you merge without data loss?": [
+  {
+   "q": "Two users edit the same Google Doc offline. What does the client store while offline?",
+   "options": [
+    "A full copy of the document saved every second",
+    "A queue of operations, each tagged with the revision it was based on",
+    "Only the final text, which replaces the server copy on reconnect",
+    "Nothing; offline edits are discarded"
+   ],
+   "answer": 1,
+   "why": "Offline edits are recorded as small operations with their base revision, so the server can order and transform them later.",
+   "level": "Easy"
+  },
+  {
+   "q": "Why can't an uploaded binary file like a .pptx be merged the way a Google Doc is?",
+   "options": [
+    "Binary files are too large to upload",
+    "Binary files are always encrypted",
+    "The server sees only changed bytes, not meaningful operations it can transform",
+    "Binary files have no revision history"
+   ],
+   "answer": 2,
+   "why": "Without knowing what each change means, the server cannot safely combine two byte-level edits, so it detects the conflict and keeps both versions.",
+   "level": "Easy"
+  },
+  {
+   "q": "Which rule should you avoid for merging document content edited offline?",
+   "options": [
+    "Server-assigned order with transformation",
+    "Keep both versions of a conflicting binary file",
+    "Compare-and-swap on the revision number",
+    "Last-write-wins using each device's clock"
+   ],
+   "answer": 3,
+   "why": "Device clocks drift and last-write-wins silently drops a whole offline session.",
+   "level": "Easy"
+  },
+  {
+   "q": "What does a tombstone do in a sync system?",
+   "options": [
+    "Records that an item was deleted, so a late concurrent edit can be detected",
+    "Permanently erases data to save space",
+    "Locks a file while a user is offline",
+    "Compresses old revisions"
+   ],
+   "answer": 0,
+   "why": "Keeping a deletion marker lets the server notice an edit-vs-delete conflict instead of losing the edit.",
+   "level": "Easy"
+  },
+  {
+   "q": "Two clients commit a new version of the same binary file, both with If-Match: r7. What happens?",
+   "options": [
+    "Both commits succeed and the bytes are averaged",
+    "The first becomes r8; the second gets 412 and is kept as a conflicting copy",
+    "Both commits fail and users must retry later",
+    "The commit with the larger file wins"
+   ],
+   "answer": 1,
+   "why": "Optimistic concurrency lets exactly one commit move the revision; the stale one is rejected and preserved separately.",
+   "level": "Medium"
+  },
+  {
+   "q": "Arjun inserted 3 rows above row 12 while Priya, offline, edited cell B12. After transformation, which cell does Priya's edit land in?",
+   "options": [
+    "B12",
+    "B9",
+    "B15",
+    "It is dropped"
+   ],
+   "answer": 2,
+   "why": "Her op is transformed against Arjun's insert, so the same logical row is now row 15.",
+   "level": "Medium"
+  },
+  {
+   "q": "A client retries an op batch because the acknowledgment was lost. What prevents duplicate edits?",
+   "options": [
+    "Using TCP instead of UDP",
+    "A bigger server buffer",
+    "Device timestamps on each op",
+    "An idempotency key or per-client sequence number on the batch"
+   ],
+   "answer": 3,
+   "why": "The server recognises the batch ID it already applied and returns the stored result.",
+   "level": "Medium"
+  },
+  {
+   "q": "When are CRDTs a better fit than server-based OT?",
+   "options": [
+    "When devices may stay offline for long periods or sync peer-to-peer",
+    "When there is always a fast central server",
+    "When files are binary blobs",
+    "When you want last-write-wins"
+   ],
+   "answer": 0,
+   "why": "CRDT ops commute without a central sequencer, which suits long offline gaps and peer-to-peer merging, at the cost of extra metadata.",
+   "level": "Medium"
+  },
+  {
+   "q": "Two devices have version vectors {laptop: 5, phone: 3} and {laptop: 4, phone: 4}. What can you conclude?",
+   "options": [
+    "The first is newer",
+    "The second is newer",
+    "They are identical",
+    "The edits are concurrent, so it is a conflict"
+   ],
+   "answer": 3,
+   "why": "Neither vector is greater or equal in every slot, so each saw changes the other did not.",
+   "level": "Hard"
+  },
+  {
+   "q": "As a director, which metric best shows whether your sync system keeps its 'no data loss' promise?",
+   "options": [
+    "Average upload speed",
+    "Number of accepted edits that later failed to apply, with alerts on any non-zero value",
+    "Number of files stored",
+    "Daily active users"
+   ],
+   "answer": 1,
+   "why": "Turning 'no data loss' into a measurable SLO with alerts makes the promise checkable.",
+   "level": "Medium"
+  }
+ ],
+ "Gmail search for 1.8 billion users, with per-user isolated indexes. How do you make it feel instant?": [
+  {
+   "q": "What is the natural partition key for a per-user mail search index?",
+   "options": [
+    "The word being searched",
+    "The user ID",
+    "The email's date",
+    "The sender's domain"
+   ],
+   "answer": 1,
+   "why": "Every query touches one mailbox, so sharding by user sends it to one place with no cross-user fan-out.",
+   "level": "Easy"
+  },
+  {
+   "q": "Why is a per-user index safer for privacy than a global index with a filter?",
+   "options": [
+    "It uses stronger encryption",
+    "It is stored in a different country",
+    "A query can only open that user's index, so a filter bug cannot leak other mail",
+    "It hides email subjects"
+   ],
+   "answer": 2,
+   "why": "Isolation comes from the data layout itself, not from a filter that must always be correct.",
+   "level": "Easy"
+  },
+  {
+   "q": "Most Gmail searches look for recent mail. Which design exploits this?",
+   "options": [
+    "Time-based segments with recent ones in memory, searched first",
+    "Storing every index entirely on tape",
+    "Sorting results alphabetically",
+    "Indexing only mail older than a year"
+   ],
+   "answer": 0,
+   "why": "Hot recent segments usually fill the first page quickly, so older segments are often not needed on the critical path.",
+   "level": "Easy"
+  },
+  {
+   "q": "How is a newly arrived email usually made searchable?",
+   "options": [
+    "The whole mailbox index is rebuilt",
+    "Delivery waits until indexing finishes",
+    "It is only indexed at night",
+    "It is indexed asynchronously into a small near-real-time segment within seconds"
+   ],
+   "answer": 3,
+   "why": "Asynchronous NRT segments keep search fresh without coupling mail delivery to indexing.",
+   "level": "Easy"
+  },
+  {
+   "q": "Why does adding more users not slow down each individual Gmail search?",
+   "options": [
+    "Because searches are cached forever",
+    "Because per-query work depends on one mailbox's size, not the total number of users",
+    "Because users search less as they grow",
+    "Because all indexes are in RAM"
+   ],
+   "answer": 1,
+   "why": "With user-sharding there is no fan-out across users; growth adds shards, not per-query work.",
+   "level": "Medium"
+  },
+  {
+   "q": "Index segments are immutable. How can a deleted email disappear from search immediately?",
+   "options": [
+    "Rewrite the segment synchronously on every delete",
+    "Wait for the nightly rebuild",
+    "Check a per-user deleted/override bitmap at query time, then drop it during compaction",
+    "Delete the user's whole index"
+   ],
+   "answer": 2,
+   "why": "A small override list is cheap to check and keeps segments immutable until the next merge.",
+   "level": "Medium"
+  },
+  {
+   "q": "What does a hedged request do?",
+   "options": [
+    "Sends the query to a second replica if the first is slower than about p95, and uses the first answer",
+    "Retries the query after it fails",
+    "Splits the query across all users",
+    "Caches the query result for one hour"
+   ],
+   "answer": 0,
+   "why": "It cuts tail latency caused by rare slow machines at the cost of a small amount of extra load.",
+   "level": "Medium"
+  },
+  {
+   "q": "Why not keep all 1.8 billion users' full indexes in RAM?",
+   "options": [
+    "RAM is too slow for search",
+    "Indexes can't be loaded into RAM",
+    "Search needs disk-only access",
+    "Most accounts are inactive at any moment and old mail is rarely searched, so it would be enormously wasteful"
+   ],
+   "answer": 3,
+   "why": "Tiering keeps only active users' hot segments warm, which is what makes the cost manageable.",
+   "level": "Medium"
+  },
+  {
+   "q": "Searches average 6,250 per second with a 3x peak and about 4 type-ahead suggestion requests per search. Roughly how many suggestion requests per second at peak?",
+   "options": [
+    "25,000",
+    "50,000",
+    "75,000",
+    "6,250"
+   ],
+   "answer": 2,
+   "why": "Peak search rate is about 18,750/s; times 4 suggestions gives about 75,000/s.",
+   "level": "Hard"
+  },
+  {
+   "q": "As a director owning mail search, which SLO matters most for 'feels instant'?",
+   "options": [
+    "Average latency across all searches",
+    "p99 first-page latency plus an index freshness target",
+    "Total index size in petabytes",
+    "Number of search servers"
+   ],
+   "answer": 1,
+   "why": "Users feel the slow tail and stale results; averages hide both.",
+   "level": "Medium"
+  }
+ ],
+ "Google Meet at 100k concurrent calls. A user's bandwidth drops mid-call. How do you degrade quality gracefully without dropping the call?": [
+  {
+   "q": "What does an SFU do in a video call?",
+   "options": [
+    "Decodes and mixes all videos into one picture",
+    "Stores recordings of the call",
+    "Forwards chosen streams to each participant without decoding them",
+    "Encrypts the user's password"
+   ],
+   "answer": 2,
+   "why": "A Selective Forwarding Unit just forwards packets, so it is cheap and can pick a different quality per receiver.",
+   "level": "Easy"
+  },
+  {
+   "q": "When a user's bandwidth drops, what should be protected above everything else?",
+   "options": [
+    "Audio",
+    "Speaker video at 720p",
+    "Thumbnail videos",
+    "Screen-share frame rate"
+   ],
+   "answer": 0,
+   "why": "Users tolerate poor video but hang up on choppy audio, which needs very little bandwidth.",
+   "level": "Easy"
+  },
+  {
+   "q": "What is simulcast?",
+   "options": [
+    "Recording the call in the cloud",
+    "Sending the same call to two SFUs for backup",
+    "Mixing several participants into one stream",
+    "The sender uploading several versions of its video at different qualities"
+   ],
+   "answer": 3,
+   "why": "Multiple encodings give the SFU options to forward the right one to each receiver.",
+   "level": "Easy"
+  },
+  {
+   "q": "Why does WebRTC mainly use UDP rather than TCP for media?",
+   "options": [
+    "UDP is encrypted and TCP is not",
+    "A late packet is useless for live media, and TCP's in-order retransmission causes stalls",
+    "UDP guarantees delivery",
+    "Browsers do not support TCP"
+   ],
+   "answer": 1,
+   "why": "Live media prefers selective repair (NACK, FEC) over stalling for every lost packet; TCP is used only as a fallback.",
+   "level": "Easy"
+  },
+  {
+   "q": "What signal lets Google Congestion Control reduce bitrate before packets start dropping?",
+   "options": [
+    "Growing packet delay",
+    "CPU temperature",
+    "Battery level",
+    "Number of participants"
+   ],
+   "answer": 0,
+   "why": "Rising one-way delay shows a queue building on the path, an early sign of congestion.",
+   "level": "Medium"
+  },
+  {
+   "q": "During a screen share of slides, bandwidth drops. What is the best degradation?",
+   "options": [
+    "Lower resolution and keep 30 fps",
+    "Switch the share off immediately",
+    "Keep resolution sharp and reduce frame rate",
+    "Drop the presenter's audio"
+   ],
+   "answer": 2,
+   "why": "Text must stay readable; slides change rarely, so a low frame rate is fine.",
+   "level": "Medium"
+  },
+  {
+   "q": "The SFU switches a receiver from the 720p simulcast layer to the 180p layer. What does it usually need?",
+   "options": [
+    "A new ICE candidate",
+    "A TURN server",
+    "A DTX packet",
+    "A keyframe on the new layer, requested with a PLI"
+   ],
+   "answer": 3,
+   "why": "Simulcast layers are independent streams, so the decoder needs a full keyframe to start on the new one.",
+   "level": "Medium"
+  },
+  {
+   "q": "A user's phone switches from Wi-Fi to 4G mid-call. What keeps the call alive?",
+   "options": [
+    "An ICE restart that reconnects media to the same server-side session",
+    "Ending the call and inviting the user again",
+    "Switching the whole meeting to an MCU",
+    "Lowering everyone's video to 180p"
+   ],
+   "answer": 0,
+   "why": "Session state lives on the server, so new network paths can be negotiated without leaving the meeting.",
+   "level": "Medium"
+  },
+  {
+   "q": "100,000 calls average 5 participants, each downloading 1.5 Mbps. If one SFU handles 5 Gbps of egress, how many servers are needed before headroom?",
+   "options": [
+    "30",
+    "150",
+    "750",
+    "1,500"
+   ],
+   "answer": 1,
+   "why": "500,000 x 1.5 Mbps = 750 Gbps; 750 / 5 = 150 servers, before adding headroom.",
+   "level": "Hard"
+  },
+  {
+   "q": "As a director, which metric best captures 'degrade gracefully without dropping the call'?",
+   "options": [
+    "Average video resolution",
+    "Number of SFU servers",
+    "Call drop rate and audio interruptions per minute, alongside time-to-recover",
+    "Peak bitrate per call"
+   ],
+   "answer": 2,
+   "why": "The goal is continuity and intelligible audio, so measure drops, audio gaps and recovery, not peak quality.",
+   "level": "Medium"
+  }
  ]
 }
