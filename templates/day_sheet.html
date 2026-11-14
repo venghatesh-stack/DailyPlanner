@@ -91,6 +91,40 @@
   .ds-field .ds-area { border-bottom: 1px solid var(--color-border); padding: 6px 0; }
   .ds-banner { padding: 12px 16px; border-radius: 12px; font-size: 14px; border: 1px solid var(--color-warning, #b45309);
     background: var(--color-warning-light, #fff7ed); color: var(--color-warning-on-tint, #7c2d12); }
+  /* ── Planning methods (v355) ── */
+  .ds-methods { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+  .ds-mbtn { flex: 0 0 auto; font: inherit; font-size: 13.5px; font-weight: 700; padding: 8px 14px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); white-space: nowrap; }
+  .ds-mbtn[aria-pressed="true"] { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-on-primary); }
+  .ds-mdesc { margin: 10px 2px 0; font-size: 13.5px; color: var(--color-text-secondary); line-height: 1.5; }
+  .ds-sub { margin: 14px 0 6px; font-size: 12px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--color-text-secondary);
+    display: flex; justify-content: space-between; gap: 8px; }
+  .ds-sub:first-child { margin-top: 0; }
+  .ds-moved { font-size: 11.5px; font-weight: 700; white-space: nowrap; color: var(--color-text-secondary); }
+  .is-moved .ds-in { color: var(--color-text-secondary); }
+  .ds-foot { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; margin-top: 12px; padding-top: 8px; border-top: 1px dashed var(--color-border); }
+  .ds-foot a { font-size: 13.5px; font-weight: 700; color: var(--color-primary-ink, var(--color-primary)); text-decoration: none; }
+  .ds-foot .ds-add { margin: 0; }
+  .ds-quad { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .ds-q { border-radius: 12px; padding: 12px; background: var(--color-bg); min-width: 0; }
+  .ds-q h3 { margin: 0; font-size: 14px; font-weight: 800; }
+  .ds-q h3 small { display: block; font-size: 11.5px; font-weight: 600; color: var(--color-text-secondary); margin-top: 2px; }
+  .ds-q .ds-row { min-height: 38px; }
+  .ds-q .ds-add { margin-top: 4px; padding: 4px 0; }
+  .ds-ivy-now { outline: 2px solid var(--color-primary); }
+  .ds-ivy-tag { font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--color-primary-ink, var(--color-primary)); white-space: nowrap; }
+  .ds-sym { width: 32px; height: 32px; flex: 0 0 32px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-surface);
+    color: var(--color-text); font: inherit; font-size: 18px; font-weight: 800; cursor: pointer; line-height: 1; padding: 0; }
+  .ds-log-new { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+  .ds-log-new .ds-in { border-bottom: 1px solid var(--color-border); padding: 8px 0; font-size: 15px; }
+  .ds-tb { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px; }
+  .ds-tb .ds-in.actual { background: transparent; border: 1px dashed var(--color-border); }
+  .ds-tbhead { display: grid; grid-template-columns: 58px minmax(0, 1fr) minmax(0, 1fr); gap: 10px 6px; font-size: 11.5px; font-weight: 800;
+    letter-spacing: .05em; text-transform: uppercase; color: var(--color-text-secondary); padding-bottom: 6px; }
+  .ds-tbhead span:first-child { grid-column: 2; }
+  @media (max-width: 640px) {
+    .ds-quad { grid-template-columns: minmax(0, 1fr); }
+  }
   @media (max-width: 640px) {
     .ds-head h1 { font-size: 27px; }
     .ds-week { flex-wrap: nowrap; width: 100%; gap: 4px; }
@@ -102,7 +136,7 @@
     .ds-card { padding: 16px; }
   }
   @media print {
-    .nav-icons, .ds-arrow, .ds-add, .ds-x, .ds-save, .ds-banner, .ds-range { display: none !important; }
+    .nav-icons, .ds-arrow, .ds-add, .ds-x, .ds-save, .ds-banner, .ds-range, .ds-methods, .ds-foot, .ds-log-new { display: none !important; }
     body { background: #fff; }
     .ds-card { break-inside: avoid; }
   }
@@ -137,6 +171,12 @@
     </div>
   </section>
 
+  <section class="ds-card" aria-labelledby="ds-method-h" style="padding:14px 16px">
+    <h2 id="ds-method-h" class="ds-sub" style="margin:0 0 10px;font-size:12px">Planning method</h2>
+    <div class="ds-methods" id="ds-methods" role="group" aria-labelledby="ds-method-h"></div>
+    <p class="ds-mdesc" id="ds-mdesc"></p>
+  </section>
+
   <div class="ds-cols">
     <section class="ds-card ds-left" aria-labelledby="ds-sched-h">
       <h2 id="ds-sched-h">Schedule
@@ -149,9 +189,9 @@
     </section>
 
     <div class="ds-right">
-      <section class="ds-card" aria-labelledby="ds-top-h">
-        <h2 id="ds-top-h">Top 3 priorities</h2>
-        <div id="ds-top3"></div>
+      <section class="ds-card" aria-labelledby="ds-plan-h">
+        <h2 id="ds-plan-h">Top 3 priorities</h2>
+        <div id="ds-plan"></div>
       </section>
 
       <div class="ds-pair">
@@ -217,6 +257,9 @@ function queue(field, value) {
 // it in one upsert without reading the old row first.
 function touch(key) {
   if (!S.available) { status('Not saved: run ' + S.migration + ' in Supabase first'); return; }
+  // Pin the method in use to this day, so changing the default later
+  // doesn't change how an old day is shown.
+  if (!sheet.template) sheet.template = method();
   queue('sheet', sheet);
 }
 
@@ -255,7 +298,7 @@ async function load() {
     b.hidden = false;
     b.innerHTML = `Top 3, to-dos, energy, notes and hour notes need one table. Run <b>${esc(S.migration)}</b> in Supabase once. Focus, schedule, habits and the reflection already work.`;
   }
-  renderWeek(); renderFocus(); renderEnergy(); renderRange(); renderHours(); renderTop3(); renderTodos(); renderPlanned(); renderHabits(); renderText();
+  renderWeek(); renderFocus(); renderEnergy(); renderMethods(); renderRange(); renderHours(); renderPlan(); renderTodos(); renderPlanned(); renderHabits(); renderText();
   if (window.feather) feather.replace();
 }
 
@@ -290,7 +333,7 @@ function hourRange() {
   let from = parseInt(lsGet('ds-from', '6'), 10), to = parseInt(lsGet('ds-to', '21'), 10);
   // Widen to include anything scheduled outside the chosen range.
   (S.timed || []).forEach(t => { const h = parseInt(t.time, 10); if (!isNaN(h)) { from = Math.min(from, h); to = Math.max(to, h); } });
-  Object.keys(sheet.hours || {}).forEach(k => { const h = parseInt(k, 10); from = Math.min(from, h); to = Math.max(to, h); });
+  Object.keys(Object.assign({}, sheet.hours, sheet.actual)).forEach(k => { const h = parseInt(k, 10); from = Math.min(from, h); to = Math.max(to, h); });
   return [from, to];
 }
 function renderRange() {
@@ -306,29 +349,194 @@ function renderHours() {
   const nowH = (S.date === S.today) ? new Date().getHours() : -1;
   const byHour = {};
   (S.timed || []).forEach(t => { const h = parseInt(t.time, 10); (byHour[h] = byHour[h] || []).push(t); });
-  let html = '';
+  // Time blocking adds an Actual column next to each hour's plan.
+  const tb = method() === 'timeblock';
+  let html = tb ? '<div class="ds-tbhead"><span>Plan</span><span>Actual</span></div>' : '';
   for (let h = from; h <= to; h++) {
     const key = String(h).padStart(2, '0');
     const chips = (byHour[h] || []).map(t => `<div class="ds-chip${t.done ? ' done' : ''}"><b>${esc(fmtTime(t.time))}${t.end_time ? '–' + esc(fmtTime(t.end_time)) : ''}</b><span>${esc(t.title)}</span></div>`).join('');
+    const plan = `<input class="ds-in" data-h="${key}" data-f="hours" aria-label="${tb ? 'Plan' : 'Note'} for ${fmtHour(h)}" maxlength="300"${tb ? ' placeholder="Block"' : ''} value="${esc((sheet.hours || {})[key] || '')}">`;
+    const actual = tb ? `<input class="ds-in actual" data-h="${key}" data-f="actual" aria-label="Actual for ${fmtHour(h)}" maxlength="300" placeholder="What happened" value="${esc((sheet.actual || {})[key] || '')}">` : '';
     html += `<div class="ds-hour${h === nowH ? ' is-now' : ''}"><span>${fmtHour(h)}</span><div class="ds-slot">${chips}
-      <input class="ds-in" data-h="${key}" aria-label="Note for ${fmtHour(h)}" maxlength="300" value="${esc((sheet.hours || {})[key] || '')}"></div></div>`;
+      ${tb ? `<div class="ds-tb">${plan}${actual}</div>` : plan}</div></div>`;
   }
   const box = document.getElementById('ds-hours');
   box.innerHTML = html;
   box.querySelectorAll('input').forEach(i => i.oninput = () => {
-    sheet.hours = sheet.hours || {};
-    if (i.value.trim()) sheet.hours[i.dataset.h] = i.value; else delete sheet.hours[i.dataset.h];
-    touch('hours');
+    const f = i.dataset.f;
+    sheet[f] = sheet[f] || {};
+    if (i.value.trim()) sheet[f][i.dataset.h] = i.value; else delete sheet[f][i.dataset.h];
+    touch(f);
   });
 }
 
+// ── Planning methods (v355) ──
+// Each method draws its own planning card. Schedule, to-dos, habits, notes
+// and the reflection stay the same for all of them. The choice is saved on
+// the day's sheet, and the last one picked is the default for new days.
+const METHODS = {
+  top3: { name: 'Top 3', title: 'Top 3 priorities', carry: ['top3'],
+    desc: 'Pick the three things that would make today a win, even if nothing else gets done. Do #1 first.' },
+  '135': { name: '1-3-5', title: '1-3-5', carry: ['big', 'medium', 'small'],
+    desc: 'One big task, three medium, five small. Nine is about the most anyone really finishes in a day, so the list stays honest.' },
+  eisenhower: { name: 'Eisenhower', title: 'Eisenhower matrix', carry: ['q_do', 'q_plan', 'q_delegate'],
+    desc: 'Sort by urgent and important. Do the first box today, put the second on the calendar, hand off the third, drop the fourth.' },
+  ivylee: { name: 'Ivy Lee', title: 'Ivy Lee: six, in order', carry: ['ivy'],
+    desc: 'Write six tasks in order of importance (ideally the evening before). Work on #1 until it is done, then #2. Whatever is left goes first on tomorrow’s list.' },
+  timeblock: { name: 'Time blocking', title: 'Top 3 for today’s blocks', carry: ['top3'],
+    desc: 'Give every hour on the schedule a job in the Plan column, then write what really happened in Actual. The gap between the two is the lesson.' },
+  bujo: { name: 'Bullet journal', title: 'Rapid log', carry: ['log'],
+    desc: 'Log things as they come up: • task, ○ event, – note. Tap the symbol to change it, tick tasks when done, and move open tasks to tomorrow.' },
+  manager: { name: 'Manager’s day', title: 'Top 3 outcomes', carry: ['top3', 'people', 'quick'],
+    desc: 'Three outcomes, the people you owe something (1:1s, follow-ups, things to delegate) and quick wins for the gaps between meetings.' },
+};
+const CAPS = { big: 1, medium: 3, small: 5, q_do: 12, q_plan: 12, q_delegate: 12, q_drop: 12, ivy: 6, log: 60, people: 20, quick: 20 };
+function method() { const m = sheet.template || lsGet('ds-template', 'top3'); return METHODS[m] ? m : 'top3'; }
+function list(key) { sheet.lists = sheet.lists || {}; return (sheet.lists[key] = sheet.lists[key] || []); }
+function shiftIso(iso, n) { const x = dt(iso); x.setDate(x.getDate() + n); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); }
+const MOVED = '<span class="ds-moved" title="Moved to tomorrow">→ tomorrow</span>';
+
+function renderMethods() {
+  const m = method();
+  // Explicit order: a numeric-looking key ("135") would otherwise sort first.
+  const ORDER = ['top3', '135', 'eisenhower', 'ivylee', 'timeblock', 'bujo', 'manager'];
+  document.getElementById('ds-methods').innerHTML = ORDER.map(k => [k, METHODS[k]]).map(([k, v]) =>
+    `<button type="button" class="ds-mbtn" data-m="${k}" aria-pressed="${k === m}">${esc(v.name)}</button>`).join('');
+  document.getElementById('ds-mdesc').textContent = METHODS[m].desc;
+  document.querySelectorAll('#ds-methods .ds-mbtn').forEach(b => b.onclick = () => {
+    sheet.template = b.dataset.m; lsSet('ds-template', b.dataset.m);
+    touch('template'); renderMethods(); renderPlan(); renderHours();
+  });
+}
+
+function renderPlan() {
+  const m = method(), box = document.getElementById('ds-plan');
+  document.getElementById('ds-plan-h').textContent = METHODS[m].title;
+  let html = '';
+  if (m === '135') {
+    html = sec('1 big thing', 'big', 'The task that moves the needle')
+      + sec('3 medium', 'medium', 'Medium task') + sec('5 small', 'small', 'Small task');
+  } else if (m === 'eisenhower') {
+    const q = [['q_do', 'Do', 'Urgent and important'], ['q_plan', 'Schedule', 'Important, not urgent'],
+               ['q_delegate', 'Delegate', 'Urgent, not important'], ['q_drop', 'Drop', 'Neither']];
+    html = '<div class="ds-quad">' + q.map(([k, t, s]) => `<div class="ds-q"><h3>${t}<small>${s}</small></h3>
+      <div data-list="${k}"></div><button type="button" class="ds-add" data-add="${k}">+ Add</button></div>`).join('') + '</div>';
+  } else if (m === 'ivylee') {
+    html = '<div data-list="ivy" data-fixed="1" data-num="1"></div>';
+  } else if (m === 'bujo') {
+    html = `<div data-list="log" data-bujo="1"></div>
+      <div class="ds-log-new"><input class="ds-in" id="ds-log-in" maxlength="300" aria-label="Add to the log"
+        placeholder="Type and press Enter. Start with o for an event, - for a note"></div>`;
+  } else if (m === 'manager') {
+    html = '<div id="ds-top3"></div>'
+      + `<p class="ds-sub">People <span style="text-transform:none;letter-spacing:0;font-weight:600">1:1s, follow-ups owed, to delegate</span></p><div data-list="people"></div><button type="button" class="ds-add" data-add="people">+ Add a person item</button>`
+      + `<p class="ds-sub">Quick wins <span style="text-transform:none;letter-spacing:0;font-weight:600">under 15 minutes</span></p><div data-list="quick"></div><button type="button" class="ds-add" data-add="quick">+ Add a quick win</button>`;
+  } else {
+    html = '<div id="ds-top3"></div>';
+  }
+  html += `<div class="ds-foot"><button type="button" class="ds-add" id="ds-carry">Move unfinished to tomorrow</button>
+    <a href="/day-sheet?date=${shiftIso(S.date, 1)}">${m === 'ivylee' ? 'Plan tomorrow’s six' : 'Open tomorrow'} →</a></div>`;
+  box.innerHTML = html;
+  if (box.querySelector('#ds-top3')) renderTop3();
+  box.querySelectorAll('[data-list]').forEach(renderList);
+  box.querySelectorAll('[data-add]').forEach(b => b.onclick = () => addItem(b.dataset.add));
+  document.getElementById('ds-carry').onclick = carry;
+  const logIn = document.getElementById('ds-log-in');
+  if (logIn) logIn.onkeydown = e => {
+    if (e.key !== 'Enter' || !logIn.value.trim()) return;
+    e.preventDefault();
+    let t = logIn.value.trim(), kind = 'task';
+    const mm = t.match(/^([o○•*\-–])\s+(.*)$/i);
+    if (mm) { kind = /[o○]/i.test(mm[1]) ? 'event' : /[\-–]/.test(mm[1]) ? 'note' : 'task'; t = mm[2]; }
+    const rows = list('log');
+    if (rows.length >= CAPS.log) return;
+    rows.push({ text: t, done: false, kind }); logIn.value = '';
+    touch('lists'); renderList(box.querySelector('[data-list="log"]')); logIn.focus();
+  };
+}
+function sec(label, key, ph) {
+  return `<p class="ds-sub">${label} <span>${list(key).filter(r => r.done).length}/${CAPS[key]}</span></p>
+    <div data-list="${key}" data-fixed="1" data-ph="${esc(ph)}"></div>`;
+}
+
+function renderList(el) {
+  const key = el.dataset.list, fixed = !!el.dataset.fixed, rows = list(key);
+  if (fixed) while (rows.length < CAPS[key]) rows.push({ text: '', done: false });
+  else if (!el.dataset.bujo && !rows.length) rows.push({ text: '', done: false });
+  const SYM = { task: '•', event: '○', note: '–' };
+  const nowIdx = el.dataset.num ? rows.findIndex(r => r.text.trim() && !r.done && !r.moved) : -1;
+  el.innerHTML = rows.map((r, i) => {
+    const cls = `ds-row${r.done ? ' is-done' : ''}${r.moved ? ' is-moved' : ''}${i === nowIdx ? ' ds-ivy-now' : ''}`;
+    if (el.dataset.bujo) {
+      const k = r.kind || 'task', sym = k === 'task' && r.done ? '×' : k === 'task' && r.moved ? '>' : SYM[k];
+      return `<div class="${cls}" style="${i === nowIdx ? 'border-radius:8px' : ''}">
+        <button type="button" class="ds-sym" data-i="${i}" aria-label="${k}, tap to change">${sym}</button>
+        <input class="ds-in" data-i="${i}" maxlength="300" aria-label="Log entry ${i + 1}" value="${esc(r.text)}">
+        ${k === 'task' ? `<input type="checkbox" class="ds-check" data-i="${i}" aria-label="Done"${r.done ? ' checked' : ''}>` : ''}
+        ${r.moved ? MOVED : ''}<button type="button" class="ds-x" data-i="${i}" aria-label="Remove entry ${i + 1}">×</button></div>`;
+    }
+    const num = el.dataset.num ? `<span class="ds-num" aria-hidden="true" style="width:26px;height:26px;flex-basis:26px;font-size:13px">${i + 1}</span>` : '';
+    const ph = el.dataset.ph || (key === 'ivy' ? ['Most important', 'Next', 'Then', '', '', 'Last'][i] || '' : '');
+    return `<div class="${cls}" style="${i === nowIdx ? 'border-radius:8px;padding:0 6px' : ''}">
+      ${num}<input type="checkbox" class="ds-check" data-i="${i}" aria-label="Done"${r.done ? ' checked' : ''}>
+      <input class="ds-in" data-i="${i}" maxlength="300" aria-label="${esc(key)} ${i + 1}" placeholder="${esc(ph)}" value="${esc(r.text)}">
+      ${i === nowIdx ? '<span class="ds-ivy-tag">Now</span>' : ''}${r.moved ? MOVED : ''}
+      ${fixed ? '' : `<button type="button" class="ds-x" data-i="${i}" aria-label="Remove item ${i + 1}">×</button>`}</div>`;
+  }).join('') || '<p class="ds-empty">Nothing logged yet.</p>';
+  const rerender = () => { renderList(el); refreshCounts(); };
+  el.querySelectorAll('.ds-in').forEach(i => i.oninput = () => { rows[i.dataset.i].text = i.value; touch('lists'); });
+  el.querySelectorAll('.ds-check').forEach(c => c.onchange = () => { rows[c.dataset.i].done = c.checked; touch('lists'); rerender(); });
+  el.querySelectorAll('.ds-x').forEach(b => b.onclick = () => { rows.splice(Number(b.dataset.i), 1); touch('lists'); rerender(); });
+  el.querySelectorAll('.ds-sym').forEach(b => b.onclick = () => {
+    const r = rows[b.dataset.i], order = ['task', 'event', 'note'];
+    r.kind = order[(order.indexOf(r.kind || 'task') + 1) % 3];
+    if (r.kind !== 'task') { r.done = false; delete r.moved; }
+    touch('lists'); rerender();
+  });
+}
+function refreshCounts() {
+  document.querySelectorAll('#ds-plan .ds-sub span').forEach(s => {
+    const k = s.parentElement.nextElementSibling?.dataset.list;
+    if (k && CAPS[k] && /^\d+\/\d+$/.test(s.textContent)) s.textContent = list(k).filter(r => r.done).length + '/' + CAPS[k];
+  });
+}
+function addItem(key) {
+  const rows = list(key);
+  if (rows.length >= CAPS[key]) { if (window.showToast) showToast('That list is full (' + CAPS[key] + ')', 'info'); return; }
+  rows.push({ text: '', done: false });
+  const el = document.querySelector(`#ds-plan [data-list="${key}"]`);
+  renderList(el); const ins = el.querySelectorAll('.ds-in'); ins[ins.length - 1].focus();
+}
+
+async function carry() {
+  if (!S.available) { status('Not saved: run ' + S.migration + ' in Supabase first'); return; }
+  const btn = document.getElementById('ds-carry'); btn.disabled = true;
+  if (Object.keys(pending).length) { clearTimeout(saveTimer); await flush(); }
+  try {
+    const r = await fetch('/api/day-sheet/carry', { method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ date: DATE, keys: METHODS[method()].carry }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || 'Could not move');
+    const keep = sheet.template;
+    sheet = S.sheet = j.sheet; if (!sheet.template && keep) sheet.template = keep;
+    renderPlan();
+    const msg = j.moved ? `Moved ${j.moved} to tomorrow` + (j.skipped ? ` (${j.skipped} didn’t fit)` : '') : 'Nothing unfinished to move';
+    status(msg); if (window.showToast) showToast(msg, j.moved ? 'success' : 'info');
+  } catch (e) {
+    if (window.showToast) showToast(e.message, 'error'); status('Not moved: ' + e.message);
+  } finally { const b = document.getElementById('ds-carry'); if (b) b.disabled = false; }
+}
+
 function renderTop3() {
-  const ph = ['The one thing that must happen today', 'Second priority', 'Third priority'];
+  const m = method();
+  const ph = m === 'manager' ? ['The outcome that matters most today', 'Second outcome', 'Third outcome']
+    : ['The one thing that must happen today', 'Second priority', 'Third priority'];
   const box = document.getElementById('ds-top3');
-  box.innerHTML = sheet.top3.map((t, i) => `<div class="ds-top${t.done ? ' is-done' : ''}">
+  box.innerHTML = sheet.top3.map((t, i) => `<div class="ds-top${t.done ? ' is-done' : ''}${t.moved ? ' is-moved' : ''}">
       <span class="ds-num" aria-hidden="true">${i + 1}</span>
       <input class="ds-in" data-i="${i}" aria-label="Priority ${i + 1}" maxlength="300" placeholder="${ph[i]}" value="${esc(t.text)}">
-      <input type="checkbox" class="ds-check" data-i="${i}" aria-label="Priority ${i + 1} done"${t.done ? ' checked' : ''}></div>`).join('');
+      ${t.moved ? MOVED : ''}<input type="checkbox" class="ds-check" data-i="${i}" aria-label="Priority ${i + 1} done"${t.done ? ' checked' : ''}></div>`).join('');
   box.querySelectorAll('.ds-in').forEach(el => el.oninput = () => { sheet.top3[el.dataset.i].text = el.value; touch('top3'); });
   box.querySelectorAll('.ds-check').forEach(el => el.onchange = () => {
     sheet.top3[el.dataset.i].done = el.checked; el.parentElement.classList.toggle('is-done', el.checked); touch('top3');

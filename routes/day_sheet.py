@@ -39,6 +39,22 @@ MAX_TODOS = 30
 MAX_LINE = 300
 MAX_NOTES = 8000
 
+# Planning methods (v355). The page shows a different planning card for
+# each; all of them keep the schedule, habits, notes and reflection.
+#   top3      Top 3 / MITs (the original card, uses `top3`)
+#   135       1-3-5 rule: lists big(1) medium(3) small(5)
+#   eisenhower  lists q_do, q_plan, q_delegate, q_drop
+#   ivylee    Ivy Lee: six tasks in strict order, list ivy(6)
+#   timeblock Top 3 plus a planned/actual column on the schedule (`actual`)
+#   bujo      bullet-journal rapid log, list log (items carry `kind`)
+#   manager   Top 3 outcomes + lists people and quick
+TEMPLATES = ("top3", "135", "eisenhower", "ivylee", "timeblock", "bujo", "manager")
+LIST_CAPS = {"big": 1, "medium": 3, "small": 5, "q_do": 12, "q_plan": 12, "q_delegate": 12,
+             "q_drop": 12, "ivy": 6, "log": 60, "people": 20, "quick": 20}
+BUJO_KINDS = ("task", "event", "note")
+# Lists whose unfinished items can be carried to the next day.
+CARRY_KEYS = ("top3", "todos") + tuple(LIST_CAPS)
+
 
 def _parse_date(raw):
     raw = (raw or "").strip()
@@ -56,7 +72,12 @@ def _clean_sheet(raw):
         res = []
         for it in (v if isinstance(v, list) else [])[:n]:
             it = it if isinstance(it, dict) else {}
-            res.append({"text": str(it.get("text") or "")[:MAX_LINE], "done": bool(it.get("done"))})
+            row = {"text": str(it.get("text") or "")[:MAX_LINE], "done": bool(it.get("done"))}
+            if it.get("kind") in BUJO_KINDS:
+                row["kind"] = it["kind"]
+            if it.get("moved"):
+                row["moved"] = True
+            res.append(row)
         return res
 
     if "top3" in raw:
@@ -73,17 +94,26 @@ def _clean_sheet(raw):
         out["notes"] = str(raw["notes"] or "")[:MAX_NOTES]
     if "tomorrow" in raw:
         out["tomorrow"] = str(raw["tomorrow"] or "")[:1000]
-    if "hours" in raw and isinstance(raw["hours"], dict):
-        hours = {}
-        for k, v in raw["hours"].items():
-            try:
-                h = int(k)
-            except (TypeError, ValueError):
-                continue
-            if 0 <= h <= 23 and str(v or "").strip():
-                hours[f"{h:02d}"] = str(v)[:MAX_LINE]
-        out["hours"] = hours
+    for key in ("hours", "actual"):
+        if key in raw and isinstance(raw[key], dict):
+            out[key] = _clean_hours(raw[key])
+    if "template" in raw:
+        out["template"] = raw["template"] if raw["template"] in TEMPLATES else ""
+    if "lists" in raw and isinstance(raw["lists"], dict):
+        out["lists"] = {k: items(v, LIST_CAPS[k]) for k, v in raw["lists"].items() if k in LIST_CAPS}
     return out
+
+
+def _clean_hours(raw):
+    hours = {}
+    for k, v in raw.items():
+        try:
+            h = int(k)
+        except (TypeError, ValueError):
+            continue
+        if 0 <= h <= 23 and str(v or "").strip():
+            hours[f"{h:02d}"] = str(v)[:MAX_LINE]
+    return hours
 
 
 def _load_sheet(user_id, d):
@@ -202,6 +232,7 @@ def _payload(user_id, d):
 
     data, available = out["sheet"]
     sheet = _clean_sheet({"top3": [], "todos": [], "energy": 0, "notes": "", "tomorrow": "", "hours": {},
+                          "actual": {}, "template": "", "lists": {},
                           **(data if isinstance(data, dict) else {})})
     timed, untimed = _schedule(out["events"] + out["matrix"] + out["project"] + out["bucket"])
     return {
@@ -285,6 +316,91 @@ def save():
     if errors:
         return jsonify({"error": "Could not save"}), 500
     return jsonify({"ok": True})
+
+
+def _open_items(rows, key):
+    """Unfinished, non-empty, not already moved. In the bullet journal only
+    tasks move (events and notes stay on their day)."""
+    return [r for r in rows if r.get("text", "").strip() and not r.get("done") and not r.get("moved")
+            and (key != "log" or r.get("kind", "task") == "task")]
+
+
+@day_sheet_bp.route("/api/day-sheet/carry", methods=["POST"])
+@login_required
+def carry():
+    """Move unfinished items of the given lists to the next day's sheet.
+
+    Body: {date, keys: ["ivy", "log", ...]}. The items stay on today's
+    sheet marked `moved` (shown as "-> tomorrow"), so carrying twice does
+    not copy them twice. Tomorrow gets them in the same list: Ivy Lee puts
+    them FIRST (that is the method), Top 3 fills empty slots, the rest
+    append. Duplicates (same text) and items past a list's cap are skipped.
+    Returns today's updated sheet so the page can replace its copy.
+    """
+    user_id = session["user_id"]
+    body = request.get_json(silent=True) or {}
+    try:
+        d = _parse_date(body.get("date"))
+    except ValueError:
+        return jsonify({"error": "Invalid date"}), 400
+    keys = [k for k in (body.get("keys") or []) if k in CARRY_KEYS]
+    if not keys:
+        return jsonify({"error": "Nothing to carry"}), 400
+    nxt = d + timedelta(days=1)
+    (src, ok1), (dst, ok2) = _load_sheet(user_id, d), _load_sheet(user_id, nxt)
+    if not (ok1 and ok2):
+        return jsonify({"error": f"Run {MIGRATION} in Supabase first", "migration": MIGRATION}), 409
+    src = _clean_sheet({"top3": [], "todos": [], "lists": {}, **(src or {})})
+    dst = _clean_sheet({"top3": [], "todos": [], "lists": {}, **(dst or {})})
+    if not dst.get("template") and src.get("template"):
+        dst["template"] = src["template"]
+
+    moved = skipped = 0
+    for key in keys:
+        if key in ("top3", "todos"):
+            s_rows, d_rows, cap = src[key], dst[key], 3 if key == "top3" else MAX_TODOS
+        else:
+            s_rows = src["lists"].setdefault(key, [])
+            d_rows, cap = dst["lists"].setdefault(key, []), LIST_CAPS[key]
+        have = {r["text"].strip().lower() for r in d_rows if r.get("text", "").strip()}
+        new = []
+        for r in _open_items(s_rows, key):
+            t = r["text"].strip()
+            if t.lower() in have:
+                r["moved"] = True          # already on tomorrow: just mark it
+                continue
+            row = {"text": t, "done": False}
+            if key == "log":
+                row["kind"] = "task"
+            new.append((r, row))
+            have.add(t.lower())
+        filled = [x for x in d_rows if x.get("text", "").strip()]
+        room = cap - len(filled)
+        take, rest = new[:max(room, 0)], new[max(room, 0):]
+        skipped += len(rest)
+        rows = [row for _, row in take]
+        if key == "ivy":
+            merged = rows + filled           # carried tasks go first
+        else:
+            merged = filled + rows
+        if key == "top3":
+            merged += [{"text": "", "done": False}] * (3 - len(merged))
+        if key in ("top3", "todos"):
+            dst[key] = merged
+        else:
+            dst["lists"][key] = merged
+        for r, _ in take:
+            r["moved"] = True
+        moved += len(take)
+
+    now = datetime.now(timezone.utc).isoformat()
+    for day, data in ((nxt, dst), (d, src)):          # tomorrow first: never mark moved without the copy
+        post("day_sheets?on_conflict=user_id,sheet_date",
+             {"user_id": user_id, "sheet_date": day.isoformat(), "data": data, "updated_at": now},
+             prefer="resolution=merge-duplicates,return=minimal")
+    return jsonify({"ok": True, "moved": moved, "skipped": skipped, "to": nxt.isoformat(),
+                    "sheet": _clean_sheet({"top3": [], "todos": [], "energy": 0, "notes": "", "tomorrow": "",
+                                           "hours": {}, "actual": {}, "template": "", "lists": {}, **src})})
 
 
 def _table_missing(exc):

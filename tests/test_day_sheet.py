@@ -107,3 +107,61 @@ def test_page(auth_client, monkeypatch):
     assert b'id="ds-data"' in html and b"Standup" in html          # data embedded, no second request
     assert b"Top 3 priorities" in html and b'data-date="2026-11-04"' in html and b"/day-sheet" in html
     assert auth_client.get("/day-sheet?date=bad").status_code == 302
+
+
+def test_clean_sheet_methods():
+    from routes.day_sheet import _clean_sheet
+    out = _clean_sheet({"template": "ivylee", "actual": {"9": "email", "99": "x"},
+                        "lists": {"ivy": [{"text": f"t{i}"} for i in range(9)], "big": [{"text": "a"}, {"text": "b"}],
+                                  "log": [{"text": "call", "kind": "event"}, {"text": "x", "kind": "bad", "moved": 1}],
+                                  "hack": [{"text": "no"}]}})
+    assert out["template"] == "ivylee" and out["actual"] == {"09": "email"}
+    assert len(out["lists"]["ivy"]) == 6 and len(out["lists"]["big"]) == 1 and "hack" not in out["lists"]
+    assert out["lists"]["log"] == [{"text": "call", "done": False, "kind": "event"}, {"text": "x", "done": False, "moved": True}]
+    assert _clean_sheet({"template": "<script>"})["template"] == ""
+
+
+def test_carry_to_tomorrow(auth_client, monkeypatch):
+    import routes.day_sheet as ds
+    sheets = {
+        "2026-11-04": {"template": "ivylee", "top3": [{"text": "Ship", "done": False}, {"text": "Done one", "done": True}],
+                       "lists": {"ivy": [{"text": "A", "done": True}, {"text": "B"}, {"text": "C"}, {"text": ""}],
+                                 "log": [{"text": "task", "kind": "task"}, {"text": "meeting", "kind": "event"},
+                                         {"text": "old", "kind": "task", "moved": True}]}},
+        "2026-11-05": {"lists": {"ivy": [{"text": "X"}, {"text": "c"}]}},
+    }
+    posts = []
+    monkeypatch.setattr(ds, "get", lambda t, params=None, **k: [{"data": sheets.get(params["sheet_date"][3:], {})}])
+    monkeypatch.setattr(ds, "post", lambda t, row, **k: posts.append(row) or [row])
+
+    j = auth_client.post("/api/day-sheet/carry", json={"date": "2026-11-04", "keys": ["ivy", "log", "top3", "evil"]}).get_json()
+    assert j["ok"] and j["to"] == "2026-11-05"
+    tomorrow, today = posts[0], posts[1]                       # tomorrow is written first
+    assert tomorrow["sheet_date"] == "2026-11-05" and today["sheet_date"] == "2026-11-04"
+    t = tomorrow["data"]
+    assert [r["text"] for r in t["lists"]["ivy"]] == ["B", "X", "c"]      # carried first; "C" already there
+    assert t["lists"]["log"] == [{"text": "task", "done": False, "kind": "task"}]   # tasks only, not moved ones
+    assert t["top3"][0]["text"] == "Ship" and len(t["top3"]) == 3 and t["template"] == "ivylee"
+    ivy = today["data"]["lists"]["ivy"]
+    assert [bool(r.get("moved")) for r in ivy] == [False, True, True, False]
+    assert j["moved"] == 3 and j["sheet"]["lists"]["ivy"][1]["moved"]
+    assert auth_client.post("/api/day-sheet/carry", json={"date": "2026-11-04", "keys": ["evil"]}).status_code == 400
+
+
+def test_carry_respects_caps(auth_client, monkeypatch):
+    import routes.day_sheet as ds
+    sheets = {"2026-11-04": {"lists": {"big": [{"text": "New big"}]}},
+              "2026-11-05": {"lists": {"big": [{"text": "Already big"}]}}}
+    posts = []
+    monkeypatch.setattr(ds, "get", lambda t, params=None, **k: [{"data": sheets[params["sheet_date"][3:]]}])
+    monkeypatch.setattr(ds, "post", lambda t, row, **k: posts.append(row) or [row])
+    j = auth_client.post("/api/day-sheet/carry", json={"date": "2026-11-04", "keys": ["big"]}).get_json()
+    assert j["moved"] == 0 and j["skipped"] == 1
+    assert posts[0]["data"]["lists"]["big"] == [{"text": "Already big", "done": False}]
+    assert not posts[1]["data"]["lists"]["big"][0].get("moved")      # not moved: it didn't fit
+
+
+def test_page_has_methods(auth_client, monkeypatch):
+    _fake_db(monkeypatch)
+    html = auth_client.get("/day-sheet?date=2026-11-04").data
+    assert b'id="ds-methods"' in html and b"Eisenhower" in html and b"/api/day-sheet/carry" in html
