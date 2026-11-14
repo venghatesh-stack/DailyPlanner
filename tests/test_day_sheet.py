@@ -165,3 +165,71 @@ def test_page_has_methods(auth_client, monkeypatch):
     _fake_db(monkeypatch)
     html = auth_client.get("/day-sheet?date=2026-11-04").data
     assert b'id="ds-methods"' in html and b"Eisenhower" in html and b"/api/day-sheet/carry" in html
+
+
+def test_scan_parser_js():
+    """The paper-sheet line parser (static/js/day_sheet_scan.js), run in node."""
+    import shutil, subprocess, pytest
+    if not shutil.which("node"):
+        pytest.skip("node not installed")
+    r = subprocess.run(["node", "tests/js/day_sheet_scan.test.js"], capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_clean_sheet_photos():
+    from routes.day_sheet import _clean_sheet
+    good = "daysheet/test-user-id/" + "a" * 32 + ".jpg"
+    out = _clean_sheet({"photos": [{"key": good, "at": "t"}, {"key": "thoughts/u/x.jpg"},
+                                   {"key": "daysheet/u/../x.jpg"}, "junk"]})
+    assert out["photos"] == [{"key": good, "at": "t"}]
+
+
+class _Resp:
+    def __init__(self, ok=True, content=b"img", ctype="image/jpeg"):
+        self.ok, self.content, self.text, self.headers = ok, content, "", {"Content-Type": ctype}
+
+
+def test_photo_upload_and_owner_only(auth_client, monkeypatch):
+    import io, requests
+    import routes.day_sheet as ds
+    store, sent = {}, []
+    monkeypatch.setattr(ds, "get", lambda t, params=None, **k: [{"data": store["d"]}] if "d" in store else [])
+    monkeypatch.setattr(ds, "post", lambda t, row, **k: store.__setitem__("d", row["data"]) or [row])
+    monkeypatch.setattr(requests, "post", lambda url, **k: sent.append(url) or _Resp())
+    monkeypatch.setattr(requests, "get", lambda url, **k: _Resp(content=b"JPEGDATA"))
+    monkeypatch.setattr(requests, "delete", lambda url, **k: sent.append("DEL " + url) or _Resp())
+
+    r = auth_client.post("/api/day-sheet/photo", data={"date": "2026-11-14", "image": (io.BytesIO(b"x" * 10), "p.jpg", "image/jpeg")},
+                         content_type="multipart/form-data")
+    j = r.get_json()
+    assert r.status_code == 200 and len(j["photos"]) == 1
+    key = j["photos"][0]["key"]
+    assert key.startswith("daysheet/test-user-id/") and sent[0].endswith(key) and store["d"]["photos"][0]["key"] == key
+    got = auth_client.get("/api/day-sheet/photo/" + key)
+    assert got.status_code == 200 and got.data == b"JPEGDATA" and "private" in got.headers["Cache-Control"]
+    other = "daysheet/someone-else/" + "b" * 32 + ".jpg"
+    assert auth_client.get("/api/day-sheet/photo/" + other).status_code == 404
+    assert auth_client.post("/api/day-sheet/photo/delete", json={"date": "2026-11-14", "key": other}).status_code == 404
+    bad = auth_client.post("/api/day-sheet/photo", data={"image": (io.BytesIO(b"x"), "a.pdf", "application/pdf")},
+                           content_type="multipart/form-data")
+    assert bad.status_code == 400
+    j = auth_client.post("/api/day-sheet/photo/delete", json={"date": "2026-11-14", "key": key}).get_json()
+    assert j["photos"] == [] and sent[-1].startswith("DEL ") and store["d"]["photos"] == []
+
+
+def test_csp_allows_wasm_only(client):
+    csp = client.get("/login").headers.get("Content-Security-Policy", "")
+    assert "'wasm-unsafe-eval'" in csp and "'unsafe-eval'" not in csp.replace("'wasm-unsafe-eval'", "")
+
+
+def test_ocr_is_self_hosted():
+    """Scanning must not call out to any service: the OCR engine, its core
+    and the English data are served from this app."""
+    import os
+    base = os.path.join(os.path.dirname(__file__), "..", "static", "js", "vendor", "tesseract-7.0.0")
+    for f in ("tesseract.min.js", "worker.min.js", "core/tesseract-core-lstm.wasm.js",
+              "core/tesseract-core-simd-lstm.wasm.js", "lang/eng.traineddata.gz"):
+        assert os.path.getsize(os.path.join(base, f)) > 10000, f
+    src = open(os.path.join(os.path.dirname(__file__), "..", "static", "js", "day_sheet_scan.js")).read()
+    assert "/static/js/vendor/tesseract-7.0.0" in src and "workerBlobURL: false" in src
+    assert "api.anthropic" not in src and "generativelanguage" not in src and "fetch(" not in src

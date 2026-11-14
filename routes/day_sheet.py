@@ -19,6 +19,8 @@ If that table is missing the page still works for everything else and
 says which SQL file to run.
 """
 import logging
+import re
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 
@@ -52,6 +54,17 @@ TEMPLATES = ("top3", "135", "eisenhower", "ivylee", "timeblock", "bujo", "manage
 LIST_CAPS = {"big": 1, "medium": 3, "small": 5, "q_do": 12, "q_plan": 12, "q_delegate": 12,
              "q_drop": 12, "ivy": 6, "log": 60, "people": 20, "quick": 20}
 BUJO_KINDS = ("task", "event", "note")
+
+# Paper-sheet photos (v356, "Scan paper sheet"). The text is read on the
+# phone (Tesseract in the browser, or pasted from Google Lens); only the
+# photo comes here, kept so the paper page stays with its day. Private:
+# the `user-photos` bucket under daysheet/<user>/, streamed only to its
+# owner. Keys live in day_sheets.data.photos.
+PHOTO_PREFIX = "daysheet"
+MAX_PHOTOS = 6
+MAX_PHOTO_BYTES = 5 * 1024 * 1024
+PHOTO_MIMES = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
+_PHOTO_KEY = re.compile(r"^daysheet/[A-Za-z0-9_.@-]+/[0-9a-f]{32}\.(jpg|png|webp)$")
 # Lists whose unfinished items can be carried to the next day.
 CARRY_KEYS = ("top3", "todos") + tuple(LIST_CAPS)
 
@@ -101,6 +114,10 @@ def _clean_sheet(raw):
         out["template"] = raw["template"] if raw["template"] in TEMPLATES else ""
     if "lists" in raw and isinstance(raw["lists"], dict):
         out["lists"] = {k: items(v, LIST_CAPS[k]) for k, v in raw["lists"].items() if k in LIST_CAPS}
+    if "photos" in raw:
+        out["photos"] = [{"key": p["key"], "at": str(p.get("at") or "")[:40]}
+                         for p in (raw["photos"] if isinstance(raw["photos"], list) else [])
+                         if isinstance(p, dict) and _PHOTO_KEY.match(str(p.get("key") or ""))][:MAX_PHOTOS]
     return out
 
 
@@ -232,7 +249,7 @@ def _payload(user_id, d):
 
     data, available = out["sheet"]
     sheet = _clean_sheet({"top3": [], "todos": [], "energy": 0, "notes": "", "tomorrow": "", "hours": {},
-                          "actual": {}, "template": "", "lists": {},
+                          "actual": {}, "template": "", "lists": {}, "photos": [],
                           **(data if isinstance(data, dict) else {})})
     timed, untimed = _schedule(out["events"] + out["matrix"] + out["project"] + out["bucket"])
     return {
@@ -401,6 +418,103 @@ def carry():
     return jsonify({"ok": True, "moved": moved, "skipped": skipped, "to": nxt.isoformat(),
                     "sheet": _clean_sheet({"top3": [], "todos": [], "energy": 0, "notes": "", "tomorrow": "",
                                            "hours": {}, "actual": {}, "template": "", "lists": {}, **src})})
+
+
+def _storage():
+    """(base url, headers, bucket) for Supabase Storage. Same bucket as the
+    Random thoughts images, under its own folder."""
+    from services.thoughts_service import BUCKET, _storage_headers
+    from supabase_client import SUPABASE_URL
+    return f"{SUPABASE_URL}/storage/v1/object/{BUCKET}", _storage_headers, BUCKET
+
+
+def _save_photos(user_id, d, sheet):
+    post("day_sheets?on_conflict=user_id,sheet_date",
+         {"user_id": user_id, "sheet_date": d.isoformat(), "data": sheet,
+          "updated_at": datetime.now(timezone.utc).isoformat()},
+         prefer="resolution=merge-duplicates,return=minimal")
+
+
+@day_sheet_bp.route("/api/day-sheet/photo", methods=["POST"])
+@login_required
+def upload_photo():
+    """Keep a photo of the paper sheet with its day. Multipart: date, image.
+    Only the photo is sent; the text was already read on the phone."""
+    import requests
+    user_id = session["user_id"]
+    try:
+        d = _parse_date(request.form.get("date"))
+    except ValueError:
+        return jsonify({"error": "Invalid date"}), 400
+    f = request.files.get("image")
+    mime = (getattr(f, "mimetype", "") or "").lower()
+    if not f or mime not in PHOTO_MIMES:
+        return jsonify({"error": "Send a JPG, PNG or WebP photo"}), 400
+    data = f.read(MAX_PHOTO_BYTES + 1)
+    if len(data) > MAX_PHOTO_BYTES:
+        return jsonify({"error": "Photo is over 5 MB"}), 413
+    raw, available = _load_sheet(user_id, d)
+    if not available:
+        return jsonify({"error": f"Run {MIGRATION} in Supabase first", "migration": MIGRATION}), 409
+    sheet = _clean_sheet(raw or {})
+    photos = sheet.get("photos") or []
+    if len(photos) >= MAX_PHOTOS:
+        return jsonify({"error": f"This day already has {MAX_PHOTOS} photos"}), 400
+    base, headers, _ = _storage()
+    key = f"{PHOTO_PREFIX}/{user_id}/{uuid.uuid4().hex}.{PHOTO_MIMES[mime]}"
+    try:
+        r = requests.post(f"{base}/{key}", headers=headers({"Content-Type": mime, "x-upsert": "false"}),
+                          data=data, timeout=60)
+        if not r.ok:
+            raise RuntimeError(f"storage {r.status_code}: {r.text[:200]}")
+    except Exception:
+        logger.warning("day sheet: photo upload failed", exc_info=True)
+        return jsonify({"error": "Could not store the photo. Check that the user-photos storage bucket exists."}), 502
+    sheet["photos"] = photos + [{"key": key, "at": datetime.now(timezone.utc).isoformat()}]
+    _save_photos(user_id, d, sheet)
+    return jsonify({"ok": True, "photos": sheet["photos"]})
+
+
+@day_sheet_bp.route("/api/day-sheet/photo/<path:key>")
+@login_required
+def get_photo(key):
+    import requests
+    from flask import Response
+    user_id = session["user_id"]
+    if not _PHOTO_KEY.match(key) or not key.startswith(f"{PHOTO_PREFIX}/{user_id}/"):
+        return jsonify({"error": "Not found"}), 404
+    base, headers, _ = _storage()
+    r = requests.get(f"{base}/{key}", headers=headers(), timeout=60)
+    if not r.ok:
+        return jsonify({"error": "Not found"}), 404
+    return Response(r.content, mimetype=r.headers.get("Content-Type") or "image/jpeg",
+                    headers={"Cache-Control": "private, max-age=86400"})
+
+
+@day_sheet_bp.route("/api/day-sheet/photo/delete", methods=["POST"])
+@login_required
+def delete_photo():
+    import requests
+    user_id = session["user_id"]
+    body = request.get_json(silent=True) or {}
+    key = str(body.get("key") or "")
+    try:
+        d = _parse_date(body.get("date"))
+    except ValueError:
+        return jsonify({"error": "Invalid date"}), 400
+    if not key.startswith(f"{PHOTO_PREFIX}/{user_id}/"):
+        return jsonify({"error": "Not found"}), 404
+    raw, available = _load_sheet(user_id, d)
+    sheet = _clean_sheet(raw or {})
+    sheet["photos"] = [p for p in sheet.get("photos") or [] if p["key"] != key]
+    if available:
+        _save_photos(user_id, d, sheet)
+    base, headers, _ = _storage()
+    try:
+        requests.delete(f"{base}/{key}", headers=headers(), timeout=30)
+    except Exception:
+        logger.warning("day sheet: could not delete photo %s", key)
+    return jsonify({"ok": True, "photos": sheet["photos"]})
 
 
 def _table_missing(exc):

@@ -125,6 +125,45 @@
   @media (max-width: 640px) {
     .ds-quad { grid-template-columns: minmax(0, 1fr); }
   }
+  /* ── Scan paper sheet (v356) ── */
+  .ds-scanbtn { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; font: inherit; font-size: 14px; font-weight: 700; padding: 9px 14px;
+    border-radius: 999px; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); cursor: pointer; }
+  .ds-scanbtn svg { width: 17px; height: 17px; }
+  .ds-photos { display: flex; gap: 10px; flex-wrap: wrap; }
+  .ds-photos figure { margin: 0; position: relative; }
+  .ds-photos img { width: 96px; height: 128px; object-fit: cover; border-radius: 10px; border: 1px solid var(--color-border); display: block; cursor: zoom-in; background: var(--color-bg); }
+  .ds-photos .ds-x { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; background: var(--color-surface); border: 1px solid var(--color-border); font-size: 15px; }
+  dialog.ds-dlg { width: min(760px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); border: 1px solid var(--color-border); border-radius: 18px; padding: 0;
+    background: var(--color-surface); color: var(--color-text); box-sizing: border-box; }
+  dialog.ds-dlg::backdrop { background: rgba(0, 0, 0, .45); }
+  .ds-dlg-in { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .ds-dlg h2 { margin: 0; font-size: 20px; font-weight: 800; display: flex; justify-content: space-between; align-items: center; }
+  .ds-dlg p.ds-help { margin: 0; font-size: 13.5px; color: var(--color-text-secondary); line-height: 1.5; }
+  .ds-choices { display: flex; flex-wrap: wrap; gap: 10px; }
+  .ds-choice { flex: 1 1 220px; display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 14px; border-radius: 14px; cursor: pointer;
+    border: 1px solid var(--color-border); background: var(--color-bg); color: var(--color-text); font: inherit; }
+  .ds-choice b { font-size: 15px; } .ds-choice span { font-size: 12.5px; color: var(--color-text-secondary); }
+  .ds-bar { height: 8px; border-radius: 99px; background: var(--color-bg); overflow: hidden; }
+  .ds-bar i { display: block; height: 100%; width: 0; background: var(--color-primary); transition: width .2s; }
+  .ds-paste { width: 100%; min-height: 160px; box-sizing: border-box; font: inherit; font-size: 14.5px; padding: 10px; border-radius: 10px;
+    border: 1px solid var(--color-border); background: var(--color-bg); color: var(--color-text); }
+  .ds-rv { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto 22px; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--color-border); }
+  .ds-rv .ds-in { font-size: 14.5px; padding: 6px 8px; border-radius: 8px; background: var(--color-bg); box-sizing: border-box; }
+  .ds-rv select { font: inherit; font-size: 13px; padding: 5px 6px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); max-width: 150px; }
+  .ds-rv.off .ds-in, .ds-rv.off select { opacity: .45; }
+  .ds-rvhead { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto 22px; gap: 8px; font-size: 11px; font-weight: 800; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--color-text-secondary); }
+  .ds-dlg-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; align-items: center; }
+  .ds-btn { font: inherit; font-size: 14px; font-weight: 700; padding: 10px 16px; border-radius: 10px; cursor: pointer; border: 1px solid var(--color-border);
+    background: var(--color-surface); color: var(--color-text); }
+  .ds-btn.primary { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-on-primary); }
+  .ds-btn:disabled { opacity: .5; cursor: default; }
+  .ds-preview { max-height: 180px; max-width: 100%; border-radius: 10px; border: 1px solid var(--color-border); align-self: flex-start; }
+  @media (max-width: 640px) {
+    .ds-rv { grid-template-columns: 22px minmax(0, 1fr) 22px; }
+    .ds-rv select { grid-column: 2; max-width: none; width: 100%; }
+    .ds-rvhead { display: none; }
+  }
   @media (max-width: 640px) {
     .ds-head h1 { font-size: 27px; }
     .ds-week { flex-wrap: nowrap; width: 100%; gap: 4px; }
@@ -152,6 +191,7 @@
       <div class="ds-kicker">Day sheet</div>
       <h1 id="ds-title">Loading…</h1>
       <div class="ds-save" id="ds-save" role="status" aria-live="polite"></div>
+      <button type="button" class="ds-scanbtn" id="ds-scan-open"><i data-feather="camera"></i> Scan paper sheet</button>
     </div>
     <nav class="ds-week" aria-label="This week">
       <a class="ds-arrow" id="ds-prev" href="#" aria-label="Previous week"><i data-feather="chevron-left"></i></a>
@@ -211,6 +251,11 @@
         </section>
       </div>
 
+      <section class="ds-card" aria-labelledby="ds-photos-h" id="ds-photos-card" hidden>
+        <h2 id="ds-photos-h">Paper pages <span>tap to open</span></h2>
+        <div class="ds-photos" id="ds-photos"></div>
+      </section>
+
       <div class="ds-pair">
         <section class="ds-card" aria-labelledby="ds-notes-h">
           <h2 id="ds-notes-h">Notes</h2>
@@ -231,6 +276,48 @@
   </div>
 </main>
 
+<dialog class="ds-dlg" id="ds-scan" aria-labelledby="ds-scan-h">
+  <div class="ds-dlg-in">
+    <h2 id="ds-scan-h"><span>Scan paper sheet</span><button type="button" class="ds-x" id="ds-scan-close" aria-label="Close">×</button></h2>
+
+    <div id="ds-scan-start">
+      <p class="ds-help" style="margin-bottom:12px">Your page is read on this phone. No AI service is used and nothing is added until you check it.</p>
+      <div class="ds-choices">
+        <label class="ds-choice" for="ds-scan-file"><b>📷 Photo of the page</b>
+          <span>Take a photo or pick one. Best with clear print-style writing, good light and the page filling the frame.</span></label>
+        <button type="button" class="ds-choice" id="ds-scan-paste-btn"><b>📋 Paste text</b>
+          <span>Most accurate for joined-up handwriting: open the photo in Google Lens, tap Text → Select all → Copy, then paste here.</span></button>
+      </div>
+      <input type="file" id="ds-scan-file" accept="image/*" capture="environment" hidden>
+    </div>
+
+    <div id="ds-scan-paste" hidden>
+      <textarea class="ds-paste" id="ds-scan-text" placeholder="One item per line. Headings like Top 3, To-do, Notes or Schedule sort the lines under them.&#10;Times like 9:30 Standup or 2pm Review go into the schedule."></textarea>
+      <div class="ds-dlg-actions" style="margin-top:10px"><button type="button" class="ds-btn primary" id="ds-scan-parse">Read lines</button></div>
+    </div>
+
+    <div id="ds-scan-busy" hidden>
+      <img class="ds-preview" id="ds-scan-img" alt="Your page">
+      <p class="ds-help" id="ds-scan-label" style="margin:10px 0 6px">Getting ready…</p>
+      <div class="ds-bar"><i id="ds-scan-bar"></i></div>
+    </div>
+
+    <div id="ds-scan-review" hidden>
+      <p class="ds-help" id="ds-scan-note" style="margin-bottom:8px"></p>
+      <div class="ds-rvhead"><span></span><span>Item (fix any misread words)</span><span>Goes to</span><span title="Already done">✓</span></div>
+      <div id="ds-scan-rows"></div>
+      <button type="button" class="ds-add" id="ds-scan-addrow">+ Add a line</button>
+      <label class="ds-help" id="ds-scan-keep-wrap" style="display:flex;gap:8px;align-items:center;margin-top:6px">
+        <input type="checkbox" class="ds-check" id="ds-scan-keep" checked> Keep the photo with this day</label>
+      <div class="ds-dlg-actions" style="margin-top:12px">
+        <button type="button" class="ds-btn" id="ds-scan-back">Start again</button>
+        <button type="button" class="ds-btn primary" id="ds-scan-apply">Add</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<script src="{{ url_for('static', filename='js/day_sheet_scan.js') }}"></script>
 <script>
 const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 const DATE = document.getElementById('ds').dataset.date;
@@ -298,7 +385,7 @@ async function load() {
     b.hidden = false;
     b.innerHTML = `Top 3, to-dos, energy, notes and hour notes need one table. Run <b>${esc(S.migration)}</b> in Supabase once. Focus, schedule, habits and the reflection already work.`;
   }
-  renderWeek(); renderFocus(); renderEnergy(); renderMethods(); renderRange(); renderHours(); renderPlan(); renderTodos(); renderPlanned(); renderHabits(); renderText();
+  renderWeek(); renderFocus(); renderEnergy(); renderMethods(); renderRange(); renderHours(); renderPlan(); renderTodos(); renderPlanned(); renderHabits(); renderText(); renderPhotos(); initScan();
   if (window.feather) feather.replace();
 }
 
@@ -591,6 +678,170 @@ function renderHabits() {
       d.done = el.checked; d.value = j.value; status('Saved');
     } catch (e) { el.checked = !el.checked; if (window.showToast) showToast(e.message || 'Could not save', 'error'); }
   });
+}
+
+// ── Scan paper sheet (v356) ──
+// Read on the phone (Tesseract in static/js/day_sheet_scan.js) or pasted
+// from Google Lens. No AI API, no tokens. Every line is reviewed before
+// anything is added.
+const LIST_LABELS = { big: '1-3-5 · Big', medium: '1-3-5 · Medium', small: '1-3-5 · Small', q_do: 'Eisenhower · Do',
+  q_plan: 'Eisenhower · Schedule', q_delegate: 'Eisenhower · Delegate', q_drop: 'Eisenhower · Drop', ivy: 'Ivy Lee six',
+  log: 'Rapid log', people: 'People', quick: 'Quick wins' };
+const METHOD_LISTS = { '135': ['big', 'medium', 'small'], eisenhower: ['q_do', 'q_plan', 'q_delegate', 'q_drop'],
+  ivylee: ['ivy'], bujo: ['log'], manager: ['people', 'quick'] };
+const scan = { rows: [], file: null };
+function $id(id) { return document.getElementById(id); }
+function scanStep(step) { ['start', 'paste', 'busy', 'review'].forEach(s => $id('ds-scan-' + s).hidden = s !== step); }
+
+function destOptions(cur) {
+  const lists = new Set(METHOD_LISTS[method()] || []);
+  scan.rows.forEach(r => r.dest.startsWith('list:') && lists.add(r.dest.slice(5)));
+  const opts = [['top3', 'Top 3'], ['todo', 'To-do'], ['bucket', 'Quick Bucket task'], ['notes', 'Notes']]
+    .concat([...lists].map(k => ['list:' + k, LIST_LABELS[k]]))
+    .concat(Array.from({ length: 24 }, (_, h) => ['hour:' + String(h).padStart(2, '0'), 'Schedule · ' + fmtHour(h)]))
+    .concat([['skip', 'Don’t add']]);
+  return opts.map(([v, l]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${esc(l)}</option>`).join('');
+}
+function renderScanRows() {
+  const box = $id('ds-scan-rows');
+  box.innerHTML = scan.rows.map((r, i) => `<div class="ds-rv${r.dest === 'skip' ? ' off' : ''}">
+      <input type="checkbox" class="ds-check" data-i="${i}" data-f="on" aria-label="Add this line"${r.dest !== 'skip' ? ' checked' : ''}>
+      <input class="ds-in" data-i="${i}" maxlength="300" aria-label="Line ${i + 1}" value="${esc(r.text)}">
+      <select data-i="${i}" aria-label="Where line ${i + 1} goes">${destOptions(r.dest)}</select>
+      <input type="checkbox" class="ds-check" data-i="${i}" data-f="done" aria-label="Already done"${r.done ? ' checked' : ''}></div>`).join('')
+    || '<p class="ds-empty">No lines found. Add them by hand below, or start again with a clearer photo.</p>';
+  const n = scan.rows.filter(r => r.dest !== 'skip' && r.text.trim()).length;
+  $id('ds-scan-apply').textContent = n ? `Add ${n} item${n === 1 ? '' : 's'}` : 'Add';
+  $id('ds-scan-apply').disabled = !n && !(scan.file && $id('ds-scan-keep').checked);
+  box.querySelectorAll('.ds-in').forEach(el => el.oninput = () => { scan.rows[el.dataset.i].text = el.value; });
+  box.querySelectorAll('select').forEach(el => el.onchange = () => { const r = scan.rows[el.dataset.i]; r.dest = el.value; if (r.dest !== 'skip') r.prev = r.dest; renderScanRows(); });
+  box.querySelectorAll('.ds-check').forEach(el => el.onchange = () => {
+    const r = scan.rows[el.dataset.i];
+    if (el.dataset.f === 'done') { r.done = el.checked; return; }
+    if (el.checked) r.dest = r.prev || 'todo'; else { r.prev = r.dest; r.dest = 'skip'; }
+    renderScanRows();
+  });
+}
+function showReview(text, note) {
+  scan.rows = DSScan.parse(text, { method: method() });
+  $id('ds-scan-note').textContent = note || '';
+  $id('ds-scan-keep-wrap').hidden = !scan.file;
+  scanStep('review'); renderScanRows();
+}
+
+function openScan() {
+  if (!S.available) { status('Not saved: run ' + S.migration + ' in Supabase first'); if (window.showToast) showToast('Run ' + S.migration + ' in Supabase first', 'error'); return; }
+  scan.rows = []; scan.file = null; $id('ds-scan-file').value = ''; $id('ds-scan-text').value = '';
+  scanStep('start');
+  const d = $id('ds-scan'); if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+}
+async function onScanFile() {
+  const f = $id('ds-scan-file').files[0];
+  if (!f) return;
+  scan.file = f;
+  const img = $id('ds-scan-img'); img.src = URL.createObjectURL(f);
+  scanStep('busy');
+  const bar = $id('ds-scan-bar'), label = $id('ds-scan-label');
+  try {
+    const res = await DSScan.ocr(f, (p, l) => { bar.style.width = Math.round(p * 100) + '%'; if (l) label.textContent = l + (p ? ' · ' + Math.round(p * 100) + '%' : ''); });
+    const conf = Math.round(res.confidence || 0);
+    showReview(res.text, conf < 60
+      ? `The reader was unsure about this page (${conf}% confident), so check each line. For joined-up handwriting, Paste text from Google Lens works better.`
+      : 'Check each line and where it goes. Untick anything you don’t want; tick the box on the right if it’s already done.');
+  } catch (e) {
+    label.textContent = 'Could not read the photo: ' + (e.message || e) + '. You can still type or paste the lines.';
+    showReview('', 'Could not read the photo. Add the lines by hand, or use Paste text.');
+  }
+}
+
+function fillSlots(arr, cap, newRows) {
+  // Use empty slots first, then append up to the cap. Skips duplicates.
+  // Returns the rows that didn't fit.
+  const have = new Set(arr.filter(r => r.text.trim()).map(r => r.text.trim().toLowerCase()));
+  const spill = [];
+  for (const r of newRows) {
+    if (have.has(r.text.toLowerCase())) continue;
+    const empty = arr.findIndex(x => !x.text.trim());
+    if (empty >= 0) arr[empty] = r; else if (arr.length < cap) arr.push(r); else { spill.push(r); continue; }
+    have.add(r.text.toLowerCase());
+  }
+  return spill;
+}
+async function applyScan() {
+  const btn = $id('ds-scan-apply'); btn.disabled = true;
+  const rows = scan.rows.filter(r => r.dest !== 'skip' && r.text.trim()).map(r => ({ ...r, text: r.text.trim().slice(0, 300) }));
+  const by = d => rows.filter(r => r.dest === d).map(r => ({ text: r.text, done: !!r.done }));
+  let spill = fillSlots(sheet.top3, 3, by('top3'));
+  Object.keys(CAPS).forEach(k => {
+    const mine = rows.filter(r => r.dest === 'list:' + k).map(r => (k === 'log' ? { text: r.text, done: !!r.done, kind: r.kind || 'task' } : { text: r.text, done: !!r.done }));
+    if (mine.length) spill = spill.concat(fillSlots(list(k), CAPS[k], mine));
+  });
+  const lost = fillSlots(sheet.todos, 30, by('todo').concat(spill.map(r => ({ text: r.text, done: r.done }))));
+  // Scanning the same page twice must not double the notes or hours.
+  const noteLines = new Set((sheet.notes || '').split('\n').map(l => l.trim().toLowerCase()));
+  const notes = by('notes').map(r => r.text).filter(t => !noteLines.has(t.toLowerCase()));
+  if (notes.length) sheet.notes = ((sheet.notes ? sheet.notes.replace(/\s+$/, '') + '\n' : '') + notes.join('\n')).slice(0, 8000);
+  rows.filter(r => r.dest.startsWith('hour:')).forEach(r => {
+    const h = r.dest.slice(5), cur = (sheet.hours = sheet.hours || {})[h] || '';
+    if (cur.toLowerCase().split(' · ').includes(r.text.toLowerCase())) return;
+    sheet.hours[h] = cur ? (cur + ' · ' + r.text).slice(0, 300) : r.text;
+  });
+  if (rows.length) { touch('scan'); clearTimeout(saveTimer); await flush(); }
+
+  let bucketFail = 0;
+  for (const r of rows.filter(r => r.dest === 'bucket')) {
+    try {
+      const res = await fetch('/api/quick-bucket', { method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+        body: JSON.stringify({ text: r.text, is_done: !!r.done, time_bucket: 'now' }) });
+      if (!res.ok) bucketFail++;
+    } catch (e) { bucketFail++; }
+  }
+  let photoMsg = '';
+  if (scan.file && $id('ds-scan-keep').checked) {
+    try {
+      const fd = new FormData();
+      fd.append('date', DATE);
+      fd.append('image', await DSScan.photoBlob(scan.file), 'page.jpg');
+      const res = await fetch('/api/day-sheet/photo', { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF }, body: fd });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error || 'Could not keep the photo');
+      sheet.photos = j.photos;
+    } catch (e) { photoMsg = ' Photo not kept: ' + e.message; }
+  }
+  $id('ds-scan').close();
+  renderPlan(); renderTodos(); renderHours(); renderText(); renderPhotos();
+  const msg = `Added ${rows.length - lost.length - bucketFail} item${rows.length === 1 ? '' : 's'}`
+    + (lost.length ? `; ${lost.length} didn’t fit` : '') + (bucketFail ? `; ${bucketFail} Quick Bucket task${bucketFail === 1 ? '' : 's'} failed` : '') + '.' + photoMsg;
+  status(msg); if (window.showToast) showToast(msg, lost.length || bucketFail || photoMsg ? 'info' : 'success');
+}
+
+function renderPhotos() {
+  const photos = sheet.photos || [];
+  $id('ds-photos-card').hidden = !photos.length;
+  $id('ds-photos').innerHTML = photos.map((p, i) => `<figure>
+      <a href="/api/day-sheet/photo/${esc(p.key)}" target="_blank" rel="noopener"><img src="/api/day-sheet/photo/${esc(p.key)}" alt="Paper page ${i + 1}" loading="lazy"></a>
+      <button type="button" class="ds-x" data-i="${i}" aria-label="Remove paper page ${i + 1}">×</button></figure>`).join('');
+  $id('ds-photos').querySelectorAll('.ds-x').forEach(b => b.onclick = async () => {
+    if (!confirm('Remove this photo? The items already added stay.')) return;
+    const key = photos[b.dataset.i].key;
+    const r = await fetch('/api/day-sheet/photo/delete', { method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF }, body: JSON.stringify({ date: DATE, key }) });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok) { sheet.photos = j.photos; renderPhotos(); } else if (window.showToast) showToast(j.error || 'Could not remove', 'error');
+  });
+}
+
+function initScan() {
+  $id('ds-scan-open').onclick = openScan;
+  $id('ds-scan-close').onclick = () => $id('ds-scan').close();
+  $id('ds-scan-file').onchange = onScanFile;
+  $id('ds-scan-paste-btn').onclick = () => { scanStep('paste'); $id('ds-scan-text').focus(); };
+  $id('ds-scan-parse').onclick = () => showReview($id('ds-scan-text').value, 'Check each line and where it goes. Untick anything you don’t want; tick the box on the right if it’s already done.');
+  $id('ds-scan-back').onclick = () => { scan.file = null; $id('ds-scan-file').value = ''; scanStep('start'); };
+  $id('ds-scan-addrow').onclick = () => { scan.rows.push({ text: '', done: false, dest: 'todo' }); renderScanRows(); const ins = $id('ds-scan-rows').querySelectorAll('.ds-in'); ins[ins.length - 1].focus(); };
+  $id('ds-scan-keep').onchange = renderScanRows;
+  $id('ds-scan-apply').onclick = applyScan;
 }
 
 function renderText() {

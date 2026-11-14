@@ -16,7 +16,11 @@ def apply_security_headers(app):
             "default-src 'self'; "
             # www.youtube.com + s.ytimg.com: the YouTube IFrame Player API,
             # which Drive Queue uses to auto-advance and repeat videos.
-            "script-src 'self' 'unsafe-inline' "
+            # 'wasm-unsafe-eval': lets the self-hosted OCR engine
+            # (static/js/vendor/tesseract-7.0.0, Day Sheet "Scan paper
+            # sheet") compile its WebAssembly. It allows WebAssembly only,
+            # not eval() of JavaScript.
+            "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' "
             "  https://unpkg.com https://cdn.jsdelivr.net https://cdn.quilljs.com "
             "  https://www.youtube.com https://s.ytimg.com; "
             "style-src 'self' 'unsafe-inline' "
